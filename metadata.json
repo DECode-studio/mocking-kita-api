@@ -1,0 +1,6 @@
+{
+  "name": "Mock API Studio",
+  "description": "Developer dashboard for managing local mock API projects, environments, collections, request and response scenarios",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
