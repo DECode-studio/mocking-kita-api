@@ -79,24 +79,6 @@ Penyimpanan SQLite dirancang berdasarkan skema relational [mocking-kita.sql](fil
 
 ---
 
-## 📏 Architecture Rules & Coding Standards
-
-Dokumen aturan pengkodean lengkap tersedia di [.extra/rules.md](file:///.extra/rules.md):
-
-### 🟢 DOs:
-- ✅ Gunakan `app/[route]/page.tsx` murni sebagai **Server Component (SSR Page Shell)** untuk pre-fetching data awal.
-- ✅ Terapkan **Feature Co-location MVVM**: View Component (`View.tsx`) hanya untuk render UI, View Model Hook (`use[Feature]ViewModel.ts`) untuk menangani state dan event logic.
-- ✅ Simpan seluruh persistence data di **SQLite Database** (Dilarang menggunakan `LocalStorage`).
-- ✅ Lakukan mapping dari Data Model (DTO) ke Domain Entity di dalam **Repository Implementation**.
-
-### 🔴 DON'Ts:
-- ❌ **DILARANG** mengimpor `better-sqlite3` atau query database langsung dari View / View Model Client Side (`'use client'`).
-- ❌ **DILARANG** mengimpor React, Next.js, atau UI Libraries di dalam `src/domain/`.
-- ❌ **DILARANG** mengekspos raw DTO / Database Model langsung ke Presentation Layer.
-- ❌ **DILARANG** mempertahankan lapisan wrapper yang menduplikasi implementasi jika `views/` sudah menjadi sumber implementasi.
-
----
-
 ## 🛠 Panduan Jalankan Proyek
 
 ### Prerequisites
