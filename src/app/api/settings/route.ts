@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { ThemeMode } from '@/src/domain/settings/entity/theme_mode';
+import { ThemeMode } from '@/src/core/theme/theme-types';
 
 export const runtime = 'nodejs';
 
