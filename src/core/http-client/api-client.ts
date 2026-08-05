@@ -5,7 +5,13 @@ type RequestOptions = {
 };
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const response = await fetch(path, {
+  let url = path;
+  if (typeof window === 'undefined' && path.startsWith('/')) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+    url = `${baseUrl.replace(/\/$/, '')}${path}`;
+  }
+
+  const response = await fetch(url, {
     method: options.method ?? 'GET',
     headers: {
       'Content-Type': 'application/json',
