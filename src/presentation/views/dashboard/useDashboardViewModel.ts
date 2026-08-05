@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
-import { dashboardUseCase } from '@/src/data/dashboard/dashboard_usecase';
+import { dashboardUseCase } from '@/src/application/dashboard/dashboard_usecase';
 import { ROUTES } from '@/src/core/constants/routes';
 
 const emptyDb: MockApiDatabase = {
