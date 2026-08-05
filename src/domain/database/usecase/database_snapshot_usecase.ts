@@ -1,13 +1,13 @@
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
-import { DatabaseAdminRepository } from '../repository/database_admin_repository';
+import { DatabaseSnapshotRepository } from '../repository/database_snapshot_repository';
 
-export interface DatabaseAdminUseCase {
+export interface DatabaseSnapshotUseCase {
   getDatabase(): Promise<MockApiDatabase>;
   importDatabase(data: MockApiDatabase, mode: 'replace' | 'merge'): Promise<MockApiDatabase>;
 }
 
-export class DatabaseAdminUseCaseImpl implements DatabaseAdminUseCase {
-  constructor(private readonly databaseRepository: DatabaseAdminRepository) {}
+export class DatabaseSnapshotUseCaseImpl implements DatabaseSnapshotUseCase {
+  constructor(private readonly databaseRepository: DatabaseSnapshotRepository) {}
 
   getDatabase(): Promise<MockApiDatabase> {
     return this.databaseRepository.getDatabase();
