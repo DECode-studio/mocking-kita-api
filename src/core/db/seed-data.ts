@@ -1,0 +1,245 @@
+import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+
+export const INITIAL_SEED_DATA: MockApiDatabase = {
+  version: '1.0.0',
+  projects: [
+    {
+      id: 'proj-ecommerce-001',
+      name: 'E-Commerce API',
+      description: 'Mock API configuration for modern e-commerce web and mobile applications',
+      status: true,
+      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'proj-payment-002',
+      name: 'Payment Gateway Integration',
+      description: 'Mock endpoints for Stripe/PayPal payment gateway webhooks and processing',
+      status: true,
+      createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+  ],
+  environments: [
+    {
+      id: 'env-local-001',
+      projectId: 'proj-ecommerce-001',
+      name: 'Local',
+      environmentType: 'LOCAL',
+      publicBaseUrl: 'http://localhost:3000',
+      originBaseUrl: 'https://api.example.com',
+      status: true,
+      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'env-dev-001',
+      projectId: 'proj-ecommerce-001',
+      name: 'Development',
+      environmentType: 'DEVELOPMENT',
+      publicBaseUrl: 'https://mock-dev.example.local',
+      originBaseUrl: 'https://dev-api.example.com',
+      status: true,
+      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'env-staging-001',
+      projectId: 'proj-ecommerce-001',
+      name: 'Staging',
+      environmentType: 'STAGING',
+      publicBaseUrl: 'https://mock-staging.example.local',
+      originBaseUrl: 'https://staging-api.example.com',
+      status: true,
+      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'env-pay-local',
+      projectId: 'proj-payment-002',
+      name: 'Local Sandbox',
+      environmentType: 'LOCAL',
+      publicBaseUrl: 'http://localhost:4000',
+      originBaseUrl: 'https://sandbox.payment.local',
+      status: true,
+      createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+      deletedAt: null,
+    }
+  ],
+  apiCollections: [
+    {
+      id: 'api-products-list',
+      projectId: 'proj-ecommerce-001',
+      name: 'Get Products Catalog',
+      description: 'Fetches paginated list of store products with optional category filters',
+      path: '/api/products',
+      methodRequest: 'GET',
+      status: true,
+      createdAt: new Date(Date.now() - 6 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'api-products-detail',
+      projectId: 'proj-ecommerce-001',
+      name: 'Get Product Detail',
+      description: 'Retrieves product detail by product ID',
+      path: '/api/products/:id',
+      methodRequest: 'GET',
+      status: true,
+      createdAt: new Date(Date.now() - 6 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'api-orders-create',
+      projectId: 'proj-ecommerce-001',
+      name: 'Create Order',
+      description: 'Submits new shopping cart order with items and delivery address',
+      path: '/api/orders',
+      methodRequest: 'POST',
+      status: true,
+      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'api-orders-detail',
+      projectId: 'proj-ecommerce-001',
+      name: 'Get Order Status',
+      description: 'Fetches current order status and shipment tracking',
+      path: '/api/orders/:id',
+      methodRequest: 'GET',
+      status: true,
+      createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+  ],
+  apiEnvironments: [
+    {
+      id: 'apienv-prod-detail-local',
+      apiId: 'api-products-detail',
+      environmentId: 'env-local-001',
+      enabled: true,
+      pathOverride: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: 'apienv-prod-detail-dev',
+      apiId: 'api-products-detail',
+      environmentId: 'env-dev-001',
+      enabled: true,
+      pathOverride: '/v2/products/:id',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+  ],
+  requestScenarios: [
+    {
+      id: 'req-prod-detail-active',
+      apiId: 'api-products-detail',
+      name: 'Existing active product request',
+      description: 'Matches valid request for an available product in stock',
+      headers: {
+        'accept': 'application/json',
+        'x-client-version': '2.4.0'
+      },
+      queryParams: {
+        'includeReviews': 'true'
+      },
+      pathParams: {
+        'id': 'product-001'
+      },
+      body: {},
+      matchType: 'EXACT',
+      priority: 100,
+      status: true,
+      createdAt: new Date(Date.now() - 4 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'req-prod-detail-notfound',
+      apiId: 'api-products-detail',
+      name: 'Out of stock / missing product request',
+      description: 'Matches request when ID is invalid or product non-existent',
+      headers: {},
+      queryParams: {},
+      pathParams: {
+        'id': 'product-999'
+      },
+      body: {},
+      matchType: 'EXACT',
+      priority: 90,
+      status: true,
+      createdAt: new Date(Date.now() - 4 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+  ],
+  responseScenarios: [
+    {
+      id: 'res-prod-detail-success',
+      requestScenarioId: 'req-prod-detail-active',
+      name: '200 OK - Product Found',
+      description: 'Returns product details including stock and pricing',
+      statusCode: 200,
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'max-age=300'
+      },
+      body: {
+        success: true,
+        message: 'Product retrieved successfully',
+        data: {
+          id: 'product-001',
+          name: 'Mechanical Keyboard RGB',
+          price: 1250000,
+          currency: 'IDR',
+          stock: 15,
+          category: 'Peripherals',
+          tags: ['keyboard', 'gaming', 'rgb']
+        }
+      },
+      delayMs: 300,
+      weight: 100,
+      priority: 100,
+      status: true,
+      createdAt: new Date(Date.now() - 4 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: 'res-prod-detail-404',
+      requestScenarioId: 'req-prod-detail-notfound',
+      name: '404 Not Found - Product Missing',
+      description: 'Returns standard not found error payload',
+      statusCode: 404,
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: {
+        success: false,
+        error: {
+          code: 'PRODUCT_NOT_FOUND',
+          message: 'The requested product ID does not exist in store catalog'
+        }
+      },
+      delayMs: 150,
+      weight: 100,
+      priority: 100,
+      status: true,
+      createdAt: new Date(Date.now() - 4 * 86400000).toISOString(),
+      updatedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      deletedAt: null,
+    }
+  ],
+};

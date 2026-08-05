@@ -1,0 +1,12 @@
+export const ROUTES = {
+  SIGN_IN: '/sign-in',
+  DASHBOARD: '/dashboard',
+  PROJECTS: '/projects',
+  ENVIRONMENTS: '/environments',
+  APIS: '/apis',
+  SETTINGS: '/settings',
+  PROJECT_DETAIL: (projectId: string) => `/projects/${projectId}`,
+  PROJECT_ENVIRONMENTS: (projectId: string) => `/projects/${projectId}/environments`,
+  PROJECT_APIS: (projectId: string) => `/projects/${projectId}/apis`,
+  API_DETAIL: (projectId: string, apiId: string) => `/projects/${projectId}/apis/${apiId}`,
+} as const;
