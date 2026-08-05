@@ -1,6 +1,16 @@
 export const API_COLLECTIONS_SEMANTIC_ID = {
   CONTAINER: 'api-collections-container',
+  HEADER: 'api-collections-header',
+  FILTER_BAR: 'api-collections-filter-bar',
   SEARCH_INPUT: 'api-collections-search-input',
-  NEW_ENDPOINT_BTN: 'api-collections-new-btn',
-  ENDPOINT_LIST: 'api-collections-list',
+  ADD_BTN: 'api-collections-add-btn',
+  LIST: 'api-collections-list',
+  FORM_MODAL: 'api-collections-form-modal',
+  FORM_INPUT_NAME: 'api-collections-form-input-name',
+  FORM_SELECT_METHOD: 'api-collections-form-select-method',
+  FORM_INPUT_PATH: 'api-collections-form-input-path',
+  FORM_TEXTAREA_DESC: 'api-collections-form-textarea-desc',
+  FORM_CHECKBOX_STATUS: 'api-collections-form-checkbox-status',
+  FORM_BTN_SUBMIT: 'api-collections-form-btn-submit',
+  FORM_BTN_CANCEL: 'api-collections-form-btn-cancel',
 } as const;

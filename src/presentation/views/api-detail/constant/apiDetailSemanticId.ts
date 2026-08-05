@@ -1,6 +1,15 @@
 export const API_DETAIL_SEMANTIC_ID = {
   CONTAINER: 'api-detail-container',
   HEADER: 'api-detail-header',
-  TAB_LIST: 'api-detail-tabs',
-  SAVE_BTN: 'api-detail-save-btn',
+  MAIN_TABS: 'api-detail-main-tabs',
+  SCENARIO_SIDEBAR: 'api-detail-scenario-sidebar',
+  SCENARIO_SIDEBAR_SEARCH: 'api-detail-scenario-sidebar-search',
+  SCENARIO_SIDEBAR_ADD_BTN: 'api-detail-scenario-sidebar-add-btn',
+  SCENARIO_DETAIL: 'api-detail-scenario-detail',
+  RESPONSES_SECTION: 'api-detail-responses-section',
+  RESPONSES_ADD_BTN: 'api-detail-responses-add-btn',
+  ENV_TAB_CONTENT: 'api-detail-env-tab-content',
+  OVERVIEW_TAB_CONTENT: 'api-detail-overview-tab-content',
+  REQ_MODAL: 'api-detail-req-modal',
+  RESP_MODAL: 'api-detail-resp-modal',
 } as const;

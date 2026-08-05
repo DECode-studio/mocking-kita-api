@@ -1,6 +1,15 @@
 export const PROJECTS_SEMANTIC_ID = {
   CONTAINER: 'projects-container',
+  HEADER: 'projects-header',
+  FILTER_BAR: 'projects-filter-bar',
   SEARCH_INPUT: 'projects-search-input',
-  NEW_PROJECT_BTN: 'projects-new-btn',
+  ADD_PROJECT_BTN: 'projects-add-btn',
   PROJECT_GRID: 'projects-grid',
+  PROJECT_TABLE: 'projects-table',
+  FORM_MODAL: 'projects-form-modal',
+  FORM_INPUT_NAME: 'projects-form-input-name',
+  FORM_TEXTAREA_DESC: 'projects-form-textarea-desc',
+  FORM_CHECKBOX_STATUS: 'projects-form-checkbox-status',
+  FORM_BTN_SUBMIT: 'projects-form-btn-submit',
+  FORM_BTN_CANCEL: 'projects-form-btn-cancel',
 } as const;

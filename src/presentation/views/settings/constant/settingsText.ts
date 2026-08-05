@@ -1,4 +1,18 @@
 export const SETTINGS_TEXT = {
   TITLE: 'Studio Settings',
   SUBTITLE: 'Manage local database persistence, theme preferences, and import/export tools',
+  THEME_TITLE: 'Appearance & Visual Theme',
+  LIGHT_MODE: 'Light Mode',
+  DARK_MODE: 'Dark Mode',
+  SYSTEM_THEME: 'System Theme',
+  DATABASE_TITLE: 'Local Database Engine',
+  DATABASE_DRIVER_LABEL: 'Database Driver',
+  DATABASE_DRIVER_NAME: 'SQLite Server Driver (WAL Mode)',
+  IMPORT_EXPORT_BTN: 'Import / Export JSON',
+  RESET_DATABASE_BTN: 'Reset Database to Seed',
+  APP_INFO_TITLE: 'Application Information',
+  APP_INFO_DESC: 'Mock API Studio is built using a clean domain architecture with Next.js 16, React 19, TypeScript, Tailwind CSS, Zustand, and SQLite-backed persistence.',
+  RESET_DIALOG_TITLE: 'Reset Database to Default Seed Data?',
+  RESET_DIALOG_DESC: 'Are you sure you want to reset all mock projects, environments, and API endpoints back to default seed data? Current unsaved modifications will be replaced.',
+  RESET_DIALOG_CONFIRM: 'Reset Everything',
 } as const;

@@ -1,4 +1,13 @@
 export const PROJECT_DETAIL_TEXT = {
   TITLE: 'Project Overview',
   SUBTITLE: 'Manage project endpoints, environment configurations, and rules.',
+  BACK_TO_PROJECTS: 'Back to Projects',
+  TAB_APIS: 'API Collections',
+  TAB_ENVIRONMENTS: 'Environments',
+  TAB_OVERVIEW: 'Project Information',
+  METADATA_TITLE: 'Project Metadata',
+  METADATA_PROJECT_ID: 'Project ID',
+  METADATA_CREATED_AT: 'Created At',
+  METADATA_LAST_UPDATED: 'Last Updated',
+  CREATED_DATE_LABEL: 'Created Date',
 } as const;
