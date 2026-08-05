@@ -19,6 +19,10 @@ interface UIState {
   toggleMobileSidebar: () => void;
   setMobileSidebarOpen: (open: boolean) => void;
 
+  isSidebarCollapsed: boolean;
+  toggleSidebarCollapsed: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+
   // Import / Export dialog state
   isImportModalOpen: boolean;
   setImportModalOpen: (open: boolean) => void;
@@ -43,6 +47,11 @@ export const useUIStore = create<UIState>((set) => ({
   toggleMobileSidebar: () =>
     set((state) => ({ isMobileSidebarOpen: !state.isMobileSidebarOpen })),
   setMobileSidebarOpen: (open) => set({ isMobileSidebarOpen: open }),
+
+  isSidebarCollapsed: false,
+  toggleSidebarCollapsed: () =>
+    set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+  setSidebarCollapsed: (collapsed) => set({ isSidebarCollapsed: collapsed }),
 
   isImportModalOpen: false,
   setImportModalOpen: (open) => set({ isImportModalOpen: open }),
