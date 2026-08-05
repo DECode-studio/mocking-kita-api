@@ -7,6 +7,7 @@ import { upsertApiEnvironment } from '@/src/data/api/data_source/api_environment
 import { createRequestScenario, updateRequestScenario, softDeleteRequestScenario } from '@/src/data/request-scenario/data_source/request_scenario_data_source_impl';
 import { createResponseScenario, updateResponseScenario, softDeleteResponseScenario } from '@/src/data/response-scenario/data_source/response_scenario_data_source_impl';
 import { generateId } from '@/src/core/utils/uuid';
+import { clearInternalProxyCache } from '@/src/app/api/internal-proxy-cache';
 
 export const runtime = 'nodejs';
 
@@ -21,81 +22,86 @@ export async function POST(request: Request) {
 
   try {
     const now = new Date().toISOString();
+    const respond = <T>(data: T, init?: ResponseInit) => {
+      clearInternalProxyCache();
+      return NextResponse.json(data, init);
+    };
+
     switch (action) {
       case 'getDatabase':
         return NextResponse.json(readDatabase());
       case 'saveDatabase':
         seedDatabase(body.payload as any);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'resetDatabase':
-        return NextResponse.json(resetDatabaseToSeed());
+        return respond(resetDatabaseToSeed());
       case 'importDatabase': {
         const payload = body.payload as { data: any; mode: 'replace' | 'merge' };
-        return NextResponse.json(importDatabaseData(payload.data, payload.mode));
+        return respond(importDatabaseData(payload.data, payload.mode));
       }
       case 'create': {
         const input = body.payload as any;
-        return NextResponse.json(createProject({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+        return respond(createProject({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
       }
       case 'update': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(updateProject(payload.id, payload.input));
+        return respond(updateProject(payload.id, payload.input));
       }
       case 'softDelete':
         softDeleteProject((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'restore':
         restoreProject((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'hardDelete':
         hardDeleteProject((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'createEnvironment': {
         const input = body.payload as any;
-        return NextResponse.json(createEnvironment({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+        return respond(createEnvironment({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
       }
       case 'updateEnvironment': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(updateEnvironment(payload.id, payload.input));
+        return respond(updateEnvironment(payload.id, payload.input));
       }
       case 'softDeleteEnvironment':
         softDeleteEnvironment((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'createApi': {
         const input = body.payload as any;
-        return NextResponse.json(createApi({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+        return respond(createApi({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
       }
       case 'updateApi': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(updateApi(payload.id, payload.input));
+        return respond(updateApi(payload.id, payload.input));
       }
       case 'softDeleteApi':
         softDeleteApi((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'upsertApiEnv':
-        return NextResponse.json(upsertApiEnvironment(body.payload as any));
+        return respond(upsertApiEnvironment(body.payload as any));
       case 'createReqScenario': {
         const input = body.payload as any;
-        return NextResponse.json(createRequestScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+        return respond(createRequestScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
       }
       case 'updateReqScenario': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(updateRequestScenario(payload.id, payload.input));
+        return respond(updateRequestScenario(payload.id, payload.input));
       }
       case 'softDeleteReqScenario':
         softDeleteRequestScenario((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       case 'createRespScenario': {
         const input = body.payload as any;
-        return NextResponse.json(createResponseScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+        return respond(createResponseScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
       }
       case 'updateRespScenario': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(updateResponseScenario(payload.id, payload.input));
+        return respond(updateResponseScenario(payload.id, payload.input));
       }
       case 'softDeleteRespScenario':
         softDeleteResponseScenario((body.payload as { id: string }).id);
-        return NextResponse.json({ ok: true });
+        return respond({ ok: true });
       default:
         return NextResponse.json({ error: 'Unknown database action' }, { status: 400 });
     }
