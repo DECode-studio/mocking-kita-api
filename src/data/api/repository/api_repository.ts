@@ -1,6 +1,6 @@
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiCollectionRepository } from '@/src/domain/api/repository/api_repository';
-import { callDatabase } from '@/src/data/repositories/shared/database-proxy-client';
+import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 
 export class ApiCollectionRemoteRepository implements ApiCollectionRepository {
   async getByProjectId(projectId: string): Promise<ApiCollection[]> {

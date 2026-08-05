@@ -1,6 +1,6 @@
 import { ApiEnvironment } from '@/src/domain/api/entity/api_environment';
 import { ApiEnvironmentRepository } from '@/src/domain/api/repository/api_environment_repository';
-import { callDatabase } from '@/src/data/repositories/shared/database-proxy-client';
+import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 
 export class ApiEnvironmentRemoteRepository implements ApiEnvironmentRepository {
   async getByApiId(apiId: string): Promise<ApiEnvironment[]> {

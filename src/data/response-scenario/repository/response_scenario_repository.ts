@@ -1,6 +1,6 @@
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { ResponseScenarioRepository } from '@/src/domain/response-scenario/repository/response_scenario_repository';
-import { callDatabase } from '@/src/data/repositories/shared/database-proxy-client';
+import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 
 export class ResponseScenarioRemoteRepository implements ResponseScenarioRepository {
   async getByRequestScenarioId(requestScenarioId: string): Promise<ResponseScenario[]> {

@@ -1,7 +1,7 @@
 import { MockApiDatabase } from '@/src/data/database/mock-api-database';
 import { Project } from '@/src/domain/project/entity/project';
 import { ProjectRepository } from '@/src/domain/project/repository/project_repository';
-import { callDatabase } from '@/src/data/repositories/shared/database-proxy-client';
+import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 
 export class ProjectRemoteRepository implements ProjectRepository {
   async getAll(): Promise<Project[]> {

@@ -1,6 +1,6 @@
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { EnvironmentRepository } from '@/src/domain/environment/repository/environment_repository';
-import { callDatabase } from '@/src/data/repositories/shared/database-proxy-client';
+import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 
 export class EnvironmentRemoteRepository implements EnvironmentRepository {
   async getByProjectId(projectId: string): Promise<Environment[]> {
