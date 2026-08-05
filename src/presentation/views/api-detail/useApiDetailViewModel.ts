@@ -11,7 +11,7 @@ import { useEnvironmentOverrideActions } from './useEnvironmentOverrideActions';
 import { useRequestScenarioActions } from './useRequestScenarioActions';
 import { useResponseScenarioActions } from './useResponseScenarioActions';
 
-const emptySnapshot: ApiDetailSnapshot = {
+const emptyDetailState: ApiDetailSnapshot = {
   project: null,
   api: null,
   projectEnvs: [],
@@ -27,19 +27,19 @@ export function useApiDetailViewModel() {
   const router = useRouter();
   const { addToast } = useUIStore();
 
-  const [db, setDb] = useState<ApiDetailSnapshot>(emptySnapshot);
+  const [detail, setDetail] = useState<ApiDetailSnapshot>(emptyDetailState);
 
-  const reloadDatabase = async () => {
+  const reloadApiDetail = async () => {
     try {
       const data = await apiDetailUseCase.load(projectId || '', apiId || '', selectedReqScenarioId);
-      setDb(data);
+      setDetail(data);
     } catch {
       // fallback
     }
   };
 
   useEffect(() => {
-    reloadDatabase();
+    reloadApiDetail();
   }, []);
 
   const [activeMainTab, setActiveMainTab] = useState('scenarios');
@@ -53,49 +53,49 @@ export function useApiDetailViewModel() {
   const [deletingRespId, setDeletingRespId] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
-  const api = db.api;
-  const project = db.project;
-  const projectEnvs = db.projectEnvs;
-  const reqScenarios = db.requestScenarios;
+  const api = detail.api;
+  const project = detail.project;
+  const projectEnvs = detail.projectEnvs;
+  const reqScenarios = detail.requestScenarios;
 
   const activeReqScenario =
-    db.activeReqScenario || reqScenarios.find((r) => r.id === selectedReqScenarioId) || reqScenarios[0] || null;
+    detail.activeReqScenario || reqScenarios.find((r) => r.id === selectedReqScenarioId) || reqScenarios[0] || null;
 
-  const respScenarios = db.activeResponseScenarios;
+  const respScenarios = detail.activeResponseScenarios;
 
   const toggleApiCollectionStatus = async (id: string) => {
     if (!api) return;
     await apiDetailUseCase.toggleApiStatus(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const createRequestScenario = async (input: any): Promise<any> => {
     const res = await apiDetailUseCase.createRequestScenario(input);
-    await reloadDatabase();
+    await reloadApiDetail();
     return res;
   };
 
   const updateRequestScenario = async (id: string, input: any): Promise<any> => {
     const res = await apiDetailUseCase.updateRequestScenario(id, input);
-    await reloadDatabase();
+    await reloadApiDetail();
     return res;
   };
 
   const createResponseScenario = async (input: any): Promise<any> => {
     const res = await apiDetailUseCase.createResponseScenario(input);
-    await reloadDatabase();
+    await reloadApiDetail();
     return res;
   };
 
   const updateResponseScenario = async (id: string, input: any): Promise<any> => {
     const res = await apiDetailUseCase.updateResponseScenario(id, input);
-    await reloadDatabase();
+    await reloadApiDetail();
     return res;
   };
 
   const upsertApiEnvironment = async (input: any): Promise<void> => {
     await apiDetailUseCase.upsertApiEnvironment(input);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const handleCopyResolvedUrl = (url: string) => {
@@ -134,42 +134,42 @@ export function useApiDetailViewModel() {
     apiId: apiId || '',
     apiPath: api?.path || '',
     projectEnvs,
-    apiEnvironments: db.apiEnvironments,
+    apiEnvironments: detail.apiEnvironments,
     upsertApiEnvironment,
   });
 
   const toggleRequestScenarioStatus = async (id: string) => {
     await apiDetailUseCase.toggleRequestScenarioStatus(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const duplicateRequestScenario = async (id: string) => {
     await apiDetailUseCase.duplicateRequestScenario(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const deleteRequestScenario = async (id: string) => {
     await apiDetailUseCase.deleteRequestScenario(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const toggleResponseScenarioStatus = async (id: string) => {
     await apiDetailUseCase.toggleResponseScenarioStatus(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const duplicateResponseScenario = async (id: string) => {
     await apiDetailUseCase.duplicateResponseScenario(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   const deleteResponseScenario = async (id: string) => {
     await apiDetailUseCase.deleteResponseScenario(id);
-    await reloadDatabase();
+    await reloadApiDetail();
   };
 
   return {
-    db,
+    detail,
     projectId,
     project,
     api,

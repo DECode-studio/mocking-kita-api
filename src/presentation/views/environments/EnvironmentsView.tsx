@@ -10,8 +10,6 @@ import {
   Edit2,
   Trash2,
   X,
-  ExternalLink,
-  ShieldAlert,
 } from 'lucide-react';
 import { EnvironmentTypeBadge } from '../../components/shared/EnvironmentTypeBadge';
 import { StatusSwitch } from '../../components/shared/StatusSwitch';
@@ -25,8 +23,6 @@ interface EnvironmentsViewProps {
 
 export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ embeddedProjectId }) => {
   const {
-    project,
-    activeProjectId,
     environments,
     form,
     isFormOpen,

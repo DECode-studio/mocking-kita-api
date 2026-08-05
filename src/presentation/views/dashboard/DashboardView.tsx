@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { HttpMethodBadge } from '../../components/shared/HttpMethodBadge';
 import { StatusBadge } from '../../components/shared/StatusBadge';
-import { formatRelativeTime } from '../../../core/utils/date';
 import { MethodRequest } from '../../../core/utils/types';
 import { useDashboardViewModel } from './useDashboardViewModel';
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
@@ -30,8 +29,6 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
     router,
     activeProjects,
     activeApis,
-    activeReqs,
-    activeResps,
     methodCounts,
     totalApisCount,
     openImportExport,

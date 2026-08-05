@@ -15,30 +15,21 @@ import {
   Edit2,
   Trash2,
   X,
-  Play,
-  Clock,
-  Zap,
-  Sliders,
-  CheckCircle2,
-  Code2,
-  ExternalLink,
-  ChevronRight,
-  Sparkles,
 } from 'lucide-react';
 import { HttpMethodBadge } from '../../components/shared/HttpMethodBadge';
 import { StatusCodeBadge } from '../../components/shared/StatusCodeBadge';
 import { StatusBadge } from '../../components/shared/StatusBadge';
 import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { EnvironmentTypeBadge } from '../../components/shared/EnvironmentTypeBadge';
-import { KeyValueEditor } from '../../components/shared/KeyValueEditor';
-import { JsonEditor } from '../../components/shared/JsonEditor';
+import { KeyValueEditor } from './components/KeyValueEditor';
+import { JsonEditor } from './components/JsonEditor';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useApiDetailViewModel } from './useApiDetailViewModel';
 
 export const ApiDetailView: React.FC = () => {
   const {
-    db,
+    detail,
     projectId,
     project,
     api,
@@ -225,7 +216,7 @@ export const ApiDetailView: React.FC = () => {
                       .filter((r) => r.name.toLowerCase().includes(scenarioSearch.toLowerCase()))
                       .map((req) => {
                         const isSelected = activeReqScenario?.id === req.id;
-                        const respCount = db.responseScenarios.filter(
+                        const respCount = detail.responseScenarios.filter(
                           (res) => res.requestScenarioId === req.id && !res.deletedAt
                         ).length;
 
