@@ -61,7 +61,9 @@ export function updateEnvironment(id: string, input: Partial<Environment>): Envi
 }
 
 export function softDeleteEnvironment(id: string): void {
-  db.prepare('DELETE FROM tblEnvironment WHERE id = ?').run(id);
+  const current = getEnvironmentById(id);
+  if (!current) throw new Error(`Environment ${id} not found`);
+  updateEnvironment(id, { deletedAt: new Date().toISOString(), status: false });
 }
 
 export function removeEnvironmentsByProjectId(projectId: string): void {

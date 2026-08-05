@@ -68,7 +68,9 @@ export function updateRequestScenario(id: string, input: Partial<RequestScenario
 }
 
 export function softDeleteRequestScenario(id: string): void {
-  db.prepare('DELETE FROM tblRequestScenario WHERE id = ?').run(id);
+  const current = getRequestScenarioById(id);
+  if (!current) throw new Error(`Request scenario ${id} not found`);
+  updateRequestScenario(id, { deletedAt: new Date().toISOString(), status: false });
 }
 
 export function removeRequestScenariosByApiId(apiId: string): void {

@@ -70,7 +70,9 @@ export function updateResponseScenario(id: string, input: Partial<ResponseScenar
 }
 
 export function softDeleteResponseScenario(id: string): void {
-  db.prepare('DELETE FROM tblResponseScenario WHERE id = ?').run(id);
+  const current = getResponseScenarioById(id);
+  if (!current) throw new Error(`Response scenario ${id} not found`);
+  updateResponseScenario(id, { deletedAt: new Date().toISOString(), status: false });
 }
 
 export function removeResponseScenariosByRequestScenarioId(requestScenarioId: string): void {

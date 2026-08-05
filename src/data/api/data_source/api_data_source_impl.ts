@@ -60,7 +60,9 @@ export function updateApi(id: string, input: Partial<ApiCollection>): ApiCollect
 }
 
 export function softDeleteApi(id: string): void {
-  db.prepare('DELETE FROM tblApi WHERE id = ?').run(id);
+  const current = getApiById(id);
+  if (!current) throw new Error(`API Collection ${id} not found`);
+  updateApi(id, { deletedAt: new Date().toISOString(), status: false });
 }
 
 export function removeApisByProjectId(projectId: string): void {
