@@ -12,15 +12,14 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const rawSettings = cookieStore.get('mock-api-studio-settings')?.value;
-  const theme = rawSettings ? (() => {
+  let theme: string | null = null;
+  if (rawSettings) {
     try {
       const parsed = JSON.parse(rawSettings);
-      return parsed?.theme;
-    } catch {
-      return null;
-    }
-  })() : null;
-  const isDark = theme === 'dark';
+      theme = parsed?.theme;
+    } catch {}
+  }
+  const isDark = theme ? theme === 'dark' : true;
 
   return (
     <html lang="en" className={isDark ? 'dark' : undefined} suppressHydrationWarning>
