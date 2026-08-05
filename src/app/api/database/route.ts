@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   const database = readDatabase();
-  return NextResponse.json(database);
+  return NextResponse.json({ success: true, data: database });
 }
 
 export async function POST(request: Request) {
@@ -24,15 +24,20 @@ export async function POST(request: Request) {
     const now = new Date().toISOString();
     const respond = <T>(data: T, init?: ResponseInit) => {
       clearInternalProxyCache();
-      return NextResponse.json(data, init);
+      return NextResponse.json({ success: true, data }, init);
+    };
+
+    const respondVoid = (init?: ResponseInit) => {
+      clearInternalProxyCache();
+      return NextResponse.json({ success: true }, init);
     };
 
     switch (action) {
       case 'getDatabase':
-        return NextResponse.json(readDatabase());
+        return NextResponse.json({ success: true, data: readDatabase() });
       case 'saveDatabase':
         seedDatabase(body.payload as any);
-        return respond({ ok: true });
+        return respondVoid();
       case 'resetDatabase':
         return respond(resetDatabaseToSeed());
       case 'importDatabase': {
@@ -49,13 +54,13 @@ export async function POST(request: Request) {
       }
       case 'softDelete':
         softDeleteProject((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       case 'restore':
         restoreProject((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       case 'hardDelete':
         hardDeleteProject((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       case 'createEnvironment': {
         const input = body.payload as any;
         return respond(createEnvironment({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
       }
       case 'softDeleteEnvironment':
         softDeleteEnvironment((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       case 'createApi': {
         const input = body.payload as any;
         return respond(createApi({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
@@ -77,7 +82,7 @@ export async function POST(request: Request) {
       }
       case 'softDeleteApi':
         softDeleteApi((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       case 'upsertApiEnv':
         return respond(upsertApiEnvironment(body.payload as any));
       case 'createReqScenario': {
@@ -90,7 +95,7 @@ export async function POST(request: Request) {
       }
       case 'softDeleteReqScenario':
         softDeleteRequestScenario((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       case 'createRespScenario': {
         const input = body.payload as any;
         return respond(createResponseScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
@@ -101,7 +106,7 @@ export async function POST(request: Request) {
       }
       case 'softDeleteRespScenario':
         softDeleteResponseScenario((body.payload as { id: string }).id);
-        return respond({ ok: true });
+        return respondVoid();
       default:
         return NextResponse.json({ error: 'Unknown database action' }, { status: 400 });
     }

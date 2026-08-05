@@ -124,6 +124,28 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(toComparable(a)) === JSON.stringify(toComparable(b));
 }
 
+function toLooseComparable(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(toLooseComparable);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = toLooseComparable((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {});
+  }
+
+  if (value == null) return value;
+  return String(value);
+}
+
+function deepEqualLoose(a: unknown, b: unknown): boolean {
+  return JSON.stringify(toLooseComparable(a)) === JSON.stringify(toLooseComparable(b));
+}
+
 function objectEntries(obj: unknown): Array<[string, unknown]> {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return [];
   return Object.entries(obj as Record<string, unknown>);
@@ -151,51 +173,52 @@ function countSpecifiedFields(value: unknown): number {
   return nestedCount || Object.keys(objectValue).length;
 }
 
-function matchesExact(expected: unknown, actual: unknown): boolean {
+function matchesExact(expected: unknown, actual: unknown, looseScalars = false): boolean {
   if (isEmptyValue(expected)) return true;
   if (Array.isArray(expected) || (expected && typeof expected === 'object')) {
-    return deepEqual(expected, actual);
+    return looseScalars ? deepEqualLoose(expected, actual) : deepEqual(expected, actual);
   }
   return String(actual ?? '') === String(expected ?? '');
 }
 
-function matchesPartial(expected: unknown, actual: unknown): boolean {
+function matchesPartial(expected: unknown, actual: unknown, looseScalars = false): boolean {
   if (isEmptyValue(expected)) return true;
 
   if (Array.isArray(expected)) {
     if (!Array.isArray(actual)) return false;
     if (expected.length !== actual.length) return false;
-    return expected.every((expectedItem, index) => matchesPartial(expectedItem, actual[index]));
+    return expected.every((expectedItem, index) => matchesPartial(expectedItem, actual[index], looseScalars));
   }
 
   if (expected && typeof expected === 'object') {
     if (!actual || typeof actual !== 'object') return false;
     return objectEntries(expected).every(([key, expectedValue]) =>
-      matchesPartial(expectedValue, (actual as Record<string, unknown>)[key])
+      matchesPartial(expectedValue, (actual as Record<string, unknown>)[key], looseScalars)
     );
   }
 
   return String(actual ?? '') === String(expected ?? '');
 }
 
-function matchesRegex(expected: unknown, actual: unknown): boolean {
+function matchesRegex(expected: unknown, actual: unknown, looseScalars = false): boolean {
   if (isEmptyValue(expected)) return true;
 
   if (Array.isArray(expected)) {
     if (!Array.isArray(actual)) return false;
     if (expected.length !== actual.length) return false;
-    return expected.every((expectedItem, index) => matchesRegex(expectedItem, actual[index]));
+    return expected.every((expectedItem, index) => matchesRegex(expectedItem, actual[index], looseScalars));
   }
 
   if (expected && typeof expected === 'object') {
     if (!actual || typeof actual !== 'object') return false;
     return objectEntries(expected).every(([key, expectedValue]) =>
-      matchesRegex(expectedValue, (actual as Record<string, unknown>)[key])
+      matchesRegex(expectedValue, (actual as Record<string, unknown>)[key], looseScalars)
     );
   }
 
   try {
-    return new RegExp(String(expected)).test(String(actual ?? ''));
+    const target = looseScalars && actual != null ? String(actual) : String(actual ?? '');
+    return new RegExp(String(expected)).test(target);
   } catch {
     return false;
   }
@@ -260,17 +283,17 @@ function matchesJsonSchema(schema: unknown, actual: unknown): boolean {
   return true;
 }
 
-function matchesValue(expected: unknown, actual: unknown, matchType: MatchType): boolean {
+function matchesValue(expected: unknown, actual: unknown, matchType: MatchType, looseScalars = false): boolean {
   switch (matchType) {
     case 'PARTIAL':
-      return matchesPartial(expected, actual);
+      return matchesPartial(expected, actual, looseScalars);
     case 'REGEX':
-      return matchesRegex(expected, actual);
+      return matchesRegex(expected, actual, looseScalars);
     case 'JSON_SCHEMA':
       return matchesJsonSchema(expected, actual);
     case 'EXACT':
     default:
-      return matchesExact(expected, actual);
+      return matchesExact(expected, actual, looseScalars);
   }
 }
 
@@ -314,9 +337,9 @@ function scoreScenarioMatch(
     body: unknown;
   }
 ): ScenarioMatchResult | null {
-  const headerMatch = matchesValue(scenario.headers, actual.headers, scenario.matchType);
-  const queryMatch = matchesValue(scenario.queryParams, actual.queryParams, scenario.matchType);
-  const pathMatch = matchesValue(scenario.pathParams, actual.pathParams, scenario.matchType);
+  const headerMatch = matchesValue(scenario.headers, actual.headers, scenario.matchType, true);
+  const queryMatch = matchesValue(scenario.queryParams, actual.queryParams, scenario.matchType, true);
+  const pathMatch = matchesValue(scenario.pathParams, actual.pathParams, scenario.matchType, true);
   const bodyMatch = matchesValue(scenario.body, actual.body, scenario.matchType);
 
   if (!headerMatch || !queryMatch || !pathMatch || !bodyMatch) {
