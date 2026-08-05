@@ -8,9 +8,8 @@
 
 1. **Predictable & Dynamic API Prototyping**: Membangun kontrak REST API secara cepat dan konsisten sebelum backend siap.
 2. **Offline-First & Server-Side Persistence**: Penyimpanan terpusat dan efisien menggunakan **SQLite (`node:sqlite`)** dengan mode `WAL (Write-Ahead Logging)` dan relational schema.
-3. **Smart Dynamic Proxying & Dynamic Route Mocking**: Engine `/api/[...path]` yang cerdas dan mampu memproses matching request scenario, CORS handling, fallback dynamic path parsing, serta simulasi delay latensi.
-4. **Clean Architecture & Scalable Codebase**: Pemisahan yang ketat antara **Core (Driver & Infra), Domain (Pure Business Logic), Data (DTO & Concrete Repositories), dan Presentation (MVVM Pattern)**.
-5. **Interactive Studio UI**: UI interaktif untuk mengelola Projects, Environments, API Collections, Request Scenarios, Response Scenarios, dan System Settings.
+3. **Clean Architecture & Scalable Codebase**: Pemisahan yang ketat antara **Core (Driver & Infra), Domain (Pure Business Logic), Data (DTO & Concrete Repositories), dan Presentation (MVVM Pattern)**.
+4. **Interactive Studio UI**: UI interaktif untuk mengelola Projects, Environments, API Collections, Request Scenarios, Response Scenarios, dan System Settings.
 
 ---
 
