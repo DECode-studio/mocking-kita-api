@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { AuthLoginResponse } from '@/src/domain/auth/repository/auth_repository';
 import { UserSession } from '@/src/domain/auth/entity/user_session';
-import { authRepository } from '../../data/auth/repository/auth_repository';
+import { authUseCase } from '@/src/application/auth/auth_usecase';
 
 interface AuthState {
   session: UserSession | null;
@@ -16,7 +16,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   login: async (username: string, pass: string, rememberMe = false) => {
-    const res = await authRepository.login(username, pass, rememberMe);
+    const res = await authUseCase.login(username, pass, rememberMe);
     if (res.success && res.session) {
       set({ session: res.session, isAuthenticated: true });
     }
@@ -24,12 +24,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await authRepository.logout();
+    await authUseCase.logout();
     set({ session: null, isAuthenticated: false });
   },
 
   checkAuth: async () => {
-    const session = await authRepository.getSession();
+    const session = await authUseCase.getSession();
     set({ session, isAuthenticated: !!session });
   },
 }));
