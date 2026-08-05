@@ -1,6 +1,6 @@
 import { ThemeMode } from '../entity/theme_mode';
 import { SettingsRepository } from '../repository/settings_repository';
-import { DatabaseRepository } from '@/src/domain/database/repository/database_repository';
+import { DatabaseResetRepository } from '@/src/domain/database/repository/database_reset_repository';
 
 export interface SettingsUseCase {
   getTheme(): Promise<ThemeMode>;
@@ -11,7 +11,7 @@ export interface SettingsUseCase {
 export class SettingsUseCaseImpl implements SettingsUseCase {
   constructor(
     private readonly settingsRepository: SettingsRepository,
-    private readonly databaseRepository: DatabaseRepository
+    private readonly databaseRepository: DatabaseResetRepository
   ) {}
 
   getTheme(): Promise<ThemeMode> {
