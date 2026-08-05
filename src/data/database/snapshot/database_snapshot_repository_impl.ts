@@ -1,8 +1,8 @@
 import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
-import { DatabaseAdminRepository } from '@/src/domain/database/repository/database_admin_repository';
+import { DatabaseSnapshotRepository } from '@/src/domain/database/repository/database_snapshot_repository';
 
-export class DatabaseAdminRepositoryImpl implements DatabaseAdminRepository {
+export class DatabaseSnapshotRepositoryImpl implements DatabaseSnapshotRepository {
   async getDatabase(): Promise<MockApiDatabase> {
     return callDatabase<MockApiDatabase>('getDatabase');
   }
@@ -12,4 +12,4 @@ export class DatabaseAdminRepositoryImpl implements DatabaseAdminRepository {
   }
 }
 
-export const databaseAdminRepository = new DatabaseAdminRepositoryImpl();
+export const databaseSnapshotRepository = new DatabaseSnapshotRepositoryImpl();
