@@ -7,6 +7,7 @@ import { Project } from '@/src/domain/project/entity/project';
 import { HttpMethodBadge } from '@/src/presentation/components/shared/HttpMethodBadge';
 import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
 import { StatusSwitch } from '@/src/presentation/components/shared/StatusSwitch';
+import { API_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface ApiDetailHeaderProps {
   api: ApiCollection;
@@ -22,7 +23,7 @@ export const ApiDetailHeader: React.FC<ApiDetailHeaderProps> = ({
   onToggleStatus,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div id={API_DETAIL_SEMANTIC_ID.HEADER} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
       <div className="space-y-1">
         <button
           type="button"

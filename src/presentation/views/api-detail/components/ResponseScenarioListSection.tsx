@@ -1,14 +1,13 @@
 'use client';
 
 import React from 'react';
-import * as Tabs from '@radix-ui/react-tabs';
 import { Plus, Edit2, Copy, Trash2 } from 'lucide-react';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import { StatusCodeBadge } from '@/src/presentation/components/shared/StatusCodeBadge';
+import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
 import { StatusSwitch } from '@/src/presentation/components/shared/StatusSwitch';
-import { KeyValueEditor } from './KeyValueEditor';
-import { JsonEditor } from './JsonEditor';
+import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ResponseScenarioListSectionProps {
   respScenarios: ResponseScenario[];
   onAddClick: () => void;
@@ -16,7 +15,7 @@ interface ResponseScenarioListSectionProps {
   onDuplicate: (id: string) => void;
   onDeleteRequest: (id: string) => void;
   onToggleStatus: (id: string) => void;
-  onUpdateScenario: (id: string, partial: Partial<ResponseScenario>) => Promise<void>;
+  onUpdateScenario?: any;
 }
 
 export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionProps> = ({
@@ -26,65 +25,52 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
   onDuplicate,
   onDeleteRequest,
   onToggleStatus,
-  onUpdateScenario,
 }) => {
   return (
-    <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-4">
+    <div id={API_DETAIL_SEMANTIC_ID.RESPONSES_SECTION} className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
-            Mock Responses ({respScenarios.length})
-          </h3>
-          <p className="text-[11px] text-slate-500">
-            Multiple weighted or prioritized response payoffs for this request match
-          </p>
-        </div>
-
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          {API_DETAIL_TEXT.RESPONSES_TITLE} ({respScenarios.length})
+        </h4>
         <button
+          id={API_DETAIL_SEMANTIC_ID.RESPONSES_ADD_BTN}
           type="button"
           onClick={onAddClick}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-xs transition-colors"
         >
-          <Plus className="w-3.5 h-3.5" /> Add Response
+          <Plus className="w-3.5 h-3.5" /> {API_DETAIL_TEXT.RESPONSES_ADD_BTN}
         </button>
       </div>
 
-      {respScenarios.length === 0 ? (
-        <div className="p-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center">
-          <p className="text-xs text-slate-500">No mock responses configured for this scenario.</p>
-          <button
-            type="button"
-            onClick={onAddClick}
-            className="mt-2 text-xs text-indigo-600 font-semibold hover:underline"
-          >
-            Add response scenario
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {respScenarios.map((resp) => (
+      <div className="space-y-3">
+        {respScenarios.length === 0 ? (
+          <p className="text-xs text-slate-400 italic py-4 text-center">
+            No response scenarios configured. Add a response payload (e.g. 200 OK, 400 Bad Request, 500 Error).
+          </p>
+        ) : (
+          respScenarios.map((resp) => (
             <div
               key={resp.id}
-              className="p-4 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3"
+              className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <StatusCodeBadge code={resp.statusCode} />
-                    <h4 className="font-bold text-xs text-slate-900 dark:text-slate-100">
-                      {resp.name}
-                    </h4>
-                  </div>
-                  <p className="text-[11px] text-slate-500">{resp.description || 'No description'}</p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
+                      resp.statusCode >= 200 && resp.statusCode < 300
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                        : resp.statusCode >= 400 && resp.statusCode < 500
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
+                    }`}
+                  >
+                    HTTP {resp.statusCode}
+                  </span>
+                  <span className="font-bold text-xs text-slate-900 dark:text-slate-100">{resp.name}</span>
+                  <StatusBadge status={resp.status} />
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded">
-                    Delay: {resp.delayMs}ms
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded">
-                    Weight: {resp.weight}%
-                  </span>
                   <StatusSwitch
                     checked={resp.status}
                     onCheckedChange={() => onToggleStatus(resp.id)}
@@ -94,6 +80,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     type="button"
                     onClick={() => onEdit(resp)}
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    title="Edit Response"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -101,73 +88,34 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     type="button"
                     onClick={() => onDuplicate(resp.id)}
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                    title="Duplicate Response"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => onDeleteRequest(resp.id)}
-                    className="p-1 text-slate-400 hover:text-rose-600"
+                    className="p-1 text-rose-500 hover:text-rose-700"
+                    title="Delete Response"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
-              <Tabs.Root defaultValue="preview" className="space-y-2">
-                <Tabs.List className="flex border-b border-slate-200 dark:border-slate-800 gap-4 text-[11px] font-medium">
-                  <Tabs.Trigger
-                    value="preview"
-                    className="pb-1 text-slate-500 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b"
-                  >
-                    Preview Response
-                  </Tabs.Trigger>
-                  <Tabs.Trigger
-                    value="body"
-                    className="pb-1 text-slate-500 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b"
-                  >
-                    Edit Body
-                  </Tabs.Trigger>
-                  <Tabs.Trigger
-                    value="headers"
-                    className="pb-1 text-slate-500 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b"
-                  >
-                    Edit Headers
-                  </Tabs.Trigger>
-                </Tabs.List>
+              {resp.delayMs > 0 && (
+                <div className="text-[11px] font-mono text-slate-400">
+                  Delay: <span className="text-slate-700 dark:text-slate-300 font-semibold">{resp.delayMs} ms</span>
+                </div>
+              )}
 
-                <Tabs.Content value="preview">
-                  <div className="p-3 bg-slate-950 text-slate-100 rounded-lg font-mono text-xs space-y-2">
-                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 text-[10px] text-slate-400">
-                      <span>HTTP/1.1 {resp.statusCode}</span>
-                      <span>Simulated Delay: {resp.delayMs}ms</span>
-                    </div>
-                    <pre className="text-emerald-400 overflow-x-auto max-h-48 leading-relaxed">
-                      {JSON.stringify(resp.body ?? {}, null, 2)}
-                    </pre>
-                  </div>
-                </Tabs.Content>
-
-                <Tabs.Content value="body">
-                  <JsonEditor
-                    value={resp.body ?? {}}
-                    onChange={(val) => onUpdateScenario(resp.id, { body: val })}
-                    rows={6}
-                  />
-                </Tabs.Content>
-
-                <Tabs.Content value="headers">
-                  <KeyValueEditor
-                    title="Response Headers"
-                    value={resp.headers ?? {}}
-                    onChange={(val) => onUpdateScenario(resp.id, { headers: val })}
-                  />
-                </Tabs.Content>
-              </Tabs.Root>
+              <div className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-emerald-400 overflow-x-auto max-h-48 leading-relaxed">
+                <pre>{typeof resp.body === 'string' ? resp.body : JSON.stringify(resp.body || {}, null, 2)}</pre>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 };

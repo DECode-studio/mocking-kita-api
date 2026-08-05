@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Plus, Trash2, Code2, List } from 'lucide-react';
-import { cn } from '../../../../core/utils/cn';
-import { objectToKeyValuePairs, keyValuePairsToObject, validateJsonString } from '../../../../core/utils/json';
-import { getErrorMessage } from '../../../../core/utils/error';
+import { useKeyValueEditorViewModel } from '../view_model/useKeyValueEditorViewModel';
 
 export interface KeyValuePair {
   id: string;
@@ -28,90 +26,19 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({
   keyPlaceholder = 'Key (e.g. Content-Type)',
   valuePlaceholder = 'Value (e.g. application/json)',
 }) => {
-  const [pairs, setPairs] = useState<KeyValuePair[]>(() => objectToKeyValuePairs(value));
-  const [mode, setMode] = useState<'table' | 'json'>('table');
-  const [rawJsonText, setRawJsonText] = useState<string>(() => JSON.stringify(value || {}, null, 2));
-  const [jsonError, setJsonError] = useState<string | null>(null);
-
-  // Sync internal pairs state when parent value changes externally
-  useEffect(() => {
-    if (mode === 'table') {
-      const currentObj = keyValuePairsToObject(pairs);
-      if (JSON.stringify(currentObj) !== JSON.stringify(value)) {
-        setPairs(objectToKeyValuePairs(value));
-      }
-    }
-  }, [value]);
-
-  const updatePairsAndTriggerChange = (newPairs: KeyValuePair[]) => {
-    setPairs(newPairs);
-    const obj = keyValuePairsToObject(newPairs);
-    onChange(obj);
-  };
-
-  const handleAddRow = () => {
-    const newPair: KeyValuePair = {
-      id: `kv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      key: '',
-      value: '',
-      enabled: true,
-    };
-    updatePairsAndTriggerChange([...pairs, newPair]);
-  };
-
-  const handleRemoveRow = (id: string) => {
-    const newPairs = pairs.filter((p) => p.id !== id);
-    updatePairsAndTriggerChange(newPairs);
-  };
-
-  const handleRowChange = (id: string, field: 'key' | 'value' | 'enabled', val: string | boolean) => {
-    const newPairs = pairs.map((p) => (p.id === id ? { ...p, [field]: val } : p));
-    updatePairsAndTriggerChange(newPairs);
-  };
-
-  const handleClearAll = () => {
-    updatePairsAndTriggerChange([]);
-  };
-
-  const handleSwitchToRawJson = () => {
-    const currentObj = keyValuePairsToObject(pairs);
-    setRawJsonText(JSON.stringify(currentObj, null, 2));
-    setJsonError(null);
-    setMode('json');
-  };
-
-  const handleSwitchToTable = () => {
-    const validation = validateJsonString(rawJsonText);
-    if (!validation.isValid) {
-      setJsonError(validation.error || 'Invalid JSON syntax');
-      return;
-    }
-    try {
-      const parsed = JSON.parse(rawJsonText || '{}');
-      const newPairs = objectToKeyValuePairs(parsed);
-      setPairs(newPairs);
-      onChange(parsed);
-      setJsonError(null);
-      setMode('table');
-    } catch (error: unknown) {
-      setJsonError(getErrorMessage(error, 'Failed to parse JSON'));
-    }
-  };
-
-  const handleRawJsonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value;
-    setRawJsonText(text);
-    const validation = validateJsonString(text);
-    if (validation.isValid) {
-      setJsonError(null);
-      try {
-        const parsed = JSON.parse(text || '{}');
-        onChange(parsed);
-      } catch {}
-    } else {
-      setJsonError(validation.error || 'Invalid JSON');
-    }
-  };
+  const {
+    pairs,
+    mode,
+    rawJsonText,
+    jsonError,
+    handleAddRow,
+    handleRemoveRow,
+    handleRowChange,
+    handleClearAll,
+    handleSwitchToRawJson,
+    handleSwitchToTable,
+    handleRawJsonChange,
+  } = useKeyValueEditorViewModel(value, onChange);
 
   return (
     <div className="space-y-3">
@@ -219,10 +146,9 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({
             value={rawJsonText}
             onChange={handleRawJsonChange}
             rows={6}
-            className={cn(
-              'w-full p-3 font-mono text-xs bg-slate-900 text-slate-100 rounded-lg border focus:ring-1 focus:outline-none resize-y',
+            className={`w-full p-3 font-mono text-xs bg-slate-900 text-slate-100 rounded-lg border focus:ring-1 focus:outline-none resize-y ${
               jsonError ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-800 focus:ring-indigo-500'
-            )}
+            }`}
             placeholder="{}"
           />
           {jsonError ? (

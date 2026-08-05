@@ -7,6 +7,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { createApiUseCase } from '@/src/domain/api';
 import { useApiCollectionsViewModel } from './view_model/useApiCollectionsViewModel';
 import { ROUTES } from '@/src/core/constants/routes';
+import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from './constant';
 import {
   ApiCollectionHeader,
   ApiCollectionFilterBar,
@@ -47,7 +48,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
   } = useApiCollectionsViewModel(apiUseCase, embeddedProjectId, initialApis);
 
   return (
-    <div className="space-y-4">
+    <div id={API_COLLECTIONS_SEMANTIC_ID.CONTAINER} className="space-y-4">
       <ApiCollectionHeader
         totalCount={apis.length}
         activeProjectId={activeProjectId}
@@ -66,17 +67,17 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
       {filteredApis.length === 0 ? (
         <EmptyState
           icon={Layers}
-          title="No API collections found"
+          title={API_COLLECTIONS_TEXT.NO_ENDPOINTS}
           description={
             search
               ? `No API endpoint definitions matching "${search}"`
               : 'Add an API Collection endpoint (e.g. GET /api/products) to configure request matching & response payloads.'
           }
-          actionLabel="Add API Collection"
+          actionLabel={API_COLLECTIONS_TEXT.ADD_COLLECTION_BTN}
           onAction={openAddDialog}
         />
       ) : (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+        <div id={API_COLLECTIONS_SEMANTIC_ID.LIST} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredApis.map((api) => (
               <ApiCollectionListItem
@@ -105,9 +106,9 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
         isOpen={!!deletingApiId}
         onClose={() => setDeletingApiId(null)}
         onConfirm={handleDelete}
-        title="Delete API Endpoint?"
-        description="Are you sure you want to delete this API endpoint? All associated request and response scenarios will be deleted."
-        confirmLabel="Delete"
+        title={API_COLLECTIONS_TEXT.DELETE_DIALOG_TITLE}
+        description={API_COLLECTIONS_TEXT.DELETE_DIALOG_DESC}
+        confirmLabel={API_COLLECTIONS_TEXT.DELETE_DIALOG_CONFIRM}
         variant="danger"
       />
     </div>

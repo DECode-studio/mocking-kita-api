@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { createApiDetailUseCase } from '@/src/domain/api';
 import { useApiDetailViewModel } from './view_model/useApiDetailViewModel';
 import { ApiDetailSnapshot } from '@/src/domain/api/usecase/api_detail_usecase';
+import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from './constant';
 import {
   ApiDetailHeader,
   RequestScenarioSidebar,
@@ -73,7 +74,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
   if (!api || !project) {
     return (
       <div className="py-16 text-center space-y-3">
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">API Endpoint Not Found</h2>
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">{API_DETAIL_TEXT.NOT_FOUND}</h2>
         <button
           onClick={() => router.push(`/projects/${projectId}`)}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md"
@@ -85,7 +86,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
   }
 
   return (
-    <div className="space-y-6">
+    <div id={API_DETAIL_SEMANTIC_ID.CONTAINER} className="space-y-6">
       {/* Top Header */}
       <ApiDetailHeader
         api={api}
@@ -96,7 +97,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
 
       {/* Main Tabs Navigation */}
       <Tabs.Root value={activeMainTab} onValueChange={setActiveMainTab} className="space-y-4">
-        <Tabs.List className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
+        <Tabs.List id={API_DETAIL_SEMANTIC_ID.MAIN_TABS} className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
           <Tabs.Trigger
             value="scenarios"
             className={`pb-2.5 text-xs font-semibold transition-colors ${
@@ -105,7 +106,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Request & Response Scenarios ({reqScenarios.length})
+            {API_DETAIL_TEXT.TAB_SCENARIOS} ({reqScenarios.length})
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -116,7 +117,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Environment Overrides ({projectEnvs.length})
+            {API_DETAIL_TEXT.TAB_ENVIRONMENTS} ({projectEnvs.length})
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -127,7 +128,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Endpoint Overview
+            {API_DETAIL_TEXT.TAB_OVERVIEW}
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -232,8 +233,8 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
           if (deletingReqId) await deleteRequestScenario(deletingReqId);
           setDeletingReqId(null);
         }}
-        title="Delete Request Scenario?"
-        description="Are you sure you want to delete this scenario and all attached response payloads?"
+        title={API_DETAIL_TEXT.DELETE_REQ_DIALOG_TITLE}
+        description={API_DETAIL_TEXT.DELETE_REQ_DIALOG_DESC}
         variant="danger"
       />
 
@@ -244,8 +245,8 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
           if (deletingRespId) await deleteResponseScenario(deletingRespId);
           setDeletingRespId(null);
         }}
-        title="Delete Response Scenario?"
-        description="Are you sure you want to delete this mock response payload?"
+        title={API_DETAIL_TEXT.DELETE_RESP_DIALOG_TITLE}
+        description={API_DETAIL_TEXT.DELETE_RESP_DIALOG_DESC}
         variant="danger"
       />
     </div>

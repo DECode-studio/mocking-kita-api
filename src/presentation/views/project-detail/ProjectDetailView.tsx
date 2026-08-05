@@ -2,21 +2,7 @@
 
 import React from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
-import {
-  FolderGit2,
-  Globe,
-  Layers,
-  FileCode,
-  ArrowLeft,
-  Edit2,
-  Plus,
-  Copy,
-  Trash2,
-  Clock,
-  CheckCircle2,
-} from 'lucide-react';
-import { StatusBadge } from '../../components/shared/StatusBadge';
-import { StatusSwitch } from '../../components/shared/StatusSwitch';
+import { ArrowLeft } from 'lucide-react';
 import { EnvironmentsView } from '../environments/EnvironmentsView';
 import { ApiCollectionsView } from '../api-collections/ApiCollectionsView';
 import { formatDate } from '../../../core/utils/date';
@@ -25,6 +11,11 @@ import { useProjectDetailViewModel } from './view_model/useProjectDetailViewMode
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { Project } from '@/src/domain/project/entity/project';
+import { PROJECT_DETAIL_TEXT, PROJECT_DETAIL_SEMANTIC_ID } from './constant';
+import {
+  ProjectDetailHeader,
+  ProjectMetadataCard,
+} from './components';
 
 interface ProjectDetailViewProps {
   initialProject?: Project | null;
@@ -64,53 +55,24 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div id={PROJECT_DETAIL_SEMANTIC_ID.CONTAINER} className="space-y-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-        <div className="space-y-1">
-          <button
-            onClick={() => router.push('/projects')}
-            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-colors mb-1"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Projects
-          </button>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              {project.name}
-            </h1>
-            <StatusBadge status={project.status} />
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {project.description || 'No project description configured.'}
-          </p>
-        </div>
+      <ProjectDetailHeader
+        project={project}
+        onBack={() => router.push('/projects')}
+        onToggleStatus={toggleProjectStatus}
+        onSoftDelete={handleSoftDelete}
+      />
 
-        <div className="flex items-center gap-3">
-          <StatusSwitch
-            checked={project.status}
-            onCheckedChange={() => toggleProjectStatus(project.id)}
-            label={project.status ? 'Active' : 'Disabled'}
-          />
-          <button
-            onClick={handleSoftDelete}
-            className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-            title="Delete Project"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Summary Stat Cards */}
+      {/* Summary Stat Card */}
       <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs flex items-center justify-between font-mono text-xs">
-        <span className="text-slate-500 font-sans">Created Date</span>
+        <span className="text-slate-500 font-sans">{PROJECT_DETAIL_TEXT.CREATED_DATE_LABEL}</span>
         <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(project.createdAt)}</span>
       </div>
 
       {/* Tabs */}
       <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <Tabs.List className="flex border-b border-slate-200 dark:border-slate-800 gap-4">
+        <Tabs.List id={PROJECT_DETAIL_SEMANTIC_ID.TAB_LIST} className="flex border-b border-slate-200 dark:border-slate-800 gap-4">
           <Tabs.Trigger
             value="apis"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
@@ -119,7 +81,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            API Collections
+            {PROJECT_DETAIL_TEXT.TAB_APIS}
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -130,7 +92,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Environments
+            {PROJECT_DETAIL_TEXT.TAB_ENVIRONMENTS}
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -141,7 +103,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Project Information
+            {PROJECT_DETAIL_TEXT.TAB_OVERVIEW}
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -154,25 +116,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         </Tabs.Content>
 
         <Tabs.Content value="overview">
-          <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-4 max-w-2xl">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Project Metadata
-            </h3>
-            <div className="space-y-3 text-xs font-mono">
-              <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-400">Project ID</span>
-                <span className="text-slate-800 dark:text-slate-200">{project.id}</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-400">Created At</span>
-                <span className="text-slate-800 dark:text-slate-200">{formatDate(project.createdAt)}</span>
-              </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-400">Last Updated</span>
-                <span className="text-slate-800 dark:text-slate-200">{formatDate(project.updatedAt)}</span>
-              </div>
-            </div>
-          </div>
+          <ProjectMetadataCard project={project} />
         </Tabs.Content>
       </Tabs.Root>
     </div>

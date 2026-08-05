@@ -1,18 +1,18 @@
 'use client';
 
 import React from 'react';
-import * as Tabs from '@radix-ui/react-tabs';
 import { Edit2, Copy, Trash2 } from 'lucide-react';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
-import { KeyValueEditor } from './KeyValueEditor';
-import { JsonEditor } from './JsonEditor';
+import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
+import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 interface RequestScenarioDetailPanelProps {
   scenario: RequestScenario;
   onEdit: () => void;
   onDuplicate: () => void;
   onDeleteRequest: () => void;
-  onUpdateScenario: (id: string, partial: Partial<RequestScenario>) => Promise<void>;
+  onUpdateScenario?: any;
   children?: React.ReactNode;
 }
 
@@ -21,23 +21,18 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
   onEdit,
   onDuplicate,
   onDeleteRequest,
-  onUpdateScenario,
   children,
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              {scenario.name}
-            </h2>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded border border-indigo-200 dark:border-indigo-800">
-              MATCH: {scenario.matchType}
-            </span>
+    <div id={API_DETAIL_SEMANTIC_ID.SCENARIO_DETAIL} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-6 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">{scenario.name}</h3>
+            <StatusBadge status={scenario.status} />
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            {scenario.description || 'No description provided.'}
+          <p className="text-xs text-slate-500 font-mono">
+            {API_DETAIL_TEXT.DETAIL_RULE_WEIGHT}: <span className="font-bold text-indigo-600 dark:text-indigo-400">{scenario.priority}</span>
           </p>
         </div>
 
@@ -45,97 +40,57 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
           <button
             type="button"
             onClick={onEdit}
-            className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-800 rounded-md transition-colors"
-            title="Edit Scenario Settings"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
-            <Edit2 className="w-3.5 h-3.5" />
+            <Edit2 className="w-3.5 h-3.5" /> Edit Rule
           </button>
           <button
             type="button"
             onClick={onDuplicate}
-            className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-800 rounded-md transition-colors"
-            title="Duplicate Scenario"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg"
+            title="Duplicate Rule"
           >
-            <Copy className="w-3.5 h-3.5" />
+            <Copy className="w-4 h-4" />
           </button>
           <button
             type="button"
             onClick={onDeleteRequest}
-            className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors"
-            title="Delete Scenario"
+            className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg"
+            title="Delete Rule"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      <Tabs.Root defaultValue="headers" className="space-y-3">
-        <Tabs.List className="flex border-b border-slate-100 dark:border-slate-800 gap-4 text-xs font-medium">
-          <Tabs.Trigger
-            value="headers"
-            className="pb-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
-          >
-            Headers ({Object.keys(scenario.headers || {}).length})
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="queryParams"
-            className="pb-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
-          >
-            Query Params ({Object.keys(scenario.queryParams || {}).length})
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="pathParams"
-            className="pb-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
-          >
-            Path Params ({Object.keys(scenario.pathParams || {}).length})
-          </Tabs.Trigger>
-          <Tabs.Trigger
-            value="body"
-            className="pb-2 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 data-[state=active]:text-indigo-600 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
-          >
-            Body
-          </Tabs.Trigger>
-        </Tabs.List>
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 font-mono">
+            {API_DETAIL_TEXT.DETAIL_PARAM_MATCHING}
+          </h4>
+          <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200">
+            <pre>{JSON.stringify(scenario.queryParams || {}, null, 2)}</pre>
+          </div>
+        </div>
 
-        <Tabs.Content value="headers">
-          <KeyValueEditor
-            title="Expected Request Headers"
-            keyPlaceholder="e.g. authorization"
-            valuePlaceholder="e.g. Bearer token"
-            value={scenario.headers || {}}
-            onChange={(val) => onUpdateScenario(scenario.id, { headers: val })}
-          />
-        </Tabs.Content>
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 font-mono">
+            {API_DETAIL_TEXT.DETAIL_HEADER_MATCHING}
+          </h4>
+          <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200">
+            <pre>{JSON.stringify(scenario.headers || {}, null, 2)}</pre>
+          </div>
+        </div>
 
-        <Tabs.Content value="queryParams">
-          <KeyValueEditor
-            title="Expected Query Parameters"
-            keyPlaceholder="e.g. includeDetails"
-            valuePlaceholder="e.g. true"
-            value={scenario.queryParams || {}}
-            onChange={(val) => onUpdateScenario(scenario.id, { queryParams: val })}
-          />
-        </Tabs.Content>
-
-        <Tabs.Content value="pathParams">
-          <KeyValueEditor
-            title="Expected Path Parameters"
-            keyPlaceholder="e.g. id"
-            valuePlaceholder="e.g. 123"
-            value={scenario.pathParams || {}}
-            onChange={(val) => onUpdateScenario(scenario.id, { pathParams: val })}
-          />
-        </Tabs.Content>
-
-        <Tabs.Content value="body">
-          <JsonEditor
-            title="Expected Request Body Schema / Payload"
-            value={scenario.body || {}}
-            onChange={(val) => onUpdateScenario(scenario.id, { body: val })}
-            rows={6}
-          />
-        </Tabs.Content>
-      </Tabs.Root>
+        <div>
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 font-mono">
+            {API_DETAIL_TEXT.DETAIL_BODY_MATCHING}
+          </h4>
+          <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200">
+            <pre>{typeof scenario.body === 'string' ? scenario.body : JSON.stringify(scenario.body || {}, null, 2)}</pre>
+          </div>
+        </div>
+      </div>
 
       {children}
     </div>
