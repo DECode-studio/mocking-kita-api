@@ -28,6 +28,7 @@ import { formatDate } from '../../../core/utils/date';
 import { useProjectsViewModel } from './useProjectsViewModel';
 
 import { Project } from '@/src/domain/project/entity/project';
+import { ROUTES } from '@/src/core/constants/routes';
 
 export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initialProjects = [] }) => {
   const {
@@ -173,7 +174,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
                         <Code2 className="w-4 h-4" />
                       </div>
                       <h3
-                        onClick={() => router.push(`/projects/${project.id}`)}
+                        onClick={() => router.push(ROUTES.PROJECT_DETAIL(project.id))}
                         className="font-display font-bold text-base text-slate-900 dark:text-slate-100 hover:text-purple-400 cursor-pointer truncate transition-colors"
                       >
                         {project.name}
@@ -286,7 +287,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
                   <tr key={project.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="p-3.5">
                       <span
-                        onClick={() => router.push(`/projects/${project.id}`)}
+                        onClick={() => router.push(ROUTES.PROJECT_DETAIL(project.id))}
                         className="font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer block"
                       >
                         {project.name}
@@ -301,7 +302,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
                     <td className="p-3.5 font-mono text-slate-500">{formatDate(project.createdAt)}</td>
                     <td className="p-3.5 text-right space-x-2">
                       <button
-                        onClick={() => router.push(`/projects/${project.id}`)}
+                        onClick={() => router.push(ROUTES.PROJECT_DETAIL(project.id))}
                         className="px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 rounded hover:bg-indigo-100 transition-colors"
                       >
                         View

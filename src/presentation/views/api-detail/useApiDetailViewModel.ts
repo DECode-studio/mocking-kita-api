@@ -5,28 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import {
-  ApiDetailSnapshot,
-  ApiDetailUseCaseImpl,
-} from '@/src/domain/api/usecase/api_detail_usecase';
-import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
-import { ApiCollectionRemoteRepository } from '@/src/data/api/repository/api_repository';
-import { EnvironmentRemoteRepository } from '@/src/data/environment/repository/environment_repository';
-import { ApiEnvironmentRemoteRepository } from '@/src/data/api/repository/api_environment_repository';
-import { RequestScenarioRemoteRepository } from '@/src/data/request-scenario/repository/request_scenario_repository';
-import { ResponseScenarioRemoteRepository } from '@/src/data/response-scenario/repository/response_scenario_repository';
+import { ApiDetailSnapshot } from '@/src/domain/api/usecase/api_detail_usecase';
+import { apiDetailUseCase } from '@/src/data/api/api_detail_usecase';
 import { useEnvironmentOverrideActions } from './useEnvironmentOverrideActions';
 import { useRequestScenarioActions } from './useRequestScenarioActions';
 import { useResponseScenarioActions } from './useResponseScenarioActions';
-
-const apiDetailUseCase = new ApiDetailUseCaseImpl(
-  new ProjectRemoteRepository(),
-  new ApiCollectionRemoteRepository(),
-  new EnvironmentRemoteRepository(),
-  new ApiEnvironmentRemoteRepository(),
-  new RequestScenarioRemoteRepository(),
-  new ResponseScenarioRemoteRepository()
-);
 
 const emptySnapshot: ApiDetailSnapshot = {
   project: null,

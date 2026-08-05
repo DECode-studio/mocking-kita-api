@@ -5,6 +5,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { LogOut, User, Settings, Shield } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/src/core/constants/routes';
 
 export const UserMenu: React.FC = () => {
   const { session, logout } = useAuthStore();
@@ -13,7 +14,7 @@ export const UserMenu: React.FC = () => {
   if (!session) return null;
 
   const handleLogout = () => {
-    void logout().then(() => router.push('/sign-in'));
+    void logout().then(() => router.push(ROUTES.SIGN_IN));
   };
 
   const initials = session.name
@@ -61,7 +62,7 @@ export const UserMenu: React.FC = () => {
           </div>
 
           <DropdownMenu.Item
-            onClick={() => router.push('/settings')}
+            onClick={() => router.push(ROUTES.SETTINGS)}
             className="flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer outline-none"
           >
             <Settings className="w-3.5 h-3.5 text-slate-400" />

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { callDatabase } from '@/src/core/http-client/database-proxy-client';
-import { MockApiDatabase } from '@/src/data/database/mock-api-database';
+import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { dashboardUseCase } from '@/src/data/dashboard/dashboard_usecase';
+import { ROUTES } from '@/src/core/constants/routes';
 
 const emptyDb: MockApiDatabase = {
   version: '1.0.0',
@@ -20,7 +21,7 @@ export function useDashboardViewModel(initialDb: MockApiDatabase = emptyDb) {
   const router = useRouter();
 
   useEffect(() => {
-    callDatabase<MockApiDatabase>('getDatabase').then(setDb).catch(() => {});
+    dashboardUseCase.load().then(setDb).catch(() => {});
   }, []);
 
   const activeProjects = db.projects.filter((p) => !p.deletedAt && p.status);
@@ -37,7 +38,7 @@ export function useDashboardViewModel(initialDb: MockApiDatabase = emptyDb) {
 
   const totalApisCount = db.apiCollections.filter((a) => !a.deletedAt).length;
 
-  const goToProjects = () => router.push('/projects');
+  const goToProjects = () => router.push(ROUTES.PROJECTS);
   const openImportExport = () => setImportModalOpen(true);
 
   return {

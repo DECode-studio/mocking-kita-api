@@ -22,6 +22,7 @@ import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { useApiCollectionsViewModel } from './useApiCollectionsViewModel';
+import { ROUTES } from '@/src/core/constants/routes';
 
 interface ApiCollectionsViewProps {
   embeddedProjectId?: string;
@@ -156,7 +157,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span
-                          onClick={() => router.push(`/projects/${api.projectId}/apis/${api.id}`)}
+                          onClick={() => router.push(ROUTES.API_DETAIL(api.projectId, api.id))}
                           className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer truncate"
                         >
                           {api.path}
@@ -177,7 +178,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
                     />
 
                     <button
-                      onClick={() => router.push(`/projects/${api.projectId}/apis/${api.id}`)}
+                      onClick={() => router.push(ROUTES.API_DETAIL(api.projectId, api.id))}
                       className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-md transition-colors"
                     >
                       Configure

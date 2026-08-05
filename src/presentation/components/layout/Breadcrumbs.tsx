@@ -4,6 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
+import { ROUTES } from '@/src/core/constants/routes';
+
 export const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
 
@@ -12,35 +14,35 @@ export const Breadcrumbs: React.FC = () => {
   if (pathSegments.length === 0 || pathSegments[0] === 'sign-in') return null;
 
   const breadcrumbItems: Array<{ label: string; href: string }> = [
-    { label: 'Dashboard', href: '/dashboard' },
+    { label: 'Dashboard', href: ROUTES.DASHBOARD },
   ];
 
   if (pathSegments[0] === 'projects') {
-    breadcrumbItems.push({ label: 'Projects', href: '/projects' });
+    breadcrumbItems.push({ label: 'Projects', href: ROUTES.PROJECTS });
 
     if (pathSegments[1]) {
       const projectId = pathSegments[1];
-      breadcrumbItems.push({ label: 'Project Detail', href: `/projects/${projectId}` });
+      breadcrumbItems.push({ label: 'Project Detail', href: ROUTES.PROJECT_DETAIL(projectId) });
 
       if (pathSegments[2] === 'environments') {
-        breadcrumbItems.push({ label: 'Environments', href: `/projects/${projectId}/environments` });
+        breadcrumbItems.push({ label: 'Environments', href: ROUTES.PROJECT_ENVIRONMENTS(projectId) });
       } else if (pathSegments[2] === 'apis') {
-        breadcrumbItems.push({ label: 'APIs', href: `/projects/${projectId}/apis` });
+        breadcrumbItems.push({ label: 'APIs', href: ROUTES.PROJECT_APIS(projectId) });
 
         if (pathSegments[3]) {
           const apiId = pathSegments[3];
-          breadcrumbItems.push({ label: 'API Detail', href: `/projects/${projectId}/apis/${apiId}` });
+          breadcrumbItems.push({ label: 'API Detail', href: ROUTES.API_DETAIL(projectId, apiId) });
         }
       }
     }
   } else if (pathSegments[0] === 'settings') {
-    breadcrumbItems.push({ label: 'Settings', href: '/settings' });
+    breadcrumbItems.push({ label: 'Settings', href: ROUTES.SETTINGS });
   }
 
   return (
     <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
       <Link
-        href="/dashboard"
+        href={ROUTES.DASHBOARD}
         className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors flex items-center gap-1"
       >
         <Home className="w-3.5 h-3.5" />

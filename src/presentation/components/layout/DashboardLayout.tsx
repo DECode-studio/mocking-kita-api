@@ -7,6 +7,7 @@ import { TopNavbar } from './TopNavbar';
 import { ToastContainer } from '../shared/ToastContainer';
 import { ImportExportDialog } from '../shared/ImportExportDialog';
 import { useAuthStore } from '../../stores/authStore';
+import { ROUTES } from '@/src/core/constants/routes';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -14,7 +15,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/sign-in');
+      router.replace(ROUTES.SIGN_IN);
     }
   }, [isAuthenticated, router]);
 

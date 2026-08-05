@@ -7,10 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Project } from '@/src/domain/project/entity/project';
-import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
+import { projectUseCase } from '@/src/data/project/project_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
-
-const projectRepo = new ProjectRemoteRepository();
 
 const projectSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters'),
@@ -29,7 +27,7 @@ export function useProjectsViewModel(initialProjects: Project[] = []) {
 
   const reloadProjects = async () => {
     try {
-      const data = await projectRepo.getAll();
+      const data = await projectUseCase.getAll();
       setProjects(data);
     } catch {
       // fallback
@@ -76,14 +74,14 @@ export function useProjectsViewModel(initialProjects: Project[] = []) {
   const onSubmitForm = async (data: ProjectFormValues) => {
     try {
       if (editingProject) {
-        await projectRepo.update(editingProject.id, {
+        await projectUseCase.update(editingProject.id, {
           name: data.name,
           description: data.description,
           status: data.status,
         });
         addToast({ type: 'success', title: 'Project Updated', description: `Updated project "${data.name}"` });
       } else {
-        const created = await projectRepo.create({
+        const created = await projectUseCase.create({
           name: data.name,
           description: data.description,
           status: data.status,
@@ -103,11 +101,8 @@ export function useProjectsViewModel(initialProjects: Project[] = []) {
 
   const handleDuplicate = async (p: Project) => {
     try {
-      const dup = await projectRepo.create({
-        name: `${p.name} (Copy)`,
-        description: p.description,
-        status: p.status,
-      });
+      const dup = await projectUseCase.duplicate(p.id);
+      if (!dup) return;
       await reloadProjects();
       addToast({ type: 'success', title: 'Project Duplicated', description: `Created copy "${dup.name}"` });
     } catch (error: unknown) {
@@ -116,29 +111,27 @@ export function useProjectsViewModel(initialProjects: Project[] = []) {
   };
 
   const handleSoftDelete = async (id: string) => {
-    await projectRepo.softDelete(id);
+    await projectUseCase.softDelete(id);
     await reloadProjects();
     addToast({ type: 'info', title: 'Project Moved to Trash', description: 'Project has been soft deleted.' });
   };
 
   const handleRestore = async (id: string) => {
-    await projectRepo.restore(id);
+    await projectUseCase.restore(id);
     await reloadProjects();
     addToast({ type: 'success', title: 'Project Restored', description: 'Project restored successfully.' });
   };
 
   const handleConfirmHardDelete = async () => {
     if (!deletingProject) return;
-    await projectRepo.hardDelete(deletingProject.id);
+    await projectUseCase.hardDelete(deletingProject.id);
     await reloadProjects();
     addToast({ type: 'success', title: 'Project Permanently Deleted', description: 'Project and all endpoints removed.' });
     setDeletingProject(null);
   };
 
   const toggleProjectStatus = async (id: string) => {
-    const proj = projects.find((p) => p.id === id);
-    if (!proj) return;
-    await projectRepo.update(id, { status: !proj.status });
+    await projectUseCase.toggleStatus(id);
     await reloadProjects();
   };
 

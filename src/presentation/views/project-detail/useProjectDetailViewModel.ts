@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
+import { projectUseCase } from '@/src/data/project/project_usecase';
 import { Project } from '@/src/domain/project/entity/project';
-
-const projectRepo = new ProjectRemoteRepository();
+import { ROUTES } from '@/src/core/constants/routes';
 
 export function useProjectDetailViewModel() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -16,7 +15,7 @@ export function useProjectDetailViewModel() {
   const reloadProject = async () => {
     if (!projectId) return;
     try {
-      const p = await projectRepo.getById(projectId);
+      const p = await projectUseCase.getById(projectId);
       setProject(p);
     } catch {
       // fallback
@@ -29,15 +28,15 @@ export function useProjectDetailViewModel() {
 
   const toggleProjectStatus = async (id: string) => {
     if (!project) return;
-    await projectRepo.update(id, { status: !project.status });
+    await projectUseCase.toggleStatus(id);
     await reloadProject();
   };
 
   const handleSoftDelete = async () => {
     if (!project) return;
-    await projectRepo.softDelete(project.id);
+    await projectUseCase.softDelete(project.id);
     addToast({ type: 'info', title: 'Project Soft Deleted', description: 'Moved project to trash.' });
-    router.push('/projects');
+    router.push(ROUTES.PROJECTS);
   };
 
   return {

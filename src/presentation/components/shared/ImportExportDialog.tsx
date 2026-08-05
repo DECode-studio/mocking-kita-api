@@ -4,9 +4,12 @@ import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
-import { MockApiDatabase } from '../../../data/database/mock-api-database';
-import { callDatabase } from '../../../core/http-client/database-proxy-client';
+import { MockApiDatabase } from '@/src/core/db/mock-api-database';
 import { getErrorMessage } from '../../../core/utils/error';
+import { DatabaseAdminUseCaseImpl } from '@/src/domain/database/usecase/database_admin_usecase';
+import { databaseAdminRepository } from '@/src/data/database/admin/database_admin_repository_impl';
+
+const databaseAdminUseCase = new DatabaseAdminUseCaseImpl(databaseAdminRepository);
 
 export const ImportExportDialog: React.FC = () => {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
@@ -18,7 +21,7 @@ export const ImportExportDialog: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const db = await callDatabase<MockApiDatabase>('getDatabase');
+      const db = await databaseAdminUseCase.getDatabase();
       const dataStr = JSON.stringify(db, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -90,7 +93,7 @@ export const ImportExportDialog: React.FC = () => {
     if (!importedJson) return;
 
     try {
-      await callDatabase<MockApiDatabase>('importDatabase', { data: importedJson, mode: importMode });
+      await databaseAdminUseCase.importDatabase(importedJson, importMode);
       addToast({
         type: 'success',
         title: 'Import Successful',

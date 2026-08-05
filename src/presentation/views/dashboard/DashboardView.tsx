@@ -21,7 +21,8 @@ import { StatusBadge } from '../../components/shared/StatusBadge';
 import { formatRelativeTime } from '../../../core/utils/date';
 import { MethodRequest } from '../../../core/utils/types';
 import { useDashboardViewModel } from './useDashboardViewModel';
-import { MockApiDatabase } from '@/src/data/database/mock-api-database';
+import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { ROUTES } from '@/src/core/constants/routes';
 
 export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initialDb }) => {
   const {
@@ -215,7 +216,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
               </h3>
             </div>
             <button
-              onClick={() => router.push('/projects')}
+              onClick={() => router.push(ROUTES.PROJECTS)}
               className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center gap-1"
             >
               View All
@@ -238,7 +239,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
                 return (
                   <div
                     key={project.id}
-                    onClick={() => router.push(`/projects/${project.id}`)}
+                    onClick={() => router.push(ROUTES.PROJECT_DETAIL(project.id))}
                     className="p-4 border border-slate-200 dark:border-slate-800/80 hover:border-purple-500 dark:hover:border-purple-500 rounded-xl bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-950 transition-all cursor-pointer flex items-center justify-between group"
                   >
                     <div className="space-y-1 min-w-0 pr-2">
@@ -289,7 +290,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
                 return (
                   <div
                     key={api.id}
-                    onClick={() => router.push(`/projects/${api.projectId}/apis/${api.id}`)}
+                    onClick={() => router.push(ROUTES.API_DETAIL(api.projectId, api.id))}
                     className="p-3.5 border border-slate-200 dark:border-slate-800/80 hover:border-purple-500 dark:hover:border-purple-500 rounded-xl bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-50 dark:hover:bg-slate-950 transition-all cursor-pointer flex items-center justify-between group"
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">

@@ -15,10 +15,13 @@ import {
   Globe,
   ChevronRight,
   Code2,
+  Zap,
+  X,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
 import { cn } from '../../../core/utils/cn';
+import { ROUTES } from '@/src/core/constants/routes';
 
 export const AppSidebar: React.FC = () => {
   const { theme, setTheme } = useThemeStore();
@@ -34,78 +37,86 @@ export const AppSidebar: React.FC = () => {
     <aside
       className={cn(
         'fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-100 border-r border-slate-800 flex flex-col transition-transform duration-200 lg:static lg:translate-x-0',
-        isMobileSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}
     >
-      {/* Sidebar Header */}
-      <div className="h-16 px-4 border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-brand-gradient flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-            <Terminal className="w-5 h-5" />
+      {/* Brand Header */}
+      <div className="h-16 px-6 border-b border-slate-800 flex items-center justify-between">
+        <Link href={ROUTES.DASHBOARD} className="flex items-center gap-3 group">
+          <div className="w-8 h-8 rounded-xl bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            <Zap className="w-4 h-4 fill-white" />
           </div>
           <div>
-            <h1 className="font-display text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-              Mock API Studio
-            </h1>
-            <p className="text-[10px] text-purple-400 font-mono tracking-wider uppercase">LOCAL ENGINE</p>
+            <span className="font-display font-bold text-sm tracking-tight text-white block">
+              MockAPI<span className="text-purple-400">Studio</span>
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono block -mt-0.5">
+              Local Engine v1.0
+            </span>
           </div>
-        </div>
+        </Link>
+        <button
+          onClick={() => setMobileSidebarOpen(false)}
+          className="lg:hidden p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3 py-5 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
         <div>
-          <p className="px-2 mb-2 text-[11px] font-semibold tracking-widest text-slate-400 uppercase font-mono">
-            NAVIGATION
+          <p className="px-2 mb-2 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+            Main Navigation
           </p>
           <nav className="space-y-1">
             <Link
-              href="/dashboard"
+              href={ROUTES.DASHBOARD}
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative',
-                pathname === '/dashboard'
+                pathname === ROUTES.DASHBOARD
                   ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
               )}
             >
-              <LayoutDashboard className={cn('w-4 h-4', pathname === '/dashboard' ? 'text-purple-400' : '')} />
+              <LayoutDashboard className={cn('w-4 h-4', pathname === ROUTES.DASHBOARD ? 'text-purple-400' : '')} />
               <span>Dashboard</span>
-              {pathname === '/dashboard' && (
+              {pathname === ROUTES.DASHBOARD && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
               )}
             </Link>
 
             <Link
-              href="/projects"
+              href={ROUTES.PROJECTS}
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative',
-                pathname.startsWith('/projects')
+                pathname.startsWith(ROUTES.PROJECTS)
                   ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
               )}
             >
-              <FolderGit2 className={cn('w-4 h-4', pathname.startsWith('/projects') ? 'text-purple-400' : '')} />
+              <FolderGit2 className={cn('w-4 h-4', pathname.startsWith(ROUTES.PROJECTS) ? 'text-purple-400' : '')} />
               <span className="flex-1">Projects</span>
-              {pathname.startsWith('/projects') && (
+              {pathname.startsWith(ROUTES.PROJECTS) && (
                 <span className="ml-1 w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
               )}
             </Link>
 
             <Link
-              href="/settings"
+              href={ROUTES.SETTINGS}
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all relative',
-                pathname === '/settings'
+                pathname === ROUTES.SETTINGS
                   ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
               )}
             >
-              <Settings className={cn('w-4 h-4', pathname === '/settings' ? 'text-purple-400' : '')} />
+              <Settings className={cn('w-4 h-4', pathname === ROUTES.SETTINGS ? 'text-purple-400' : '')} />
               <span>Settings</span>
-              {pathname === '/settings' && (
+              {pathname === ROUTES.SETTINGS && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
               )}
             </Link>
@@ -121,7 +132,7 @@ export const AppSidebar: React.FC = () => {
             <button
               onClick={() => {
                 setMobileSidebarOpen(false);
-                router.push('/projects?new=true');
+                router.push(`${ROUTES.PROJECTS}?new=true`);
               }}
               className="text-slate-400 hover:text-indigo-400 p-0.5 rounded hover:bg-slate-800 transition-colors"
               title="Add New Project"
@@ -132,7 +143,7 @@ export const AppSidebar: React.FC = () => {
 
           <div className="space-y-0.5">
             <Link
-              href="/projects"
+              href={ROUTES.PROJECTS}
               onClick={() => setMobileSidebarOpen(false)}
               className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-colors"
             >

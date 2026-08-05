@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/src/presentation/stores/authStore';
+import { ROUTES } from '@/src/core/constants/routes';
 
 const signInSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -36,7 +37,7 @@ export function useSignInViewModel() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/dashboard');
+      router.replace(ROUTES.DASHBOARD);
     }
   }, [isAuthenticated, router]);
 
@@ -44,7 +45,7 @@ export function useSignInViewModel() {
     setAuthError(null);
     const res = await login(data.username, data.password, data.rememberMe);
     if (res.success) {
-      router.replace('/dashboard');
+      router.replace(ROUTES.DASHBOARD);
       return;
     }
 

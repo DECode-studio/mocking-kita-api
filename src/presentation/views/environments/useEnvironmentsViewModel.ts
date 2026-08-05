@@ -4,14 +4,10 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { EnvironmentRemoteRepository } from '@/src/data/environment/repository/environment_repository';
-import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { Project } from '@/src/domain/project/entity/project';
-
-const environmentRepo = new EnvironmentRemoteRepository();
-const projectRepo = new ProjectRemoteRepository();
+import { environmentUseCase } from '@/src/data/environment/environment_usecase';
 
 const environmentSchema = z.object({
   name: z.string().min(2, 'Environment name is required'),
@@ -73,10 +69,9 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
   const reloadEnvironments = async () => {
     if (!activeProjectId) return;
     try {
-      const data = await environmentRepo.getByProjectId(activeProjectId);
-      setEnvironments(data.filter((e) => !e.deletedAt));
-      const proj = await projectRepo.getById(activeProjectId);
-      setProject(proj);
+      const data = await environmentUseCase.load(activeProjectId);
+      setEnvironments(data.environments);
+      setProject(data.project);
     } catch {
       // fallback
     }
@@ -87,9 +82,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
   }, [activeProjectId]);
 
   const toggleEnvironmentStatus = async (id: string) => {
-    const env = environments.find((e) => e.id === id);
-    if (!env) return;
-    await environmentRepo.update(id, { status: !env.status });
+    await environmentUseCase.toggleStatus(id);
     await reloadEnvironments();
   };
 
@@ -108,7 +101,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
 
     try {
       if (editingEnv) {
-        await environmentRepo.update(editingEnv.id, {
+        await environmentUseCase.update(editingEnv.id, {
           name: data.name,
           environmentType: data.environmentType,
           publicBaseUrl: data.publicBaseUrl,
@@ -117,7 +110,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
         });
         addToast({ type: 'success', title: 'Environment Updated', description: `Updated ${data.name}` });
       } else {
-        await environmentRepo.create({
+        await environmentUseCase.create({
           projectId: activeProjectId,
           name: data.name,
           environmentType: data.environmentType,
@@ -143,7 +136,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
 
   const handleDelete = async () => {
     if (!deletingEnvId) return;
-    await environmentRepo.softDelete(deletingEnvId);
+    await environmentUseCase.softDelete(deletingEnvId);
     await reloadEnvironments();
     addToast({ type: 'success', title: 'Environment Deleted', description: 'Environment removed.' });
     setDeletingEnvId(null);
