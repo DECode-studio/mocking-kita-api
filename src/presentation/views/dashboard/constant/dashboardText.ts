@@ -1,7 +1,7 @@
 export const DASHBOARD_TEXT = {
   TITLE: 'Engine Overview',
   SUBTITLE: 'Real-time overview of active mock projects, endpoints, and scenarios.',
-  HERO_BADGE: 'MOCK API STUDIO ENGINE',
+  HERO_BADGE: 'MOCKING KITA STUDIO ENGINE',
   HERO_TITLE_PREFIX: 'Build predictable APIs ',
   HERO_TITLE_SUFFIX: 'before the backend exists.',
   HERO_DESCRIPTION: 'Create endpoints, define deterministic or weighted response rules, configure headers & parameters, and test multi-environment URLs instantly.',

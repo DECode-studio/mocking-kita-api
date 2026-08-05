@@ -2,16 +2,25 @@
 
 import React, { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
+import { formatJsonString } from '@/src/core/utils/json';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ResponseScenarioModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   editingRespScenario: ResponseScenario | null;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: {
+    name: string;
+    statusCode: number;
+    priority: number;
+    weight: number;
+    body: string;
+    delayMs: number;
+    status: boolean;
+  }) => void;
 }
 
 export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
@@ -22,6 +31,8 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [statusCode, setStatusCode] = useState(200);
+  const [priority, setPriority] = useState(100);
+  const [weight, setWeight] = useState(100);
   const [body, setBody] = useState('{\n  "message": "Success"\n}');
   const [delayMs, setDelayMs] = useState(0);
   const [status, setStatus] = useState(true);
@@ -30,12 +41,16 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
     if (editingRespScenario) {
       setName(editingRespScenario.name);
       setStatusCode(editingRespScenario.statusCode);
+      setPriority(editingRespScenario.priority || 100);
+      setWeight(editingRespScenario.weight || 100);
       setBody(typeof editingRespScenario.body === 'string' ? editingRespScenario.body : JSON.stringify(editingRespScenario.body || {}, null, 2));
       setDelayMs(editingRespScenario.delayMs);
       setStatus(editingRespScenario.status);
     } else {
       setName('');
       setStatusCode(200);
+      setPriority(100);
+      setWeight(100);
       setBody('{\n  "message": "Success"\n}');
       setDelayMs(0);
       setStatus(true);
@@ -47,6 +62,8 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
     onSubmit({
       name,
       statusCode: Number(statusCode) || 200,
+      priority: Number(priority) || 100,
+      weight: Number(weight) || 100,
       body,
       delayMs: Number(delayMs) || 0,
       status,
@@ -87,17 +104,17 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {API_DETAIL_TEXT.LABEL_STATUS_CODE}
-                </label>
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                {API_DETAIL_TEXT.LABEL_STATUS_CODE}
+              </label>
                 <input
                   type="number"
                   required
                   value={statusCode}
                   onChange={(e) => setStatusCode(Number(e.target.value))}
                   placeholder="200"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -112,19 +129,59 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                 value={delayMs}
                 onChange={(e) => setDelayMs(Number(e.target.value))}
                 placeholder="0"
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Priority
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={priority}
+                  onChange={(e) => setPriority(Number(e.target.value))}
+                  placeholder="100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Weight
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={weight}
+                  onChange={(e) => setWeight(Number(e.target.value))}
+                  placeholder="100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {API_DETAIL_TEXT.LABEL_RESPONSE_BODY}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  {API_DETAIL_TEXT.LABEL_RESPONSE_BODY}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setBody(formatJsonString(body))}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  Beautify
+                </button>
+              </div>
               <textarea
                 rows={6}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono text-emerald-400 focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
 

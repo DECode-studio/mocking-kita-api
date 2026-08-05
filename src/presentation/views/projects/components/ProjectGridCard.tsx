@@ -38,22 +38,22 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
   onHardDeleteRequest,
 }) => {
   return (
-    <div className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/80 dark:hover:border-purple-500/80 rounded-2xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between">
+    <div
+      onClick={onNavigateDetail}
+      className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/80 dark:hover:border-purple-500/80 rounded-2xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between cursor-pointer"
+    >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
               <Code2 className="w-4 h-4" />
             </div>
-            <h3
-              onClick={onNavigateDetail}
-              className="font-display font-bold text-base text-slate-900 dark:text-slate-100 hover:text-purple-400 cursor-pointer truncate transition-colors"
-            >
+            <h3 className="font-display font-bold text-base text-slate-900 dark:text-slate-100 hover:text-purple-400 truncate transition-colors">
               {project.name}
             </h3>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
             <StatusSwitch
               checked={project.status}
               onCheckedChange={() => onToggleStatus(project.id)}

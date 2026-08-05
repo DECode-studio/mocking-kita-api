@@ -1,6 +1,6 @@
 'use client';
 
-import { Dispatch, FormEvent, SetStateAction } from 'react';
+import { Dispatch, SetStateAction } from 'react';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { getErrorMessage } from '@/src/core/utils/error';
 
@@ -11,6 +11,16 @@ type ToastInput = {
 };
 
 type CreateResponseScenarioInput = Omit<ResponseScenario, 'id' | 'createdAt' | 'updatedAt'>;
+
+type ResponseScenarioFormValues = {
+  name: string;
+  statusCode: number;
+  priority: number;
+  weight: number;
+  body: string;
+  delayMs: number;
+  status: boolean;
+};
 
 type ResponseScenarioDeps = {
   activeReqScenarioId: string | null;
@@ -31,39 +41,48 @@ export function useResponseScenarioActions({
   createResponseScenario,
   updateResponseScenario,
 }: ResponseScenarioDeps) {
-  const handleSaveRespScenario = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSaveRespScenario = async (values: ResponseScenarioFormValues) => {
     if (!activeReqScenarioId) return;
 
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
-    const statusCode = Number(formData.get('statusCode')) || 200;
-    const delayMs = Number(formData.get('delayMs')) || 0;
-    const weight = Number(formData.get('weight')) || 100;
-    const priority = Number(formData.get('priority')) || 100;
-    const status = formData.get('status') === 'on';
+    const name = values.name.trim();
+    const statusCode = Number(values.statusCode) || 200;
+    const delayMs = Number(values.delayMs) || 0;
+    const weight = Number(values.weight) || 100;
+    const priority = Number(values.priority) || 100;
+    const status = !!values.status;
+    const bodyValue = (() => {
+      const trimmed = values.body.trim();
+      if (!trimmed) return {};
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return values.body;
+      }
+    })();
 
     try {
       if (editingRespScenarioId) {
         await updateResponseScenario(editingRespScenarioId, {
           name,
-          description,
+          description: '',
           statusCode,
           delayMs,
           weight,
           priority,
           status,
+          headers: { 'content-type': 'application/json' },
+          body: bodyValue,
+          requestScenarioId: activeReqScenarioId,
         });
         addToast({ type: 'success', title: 'Response Updated', description: `Updated ${name}` });
       } else {
         await createResponseScenario({
           requestScenarioId: activeReqScenarioId,
           name,
-          description,
+          description: '',
           statusCode,
           headers: { 'content-type': 'application/json' },
-          body: { success: true, message: 'Mock response payload' },
+          body: bodyValue,
           delayMs,
           weight,
           priority,

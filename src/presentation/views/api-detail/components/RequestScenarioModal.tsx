@@ -2,16 +2,24 @@
 
 import React, { useEffect, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
+import { formatJsonString } from '@/src/core/utils/json';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface RequestScenarioModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   editingReqScenario: RequestScenario | null;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: {
+    name: string;
+    priority: number;
+    queryParams: string;
+    headers: string;
+    body: string;
+    status: boolean;
+  }) => void;
 }
 
 export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
@@ -106,38 +114,68 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Query Params Matching (JSON)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  Query Params Matching (JSON)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setQueryParams(formatJsonString(queryParams))}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  Beautify
+                </button>
+              </div>
               <textarea
                 rows={2}
                 value={queryParams}
                 onChange={(e) => setQueryParams(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Headers Matching (JSON)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  Headers Matching (JSON)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setHeaders(formatJsonString(headers))}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  Beautify
+                </button>
+              </div>
               <textarea
                 rows={2}
                 value={headers}
                 onChange={(e) => setHeaders(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Body Payload Matching (JSON)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                  Body Payload Matching (JSON)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setBody(formatJsonString(body))}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  Beautify
+                </button>
+              </div>
               <textarea
                 rows={2}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg font-mono focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
               />
             </div>
 
