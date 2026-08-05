@@ -1,1 +1,5 @@
-export { default } from '@/src/presentation/views/settings/SettingsView';
+import SettingsView from '@/src/presentation/views/settings/SettingsView';
+
+export default async function SettingsPage() {
+  return <SettingsView />;
+}

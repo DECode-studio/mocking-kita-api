@@ -1,7 +1,8 @@
-import { readDatabase } from '@/src/core/db/database_storage_helper';
+import { createProjectUseCase } from '@/src/domain/project';
 import ProjectsView from '@/src/presentation/views/projects/ProjectsView';
 
-export default function ProjectsPage() {
-  const initialProjects = readDatabase().projects;
+export default async function ProjectsPage() {
+  const projectUseCase = createProjectUseCase();
+  const initialProjects = await projectUseCase.getAll();
   return <ProjectsView initialProjects={initialProjects} />;
 }
