@@ -16,15 +16,22 @@ import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { createEnvironmentUseCase } from '@/src/domain/environment';
-import { useEnvironmentsViewModel } from './useEnvironmentsViewModel';
+import { useEnvironmentsViewModel } from './view_model/useEnvironmentsViewModel';
 
 interface EnvironmentsViewProps {
   embeddedProjectId?: string;
+  initialEnvironments?: import('@/src/domain/environment/entity/environment').Environment[];
+  initialProject?: import('@/src/domain/project/entity/project').Project | null;
 }
 
-export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ embeddedProjectId }) => {
+export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({
+  embeddedProjectId,
+  initialEnvironments = [],
+  initialProject = null,
+}) => {
   const environmentUseCase = createEnvironmentUseCase();
   const {
+    activeProjectId,
     environments,
     form,
     isFormOpen,
@@ -39,7 +46,7 @@ export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ embeddedProj
     handleCopyUrl,
     handleDelete,
     toggleEnvironmentStatus,
-  } = useEnvironmentsViewModel(environmentUseCase, embeddedProjectId);
+  } = useEnvironmentsViewModel(environmentUseCase, embeddedProjectId, initialEnvironments, initialProject);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = form;
 
@@ -59,7 +66,8 @@ export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ embeddedProj
         <button
           type="button"
           onClick={openAddDialog}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-xs transition-colors"
+          disabled={!activeProjectId}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed rounded-lg shadow-xs transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Environment

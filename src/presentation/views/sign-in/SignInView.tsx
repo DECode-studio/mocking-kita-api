@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Terminal, Eye, EyeOff, ShieldAlert, ArrowRight } from 'lucide-react';
-import { useSignInViewModel } from './useSignInViewModel';
+import { useSignInViewModel } from './view_model/useSignInViewModel';
 
 export const SignInView: React.FC = () => {
   const {

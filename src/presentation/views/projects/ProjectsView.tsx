@@ -26,7 +26,7 @@ import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { formatDate } from '../../../core/utils/date';
 import { createProjectUseCase } from '@/src/domain/project';
-import { useProjectsViewModel } from './useProjectsViewModel';
+import { useProjectsViewModel } from './view_model/useProjectsViewModel';
 
 import { Project } from '@/src/domain/project/entity/project';
 import { ROUTES } from '@/src/core/constants/routes';

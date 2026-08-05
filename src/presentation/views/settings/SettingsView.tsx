@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { createDatabaseResetUseCase } from '@/src/domain/database';
-import { useSettingsViewModel } from './useSettingsViewModel';
+import { useSettingsViewModel } from './view_model/useSettingsViewModel';
 
 export const SettingsView: React.FC = () => {
   const databaseResetUseCase = createDatabaseResetUseCase();

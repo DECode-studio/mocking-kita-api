@@ -21,9 +21,22 @@ import { EnvironmentsView } from '../environments/EnvironmentsView';
 import { ApiCollectionsView } from '../api-collections/ApiCollectionsView';
 import { formatDate } from '../../../core/utils/date';
 import { createProjectUseCase } from '@/src/domain/project';
-import { useProjectDetailViewModel } from './useProjectDetailViewModel';
+import { useProjectDetailViewModel } from './view_model/useProjectDetailViewModel';
+import { ApiCollection } from '@/src/domain/api/entity/api_collection';
+import { Environment } from '@/src/domain/environment/entity/environment';
+import { Project } from '@/src/domain/project/entity/project';
 
-export const ProjectDetailView: React.FC = () => {
+interface ProjectDetailViewProps {
+  initialProject?: Project | null;
+  initialApis?: ApiCollection[];
+  initialEnvironments?: Environment[];
+}
+
+export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
+  initialProject = null,
+  initialApis = [],
+  initialEnvironments = [],
+}) => {
   const projectUseCase = createProjectUseCase();
   const {
     projectId,
@@ -33,7 +46,7 @@ export const ProjectDetailView: React.FC = () => {
     setActiveTab,
     handleSoftDelete,
     toggleProjectStatus,
-  } = useProjectDetailViewModel(projectUseCase);
+  } = useProjectDetailViewModel(projectUseCase, initialProject);
 
   if (!project) {
     return (
@@ -133,11 +146,11 @@ export const ProjectDetailView: React.FC = () => {
         </Tabs.List>
 
         <Tabs.Content value="apis">
-          <ApiCollectionsView embeddedProjectId={project.id} />
+          <ApiCollectionsView embeddedProjectId={project.id} initialApis={initialApis} />
         </Tabs.Content>
 
         <Tabs.Content value="environments">
-          <EnvironmentsView embeddedProjectId={project.id} />
+          <EnvironmentsView embeddedProjectId={project.id} initialEnvironments={initialEnvironments} initialProject={project} />
         </Tabs.Content>
 
         <Tabs.Content value="overview">

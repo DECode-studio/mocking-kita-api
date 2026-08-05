@@ -26,9 +26,14 @@ import { JsonEditor } from './components/JsonEditor';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { createApiDetailUseCase } from '@/src/domain/api';
-import { useApiDetailViewModel } from './useApiDetailViewModel';
+import { useApiDetailViewModel } from './view_model/useApiDetailViewModel';
+import { ApiDetailSnapshot } from '@/src/domain/api/usecase/api_detail_usecase';
 
-export const ApiDetailView: React.FC = () => {
+interface ApiDetailViewProps {
+  initialDetail?: ApiDetailSnapshot;
+}
+
+export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) => {
   const apiDetailUseCase = createApiDetailUseCase();
   const {
     detail,
@@ -76,7 +81,7 @@ export const ApiDetailView: React.FC = () => {
     toggleResponseScenarioStatus,
     duplicateResponseScenario,
     deleteResponseScenario,
-  } = useApiDetailViewModel(apiDetailUseCase);
+  } = useApiDetailViewModel(apiDetailUseCase, initialDetail);
 
   if (!api || !project) {
     return (
