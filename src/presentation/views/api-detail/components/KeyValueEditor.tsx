@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Code2, List, Sparkles } from 'lucide-react';
-import { cn } from '../../../core/utils/cn';
-import { objectToKeyValuePairs, keyValuePairsToObject, formatJsonString, validateJsonString } from '../../../core/utils/json';
-import { getErrorMessage } from '../../../core/utils/error';
+import { Plus, Trash2, Code2, List } from 'lucide-react';
+import { cn } from '../../../../core/utils/cn';
+import { objectToKeyValuePairs, keyValuePairsToObject, validateJsonString } from '../../../../core/utils/json';
+import { getErrorMessage } from '../../../../core/utils/error';
 
 export interface KeyValuePair {
   id: string;

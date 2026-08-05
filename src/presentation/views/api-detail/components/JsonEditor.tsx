@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Copy, Check, Sparkles, Minimize2, RotateCcw, AlertTriangle } from 'lucide-react';
-import { cn } from '../../../core/utils/cn';
-import { formatJsonString, minifyJsonString, validateJsonString } from '../../../core/utils/json';
+import { cn } from '../../../../core/utils/cn';
+import { formatJsonString, minifyJsonString, validateJsonString } from '../../../../core/utils/json';
 
 interface JsonEditorProps {
   value: unknown;

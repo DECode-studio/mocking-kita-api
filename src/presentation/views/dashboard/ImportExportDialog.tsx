@@ -6,10 +6,10 @@ import { Download, Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide
 import { useUIStore } from '../../stores/uiStore';
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
 import { getErrorMessage } from '../../../core/utils/error';
-import { DatabaseAdminUseCaseImpl } from '@/src/domain/database/usecase/database_admin_usecase';
-import { databaseAdminRepository } from '@/src/data/database/admin/database_admin_repository_impl';
+import { DatabaseSnapshotUseCaseImpl } from '@/src/domain/database/usecase/database_snapshot_usecase';
+import { databaseSnapshotRepository } from '@/src/data/database/snapshot/database_snapshot_repository_impl';
 
-const databaseAdminUseCase = new DatabaseAdminUseCaseImpl(databaseAdminRepository);
+const databaseSnapshotUseCase = new DatabaseSnapshotUseCaseImpl(databaseSnapshotRepository);
 
 export const ImportExportDialog: React.FC = () => {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
@@ -21,7 +21,7 @@ export const ImportExportDialog: React.FC = () => {
 
   const handleExport = async () => {
     try {
-      const db = await databaseAdminUseCase.getDatabase();
+      const db = await databaseSnapshotUseCase.getDatabase();
       const dataStr = JSON.stringify(db, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -93,7 +93,7 @@ export const ImportExportDialog: React.FC = () => {
     if (!importedJson) return;
 
     try {
-      await databaseAdminUseCase.importDatabase(importedJson, importMode);
+      await databaseSnapshotUseCase.importDatabase(importedJson, importMode);
       addToast({
         type: 'success',
         title: 'Import Successful',
@@ -131,7 +131,6 @@ export const ImportExportDialog: React.FC = () => {
             </button>
           </div>
 
-          {/* Export Section */}
           <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
             <div className="flex items-center justify-between">
               <div>
@@ -151,7 +150,6 @@ export const ImportExportDialog: React.FC = () => {
             </div>
           </div>
 
-          {/* Import Section */}
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
               Import Configuration File
@@ -223,35 +221,25 @@ export const ImportExportDialog: React.FC = () => {
                       onClick={() => setImportMode('replace')}
                       className={`p-2 rounded-lg border text-left text-xs transition-colors ${
                         importMode === 'replace'
-                          ? 'border-rose-600 bg-rose-100/50 dark:bg-rose-950/50 text-rose-900 dark:text-rose-200 font-semibold'
+                          ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
                           : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
                       }`}
                     >
                       <span className="block font-medium">Replace All</span>
-                      <span className="text-[10px] text-slate-500 font-normal">Overwrites current database</span>
+                      <span className="text-[10px] text-slate-500 font-normal">Wipes all current data first</span>
                     </button>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleApplyImport}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+                >
+                  Apply Import
+                </button>
               </div>
             )}
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setImportModalOpen(false)}
-              className="px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={!importedJson}
-              onClick={handleApplyImport}
-              className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-md shadow-xs transition-colors"
-            >
-              Apply Import
-            </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
