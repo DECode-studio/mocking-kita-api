@@ -3,8 +3,11 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { ErrorBoundary } from '@/src/presentation/components/shared/ErrorBoundary';
-import { useAuthStore } from '@/src/presentation/stores/authStore';
+import { configureAuthStore, useAuthStore } from '@/src/presentation/stores/authStore';
 import { useThemeStore } from '@/src/core/theme/themeStore';
+import { createAuthUseCase } from '@/src/domain/auth';
+
+configureAuthStore(createAuthUseCase());
 
 export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
