@@ -1,9 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Terminal } from 'lucide-react';
 import { useSignInViewModel } from './view_model/useSignInViewModel';
 import { SIGN_IN_TEXT, SIGN_IN_SEMANTIC_ID } from './constant';
+import { ROUTES } from '@/src/core/constants/routes';
 import {
   SignInHeroPanel,
   SignInInfoBanner,
@@ -11,6 +13,7 @@ import {
 } from './components';
 
 export const SignInView: React.FC = () => {
+  const router = useRouter();
   const {
     isAuthenticated,
     showPassword,
@@ -23,7 +26,19 @@ export const SignInView: React.FC = () => {
     onSubmit,
   } = useSignInViewModel();
 
-  if (isAuthenticated) return null;
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace(ROUTES.DASHBOARD);
+    }
+  }, [isAuthenticated, router]);
+
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <p className="text-xs font-mono text-slate-400">Redirecting to dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div id={SIGN_IN_SEMANTIC_ID.CONTAINER} className="min-h-screen bg-slate-950 text-slate-100 flex antialiased selection:bg-purple-500/30 selection:text-purple-300">

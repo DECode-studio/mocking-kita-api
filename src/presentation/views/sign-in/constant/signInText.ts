@@ -1,5 +1,5 @@
 export const SIGN_IN_TEXT = {
-  TITLE: 'Mock API Studio',
+  TITLE: 'Mocking Kita Studio',
   SUBTITLE: 'Build predictable APIs before the backend exists.',
   HERO_BADGE: 'OFFLINE-FIRST ENGINE',
   HERO_TITLE_PREFIX: 'Build predictable APIs ',

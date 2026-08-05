@@ -37,12 +37,13 @@ export const SignInFormCard: React.FC<SignInFormCardProps> = ({
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider font-mono">
+          <label htmlFor={SIGN_IN_SEMANTIC_ID.USERNAME_INPUT} className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider font-mono">
             {SIGN_IN_TEXT.USERNAME_LABEL}
           </label>
           <input
             id={SIGN_IN_SEMANTIC_ID.USERNAME_INPUT}
             type="text"
+            autoComplete="username"
             {...register('username')}
             placeholder={SIGN_IN_TEXT.USERNAME_PLACEHOLDER}
             className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 font-mono"
@@ -53,13 +54,14 @@ export const SignInFormCard: React.FC<SignInFormCardProps> = ({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider font-mono">
+          <label htmlFor={SIGN_IN_SEMANTIC_ID.PASSWORD_INPUT} className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider font-mono">
             {SIGN_IN_TEXT.PASSWORD_LABEL}
           </label>
           <div className="relative">
             <input
               id={SIGN_IN_SEMANTIC_ID.PASSWORD_INPUT}
               type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
               {...register('password')}
               placeholder={SIGN_IN_TEXT.PASSWORD_PLACEHOLDER}
               className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 font-mono pr-10"

@@ -5,8 +5,13 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'Mock API Studio',
+  title: 'Mocking Kita Studio',
   description: 'Offline-first mock API editor and local engine.',
+  icons: {
+    icon: '/app-icon.png',
+    shortcut: '/app-icon.png',
+    apple: '/app-icon.png',
+  },
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
