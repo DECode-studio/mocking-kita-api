@@ -4,7 +4,7 @@
 
 ---
 
-## 📌 Tujuan Utama & Fitur Unggulan
+## Tujuan Utama & Fitur Unggulan
 
 1. **Predictable & Dynamic API Prototyping**: Membangun kontrak REST API secara cepat dan konsisten sebelum backend siap.
 2. **Offline-First & Server-Side Persistence**: Penyimpanan terpusat dan efisien menggunakan **SQLite (`node:sqlite`)** dengan mode `WAL (Write-Ahead Logging)` dan relational schema.
@@ -14,7 +14,7 @@
 
 ---
 
-## 🏗 Arsitektur & Infrastructure Design
+## Arsitektur & Infrastructure Design
 
 Struktur proyek mematuhi **Clean Architecture** dan **MVVM (Model-View-ViewModel)** pada presentation layer:
 
@@ -78,7 +78,7 @@ mock-api-studio/
 
 ---
 
-## 🔄 Dynamic Data Flow & Request Matching Engine
+## Dynamic Data Flow & Request Matching Engine
 
 ### 1. View-to-Database Mutation Flow (Client to DB)
 $$\text{View Component} \xrightarrow{\text{User Event}} \text{ViewModel Hook} \xrightarrow{\text{Execute}} \text{UseCase (Domain)} \xrightarrow{\text{Interface}} \text{Repository Impl (Data)} \xrightarrow{\text{Query}} \text{SQLite Storage Helper (Core)} \xrightarrow{\text{SQL Execute}} \text{SQLite DB}$$
@@ -95,7 +95,7 @@ $$\text{Internal Proxy Engine} \longrightarrow \begin{cases}
 
 ---
 
-## 🗄 Relasi Schema Database (SQLite Schema)
+## Relasi Schema Database (SQLite Schema)
 
 Database menggunakan native SQLite via `node:sqlite` yang disimpan di `.data/mock-api-studio.sqlite`. Struktur tabel meliputi:
 
@@ -108,7 +108,7 @@ Database menggunakan native SQLite via `node:sqlite` yang disimpan di `.data/moc
 
 ---
 
-## 🛠 Panduan Menjalankan Proyek
+## Panduan Menjalankan Proyek
 
 ### Prerequisites
 - Node.js >= 22.x (Membutuhkan dukungan built-in `node:sqlite`)
