@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppSidebar } from './AppSidebar';
 import { TopNavbar } from './TopNavbar';
 import { ToastContainer } from '../shared/ToastContainer';
-import { ImportExportDialog } from '../../views/dashboard/ImportExportDialog';
+import { ImportExportDialog } from '../../views/dashboard';
 import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '@/src/core/constants/routes';
 
