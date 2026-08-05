@@ -1,6 +1,7 @@
 export const API_DETAIL_SEMANTIC_ID = {
   CONTAINER: 'api-detail-container',
   HEADER: 'api-detail-header',
+  BACK_BTN: 'api-detail-back-btn',
   MAIN_TABS: 'api-detail-main-tabs',
   SCENARIO_SIDEBAR: 'api-detail-scenario-sidebar',
   SCENARIO_SIDEBAR_SEARCH: 'api-detail-scenario-sidebar-search',

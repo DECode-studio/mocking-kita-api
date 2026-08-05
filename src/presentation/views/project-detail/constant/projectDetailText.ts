@@ -10,4 +10,8 @@ export const PROJECT_DETAIL_TEXT = {
   METADATA_CREATED_AT: 'Created At',
   METADATA_LAST_UPDATED: 'Last Updated',
   CREATED_DATE_LABEL: 'Created Date',
+  NO_DESCRIPTION: 'No project description configured.',
+  STATUS_ACTIVE: 'Active',
+  STATUS_DISABLED: 'Disabled',
+  TITLE_DELETE_PROJECT: 'Delete Project',
 } as const;
