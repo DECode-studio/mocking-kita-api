@@ -1,29 +1,41 @@
-'use client';
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useDatabaseStore } from '@/src/presentation/stores/databaseStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
+import { Project } from '@/src/domain/project/entity/project';
+
+const projectRepo = new ProjectRemoteRepository();
 
 export function useProjectDetailViewModel() {
   const { projectId } = useParams<{ projectId: string }>();
   const router = useRouter();
-  const { db, toggleProjectStatus, softDeleteProject } = useDatabaseStore();
   const { addToast } = useUIStore();
   const [activeTab, setActiveTab] = useState('apis');
+  const [project, setProject] = useState<Project | null>(null);
 
-  const project = db.projects.find((p) => p.id === projectId);
+  const reloadProject = async () => {
+    if (!projectId) return;
+    try {
+      const p = await projectRepo.getById(projectId);
+      setProject(p);
+    } catch {
+      // fallback
+    }
+  };
 
-  const projectEnvs = db.environments.filter((e) => e.projectId === project?.id && !e.deletedAt);
-  const projectApis = db.apiCollections.filter((a) => a.projectId === project?.id && !a.deletedAt);
-  const projectApiIds = projectApis.map((a) => a.id);
-  const projectReqs = db.requestScenarios.filter((r) => projectApiIds.includes(r.apiId) && !r.deletedAt);
-  const projectReqIds = projectReqs.map((r) => r.id);
-  const projectResps = db.responseScenarios.filter((res) => projectReqIds.includes(res.requestScenarioId) && !res.deletedAt);
+  useEffect(() => {
+    reloadProject();
+  }, [projectId]);
+
+  const toggleProjectStatus = async (id: string) => {
+    if (!project) return;
+    await projectRepo.update(id, { status: !project.status });
+    await reloadProject();
+  };
 
   const handleSoftDelete = async () => {
     if (!project) return;
-    await softDeleteProject(project.id);
+    await projectRepo.softDelete(project.id);
     addToast({ type: 'info', title: 'Project Soft Deleted', description: 'Moved project to trash.' });
     router.push('/projects');
   };
@@ -34,10 +46,6 @@ export function useProjectDetailViewModel() {
     router,
     activeTab,
     setActiveTab,
-    projectEnvs,
-    projectApis,
-    projectReqs,
-    projectResps,
     handleSoftDelete,
     toggleProjectStatus,
   };

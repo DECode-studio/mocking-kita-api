@@ -24,13 +24,12 @@ export function useSignInViewModel() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      username: 'admin',
-      password: 'admin123',
+      username: '',
+      password: '',
       rememberMe: true,
     },
   });
@@ -49,13 +48,7 @@ export function useSignInViewModel() {
       return;
     }
 
-    setAuthError(res.error || 'Authentication failed');
-  };
-
-  const handleUseDemoAccount = () => {
-    setValue('username', 'admin');
-    setValue('password', 'admin123');
-    setAuthError(null);
+    setAuthError('error' in res ? res.error : 'Authentication failed');
   };
 
   return {
@@ -68,6 +61,5 @@ export function useSignInViewModel() {
     errors,
     isSubmitting,
     onSubmit,
-    handleUseDemoAccount,
   };
 }

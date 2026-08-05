@@ -7,10 +7,8 @@ import { TopNavbar } from './TopNavbar';
 import { ToastContainer } from '../shared/ToastContainer';
 import { ImportExportDialog } from '../shared/ImportExportDialog';
 import { useAuthStore } from '../../stores/authStore';
-import { useDatabaseStore } from '../../stores/databaseStore';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLoading } = useDatabaseStore();
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
 
@@ -20,7 +18,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [isAuthenticated, router]);
 
-  if (!isAuthenticated || isLoading) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">

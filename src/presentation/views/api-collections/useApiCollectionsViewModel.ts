@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDatabaseStore } from '@/src/presentation/stores/databaseStore';
+import { useEffect } from 'react';
+import { ApiCollectionRemoteRepository } from '@/src/data/api/repository/api_repository';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { getErrorMessage } from '@/src/core/utils/error';
+
+const apiRepo = new ApiCollectionRemoteRepository();
 
 const apiSchema = z.object({
   name: z.string().min(2, 'Endpoint name is required'),
@@ -23,19 +26,17 @@ const apiSchema = z.object({
 type ApiFormValues = z.infer<typeof apiSchema>;
 
 export function useApiCollectionsViewModel(embeddedProjectId?: string) {
-  const { db, createApiCollection, updateApiCollection, toggleApiCollectionStatus, duplicateApiCollection, deleteApiCollection } = useDatabaseStore();
   const { addToast } = useUIStore();
   const router = useRouter();
 
-  const activeProjectId = embeddedProjectId || db.projects[0]?.id;
+  const activeProjectId = embeddedProjectId;
+  const [apis, setApis] = useState<ApiCollection[]>([]);
   const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingApi, setEditingApi] = useState<ApiCollection | null>(null);
   const [deletingApiId, setDeletingApiId] = useState<string | null>(null);
-
-  const apis = db.apiCollections.filter((a) => a.projectId === activeProjectId && !a.deletedAt);
 
   const form = useForm<ApiFormValues>({
     resolver: zodResolver(apiSchema),
@@ -72,6 +73,27 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
     setIsFormOpen(true);
   };
 
+  const reloadApis = async () => {
+    if (!activeProjectId) return;
+    try {
+      const data = await apiRepo.getByProjectId(activeProjectId);
+      setApis(data.filter((a) => !a.deletedAt));
+    } catch {
+      // fallback
+    }
+  };
+
+  useEffect(() => {
+    reloadApis();
+  }, [activeProjectId]);
+
+  const toggleApiCollectionStatus = async (id: string) => {
+    const target = apis.find((a) => a.id === id);
+    if (!target) return;
+    await apiRepo.update(id, { status: !target.status });
+    await reloadApis();
+  };
+
   const onSubmitForm = async (data: ApiFormValues) => {
     if (!activeProjectId) return;
 
@@ -90,7 +112,7 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
 
     try {
       if (editingApi) {
-        await updateApiCollection(editingApi.id, {
+        await apiRepo.update(editingApi.id, {
           name: data.name,
           description: data.description,
           path: data.path,
@@ -99,7 +121,7 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
         });
         addToast({ type: 'success', title: 'API Updated', description: `Updated ${data.methodRequest} ${data.path}` });
       } else {
-        await createApiCollection({
+        await apiRepo.create({
           projectId: activeProjectId,
           name: data.name,
           description: data.description,
@@ -109,6 +131,7 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
         });
         addToast({ type: 'success', title: 'API Endpoint Added', description: `Created ${data.methodRequest} ${data.path}` });
       }
+      await reloadApis();
       setIsFormOpen(false);
     } catch (error: unknown) {
       addToast({
@@ -121,7 +144,15 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
 
   const handleDuplicate = async (api: ApiCollection) => {
     try {
-      const dup = await duplicateApiCollection(api.id);
+      const dup = await apiRepo.create({
+        projectId: api.projectId,
+        name: `${api.name} (Copy)`,
+        description: api.description,
+        path: `${api.path}-copy`,
+        methodRequest: api.methodRequest,
+        status: api.status,
+      });
+      await reloadApis();
       addToast({ type: 'success', title: 'API Duplicated', description: `Created copy "${dup.name}"` });
     } catch (error: unknown) {
       addToast({ type: 'error', title: 'Duplicate Error', description: getErrorMessage(error) });
@@ -130,7 +161,8 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
 
   const handleDelete = async () => {
     if (!deletingApiId) return;
-    await deleteApiCollection(deletingApiId);
+    await apiRepo.softDelete(deletingApiId);
+    await reloadApis();
     addToast({ type: 'success', title: 'API Endpoint Deleted', description: 'Removed API collection.' });
     setDeletingApiId(null);
   };
@@ -150,7 +182,6 @@ export function useApiCollectionsViewModel(embeddedProjectId?: string) {
   });
 
   return {
-    db,
     router,
     activeProjectId,
     search,

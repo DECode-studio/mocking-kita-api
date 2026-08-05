@@ -27,9 +27,10 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import { formatDate } from '../../../core/utils/date';
 import { useProjectsViewModel } from './useProjectsViewModel';
 
-export const ProjectsView: React.FC = () => {
+import { Project } from '@/src/domain/project/entity/project';
+
+export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initialProjects = [] }) => {
   const {
-    db,
     router,
     search,
     setSearch,
@@ -54,7 +55,7 @@ export const ProjectsView: React.FC = () => {
     handleConfirmHardDelete,
     filteredProjects,
     toggleProjectStatus,
-  } = useProjectsViewModel();
+  } = useProjectsViewModel(initialProjects);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = form;
 
@@ -160,13 +161,6 @@ export const ProjectsView: React.FC = () => {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project) => {
-            const projectApis = db.apiCollections.filter(
-              (a) => a.projectId === project.id && !a.deletedAt
-            );
-            const projectEnvs = db.environments.filter(
-              (e) => e.projectId === project.id && !e.deletedAt
-            );
-
             return (
               <div
                 key={project.id}
@@ -262,22 +256,12 @@ export const ProjectsView: React.FC = () => {
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[32px]">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-8">
                     {project.description || 'No description provided.'}
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-mono text-slate-500">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1">
-                      <Globe className="w-3.5 h-3.5 text-slate-400" />
-                      {projectEnvs.length} Envs
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Layers className="w-3.5 h-3.5 text-slate-400" />
-                      {projectApis.length} APIs
-                    </span>
-                  </div>
                   <span className="text-[10px]">{formatDate(project.createdAt)}</span>
                 </div>
               </div>
@@ -292,17 +276,12 @@ export const ProjectsView: React.FC = () => {
               <tr>
                 <th className="p-3.5">Project Name</th>
                 <th className="p-3.5">Status</th>
-                <th className="p-3.5">Environments</th>
-                <th className="p-3.5">APIs</th>
                 <th className="p-3.5">Created Date</th>
                 <th className="p-3.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredProjects.map((project) => {
-                const projectApis = db.apiCollections.filter((a) => a.projectId === project.id && !a.deletedAt).length;
-                const projectEnvs = db.environments.filter((e) => e.projectId === project.id && !e.deletedAt).length;
-
                 return (
                   <tr key={project.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                     <td className="p-3.5">
@@ -319,8 +298,6 @@ export const ProjectsView: React.FC = () => {
                     <td className="p-3.5">
                       <StatusBadge status={project.status} />
                     </td>
-                    <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{projectEnvs}</td>
-                    <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{projectApis}</td>
                     <td className="p-3.5 font-mono text-slate-500">{formatDate(project.createdAt)}</td>
                     <td className="p-3.5 text-right space-x-2">
                       <button

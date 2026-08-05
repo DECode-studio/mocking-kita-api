@@ -21,8 +21,9 @@ import { StatusBadge } from '../../components/shared/StatusBadge';
 import { formatRelativeTime } from '../../../core/utils/date';
 import { MethodRequest } from '../../../core/utils/types';
 import { useDashboardViewModel } from './useDashboardViewModel';
+import { MockApiDatabase } from '@/src/data/database/mock-api-database';
 
-export const DashboardView: React.FC = () => {
+export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initialDb }) => {
   const {
     db,
     router,
@@ -33,7 +34,7 @@ export const DashboardView: React.FC = () => {
     methodCounts,
     totalApisCount,
     openImportExport,
-  } = useDashboardViewModel();
+  } = useDashboardViewModel(initialDb);
 
   return (
     <div className="space-y-8">

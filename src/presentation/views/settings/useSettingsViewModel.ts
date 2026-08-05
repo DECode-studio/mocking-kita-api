@@ -1,21 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useDatabaseStore } from '@/src/presentation/stores/databaseStore';
-import { useSettingsStore } from '@/src/presentation/stores/settingsStore';
+import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { SettingsUseCaseImpl } from '@/src/domain/settings/usecase/settings_usecase';
+import { settingsRepository } from '@/src/data/settings/repository/settings_repository';
+import { databaseRepository } from '@/src/data/database/database_repository_impl';
+
+const settingsUseCase = new SettingsUseCaseImpl(settingsRepository, databaseRepository);
 
 export function useSettingsViewModel() {
-  const { theme, setTheme } = useSettingsStore();
-  const { db, resetDatabase } = useDatabaseStore();
+  const { theme, setTheme } = useThemeStore();
   const { setImportModalOpen, addToast } = useUIStore();
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  const rawSize = JSON.stringify(db).length;
-  const kbSize = (rawSize / 1024).toFixed(2);
-
   const handleReset = async () => {
-    await resetDatabase();
+    await settingsUseCase.resetDatabase();
     addToast({
       type: 'warning',
       title: 'Database Reset',
@@ -27,14 +27,10 @@ export function useSettingsViewModel() {
   return {
     theme,
     setTheme,
-    db,
-    resetDatabase,
     setImportModalOpen,
     addToast,
     isResetConfirmOpen,
     setIsResetConfirmOpen,
-    rawSize,
-    kbSize,
     handleReset,
   };
 }

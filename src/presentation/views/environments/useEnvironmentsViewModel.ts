@@ -1,12 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDatabaseStore } from '@/src/presentation/stores/databaseStore';
+import { EnvironmentRemoteRepository } from '@/src/data/environment/repository/environment_repository';
+import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Environment } from '@/src/domain/environment/entity/environment';
+import { Project } from '@/src/domain/project/entity/project';
+
+const environmentRepo = new EnvironmentRemoteRepository();
+const projectRepo = new ProjectRemoteRepository();
 
 const environmentSchema = z.object({
   name: z.string().min(2, 'Environment name is required'),
@@ -19,17 +24,16 @@ const environmentSchema = z.object({
 type EnvironmentFormValues = z.infer<typeof environmentSchema>;
 
 export function useEnvironmentsViewModel(embeddedProjectId?: string) {
-  const { db, createEnvironment, updateEnvironment, toggleEnvironmentStatus, deleteEnvironment } = useDatabaseStore();
   const { addToast } = useUIStore();
 
+  const [environments, setEnvironments] = useState<Environment[]>([]);
+  const [project, setProject] = useState<Project | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEnv, setEditingEnv] = useState<Environment | null>(null);
   const [deletingEnvId, setDeletingEnvId] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const activeProjectId = embeddedProjectId || db.projects[0]?.id;
-  const project = db.projects.find((p) => p.id === activeProjectId);
-  const environments = db.environments.filter((e) => e.projectId === activeProjectId && !e.deletedAt);
+  const activeProjectId = embeddedProjectId;
 
   const form = useForm<EnvironmentFormValues>({
     resolver: zodResolver(environmentSchema),
@@ -66,6 +70,29 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
     setIsFormOpen(true);
   };
 
+  const reloadEnvironments = async () => {
+    if (!activeProjectId) return;
+    try {
+      const data = await environmentRepo.getByProjectId(activeProjectId);
+      setEnvironments(data.filter((e) => !e.deletedAt));
+      const proj = await projectRepo.getById(activeProjectId);
+      setProject(proj);
+    } catch {
+      // fallback
+    }
+  };
+
+  useEffect(() => {
+    reloadEnvironments();
+  }, [activeProjectId]);
+
+  const toggleEnvironmentStatus = async (id: string) => {
+    const env = environments.find((e) => e.id === id);
+    if (!env) return;
+    await environmentRepo.update(id, { status: !env.status });
+    await reloadEnvironments();
+  };
+
   const onSubmitForm = async (data: EnvironmentFormValues) => {
     if (!activeProjectId) return;
 
@@ -81,7 +108,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
 
     try {
       if (editingEnv) {
-        await updateEnvironment(editingEnv.id, {
+        await environmentRepo.update(editingEnv.id, {
           name: data.name,
           environmentType: data.environmentType,
           publicBaseUrl: data.publicBaseUrl,
@@ -90,7 +117,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
         });
         addToast({ type: 'success', title: 'Environment Updated', description: `Updated ${data.name}` });
       } else {
-        await createEnvironment({
+        await environmentRepo.create({
           projectId: activeProjectId,
           name: data.name,
           environmentType: data.environmentType,
@@ -100,6 +127,7 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
         });
         addToast({ type: 'success', title: 'Environment Added', description: `Added ${data.name}` });
       }
+      await reloadEnvironments();
       setIsFormOpen(false);
     } catch (err: any) {
       addToast({ type: 'error', title: 'Error', description: err?.message || 'Failed to save environment' });
@@ -115,13 +143,13 @@ export function useEnvironmentsViewModel(embeddedProjectId?: string) {
 
   const handleDelete = async () => {
     if (!deletingEnvId) return;
-    await deleteEnvironment(deletingEnvId);
+    await environmentRepo.softDelete(deletingEnvId);
+    await reloadEnvironments();
     addToast({ type: 'success', title: 'Environment Deleted', description: 'Environment removed.' });
     setDeletingEnvId(null);
   };
 
   return {
-    db,
     project,
     activeProjectId,
     environments,

@@ -29,7 +29,6 @@ interface ApiCollectionsViewProps {
 
 export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embeddedProjectId }) => {
   const {
-    db,
     router,
     activeProjectId,
     search,
@@ -146,12 +145,6 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredApis.map((api) => {
-              const reqScenarios = db.requestScenarios.filter((r) => r.apiId === api.id && !r.deletedAt);
-              const reqIds = reqScenarios.map((r) => r.id);
-              const respScenarios = db.responseScenarios.filter(
-                (res) => reqIds.includes(res.requestScenarioId) && !res.deletedAt
-              );
-
               return (
                 <div
                   key={api.id}
@@ -160,11 +153,11 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     <HttpMethodBadge method={api.methodRequest} size="md" />
 
-                    <div className="min-w-0 flex-1 space-y-0.5">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span
                           onClick={() => router.push(`/projects/${api.projectId}/apis/${api.id}`)}
-                          className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer truncate"
+                          className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer truncate"
                         >
                           {api.path}
                         </span>
@@ -177,15 +170,6 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
                   </div>
 
                   <div className="flex items-center gap-4 shrink-0">
-                    <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-500">
-                      <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[11px]">
-                        {reqScenarios.length} Req
-                      </span>
-                      <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-[11px]">
-                        {respScenarios.length} Resp
-                      </span>
-                    </div>
-
                     <StatusSwitch
                       checked={api.status}
                       onCheckedChange={() => toggleApiCollectionStatus(api.id)}

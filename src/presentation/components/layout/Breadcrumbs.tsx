@@ -4,11 +4,8 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
-import { useDatabaseStore } from '../../stores/databaseStore';
-
 export const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
-  const { db } = useDatabaseStore();
 
   const pathSegments = pathname.split('/').filter(Boolean);
 
@@ -23,9 +20,7 @@ export const Breadcrumbs: React.FC = () => {
 
     if (pathSegments[1]) {
       const projectId = pathSegments[1];
-      const project = db.projects.find((p) => p.id === projectId);
-      const projName = project ? project.name : projectId;
-      breadcrumbItems.push({ label: projName, href: `/projects/${projectId}` });
+      breadcrumbItems.push({ label: 'Project Detail', href: `/projects/${projectId}` });
 
       if (pathSegments[2] === 'environments') {
         breadcrumbItems.push({ label: 'Environments', href: `/projects/${projectId}/environments` });
@@ -34,9 +29,7 @@ export const Breadcrumbs: React.FC = () => {
 
         if (pathSegments[3]) {
           const apiId = pathSegments[3];
-          const api = db.apiCollections.find((a) => a.id === apiId);
-          const apiName = api ? `${api.methodRequest} ${api.path}` : apiId;
-          breadcrumbItems.push({ label: apiName, href: `/projects/${projectId}/apis/${apiId}` });
+          breadcrumbItems.push({ label: 'API Detail', href: `/projects/${projectId}/apis/${apiId}` });
         }
       }
     }
@@ -56,13 +49,13 @@ export const Breadcrumbs: React.FC = () => {
         <React.Fragment key={item.href + idx}>
           <ChevronRight className="w-3 h-3 text-slate-300 dark:text-slate-700 shrink-0" />
           {idx === breadcrumbItems.length - 1 ? (
-            <span className="font-semibold text-slate-900 dark:text-slate-100 max-w-[150px] sm:max-w-[200px] truncate">
+            <span className="font-semibold text-slate-900 dark:text-slate-100 max-w-37.5 sm:max-w-50 truncate">
               {item.label}
             </span>
           ) : (
             <Link
               href={item.href}
-              className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors max-w-[120px] truncate"
+              className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors max-w-30 truncate"
             >
               {item.label}
             </Link>

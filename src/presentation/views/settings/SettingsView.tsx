@@ -17,11 +17,9 @@ export const SettingsView: React.FC = () => {
   const {
     theme,
     setTheme,
-    db,
     setImportModalOpen,
     isResetConfirmOpen,
     setIsResetConfirmOpen,
-    kbSize,
     handleReset,
   } = useSettingsViewModel();
 
@@ -88,23 +86,9 @@ export const SettingsView: React.FC = () => {
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Local Database Engine</h2>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-          <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 block text-[10px] font-sans">Storage Key</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">mock-api-studio.sqlite</span>
-          </div>
-          <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 block text-[10px] font-sans">Database Size</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{kbSize} KB</span>
-          </div>
-          <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 block text-[10px] font-sans">Projects</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{db.projects.length}</span>
-          </div>
-          <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800">
-            <span className="text-slate-400 block text-[10px] font-sans">Endpoints</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{db.apiCollections.length}</span>
-          </div>
+        <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800 text-xs font-mono">
+          <span className="text-slate-400 block text-[10px] font-sans">Database Driver</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-200">SQLite Server Driver (WAL Mode)</span>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2">

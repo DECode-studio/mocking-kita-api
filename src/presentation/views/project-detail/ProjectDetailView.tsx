@@ -29,10 +29,6 @@ export const ProjectDetailView: React.FC = () => {
     router,
     activeTab,
     setActiveTab,
-    projectEnvs,
-    projectApis,
-    projectReqs,
-    projectResps,
     handleSoftDelete,
     toggleProjectStatus,
   } = useProjectDetailViewModel();
@@ -92,38 +88,9 @@ export const ProjectDetailView: React.FC = () => {
       </div>
 
       {/* Summary Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Environments</span>
-            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">{projectEnvs.length}</span>
-          </div>
-          <Globe className="w-4 h-4 text-emerald-500" />
-        </div>
-
-        <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">API Endpoints</span>
-            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">{projectApis.length}</span>
-          </div>
-          <Layers className="w-4 h-4 text-indigo-500" />
-        </div>
-
-        <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Request Scenarios</span>
-            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">{projectReqs.length}</span>
-          </div>
-          <FileCode className="w-4 h-4 text-amber-500" />
-        </div>
-
-        <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider block font-semibold">Response Scenarios</span>
-            <span className="text-lg font-bold text-slate-900 dark:text-slate-100">{projectResps.length}</span>
-          </div>
-          <CheckCircle2 className="w-4 h-4 text-purple-500" />
-        </div>
+      <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xs flex items-center justify-between font-mono text-xs">
+        <span className="text-slate-500 font-sans">Created Date</span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(project.createdAt)}</span>
       </div>
 
       {/* Tabs */}
@@ -137,7 +104,7 @@ export const ProjectDetailView: React.FC = () => {
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            API Collections ({projectApis.length})
+            API Collections
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -148,7 +115,7 @@ export const ProjectDetailView: React.FC = () => {
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Environments ({projectEnvs.length})
+            Environments
           </Tabs.Trigger>
 
           <Tabs.Trigger

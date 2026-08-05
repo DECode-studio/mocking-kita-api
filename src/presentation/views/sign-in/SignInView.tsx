@@ -15,7 +15,6 @@ export const SignInView: React.FC = () => {
     errors,
     isSubmitting,
     onSubmit,
-    handleUseDemoAccount,
   } = useSignInViewModel();
 
   if (isAuthenticated) return null;
@@ -72,29 +71,13 @@ export const SignInView: React.FC = () => {
           </div>
 
           <div className="p-4 bg-slate-900/90 border border-purple-500/30 rounded-2xl space-y-2.5 shadow-xl backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-purple-300">
-                <ShieldAlert className="w-4 h-4 text-purple-400" />
-                Local Demo Account
-              </div>
-              <button
-                type="button"
-                onClick={handleUseDemoAccount}
-                className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 underline"
-              >
-                Auto-fill
-              </button>
+            <div className="flex items-center gap-2 text-xs font-semibold text-purple-300">
+              <ShieldAlert className="w-4 h-4 text-purple-400" />
+              Environment-based Auth
             </div>
-            <div className="grid grid-cols-2 gap-2 text-xs font-mono text-slate-200 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-              <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-sans">Username</span>
-                admin
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-sans">Password</span>
-                admin123
-              </div>
-            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Login credentials are validated on the proxy API using `APP_USERNAME` and `APP_PASSWORD`.
+            </p>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6">
@@ -111,7 +94,7 @@ export const SignInView: React.FC = () => {
                 <input
                   type="text"
                   {...register('username')}
-                  placeholder="admin"
+                  placeholder="Enter username"
                   className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 font-mono"
                 />
                 {errors.username && <p className="text-[11px] text-rose-400 mt-1 font-sans">{errors.username.message}</p>}
@@ -123,7 +106,7 @@ export const SignInView: React.FC = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     {...register('password')}
-                    placeholder="••••••••"
+                    placeholder="Enter password"
                     className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 font-mono pr-10"
                   />
                   <button

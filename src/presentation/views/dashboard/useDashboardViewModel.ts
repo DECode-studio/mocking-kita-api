@@ -1,14 +1,27 @@
-'use client';
-
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDatabaseStore } from '@/src/presentation/stores/databaseStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { MethodRequest } from '@/src/core/utils/types';
+import { callDatabase } from '@/src/core/http-client/database-proxy-client';
+import { MockApiDatabase } from '@/src/data/database/mock-api-database';
 
-export function useDashboardViewModel() {
-  const { db } = useDatabaseStore();
+const emptyDb: MockApiDatabase = {
+  version: '1.0.0',
+  projects: [],
+  environments: [],
+  apiCollections: [],
+  apiEnvironments: [],
+  requestScenarios: [],
+  responseScenarios: [],
+};
+
+export function useDashboardViewModel(initialDb: MockApiDatabase = emptyDb) {
+  const [db, setDb] = useState<MockApiDatabase>(initialDb);
   const { setImportModalOpen } = useUIStore();
   const router = useRouter();
+
+  useEffect(() => {
+    callDatabase<MockApiDatabase>('getDatabase').then(setDb).catch(() => {});
+  }, []);
 
   const activeProjects = db.projects.filter((p) => !p.deletedAt && p.status);
   const activeApis = db.apiCollections.filter((a) => !a.deletedAt && a.status);

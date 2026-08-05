@@ -3,22 +3,22 @@
 import React, { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import { useDatabaseStore } from '../../stores/databaseStore';
 import { useUIStore } from '../../stores/uiStore';
 import { MockApiDatabase } from '../../../data/database/mock-api-database';
+import { callDatabase } from '../../../core/http-client/database-proxy-client';
 import { getErrorMessage } from '../../../core/utils/error';
 
 export const ImportExportDialog: React.FC = () => {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
-  const { db, importDatabase } = useDatabaseStore();
 
   const [importedJson, setImportedJson] = useState<MockApiDatabase | null>(null);
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
 
-  const handleExport = () => {
+  const handleExport = async () => {
     try {
+      const db = await callDatabase<MockApiDatabase>('getDatabase');
       const dataStr = JSON.stringify(db, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -90,7 +90,7 @@ export const ImportExportDialog: React.FC = () => {
     if (!importedJson) return;
 
     try {
-      await importDatabase(importedJson, importMode);
+      await callDatabase<MockApiDatabase>('importDatabase', { data: importedJson, mode: importMode });
       addToast({
         type: 'success',
         title: 'Import Successful',
@@ -134,7 +134,7 @@ export const ImportExportDialog: React.FC = () => {
               <div>
                 <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100">Export Current Configuration</h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Download a full backup containing {db.projects.length} projects and {db.apiCollections.length} API endpoints.
+                  Download a full backup JSON containing all projects and API endpoints.
                 </p>
               </div>
               <button

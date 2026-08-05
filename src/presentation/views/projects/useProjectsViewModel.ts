@@ -5,10 +5,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDatabaseStore } from '@/src/presentation/stores/databaseStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Project } from '@/src/domain/project/entity/project';
+import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
 import { getErrorMessage } from '@/src/core/utils/error';
+
+const projectRepo = new ProjectRemoteRepository();
 
 const projectSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters'),
@@ -18,12 +20,21 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
-export function useProjectsViewModel() {
-  const { db, createProject, updateProject, toggleProjectStatus, duplicateProject, softDeleteProject, restoreProject, hardDeleteProject } = useDatabaseStore();
+export function useProjectsViewModel(initialProjects: Project[] = []) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
   const { addToast } = useUIStore();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const reloadProjects = async () => {
+    try {
+      const data = await projectRepo.getAll();
+      setProjects(data);
+    } catch {
+      // fallback
+    }
+  };
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
@@ -65,20 +76,21 @@ export function useProjectsViewModel() {
   const onSubmitForm = async (data: ProjectFormValues) => {
     try {
       if (editingProject) {
-        await updateProject(editingProject.id, {
+        await projectRepo.update(editingProject.id, {
           name: data.name,
           description: data.description,
           status: data.status,
         });
         addToast({ type: 'success', title: 'Project Updated', description: `Updated project "${data.name}"` });
       } else {
-        const created = await createProject({
+        const created = await projectRepo.create({
           name: data.name,
           description: data.description,
           status: data.status,
         });
         addToast({ type: 'success', title: 'Project Created', description: `Created new project "${created.name}"` });
       }
+      await reloadProjects();
       setIsFormOpen(false);
     } catch (error: unknown) {
       addToast({
@@ -91,7 +103,12 @@ export function useProjectsViewModel() {
 
   const handleDuplicate = async (p: Project) => {
     try {
-      const dup = await duplicateProject(p.id);
+      const dup = await projectRepo.create({
+        name: `${p.name} (Copy)`,
+        description: p.description,
+        status: p.status,
+      });
+      await reloadProjects();
       addToast({ type: 'success', title: 'Project Duplicated', description: `Created copy "${dup.name}"` });
     } catch (error: unknown) {
       addToast({ type: 'error', title: 'Duplicate Failed', description: getErrorMessage(error) });
@@ -99,23 +116,33 @@ export function useProjectsViewModel() {
   };
 
   const handleSoftDelete = async (id: string) => {
-    await softDeleteProject(id);
+    await projectRepo.softDelete(id);
+    await reloadProjects();
     addToast({ type: 'info', title: 'Project Moved to Trash', description: 'Project has been soft deleted.' });
   };
 
   const handleRestore = async (id: string) => {
-    await restoreProject(id);
+    await projectRepo.restore(id);
+    await reloadProjects();
     addToast({ type: 'success', title: 'Project Restored', description: 'Project restored successfully.' });
   };
 
   const handleConfirmHardDelete = async () => {
     if (!deletingProject) return;
-    await hardDeleteProject(deletingProject.id);
+    await projectRepo.hardDelete(deletingProject.id);
+    await reloadProjects();
     addToast({ type: 'success', title: 'Project Permanently Deleted', description: 'Project and all endpoints removed.' });
     setDeletingProject(null);
   };
 
-  const filteredProjects = db.projects
+  const toggleProjectStatus = async (id: string) => {
+    const proj = projects.find((p) => p.id === id);
+    if (!proj) return;
+    await projectRepo.update(id, { status: !proj.status });
+    await reloadProjects();
+  };
+
+  const filteredProjects = projects
     .filter((p) => {
       const matchesSearch =
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -134,7 +161,6 @@ export function useProjectsViewModel() {
     });
 
   return {
-    db,
     router,
     search,
     setSearch,

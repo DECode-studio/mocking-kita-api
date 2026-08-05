@@ -16,19 +16,15 @@ import {
   ChevronRight,
   Code2,
 } from 'lucide-react';
-import { useDatabaseStore } from '../../stores/databaseStore';
-import { useSettingsStore } from '../../stores/settingsStore';
+import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
 import { cn } from '../../../core/utils/cn';
 
 export const AppSidebar: React.FC = () => {
-  const { db } = useDatabaseStore();
-  const { theme, setTheme } = useSettingsStore();
+  const { theme, setTheme } = useThemeStore();
   const { isMobileSidebarOpen, setMobileSidebarOpen } = useUIStore();
   const pathname = usePathname();
   const router = useRouter();
-
-  const activeProjects = db.projects.filter((p) => !p.deletedAt && p.status);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -92,9 +88,6 @@ export const AppSidebar: React.FC = () => {
             >
               <FolderGit2 className={cn('w-4 h-4', pathname.startsWith('/projects') ? 'text-purple-400' : '')} />
               <span className="flex-1">Projects</span>
-              <span className="px-2 py-0.5 text-[10px] font-mono bg-slate-950 text-purple-300 rounded-md border border-slate-700/50">
-                {activeProjects.length}
-              </span>
               {pathname.startsWith('/projects') && (
                 <span className="ml-1 w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
               )}
@@ -138,36 +131,16 @@ export const AppSidebar: React.FC = () => {
           </div>
 
           <div className="space-y-0.5">
-            {activeProjects.length === 0 ? (
-              <p className="px-2 text-xs text-slate-500 italic">No active projects.</p>
-            ) : (
-              activeProjects.slice(0, 5).map((project) => {
-                const projectApis = db.apiCollections.filter(
-                  (a) => a.projectId === project.id && !a.deletedAt
-                );
-                return (
-                  <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
-                    onClick={() => setMobileSidebarOpen(false)}
-                    className={cn(
-                      'flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-colors group',
-                      pathname.startsWith(`/projects/${project.id}`)
-                        ? 'bg-slate-800 text-indigo-400 font-semibold'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-                    )}
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Code2 className="w-3.5 h-3.5 shrink-0 text-slate-500 group-hover:text-indigo-400" />
-                      <span className="truncate">{project.name}</span>
-                    </div>
-                    <span className="text-[10px] font-mono text-slate-500">
-                      {projectApis.length} APIs
-                    </span>
-                  </Link>
-                );
-              })
-            )}
+            <Link
+              href="/projects"
+              onClick={() => setMobileSidebarOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition-colors"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Code2 className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+                <span className="truncate">View All Projects</span>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
