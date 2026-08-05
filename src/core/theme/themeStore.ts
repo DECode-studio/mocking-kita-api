@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { ThemeMode } from '@/src/domain/settings/entity/theme_mode';
-import { settingsRepository } from '@/src/data/settings/repository/settings_repository';
+import type { ThemeMode } from './theme-types';
+import { getThemeSetting, setThemeSetting } from '@/src/core/http-client/settings-client';
 
 export type { ThemeMode };
 
@@ -14,14 +14,14 @@ export const useThemeStore = create<ThemeState>((set) => ({
   theme: 'dark',
 
   setTheme: async (theme: ThemeMode) => {
-    await settingsRepository.setTheme(theme);
+    await setThemeSetting(theme);
     set({ theme });
     applyTheme(theme);
   },
 
   initTheme: async () => {
     try {
-      const theme = await settingsRepository.getTheme();
+      const theme = await getThemeSetting();
       set({ theme });
       applyTheme(theme);
     } catch {
