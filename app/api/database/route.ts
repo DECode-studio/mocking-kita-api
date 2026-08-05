@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
-import { dbRepository } from '@/src/data/resources/local/database-local-resource';
+import { readDatabase, resetDatabaseToSeed, importDatabaseData, seedDatabase } from '@/src/data/database/database_storage_helper';
+import { createProject, updateProject, softDeleteProject, restoreProject, hardDeleteProject } from '@/src/data/project/data_source/project_data_source_impl';
+import { createEnvironment, updateEnvironment, softDeleteEnvironment } from '@/src/data/environment/data_source/environment_data_source_impl';
+import { createApi, updateApi, softDeleteApi } from '@/src/data/api/data_source/api_data_source_impl';
+import { upsertApiEnvironment } from '@/src/data/api/data_source/api_environment_data_source_impl';
+import { createRequestScenario, updateRequestScenario, softDeleteRequestScenario } from '@/src/data/request-scenario/data_source/request_scenario_data_source_impl';
+import { createResponseScenario, updateResponseScenario, softDeleteResponseScenario } from '@/src/data/response-scenario/data_source/response_scenario_data_source_impl';
+import { generateId } from '@/src/core/utils/uuid';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const database = await dbRepository.getDatabase();
+  const database = readDatabase();
   return NextResponse.json(database);
 }
 
@@ -13,68 +20,81 @@ export async function POST(request: Request) {
   const action = body.action;
 
   try {
+    const now = new Date().toISOString();
     switch (action) {
+      case 'getDatabase':
+        return NextResponse.json(readDatabase());
       case 'saveDatabase':
-        await dbRepository.saveDatabase(body.payload as any);
+        seedDatabase(body.payload as any);
         return NextResponse.json({ ok: true });
       case 'resetDatabase':
-        return NextResponse.json(await dbRepository.resetDatabase());
+        return NextResponse.json(resetDatabaseToSeed());
       case 'importDatabase': {
         const payload = body.payload as { data: any; mode: 'replace' | 'merge' };
-        return NextResponse.json(await dbRepository.importDatabase(payload.data, payload.mode));
+        return NextResponse.json(importDatabaseData(payload.data, payload.mode));
       }
-      case 'create':
-        return NextResponse.json(await dbRepository.create(body.payload as any));
+      case 'create': {
+        const input = body.payload as any;
+        return NextResponse.json(createProject({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+      }
       case 'update': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(await dbRepository.update(payload.id, payload.input));
+        return NextResponse.json(updateProject(payload.id, payload.input));
       }
       case 'softDelete':
-        await dbRepository.softDelete((body.payload as { id: string }).id);
+        softDeleteProject((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
       case 'restore':
-        await dbRepository.restore((body.payload as { id: string }).id);
+        restoreProject((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
       case 'hardDelete':
-        await dbRepository.hardDelete((body.payload as { id: string }).id);
+        hardDeleteProject((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
-      case 'createEnvironment':
-        return NextResponse.json(await dbRepository.createEnvironment(body.payload as any));
+      case 'createEnvironment': {
+        const input = body.payload as any;
+        return NextResponse.json(createEnvironment({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+      }
       case 'updateEnvironment': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(await dbRepository.updateEnvironment(payload.id, payload.input));
+        return NextResponse.json(updateEnvironment(payload.id, payload.input));
       }
       case 'softDeleteEnvironment':
-        await dbRepository.softDeleteEnvironment((body.payload as { id: string }).id);
+        softDeleteEnvironment((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
-      case 'createApi':
-        return NextResponse.json(await dbRepository.createApi(body.payload as any));
+      case 'createApi': {
+        const input = body.payload as any;
+        return NextResponse.json(createApi({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+      }
       case 'updateApi': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(await dbRepository.updateApi(payload.id, payload.input));
+        return NextResponse.json(updateApi(payload.id, payload.input));
       }
       case 'softDeleteApi':
-        await dbRepository.softDeleteApi((body.payload as { id: string }).id);
+        softDeleteApi((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
       case 'upsertApiEnv':
-        return NextResponse.json(await dbRepository.upsertApiEnv(body.payload as any));
-      case 'createReqScenario':
-        return NextResponse.json(await dbRepository.createReqScenario(body.payload as any));
+        return NextResponse.json(upsertApiEnvironment(body.payload as any));
+      case 'createReqScenario': {
+        const input = body.payload as any;
+        return NextResponse.json(createRequestScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+      }
       case 'updateReqScenario': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(await dbRepository.updateReqScenario(payload.id, payload.input));
+        return NextResponse.json(updateRequestScenario(payload.id, payload.input));
       }
       case 'softDeleteReqScenario':
-        await dbRepository.softDeleteReqScenario((body.payload as { id: string }).id);
+        softDeleteRequestScenario((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
-      case 'createRespScenario':
-        return NextResponse.json(await dbRepository.createRespScenario(body.payload as any));
+      case 'createRespScenario': {
+        const input = body.payload as any;
+        return NextResponse.json(createResponseScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+      }
       case 'updateRespScenario': {
         const payload = body.payload as { id: string; input: any };
-        return NextResponse.json(await dbRepository.updateRespScenario(payload.id, payload.input));
+        return NextResponse.json(updateResponseScenario(payload.id, payload.input));
       }
       case 'softDeleteRespScenario':
-        await dbRepository.softDeleteRespScenario((body.payload as { id: string }).id);
+        softDeleteResponseScenario((body.payload as { id: string }).id);
         return NextResponse.json({ ok: true });
       default:
         return NextResponse.json({ error: 'Unknown database action' }, { status: 400 });

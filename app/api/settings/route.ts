@@ -1,11 +1,10 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { ThemeMode } from '@/src/domain/settings/entity/theme_mode';
 
 export const runtime = 'nodejs';
 
 const SETTINGS_COOKIE = 'mock-api-studio-settings';
-
-type ThemeMode = 'light' | 'dark' | 'system';
 
 function parseTheme(raw: string | undefined): ThemeMode {
   if (raw === 'light' || raw === 'dark' || raw === 'system') return raw;

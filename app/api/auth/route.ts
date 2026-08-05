@@ -1,18 +1,20 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { UserSession } from '@/src/domain/auth/entity/user_session';
 
 export const runtime = 'nodejs';
 
 const AUTH_COOKIE = 'mock-api-studio-auth';
 
-export interface UserSession {
-  username: string;
-  name: string;
-  avatarUrl?: string;
-  role: string;
-  token: string;
-  rememberMe: boolean;
-  loginAt: string;
+function getAuthCredentials() {
+  const username = process.env.APP_USERNAME?.trim();
+  const password = process.env.APP_PASSWORD?.trim();
+
+  if (!username || !password) {
+    throw new Error('APP_USERNAME and APP_PASSWORD must be configured');
+  }
+
+  return { username, password };
 }
 
 function parseSession(raw: string | undefined): UserSession | null {
@@ -38,35 +40,27 @@ export async function POST(request: Request) {
   };
 
   const cleanUsername = (username || '').trim().toLowerCase();
+  const cleanPassword = (password || '').trim();
 
-  if (cleanUsername === 'admin' && password === 'admin123') {
-    const session: UserSession = {
-      username: 'admin',
-      name: 'System Admin',
-      role: 'Administrator',
-      token: 'mock-jwt-token-admin-' + Date.now(),
-      rememberMe,
-      loginAt: new Date().toISOString(),
-    };
-
-    const cookieStore = await cookies();
-    cookieStore.set(AUTH_COOKIE, JSON.stringify(session), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: rememberMe ? 60 * 60 * 24 * 30 : undefined,
-    });
-
-    return NextResponse.json({ success: true, session });
+  let credentials;
+  try {
+    credentials = getAuthCredentials();
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error?.message || 'Authentication configuration is missing',
+      },
+      { status: 500 }
+    );
   }
 
-  if (password === 'admin123' || password === 'demo123') {
+  if (cleanUsername === credentials.username.toLowerCase() && cleanPassword === credentials.password) {
     const session: UserSession = {
-      username: cleanUsername,
-      name: cleanUsername || 'User',
-      role: 'Developer',
-      token: 'mock-jwt-token-user-' + Date.now(),
+      username: credentials.username,
+      name: credentials.username,
+      role: 'Administrator',
+      token: `mock-jwt-token-${Date.now()}`,
       rememberMe,
       loginAt: new Date().toISOString(),
     };
@@ -77,7 +71,7 @@ export async function POST(request: Request) {
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',
-      maxAge: rememberMe ? 60 * 60 * 24 * 30 : undefined,
+      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24, // Default 1 day or 30 days if rememberMe
     });
 
     return NextResponse.json({ success: true, session });
@@ -86,7 +80,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       success: false,
-      error: 'Invalid username or password. Demo account: admin / admin123',
+      error: 'Invalid username or password',
     },
     { status: 401 }
   );
