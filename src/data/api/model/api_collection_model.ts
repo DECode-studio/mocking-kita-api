@@ -1,5 +1,5 @@
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
-import { toBoolean } from '@/src/data/models/shared';
+import { toBoolean } from '@/src/core/utils/db-converter';
 
 export type ApiRow = {
   id: string;

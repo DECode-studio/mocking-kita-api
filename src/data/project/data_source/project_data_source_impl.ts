@@ -1,7 +1,7 @@
 import { db } from '@/src/core/db/sqlite-client';
 import { Project } from '@/src/domain/project/entity/project';
 import { ProjectRow, projectFromRow } from '@/src/data/project/model/project_model';
-import { toDbBoolean } from '@/src/data/models/shared';
+import { toDbBoolean } from '@/src/core/utils/db-converter';
 
 export function getAllProjects(): Project[] {
   return (db.prepare('SELECT * FROM tblProject ORDER BY created_at ASC, id ASC').all() as ProjectRow[]).map(

@@ -1,7 +1,7 @@
 import { db } from '@/src/core/db/sqlite-client';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiRow, apiFromRow } from '@/src/data/api/model/api_collection_model';
-import { toDbBoolean } from '@/src/data/models/shared';
+import { toDbBoolean } from '@/src/core/utils/db-converter';
 
 export function getApisByProjectId(projectId: string): ApiCollection[] {
   return (

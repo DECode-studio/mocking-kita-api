@@ -1,5 +1,5 @@
 import { Environment } from '@/src/domain/environment/entity/environment';
-import { toBoolean } from '@/src/data/models/shared';
+import { toBoolean } from '@/src/core/utils/db-converter';
 
 export type EnvironmentRow = {
   id: string;

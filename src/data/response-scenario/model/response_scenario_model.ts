@@ -1,5 +1,5 @@
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import { parseJson, toBoolean } from '@/src/data/models/shared';
+import { parseJson, toBoolean } from '@/src/core/utils/db-converter';
 
 export type ResponseScenarioRow = {
   id: string;

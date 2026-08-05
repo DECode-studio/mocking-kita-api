@@ -1,4 +1,4 @@
-import { MockApiDatabase } from '@/src/data/database/mock-api-database';
+import { MockApiDatabase } from '@/src/core/db/mock-api-database';
 import { DashboardRepository } from '../repository/dashboard_repository';
 
 export interface DashboardUseCase {

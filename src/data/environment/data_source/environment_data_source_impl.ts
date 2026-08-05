@@ -1,7 +1,7 @@
 import { db } from '@/src/core/db/sqlite-client';
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { EnvironmentRow, environmentFromRow } from '@/src/data/environment/model/environment_model';
-import { toDbBoolean } from '@/src/data/models/shared';
+import { toDbBoolean } from '@/src/core/utils/db-converter';
 
 export function getEnvironmentsByProjectId(projectId: string): Environment[] {
   return (

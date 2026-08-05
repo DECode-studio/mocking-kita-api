@@ -1,7 +1,7 @@
 import { db } from '@/src/core/db/sqlite-client';
 import { ApiEnvironment } from '@/src/domain/api/entity/api_environment';
 import { ApiEnvironmentRow, apiEnvironmentFromRow } from '@/src/data/api/model/api_environment_model';
-import { toDbBoolean } from '@/src/data/models/shared';
+import { toDbBoolean } from '@/src/core/utils/db-converter';
 
 export function getApiEnvironmentsByApiId(apiId: string): ApiEnvironment[] {
   return (

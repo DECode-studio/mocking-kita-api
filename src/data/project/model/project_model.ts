@@ -1,5 +1,5 @@
 import { Project } from '@/src/domain/project/entity/project';
-import { toBoolean } from '@/src/data/models/shared';
+import { toBoolean } from '@/src/core/utils/db-converter';
 
 export type ProjectRow = {
   id: string;

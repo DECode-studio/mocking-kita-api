@@ -1,7 +1,7 @@
 import { db } from '@/src/core/db/sqlite-client';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { ResponseScenarioRow, responseScenarioFromRow } from '@/src/data/response-scenario/model/response_scenario_model';
-import { stringifyJson, toDbBoolean } from '@/src/data/models/shared';
+import { stringifyJson, toDbBoolean } from '@/src/core/utils/db-converter';
 
 export function getResponseScenariosByRequestScenarioId(requestScenarioId: string): ResponseScenario[] {
   return (

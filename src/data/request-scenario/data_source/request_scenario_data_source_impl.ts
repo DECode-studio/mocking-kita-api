@@ -1,7 +1,7 @@
 import { db } from '@/src/core/db/sqlite-client';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { RequestScenarioRow, requestScenarioFromRow } from '@/src/data/request-scenario/model/request_scenario_model';
-import { stringifyJson, toDbBoolean } from '@/src/data/models/shared';
+import { stringifyJson, toDbBoolean } from '@/src/core/utils/db-converter';
 
 export function getRequestScenariosByApiId(apiId: string): RequestScenario[] {
   return (

@@ -1,6 +1,6 @@
 import { MatchType } from '@/src/core/utils/types';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
-import { parseJson, toBoolean } from '@/src/data/models/shared';
+import { parseJson, toBoolean } from '@/src/core/utils/db-converter';
 
 export type RequestScenarioRow = {
   id: string;

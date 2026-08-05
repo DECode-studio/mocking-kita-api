@@ -1,4 +1,4 @@
-import { MockApiDatabase } from '@/src/data/database/mock-api-database';
+import { MockApiDatabase } from '@/src/core/db/mock-api-database';
 import { Project } from '@/src/domain/project/entity/project';
 import { ProjectRepository } from '@/src/domain/project/repository/project_repository';
 import { callDatabase } from '@/src/core/http-client/database-proxy-client';
