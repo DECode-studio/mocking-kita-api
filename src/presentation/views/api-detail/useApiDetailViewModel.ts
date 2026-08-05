@@ -5,8 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import { ApiDetailSnapshot } from '@/src/domain/api/usecase/api_detail_usecase';
-import { apiDetailUseCase } from '@/src/data/api/api_detail_usecase';
+import { ApiDetailSnapshot, ApiDetailUseCase } from '@/src/domain/api/usecase/api_detail_usecase';
 import { useEnvironmentOverrideActions } from './useEnvironmentOverrideActions';
 import { useRequestScenarioActions } from './useRequestScenarioActions';
 import { useResponseScenarioActions } from './useResponseScenarioActions';
@@ -22,7 +21,7 @@ const emptyDetailState: ApiDetailSnapshot = {
   activeReqScenario: null,
 };
 
-export function useApiDetailViewModel() {
+export function useApiDetailViewModel(apiDetailUseCase: ApiDetailUseCase) {
   const { projectId, apiId } = useParams<{ projectId: string; apiId: string }>();
   const router = useRouter();
   const { addToast } = useUIStore();

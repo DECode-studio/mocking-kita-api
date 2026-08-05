@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { Project } from '@/src/domain/project/entity/project';
-import { environmentUseCase } from '@/src/data/environment/environment_usecase';
+import { EnvironmentUseCase } from '@/src/domain/environment/usecase/environment_usecase';
 
 const environmentSchema = z.object({
   name: z.string().min(2, 'Environment name is required'),
@@ -19,7 +19,7 @@ const environmentSchema = z.object({
 
 type EnvironmentFormValues = z.infer<typeof environmentSchema>;
 
-export function useEnvironmentsViewModel(embeddedProjectId?: string) {
+export function useEnvironmentsViewModel(environmentUseCase: EnvironmentUseCase, embeddedProjectId?: string) {
   const { addToast } = useUIStore();
 
   const [environments, setEnvironments] = useState<Environment[]>([]);

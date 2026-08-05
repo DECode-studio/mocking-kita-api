@@ -15,6 +15,7 @@ import { EnvironmentTypeBadge } from '../../components/shared/EnvironmentTypeBad
 import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { createEnvironmentUseCase } from '@/src/domain/environment';
 import { useEnvironmentsViewModel } from './useEnvironmentsViewModel';
 
 interface EnvironmentsViewProps {
@@ -22,6 +23,7 @@ interface EnvironmentsViewProps {
 }
 
 export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ embeddedProjectId }) => {
+  const environmentUseCase = createEnvironmentUseCase();
   const {
     environments,
     form,
@@ -37,7 +39,7 @@ export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({ embeddedProj
     handleCopyUrl,
     handleDelete,
     toggleEnvironmentStatus,
-  } = useEnvironmentsViewModel(embeddedProjectId);
+  } = useEnvironmentsViewModel(environmentUseCase, embeddedProjectId);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = form;
 

@@ -25,12 +25,14 @@ import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { formatDate } from '../../../core/utils/date';
+import { createProjectUseCase } from '@/src/domain/project';
 import { useProjectsViewModel } from './useProjectsViewModel';
 
 import { Project } from '@/src/domain/project/entity/project';
 import { ROUTES } from '@/src/core/constants/routes';
 
 export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initialProjects = [] }) => {
+  const projectUseCase = createProjectUseCase();
   const {
     router,
     search,
@@ -56,7 +58,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
     handleConfirmHardDelete,
     filteredProjects,
     toggleProjectStatus,
-  } = useProjectsViewModel(initialProjects);
+  } = useProjectsViewModel(projectUseCase, initialProjects);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = form;
 

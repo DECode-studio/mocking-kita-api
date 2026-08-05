@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
-import { apiUseCase } from '@/src/data/api/api_usecase';
+import { ApiUseCase } from '@/src/domain/api/usecase/api_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
 
 const apiSchema = z.object({
@@ -23,7 +23,7 @@ const apiSchema = z.object({
 
 type ApiFormValues = z.infer<typeof apiSchema>;
 
-export function useApiCollectionsViewModel(embeddedProjectId?: string) {
+export function useApiCollectionsViewModel(apiUseCase: ApiUseCase, embeddedProjectId?: string) {
   const { addToast } = useUIStore();
   const router = useRouter();
 

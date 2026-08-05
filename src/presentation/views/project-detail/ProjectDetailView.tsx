@@ -20,9 +20,11 @@ import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { EnvironmentsView } from '../environments/EnvironmentsView';
 import { ApiCollectionsView } from '../api-collections/ApiCollectionsView';
 import { formatDate } from '../../../core/utils/date';
+import { createProjectUseCase } from '@/src/domain/project';
 import { useProjectDetailViewModel } from './useProjectDetailViewModel';
 
 export const ProjectDetailView: React.FC = () => {
+  const projectUseCase = createProjectUseCase();
   const {
     projectId,
     project,
@@ -31,7 +33,7 @@ export const ProjectDetailView: React.FC = () => {
     setActiveTab,
     handleSoftDelete,
     toggleProjectStatus,
-  } = useProjectDetailViewModel();
+  } = useProjectDetailViewModel(projectUseCase);
 
   if (!project) {
     return (

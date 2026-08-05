@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Project } from '@/src/domain/project/entity/project';
-import { projectUseCase } from '@/src/data/project/project_usecase';
+import { ProjectUseCase } from '@/src/domain/project/usecase/project_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
 
 const projectSchema = z.object({
@@ -18,7 +18,7 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
-export function useProjectsViewModel(initialProjects: Project[] = []) {
+export function useProjectsViewModel(projectUseCase: ProjectUseCase, initialProjects: Project[] = []) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const { addToast } = useUIStore();
   const router = useRouter();

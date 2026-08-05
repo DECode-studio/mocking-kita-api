@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { projectUseCase } from '@/src/data/project/project_usecase';
 import { Project } from '@/src/domain/project/entity/project';
+import { ProjectUseCase } from '@/src/domain/project/usecase/project_usecase';
 import { ROUTES } from '@/src/core/constants/routes';
 
-export function useProjectDetailViewModel() {
+export function useProjectDetailViewModel(projectUseCase: ProjectUseCase) {
   const { projectId } = useParams<{ projectId: string }>();
   const router = useRouter();
   const { addToast } = useUIStore();

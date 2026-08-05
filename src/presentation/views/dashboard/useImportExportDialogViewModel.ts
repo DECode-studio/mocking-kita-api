@@ -4,9 +4,9 @@ import { useState, type ChangeEvent } from 'react';
 import { useUIStore } from '../../stores/uiStore';
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
 import { getErrorMessage } from '../../../core/utils/error';
-import { databaseSnapshotUseCase } from '@/src/application/database/database_snapshot_usecase';
+import { DatabaseSnapshotUseCase } from '@/src/domain/database/usecase/database_snapshot_usecase';
 
-export function useImportExportDialogViewModel() {
+export function useImportExportDialogViewModel(databaseSnapshotUseCase: DatabaseSnapshotUseCase) {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
 
   const [importedJson, setImportedJson] = useState<MockApiDatabase | null>(null);

@@ -21,9 +21,11 @@ import { StatusBadge } from '../../components/shared/StatusBadge';
 import { MethodRequest } from '../../../core/utils/types';
 import { useDashboardViewModel } from './useDashboardViewModel';
 import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { createDatabaseSnapshotUseCase } from '@/src/domain/database';
 import { ROUTES } from '@/src/core/constants/routes';
 
 export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initialDb }) => {
+  const databaseSnapshotUseCase = createDatabaseSnapshotUseCase();
   const {
     db,
     router,
@@ -32,7 +34,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
     methodCounts,
     totalApisCount,
     openImportExport,
-  } = useDashboardViewModel(initialDb);
+  } = useDashboardViewModel(databaseSnapshotUseCase, initialDb);
 
   return (
     <div className="space-y-8">

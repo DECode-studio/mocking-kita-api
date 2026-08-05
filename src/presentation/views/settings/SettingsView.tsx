@@ -11,9 +11,11 @@ import {
   Info,
 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
+import { createDatabaseResetUseCase } from '@/src/domain/database';
 import { useSettingsViewModel } from './useSettingsViewModel';
 
 export const SettingsView: React.FC = () => {
+  const databaseResetUseCase = createDatabaseResetUseCase();
   const {
     theme,
     setTheme,
@@ -21,7 +23,7 @@ export const SettingsView: React.FC = () => {
     isResetConfirmOpen,
     setIsResetConfirmOpen,
     handleReset,
-  } = useSettingsViewModel();
+  } = useSettingsViewModel(databaseResetUseCase);
 
   return (
     <div className="space-y-6 max-w-4xl">

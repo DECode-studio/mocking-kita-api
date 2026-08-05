@@ -21,6 +21,7 @@ import { StatusBadge } from '../../components/shared/StatusBadge';
 import { StatusSwitch } from '../../components/shared/StatusSwitch';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { createApiUseCase } from '@/src/domain/api';
 import { useApiCollectionsViewModel } from './useApiCollectionsViewModel';
 import { ROUTES } from '@/src/core/constants/routes';
 
@@ -29,6 +30,7 @@ interface ApiCollectionsViewProps {
 }
 
 export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embeddedProjectId }) => {
+  const apiUseCase = createApiUseCase();
   const {
     router,
     activeProjectId,
@@ -52,7 +54,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({ embedded
     handleDuplicate,
     handleDelete,
     toggleApiCollectionStatus,
-  } = useApiCollectionsViewModel(embeddedProjectId);
+  } = useApiCollectionsViewModel(apiUseCase, embeddedProjectId);
 
   const {
     register,
