@@ -3,6 +3,7 @@ import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { MatchType } from '@/src/core/utils/types';
+import { responseCache, throttleStates } from './internal-proxy-cache';
 
 const INTERNAL_ROUTE_PREFIXES = ['/api/auth', '/api/database', '/api/settings'];
 
@@ -40,18 +41,6 @@ const CACHE_TTL_MS = 5_000;
 const THROTTLE_CAPACITY = 30;
 const THROTTLE_WINDOW_MS = 10_000;
 const THROTTLE_REFILL_PER_MS = THROTTLE_CAPACITY / THROTTLE_WINDOW_MS;
-
-const globalScope = globalThis as typeof globalThis & {
-  __mockApiProxyCache?: Map<string, CachedResponseEntry>;
-  __mockApiProxyThrottle?: Map<string, ThrottleState>;
-};
-
-const responseCache = globalScope.__mockApiProxyCache ??= new Map<string, CachedResponseEntry>();
-const throttleStates = globalScope.__mockApiProxyThrottle ??= new Map<string, ThrottleState>();
-
-export function clearInternalProxyCache(): void {
-  responseCache.clear();
-}
 
 function normalizePath(value: string): string {
   if (!value) return '/';
