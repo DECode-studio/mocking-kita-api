@@ -4,7 +4,7 @@
 
 ---
 
-## Tujuan Utama & Fitur Unggulan
+## Tujuan & Fitur
 
 1. **Predictable & Dynamic API Prototyping**: Membangun kontrak REST API secara cepat dan konsisten sebelum backend siap.
 2. **Offline-First & Server-Side Persistence**: Penyimpanan terpusat dan efisien menggunakan **SQLite (`node:sqlite`)** dengan mode `WAL (Write-Ahead Logging)` dan relational schema.
