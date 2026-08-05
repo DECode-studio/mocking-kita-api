@@ -7,7 +7,7 @@
 ## 📌 Tujuan Utama Aplikasi
 
 1. **Predictable API Prototyping**: Membangun kontrak REST API secara cepat dan konsisten sebelum backend selesai dikembangkan.
-2. **Offline-First & Server-Side Persistence**: Menggantikan penyimpanan `LocalStorage` dengan **SQLite Database** yang terpusat, aman, dan dapat diakses langsung oleh **SSR (Server-Side Rendering)**.
+2. **Offline-First & Server-Side Persistence**: Menggantikan penyimpanan `LocalStorage` dengan **SQLite Database** yang terpusat, aman, dan dapat diakses melalui jalur SSR yang konsisten.
 3. **Multi-Scenario Mocking**: Menyediakan fitur skenario pencocokan request (*Exact, Partial, Regex, JSON Schema*) serta variasi respons berbobot (*weighted response scenarios*) dan simulasi delay latensi.
 4. **Clean Architecture & Scalable Codebase**: Menerapkan arsitektur yang terpisah secara tegas antara **Core, Domain, Data, dan Presentation (MVVM)** untuk mempermudah pengembangan jangka panjang.
 
@@ -62,7 +62,11 @@ mock-api-studio/
 $$\text{View Component} \longrightarrow \text{View Model Hook} \longrightarrow \text{UseCase (Domain)} \longrightarrow \text{Repo Interface} \longrightarrow \text{Repo Impl (Data)} \longrightarrow \text{Remote Resource} \longrightarrow \text{HTTP Client (Core)} \longrightarrow \text{Server API Route} \longrightarrow \text{Local Resource} \longrightarrow \text{SQLite DB (Core)}$$
 
 ### 2. Read / Fetch GET Flow (SSR Page Rendering)
-$$\text{SQLite DB (Core)} \longrightarrow \text{Local Resource (Data)} \longrightarrow \text{Repo Impl (Data)} \longrightarrow \text{SSR Page (app/route/page.tsx)} \longrightarrow \text{View Component} \longrightarrow \text{View Model Hook}$$
+$$\text{SQLite DB (Core)} \longrightarrow \text{Local Resource (Data)} \longrightarrow \text{Proxy API (Server Route)} \longrightarrow \text{Repo Impl (Data)} \longrightarrow \text{UseCase (Domain)} \longrightarrow \text{SSR Page (app/route/page.tsx)} \longrightarrow \text{View Component} \longrightarrow \text{View Model Hook}$$
+
+Catatan:
+- Beberapa SSR entry point melakukan prefetch data lewat use case sebelum render awal, misalnya dashboard dan projects.
+- Sebagian halaman lain tetap client-first setelah SSR shell dirender, lalu data dimuat ulang dari view model di browser.
 
 ---
 
