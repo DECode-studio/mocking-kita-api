@@ -1,0 +1,11 @@
+.git
+.next
+node_modules
+.data
+coverage
+dist
+build
+npm-debug.log
+pnpm-debug.log
+Dockerfile
+docker-compose.yml
