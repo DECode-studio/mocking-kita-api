@@ -80,7 +80,7 @@ export const AppSidebar: React.FC = () => {
     <div
       className={cn(
         'fixed inset-y-0 left-0 z-40 p-3 lg:p-4 transition-all duration-300 ease-in-out flex shrink-0',
-        'lg:static lg:z-auto lg:h-screen lg:top-0',
+        'lg:sticky lg:z-30 lg:h-screen lg:top-0',
         isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}
     >

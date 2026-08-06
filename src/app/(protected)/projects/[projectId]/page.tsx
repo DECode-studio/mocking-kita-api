@@ -3,6 +3,7 @@ import ProjectDetailView from '@/src/presentation/views/project-detail/ProjectDe
 import { createProjectUseCase } from '@/src/domain/project';
 import { createApiUseCase } from '@/src/domain/api';
 import { createEnvironmentUseCase } from '@/src/domain/environment';
+import { createCollectionUseCase } from '@/src/domain/collection';
 
 interface ProjectDetailPageProps {
   params: Promise<{ projectId: string }>;
@@ -13,11 +14,13 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   const projectUseCase = createProjectUseCase();
   const apiUseCase = createApiUseCase();
   const environmentUseCase = createEnvironmentUseCase();
+  const collectionUseCase = createCollectionUseCase();
 
-  const [project, apiSnapshot, environmentSnapshot] = await Promise.all([
+  const [project, apiSnapshot, environmentSnapshot, collections] = await Promise.all([
     projectUseCase.getById(projectId),
     apiUseCase.load(projectId),
     environmentUseCase.load(projectId),
+    collectionUseCase.getByProjectId(projectId),
   ]);
 
   if (!project) {
@@ -29,6 +32,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
       initialProject={project}
       initialApis={apiSnapshot.apis}
       initialEnvironments={environmentSnapshot.environments}
+      initialCollections={collections}
     />
   );
 }

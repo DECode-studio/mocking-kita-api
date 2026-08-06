@@ -35,9 +35,22 @@ db.exec(`
     FOREIGN KEY (project_id) REFERENCES tblProject (id)
   );
 
+  CREATE TABLE IF NOT EXISTS tblCollection (
+    id TEXT PRIMARY KEY,
+    project_id TEXT,
+    name TEXT,
+    description TEXT,
+    status INTEGER DEFAULT 1,
+    created_at TEXT,
+    updated_at TEXT,
+    deleted_at TEXT,
+    FOREIGN KEY (project_id) REFERENCES tblProject (id)
+  );
+
   CREATE TABLE IF NOT EXISTS tblApi (
     id TEXT PRIMARY KEY,
     project_id TEXT,
+    collection_id TEXT,
     name TEXT,
     description TEXT,
     path TEXT,
@@ -46,7 +59,8 @@ db.exec(`
     created_at TEXT,
     updated_at TEXT,
     deleted_at TEXT,
-    FOREIGN KEY (project_id) REFERENCES tblProject (id)
+    FOREIGN KEY (project_id) REFERENCES tblProject (id),
+    FOREIGN KEY (collection_id) REFERENCES tblCollection (id) ON DELETE SET NULL
   );
 
   CREATE TABLE IF NOT EXISTS tblApiEnvironment (
@@ -100,6 +114,12 @@ db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS tblApi_index_0 ON tblApi (project_id, path, method_request);
   CREATE UNIQUE INDEX IF NOT EXISTS tblApiEnvironment_index_1 ON tblApiEnvironment (api_id, environment_id);
 `);
+
+try {
+  db.exec('ALTER TABLE tblApi ADD COLUMN collection_id TEXT REFERENCES tblCollection (id) ON DELETE SET NULL;');
+} catch {
+  // Ignore if column already exists
+}
 
 export { db };
 export default db;

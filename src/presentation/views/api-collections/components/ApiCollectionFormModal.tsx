@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
+import { Collection } from '@/src/domain/collection/entity/collection';
 import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from '../constant';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -14,6 +15,7 @@ interface ApiCollectionFormModalProps {
   editingApi: ApiCollection | null;
   form: UseFormReturn<any>;
   onSubmit: (data: any) => void;
+  collections: Collection[];
 }
 
 export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
@@ -22,6 +24,7 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
   editingApi,
   form,
   onSubmit,
+  collections,
 }) => {
   const {
     register,
@@ -60,6 +63,23 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               />
               {errors.name && <p className="text-[11px] text-rose-500 mt-1">{String(errors.name.message)}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Folder / Collection (Optional)
+              </label>
+              <select
+                {...register('collectionId')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="">No Collection (Ungrouped)</option>
+                {collections.map((col) => (
+                  <option key={col.id} value={col.id}>
+                    {col.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-3 gap-2">

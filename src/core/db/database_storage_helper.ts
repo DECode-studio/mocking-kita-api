@@ -4,6 +4,7 @@ import { ApiRow, apiFromRow } from '@/src/data/api/model/api_collection_model';
 import { ApiEnvironmentRow, apiEnvironmentFromRow } from '@/src/data/api/model/api_environment_model';
 import { EnvironmentRow, environmentFromRow } from '@/src/data/environment/model/environment_model';
 import { ProjectRow, projectFromRow } from '@/src/data/project/model/project_model';
+import { CollectionRow, collectionFromRow } from '@/src/data/collection/model/collection_model';
 import { RequestScenarioRow, requestScenarioFromRow } from '@/src/data/request-scenario/model/request_scenario_model';
 import {
   ResponseScenarioRow,
@@ -17,6 +18,9 @@ export function readDatabase(): MockApiDatabase {
   const environments = db
     .prepare('SELECT * FROM tblEnvironment ORDER BY created_at ASC, id ASC')
     .all() as EnvironmentRow[];
+  const collections = db
+    .prepare('SELECT * FROM tblCollection ORDER BY created_at ASC, id ASC')
+    .all() as CollectionRow[];
   const apiCollections = db.prepare('SELECT * FROM tblApi ORDER BY created_at ASC, id ASC').all() as ApiRow[];
   const apiEnvironments = db
     .prepare('SELECT * FROM tblApiEnvironment ORDER BY created_at ASC, id ASC')
@@ -32,6 +36,7 @@ export function readDatabase(): MockApiDatabase {
     version: '1.0.0',
     projects: projects.map(projectFromRow),
     environments: environments.map(environmentFromRow),
+    collections: collections.map(collectionFromRow),
     apiCollections: apiCollections.map(apiFromRow),
     apiEnvironments: apiEnvironments.map(apiEnvironmentFromRow),
     requestScenarios: requestScenarios.map(requestScenarioFromRow),
@@ -46,6 +51,7 @@ export function seedDatabase(data: MockApiDatabase): void {
     db.prepare('DELETE FROM tblRequestScenario').run();
     db.prepare('DELETE FROM tblApiEnvironment').run();
     db.prepare('DELETE FROM tblApi').run();
+    db.prepare('DELETE FROM tblCollection').run();
     db.prepare('DELETE FROM tblEnvironment').run();
     db.prepare('DELETE FROM tblProject').run();
 
@@ -82,13 +88,30 @@ export function seedDatabase(data: MockApiDatabase): void {
       );
     }
 
+    const insertCollection = db.prepare(
+      'INSERT INTO tblCollection (id, project_id, name, description, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    for (const item of data.collections || []) {
+      insertCollection.run(
+        item.id,
+        item.projectId,
+        item.name,
+        item.description ?? null,
+        toDbBoolean(item.status),
+        item.createdAt,
+        item.updatedAt,
+        item.deletedAt ?? null
+      );
+    }
+
     const insertApi = db.prepare(
-      'INSERT INTO tblApi (id, project_id, name, description, path, method_request, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO tblApi (id, project_id, collection_id, name, description, path, method_request, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     for (const item of data.apiCollections) {
       insertApi.run(
         item.id,
         item.projectId,
+        item.collectionId ?? null,
         item.name,
         item.description ?? null,
         item.path,
@@ -190,6 +213,7 @@ export function importDatabaseData(importedData: MockApiDatabase, mode: 'replace
     version: importedData.version || current.version,
     projects: mergeByMap(current.projects, importedData.projects),
     environments: mergeByMap(current.environments, importedData.environments),
+    collections: mergeByMap(current.collections, importedData.collections),
     apiCollections: mergeByMap(current.apiCollections, importedData.apiCollections),
     apiEnvironments: mergeByMap(current.apiEnvironments, importedData.apiEnvironments),
     requestScenarios: mergeByMap(current.requestScenarios, importedData.requestScenarios),

@@ -9,6 +9,7 @@ const emptyDb: MockApiDatabase = {
   version: '1.0.0',
   projects: [],
   environments: [],
+  collections: [],
   apiCollections: [],
   apiEnvironments: [],
   requestScenarios: [],
