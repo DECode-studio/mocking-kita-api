@@ -10,3 +10,4 @@ coverage/
 .next/
 .pnpm-store/
 tsconfig.tsbuildinfo
+pr-description.md
