@@ -21,9 +21,21 @@ CREATE TABLE `tblEnvironment` (
   `deleted_at` timestamp
 );
 
+CREATE TABLE `tblCollection` (
+  `id` uuid PRIMARY KEY,
+  `project_id` uuid,
+  `name` varchar(255),
+  `description` text,
+  `status` boolean DEFAULT true,
+  `created_at` timestamp,
+  `updated_at` timestamp,
+  `deleted_at` timestamp
+);
+
 CREATE TABLE `tblApi` (
   `id` uuid PRIMARY KEY,
   `project_id` uuid,
+  `collection_id` uuid,
   `name` varchar(255),
   `description` text,
   `path` varchar(255),
@@ -84,7 +96,11 @@ CREATE UNIQUE INDEX `tblApiEnvironment_index_1` ON `tblApiEnvironment` (`api_id`
 
 ALTER TABLE `tblEnvironment` ADD FOREIGN KEY (`project_id`) REFERENCES `tblProject` (`id`);
 
+ALTER TABLE `tblCollection` ADD FOREIGN KEY (`project_id`) REFERENCES `tblProject` (`id`);
+
 ALTER TABLE `tblApi` ADD FOREIGN KEY (`project_id`) REFERENCES `tblProject` (`id`);
+
+ALTER TABLE `tblApi` ADD FOREIGN KEY (`collection_id`) REFERENCES `tblCollection` (`id`);
 
 ALTER TABLE `tblApiEnvironment` ADD FOREIGN KEY (`api_id`) REFERENCES `tblApi` (`id`);
 

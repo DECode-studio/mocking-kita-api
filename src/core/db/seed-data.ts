@@ -22,6 +22,7 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
       deletedAt: null,
     },
   ],
+  collections: [],
   environments: [
     {
       id: 'env-local-001',
