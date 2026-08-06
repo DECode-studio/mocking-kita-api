@@ -8,6 +8,7 @@ export interface ApiCollection {
   path: string;
   methodRequest: MethodRequest;
   status: boolean;
+  collectionId?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;

@@ -3,6 +3,7 @@ import { readDatabase, resetDatabaseToSeed, importDatabaseData, seedDatabase } f
 import { createProject, updateProject, softDeleteProject, restoreProject, hardDeleteProject } from '@/src/data/project/data_source/project_data_source_impl';
 import { createEnvironment, updateEnvironment, softDeleteEnvironment } from '@/src/data/environment/data_source/environment_data_source_impl';
 import { createApi, updateApi, softDeleteApi } from '@/src/data/api/data_source/api_data_source_impl';
+import { createCollection, updateCollection, softDeleteCollection } from '@/src/data/collection/data_source/collection_data_source_impl';
 import { upsertApiEnvironment } from '@/src/data/api/data_source/api_environment_data_source_impl';
 import { createRequestScenario, updateRequestScenario, softDeleteRequestScenario } from '@/src/data/request-scenario/data_source/request_scenario_data_source_impl';
 import { createResponseScenario, updateResponseScenario, softDeleteResponseScenario } from '@/src/data/response-scenario/data_source/response_scenario_data_source_impl';
@@ -82,6 +83,17 @@ export async function POST(request: Request) {
       }
       case 'softDeleteApi':
         softDeleteApi((body.payload as { id: string }).id);
+        return respondVoid();
+      case 'createCollection': {
+        const input = body.payload as any;
+        return respond(createCollection({ ...input, id: generateId(), createdAt: now, updatedAt: now }));
+      }
+      case 'updateCollection': {
+        const payload = body.payload as { id: string; input: any };
+        return respond(updateCollection(payload.id, payload.input));
+      }
+      case 'softDeleteCollection':
+        softDeleteCollection((body.payload as { id: string }).id);
         return respondVoid();
       case 'upsertApiEnv':
         return respond(upsertApiEnvironment(body.payload as any));

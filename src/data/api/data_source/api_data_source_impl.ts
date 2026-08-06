@@ -18,10 +18,11 @@ export function createApi(
   input: Omit<ApiCollection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
 ): ApiCollection {
   db.prepare(
-    'INSERT INTO tblApi (id, project_id, name, description, path, method_request, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO tblApi (id, project_id, collection_id, name, description, path, method_request, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     input.id,
     input.projectId,
+    input.collectionId ?? null,
     input.name,
     input.description ?? null,
     input.path,
@@ -43,9 +44,10 @@ export function updateApi(id: string, input: Partial<ApiCollection>): ApiCollect
     updatedAt: new Date().toISOString(),
   };
   db.prepare(
-    'UPDATE tblApi SET project_id = ?, name = ?, description = ?, path = ?, method_request = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
+    'UPDATE tblApi SET project_id = ?, collection_id = ?, name = ?, description = ?, path = ?, method_request = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
   ).run(
     updated.projectId,
+    updated.collectionId ?? null,
     updated.name,
     updated.description ?? null,
     updated.path,

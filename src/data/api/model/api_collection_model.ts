@@ -4,6 +4,7 @@ import { toBoolean } from '@/src/core/utils/db-converter';
 export type ApiRow = {
   id: string;
   project_id: string;
+  collection_id: string | null;
   name: string | null;
   description: string | null;
   path: string | null;
@@ -18,6 +19,7 @@ export function apiFromRow(row: ApiRow): ApiCollection {
   return {
     id: row.id,
     projectId: row.project_id,
+    collectionId: row.collection_id ?? null,
     name: row.name ?? '',
     description: row.description ?? undefined,
     path: row.path ?? '',
