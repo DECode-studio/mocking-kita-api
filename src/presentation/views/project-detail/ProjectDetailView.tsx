@@ -17,16 +17,20 @@ import {
   ProjectMetadataCard,
 } from './components';
 
+import { Collection } from '@/src/domain/collection/entity/collection';
+
 interface ProjectDetailViewProps {
   initialProject?: Project | null;
   initialApis?: ApiCollection[];
   initialEnvironments?: Environment[];
+  initialCollections?: Collection[];
 }
 
 export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   initialProject = null,
   initialApis = [],
   initialEnvironments = [],
+  initialCollections = [],
 }) => {
   const projectUseCase = createProjectUseCase();
   const {
@@ -108,7 +112,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         </Tabs.List>
 
         <Tabs.Content value="apis">
-          <ApiCollectionsView embeddedProjectId={project.id} initialApis={initialApis} />
+          <ApiCollectionsView embeddedProjectId={project.id} initialApis={initialApis} initialCollections={initialCollections} />
         </Tabs.Content>
 
         <Tabs.Content value="environments">

@@ -9,6 +9,8 @@ import { useEffect } from 'react';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiUseCase } from '@/src/domain/api/usecase/api_usecase';
+import { Collection } from '@/src/domain/collection/entity/collection';
+import { CollectionUseCase } from '@/src/domain/collection/usecase/collection_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
 
 const apiSchema = z.object({
@@ -19,35 +21,49 @@ const apiSchema = z.object({
   }),
   methodRequest: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']),
   status: z.boolean(),
+  collectionId: z.string().nullable().optional(),
 });
 
 type ApiFormValues = z.infer<typeof apiSchema>;
 
 export function useApiCollectionsViewModel(
   apiUseCase: ApiUseCase,
+  collectionUseCase: CollectionUseCase,
   embeddedProjectId?: string,
-  initialApis: ApiCollection[] = []
+  initialApis: ApiCollection[] = [],
+  initialCollections: Collection[] = []
 ) {
   const { addToast } = useUIStore();
   const router = useRouter();
 
   const activeProjectId = embeddedProjectId;
   const [apis, setApis] = useState<ApiCollection[]>(initialApis);
+  const [collections, setCollections] = useState<Collection[]>(initialCollections);
   const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  
+  // Api Dialog States
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingApi, setEditingApi] = useState<ApiCollection | null>(null);
   const [deletingApiId, setDeletingApiId] = useState<string | null>(null);
 
+  // Collection Dialog States
+  const [isCollectionFormOpen, setIsCollectionFormOpen] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
+  const [deletingCollectionId, setDeletingCollectionId] = useState<string | null>(null);
+  const [collectionName, setCollectionName] = useState('');
+  const [collectionDesc, setCollectionDesc] = useState('');
+
   const form = useForm<ApiFormValues>({
     resolver: zodResolver(apiSchema),
     defaultValues: {
-      name: 'Get Users List',
-      description: 'Returns list of registered users',
-      path: '/api/users',
+      name: '',
+      description: '',
+      path: '/api/',
       methodRequest: 'GET',
       status: true,
+      collectionId: null,
     },
   });
 
@@ -59,6 +75,7 @@ export function useApiCollectionsViewModel(
       path: '/api/',
       methodRequest: 'GET',
       status: true,
+      collectionId: null,
     });
     setIsFormOpen(true);
   };
@@ -71,6 +88,7 @@ export function useApiCollectionsViewModel(
       path: api.path,
       methodRequest: api.methodRequest,
       status: api.status,
+      collectionId: api.collectionId || null,
     });
     setIsFormOpen(true);
   };
@@ -85,9 +103,20 @@ export function useApiCollectionsViewModel(
     }
   };
 
+  const reloadCollections = async () => {
+    if (!activeProjectId) return;
+    try {
+      const list = await collectionUseCase.getByProjectId(activeProjectId);
+      setCollections(list);
+    } catch {
+      // fallback
+    }
+  };
+
   useEffect(() => {
     if (activeProjectId) {
       reloadApis();
+      reloadCollections();
     }
   }, [activeProjectId]);
 
@@ -120,6 +149,7 @@ export function useApiCollectionsViewModel(
           path: data.path,
           methodRequest: data.methodRequest,
           status: data.status,
+          collectionId: data.collectionId || null,
         });
         addToast({ type: 'success', title: 'API Updated', description: `Updated ${data.methodRequest} ${data.path}` });
       } else {
@@ -130,6 +160,7 @@ export function useApiCollectionsViewModel(
           path: data.path,
           methodRequest: data.methodRequest,
           status: data.status,
+          collectionId: data.collectionId || null,
         });
         addToast({ type: 'success', title: 'API Endpoint Added', description: `Created ${data.methodRequest} ${data.path}` });
       }
@@ -161,6 +192,64 @@ export function useApiCollectionsViewModel(
     await reloadApis();
     addToast({ type: 'success', title: 'API Endpoint Deleted', description: 'Removed API collection.' });
     setDeletingApiId(null);
+  };
+
+  // Collection CRUD Handlers
+  const openAddCollectionDialog = () => {
+    setEditingCollection(null);
+    setCollectionName('');
+    setCollectionDesc('');
+    setIsCollectionFormOpen(true);
+  };
+
+  const openEditCollectionDialog = (col: Collection) => {
+    setEditingCollection(col);
+    setCollectionName(col.name);
+    setCollectionDesc(col.description || '');
+    setIsCollectionFormOpen(true);
+  };
+
+  const onSubmitCollectionForm = async () => {
+    if (!activeProjectId) return;
+    if (!collectionName.trim()) {
+      addToast({ type: 'error', title: 'Validation Error', description: 'Folder name is required' });
+      return;
+    }
+
+    try {
+      if (editingCollection) {
+        await collectionUseCase.update(editingCollection.id, {
+          name: collectionName,
+          description: collectionDesc,
+        });
+        addToast({ type: 'success', title: 'Folder Updated', description: `Folder "${collectionName}" updated` });
+      } else {
+        await collectionUseCase.create({
+          projectId: activeProjectId,
+          name: collectionName,
+          description: collectionDesc,
+          status: true,
+        });
+        addToast({ type: 'success', title: 'Folder Created', description: `Folder "${collectionName}" created` });
+      }
+      await reloadCollections();
+      setIsCollectionFormOpen(false);
+    } catch (error) {
+      addToast({ type: 'error', title: 'Error', description: getErrorMessage(error, 'Failed to save Folder') });
+    }
+  };
+
+  const handleDeleteCollection = async () => {
+    if (!deletingCollectionId) return;
+    try {
+      await collectionUseCase.softDelete(deletingCollectionId);
+      await reloadCollections();
+      await reloadApis();
+      addToast({ type: 'success', title: 'Folder Deleted', description: 'Folder has been removed.' });
+      setDeletingCollectionId(null);
+    } catch (error) {
+      addToast({ type: 'error', title: 'Error', description: getErrorMessage(error) });
+    }
   };
 
   const filteredApis = apis.filter((api) => {
@@ -200,5 +289,21 @@ export function useApiCollectionsViewModel(
     handleDuplicate,
     handleDelete,
     toggleApiCollectionStatus,
+
+    // Collection Exports
+    collections,
+    isCollectionFormOpen,
+    setIsCollectionFormOpen,
+    editingCollection,
+    deletingCollectionId,
+    setDeletingCollectionId,
+    collectionName,
+    setCollectionName,
+    collectionDesc,
+    setCollectionDesc,
+    openAddCollectionDialog,
+    openEditCollectionDialog,
+    onSubmitCollectionForm,
+    handleDeleteCollection,
   };
 }
