@@ -1,7 +1,7 @@
 'use client';
 
 import { Dispatch, SetStateAction } from 'react';
-import { MatchType } from '@/src/core/utils/types';
+import { MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { getErrorMessage } from '@/src/core/utils/error';
 
@@ -19,6 +19,7 @@ type RequestScenarioFormValues = {
   queryParams: string;
   headers: string;
   body: string;
+  bodyType: RequestBodyType;
   status: boolean;
 };
 
@@ -86,6 +87,7 @@ export function useRequestScenarioActions({
           queryParams,
           pathParams: {},
           body: bodyValue,
+          bodyType: values.bodyType,
         });
         addToast({ type: 'success', title: 'Scenario Updated', description: `Updated ${name}` });
       } else {
@@ -100,6 +102,7 @@ export function useRequestScenarioActions({
           queryParams,
           pathParams: {},
           body: bodyValue,
+          bodyType: values.bodyType,
         });
         setSelectedReqScenarioId(created.id);
         addToast({ type: 'success', title: 'Scenario Created', description: `Created ${name}` });
