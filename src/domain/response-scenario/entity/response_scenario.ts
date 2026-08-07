@@ -6,6 +6,9 @@ export interface ResponseScenario {
   statusCode: number;
   headers: Record<string, unknown>;
   body: unknown;
+  responseType: 'JSON' | 'FILE';
+  filePath?: string | null;
+  fileName?: string | null;
   delayMs: number;
   weight: number;
   priority: number;

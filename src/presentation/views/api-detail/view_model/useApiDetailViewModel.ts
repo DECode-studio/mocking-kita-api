@@ -170,6 +170,10 @@ export function useApiDetailViewModel(
     await reloadApiDetail();
   };
 
+  const uploadResponseFile = async (file: File) => {
+    return apiDetailUseCase.uploadResponseFile(file);
+  };
+
   return {
     detail,
     projectId,
@@ -218,5 +222,6 @@ export function useApiDetailViewModel(
     toggleResponseScenarioStatus,
     duplicateResponseScenario,
     deleteResponseScenario,
+    uploadResponseFile,
   };
 }

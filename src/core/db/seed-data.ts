@@ -212,6 +212,7 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
           tags: ['keyboard', 'gaming', 'rgb']
         }
       },
+      responseType: 'JSON',
       delayMs: 300,
       weight: 100,
       priority: 100,
@@ -236,6 +237,7 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
           message: 'The requested product ID does not exist in store catalog'
         }
       },
+      responseType: 'JSON',
       delayMs: 150,
       weight: 100,
       priority: 100,

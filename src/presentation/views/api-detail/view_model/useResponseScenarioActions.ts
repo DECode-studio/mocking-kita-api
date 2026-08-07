@@ -20,6 +20,9 @@ type ResponseScenarioFormValues = {
   body: string;
   delayMs: number;
   status: boolean;
+  responseType: 'JSON' | 'FILE';
+  filePath?: string | null;
+  fileName?: string | null;
 };
 
 type ResponseScenarioDeps = {
@@ -50,6 +53,10 @@ export function useResponseScenarioActions({
     const weight = Number(values.weight) || 100;
     const priority = Number(values.priority) || 100;
     const status = !!values.status;
+    const responseType = values.responseType;
+    const filePath = values.filePath || null;
+    const fileName = values.fileName || null;
+
     const bodyValue = (() => {
       const trimmed = values.body.trim();
       if (!trimmed) return {};
@@ -70,8 +77,11 @@ export function useResponseScenarioActions({
           weight,
           priority,
           status,
-          headers: { 'content-type': 'application/json' },
-          body: bodyValue,
+          headers: responseType === 'FILE' ? {} : { 'content-type': 'application/json' },
+          body: responseType === 'FILE' ? {} : bodyValue,
+          responseType,
+          filePath,
+          fileName,
           requestScenarioId: activeReqScenarioId,
         });
         addToast({ type: 'success', title: 'Response Updated', description: `Updated ${name}` });
@@ -81,8 +91,11 @@ export function useResponseScenarioActions({
           name,
           description: '',
           statusCode,
-          headers: { 'content-type': 'application/json' },
-          body: bodyValue,
+          headers: responseType === 'FILE' ? {} : { 'content-type': 'application/json' },
+          body: responseType === 'FILE' ? {} : bodyValue,
+          responseType,
+          filePath,
+          fileName,
           delayMs,
           weight,
           priority,

@@ -102,6 +102,9 @@ db.exec(`
     status_code INTEGER,
     headers TEXT,
     body TEXT,
+    response_type TEXT DEFAULT 'JSON',
+    file_path TEXT,
+    file_name TEXT,
     delay_ms INTEGER DEFAULT 0,
     weight INTEGER DEFAULT 100,
     priority INTEGER DEFAULT 0,
@@ -124,6 +127,24 @@ try {
 
 try {
   db.exec("ALTER TABLE tblRequestScenario ADD COLUMN body_type TEXT DEFAULT 'JSON';");
+} catch {
+  // Ignore if column already exists
+}
+
+try {
+  db.exec("ALTER TABLE tblResponseScenario ADD COLUMN response_type TEXT DEFAULT 'JSON';");
+} catch {
+  // Ignore if column already exists
+}
+
+try {
+  db.exec("ALTER TABLE tblResponseScenario ADD COLUMN file_path TEXT;");
+} catch {
+  // Ignore if column already exists
+}
+
+try {
+  db.exec("ALTER TABLE tblResponseScenario ADD COLUMN file_name TEXT;");
 } catch {
   // Ignore if column already exists
 }

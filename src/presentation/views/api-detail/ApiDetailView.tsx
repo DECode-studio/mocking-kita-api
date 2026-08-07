@@ -69,6 +69,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
     toggleResponseScenarioStatus,
     duplicateResponseScenario,
     deleteResponseScenario,
+    uploadResponseFile,
   } = useApiDetailViewModel(apiDetailUseCase, initialDetail);
 
   if (!api || !project) {
@@ -223,6 +224,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
         onOpenChange={setIsRespModalOpen}
         editingRespScenario={editingRespScenario}
         onSubmit={handleSaveRespScenario}
+        onUploadFile={uploadResponseFile}
       />
 
       {/* Delete Confirms */}

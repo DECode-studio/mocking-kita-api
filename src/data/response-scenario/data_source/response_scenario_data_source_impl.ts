@@ -20,7 +20,7 @@ export function createResponseScenario(
   input: Omit<ResponseScenario, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
 ): ResponseScenario {
   db.prepare(
-    'INSERT INTO tblResponseScenario (id, request_scenario_id, name, description, status_code, headers, body, delay_ms, weight, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO tblResponseScenario (id, request_scenario_id, name, description, status_code, headers, body, response_type, file_path, file_name, delay_ms, weight, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     input.id,
     input.requestScenarioId,
@@ -29,6 +29,9 @@ export function createResponseScenario(
     input.statusCode,
     stringifyJson(input.headers),
     stringifyJson(input.body),
+    input.responseType ?? 'JSON',
+    input.filePath ?? null,
+    input.fileName ?? null,
     input.delayMs,
     input.weight,
     input.priority,
@@ -49,7 +52,7 @@ export function updateResponseScenario(id: string, input: Partial<ResponseScenar
     updatedAt: new Date().toISOString(),
   };
   db.prepare(
-    'UPDATE tblResponseScenario SET request_scenario_id = ?, name = ?, description = ?, status_code = ?, headers = ?, body = ?, delay_ms = ?, weight = ?, priority = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
+    'UPDATE tblResponseScenario SET request_scenario_id = ?, name = ?, description = ?, status_code = ?, headers = ?, body = ?, response_type = ?, file_path = ?, file_name = ?, delay_ms = ?, weight = ?, priority = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
   ).run(
     updated.requestScenarioId,
     updated.name,
@@ -57,6 +60,9 @@ export function updateResponseScenario(id: string, input: Partial<ResponseScenar
     updated.statusCode,
     stringifyJson(updated.headers),
     stringifyJson(updated.body),
+    updated.responseType,
+    updated.filePath ?? null,
+    updated.fileName ?? null,
     updated.delayMs,
     updated.weight,
     updated.priority,
