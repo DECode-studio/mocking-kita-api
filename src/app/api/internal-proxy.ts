@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import { MatchType } from '@/src/core/utils/types';
+import { MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { responseCache, throttleStates } from './internal-proxy-cache';
 
 const INTERNAL_ROUTE_PREFIXES = ['/api/auth', '/api/database', '/api/settings'];
@@ -305,16 +305,59 @@ function normalizeHeaders(headers: Headers): Record<string, string> {
   return output;
 }
 
-function parseBodyContent(contentType: string | null, rawBody: string): unknown {
-  if (!rawBody) return {};
-  if (contentType?.includes('application/json')) {
+
+async function parseBodyContent(contentType: string | null, request: Request): Promise<unknown> {
+  const method = request.method.toUpperCase();
+  if (method === 'GET' || method === 'HEAD') return {};
+
+  const mimeType = contentType || '';
+  if (mimeType.includes('application/json')) {
     try {
-      return JSON.parse(rawBody);
+      const rawBody = await request.text();
+      return rawBody ? JSON.parse(rawBody) : {};
     } catch {
-      return rawBody;
+      return {};
     }
   }
-  return rawBody;
+
+  if (mimeType.includes('multipart/form-data') || mimeType.includes('application/x-www-form-urlencoded')) {
+    try {
+      const formData = await request.formData();
+      const parsedBody: Record<string, unknown> = {};
+      for (const [key, value] of formData.entries()) {
+        if (value && typeof value === 'object' && 'name' in value) {
+          const file = value as unknown as { name: string; type: string; size: number };
+          parsedBody[key] = {
+            filename: file.name,
+            type: file.type,
+            size: file.size,
+          };
+        } else {
+          parsedBody[key] = value;
+        }
+      }
+      return parsedBody;
+    } catch {
+      return {};
+    }
+  }
+
+  try {
+    return await request.text();
+  } catch {
+    return '';
+  }
+}
+
+function getActualRequestBodyType(contentType: string | null, method: string): RequestBodyType {
+  const upperMethod = method.toUpperCase();
+  if (upperMethod === 'GET' || upperMethod === 'HEAD') return 'NONE';
+
+  const mime = contentType || '';
+  if (mime.includes('application/json')) return 'JSON';
+  if (mime.includes('multipart/form-data')) return 'FORM_DATA';
+  if (mime.includes('application/x-www-form-urlencoded')) return 'URL_ENCODED';
+  return 'NONE';
 }
 
 function toHeaderValue(value: unknown): string {
@@ -328,6 +371,7 @@ function toHeaderValue(value: unknown): string {
   }
 }
 
+
 function scoreScenarioMatch(
   scenario: RequestScenario,
   actual: {
@@ -335,12 +379,25 @@ function scoreScenarioMatch(
     queryParams: Record<string, string>;
     pathParams: Record<string, string>;
     body: unknown;
+    bodyType: RequestBodyType;
   }
 ): ScenarioMatchResult | null {
+  if (scenario.bodyType && scenario.bodyType !== actual.bodyType) {
+    const isExpectedForm = scenario.bodyType === 'FORM_DATA' || scenario.bodyType === 'URL_ENCODED';
+    const isActualForm = actual.bodyType === 'FORM_DATA' || actual.bodyType === 'URL_ENCODED';
+    if (!(isExpectedForm && isActualForm)) {
+      return null;
+    }
+  }
+
   const headerMatch = matchesValue(scenario.headers, actual.headers, scenario.matchType, true);
   const queryMatch = matchesValue(scenario.queryParams, actual.queryParams, scenario.matchType, true);
   const pathMatch = matchesValue(scenario.pathParams, actual.pathParams, scenario.matchType, true);
-  const bodyMatch = matchesValue(scenario.body, actual.body, scenario.matchType);
+  
+  const isFormOrUrlEncoded = scenario.bodyType === 'FORM_DATA' || scenario.bodyType === 'URL_ENCODED';
+  const bodyMatch = matchesValue(scenario.body, actual.body, scenario.matchType, isFormOrUrlEncoded);
+
+
 
   if (!headerMatch || !queryMatch || !pathMatch || !bodyMatch) {
     return null;
@@ -484,9 +541,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
   }
 
   const method = request.method.toUpperCase();
-  const rawBody = request.method === 'GET' || request.method === 'HEAD' ? '' : await request.text();
-
-  const body = parseBodyContent(request.headers.get('content-type'), rawBody);
+  const body = await parseBodyContent(request.headers.get('content-type'), request);
   const queryParams = Object.fromEntries(url.searchParams.entries());
   const cacheKey =
     method === 'GET' || method === 'HEAD' ? makeCacheKey(method, pathname, queryParams, body) : null;
@@ -575,6 +630,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
         queryParams,
         pathParams: matchedApi.params,
         body,
+        bodyType: getActualRequestBodyType(request.headers.get('content-type'), method),
       })
     )
     .filter((value): value is ScenarioMatchResult => value !== null)
