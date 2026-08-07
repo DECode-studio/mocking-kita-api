@@ -160,6 +160,7 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
         'id': 'product-001'
       },
       body: {},
+      bodyType: 'JSON',
       matchType: 'EXACT',
       priority: 100,
       status: true,
@@ -178,6 +179,7 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
         'id': 'product-999'
       },
       body: {},
+      bodyType: 'JSON',
       matchType: 'EXACT',
       priority: 90,
       status: true,

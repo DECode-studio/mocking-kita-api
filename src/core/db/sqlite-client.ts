@@ -84,6 +84,7 @@ db.exec(`
     query_params TEXT,
     path_params TEXT,
     body TEXT,
+    body_type TEXT DEFAULT 'JSON',
     match_type TEXT DEFAULT 'EXACT',
     priority INTEGER DEFAULT 0,
     status INTEGER DEFAULT 1,
@@ -117,6 +118,12 @@ db.exec(`
 
 try {
   db.exec('ALTER TABLE tblApi ADD COLUMN collection_id TEXT REFERENCES tblCollection (id) ON DELETE SET NULL;');
+} catch {
+  // Ignore if column already exists
+}
+
+try {
+  db.exec("ALTER TABLE tblRequestScenario ADD COLUMN body_type TEXT DEFAULT 'JSON';");
 } catch {
   // Ignore if column already exists
 }

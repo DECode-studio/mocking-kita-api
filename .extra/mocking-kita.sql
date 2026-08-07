@@ -65,6 +65,7 @@ CREATE TABLE `tblRequestScenario` (
   `query_params` json,
   `path_params` json,
   `body` json,
+  `body_type` ENUM ('JSON', 'FORM_DATA', 'URL_ENCODED', 'NONE') DEFAULT 'JSON',
   `match_type` ENUM ('EXACT', 'PARTIAL', 'REGEX', 'JSON_SCHEMA') DEFAULT 'EXACT',
   `priority` int DEFAULT 0,
   `status` boolean DEFAULT true,
