@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
@@ -676,9 +678,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
       return acc;
     }, {})
   );
-  if (!responseHeaders.has('content-type')) {
-    responseHeaders.set('content-type', 'application/json');
-  }
+
   responseHeaders.set('x-cache', cacheKey ? 'MISS' : 'BYPASS');
   responseHeaders.set('x-mock-api-id', matchedApi.apiId);
   responseHeaders.set('x-mock-api-path', matchedApi.apiPath);
@@ -687,6 +687,71 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
 
   if ((selectedResponse.delayMs ?? 0) > 0) {
     await new Promise((resolve) => setTimeout(resolve, selectedResponse.delayMs));
+  }
+
+  // Handle File Responses
+  if (selectedResponse.responseType === 'FILE') {
+    const filePath = selectedResponse.filePath;
+    if (!filePath) {
+      return NextResponse.json(
+        { success: false, error: 'File path is not configured for this scenario' },
+        { status: 500 }
+      );
+    }
+
+    const resolvedPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), filePath);
+    if (!fs.existsSync(resolvedPath)) {
+      return NextResponse.json(
+        { success: false, error: `File not found: ${selectedResponse.fileName || 'unknown file'}` },
+        { status: 404 }
+      );
+    }
+
+    const fileBuffer = fs.readFileSync(resolvedPath);
+
+    if (!responseHeaders.has('content-type')) {
+      const ext = path.extname(resolvedPath).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.json': 'application/json',
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.xml': 'application/xml',
+        '.zip': 'application/zip',
+        '.csv': 'text/csv',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.mp3': 'audio/mpeg',
+        '.mp4': 'video/mp4',
+      };
+      responseHeaders.set('content-type', mimeTypes[ext] || 'application/octet-stream');
+    }
+
+    if (selectedResponse.fileName && !responseHeaders.has('content-disposition')) {
+      responseHeaders.set('content-disposition', `inline; filename="${selectedResponse.fileName}"`);
+    }
+
+    if (request.method === 'HEAD') {
+      return new NextResponse(null, {
+        status: selectedResponse.statusCode,
+        headers: responseHeaders,
+      });
+    }
+
+    return new NextResponse(fileBuffer, {
+      status: selectedResponse.statusCode,
+      headers: responseHeaders,
+    });
+  }
+
+  // Handle JSON / Default Responses
+  if (!responseHeaders.has('content-type')) {
+    responseHeaders.set('content-type', 'application/json');
   }
 
   const responseBody = typeof selectedResponse.body === 'string' ? selectedResponse.body : selectedResponse.body ?? null;
