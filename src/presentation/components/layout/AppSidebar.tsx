@@ -16,6 +16,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  HelpCircle,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -67,6 +68,12 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.PROJECTS,
       icon: FolderGit2,
       isActive: pathname.startsWith(ROUTES.PROJECTS),
+    },
+    {
+      name: 'FAQ & Guide',
+      href: ROUTES.FAQ,
+      icon: HelpCircle,
+      isActive: pathname === ROUTES.FAQ,
     },
     {
       name: 'Settings',

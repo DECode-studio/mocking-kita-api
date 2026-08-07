@@ -5,6 +5,7 @@ export const ROUTES = {
   ENVIRONMENTS: '/environments',
   APIS: '/apis',
   SETTINGS: '/settings',
+  FAQ: '/faq',
   PROJECT_DETAIL: (projectId: string) => `/projects/${projectId}`,
   PROJECT_ENVIRONMENTS: (projectId: string) => `/projects/${projectId}/environments`,
   PROJECT_APIS: (projectId: string) => `/projects/${projectId}/apis`,
