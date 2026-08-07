@@ -9,6 +9,9 @@ export type ResponseScenarioRow = {
   status_code: number | null;
   headers: string | null;
   body: string | null;
+  response_type: string | null;
+  file_path: string | null;
+  file_name: string | null;
   delay_ms: number | null;
   weight: number | null;
   priority: number | null;
@@ -27,6 +30,9 @@ export function responseScenarioFromRow(row: ResponseScenarioRow): ResponseScena
     statusCode: row.status_code ?? 200,
     headers: parseJson<Record<string, unknown>>(row.headers, {}),
     body: parseJson<unknown>(row.body, {}),
+    responseType: (row.response_type as 'JSON' | 'FILE') ?? 'JSON',
+    filePath: row.file_path,
+    fileName: row.file_name,
     delayMs: row.delay_ms ?? 0,
     weight: row.weight ?? 100,
     priority: row.priority ?? 0,

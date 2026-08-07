@@ -39,6 +39,7 @@ export interface ApiDetailUseCase {
   toggleResponseScenarioStatus(id: string): Promise<void>;
   duplicateResponseScenario(id: string): Promise<ResponseScenario | null>;
   deleteResponseScenario(id: string): Promise<void>;
+  uploadResponseFile(file: File): Promise<{ filePath: string; fileName: string }>;
 }
 
 export class ApiDetailUseCaseImpl implements ApiDetailUseCase {
@@ -175,6 +176,9 @@ export class ApiDetailUseCaseImpl implements ApiDetailUseCase {
       statusCode: target.statusCode,
       headers: target.headers,
       body: target.body,
+      responseType: target.responseType ?? 'JSON',
+      filePath: target.filePath ?? null,
+      fileName: target.fileName ?? null,
       delayMs: target.delayMs,
       weight: target.weight,
       priority: target.priority,
@@ -184,5 +188,9 @@ export class ApiDetailUseCaseImpl implements ApiDetailUseCase {
 
   deleteResponseScenario(id: string): Promise<void> {
     return this.responseScenarioRepository.softDelete(id);
+  }
+
+  uploadResponseFile(file: File): Promise<{ filePath: string; fileName: string }> {
+    return this.responseScenarioRepository.uploadFile(file);
   }
 }

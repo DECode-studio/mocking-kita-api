@@ -24,4 +24,25 @@ export class ResponseScenarioRemoteRepository implements ResponseScenarioReposit
   async softDelete(id: string): Promise<void> {
     await callDatabase<void>('softDeleteRespScenario', { id });
   }
+
+  async uploadFile(file: File): Promise<{ filePath: string; fileName: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Upload failed');
+    }
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Upload failed');
+    }
+    return {
+      filePath: data.filePath,
+      fileName: data.fileName,
+    };
+  }
 }
