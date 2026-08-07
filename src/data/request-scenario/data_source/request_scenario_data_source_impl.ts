@@ -18,7 +18,7 @@ export function createRequestScenario(
   input: Omit<RequestScenario, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
 ): RequestScenario {
   db.prepare(
-    'INSERT INTO tblRequestScenario (id, api_id, name, description, headers, query_params, path_params, body, match_type, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO tblRequestScenario (id, api_id, name, description, headers, query_params, path_params, body, body_type, match_type, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).run(
     input.id,
     input.apiId,
@@ -28,6 +28,7 @@ export function createRequestScenario(
     stringifyJson(input.queryParams),
     stringifyJson(input.pathParams),
     stringifyJson(input.body),
+    input.bodyType,
     input.matchType,
     input.priority,
     toDbBoolean(input.status),
@@ -47,7 +48,7 @@ export function updateRequestScenario(id: string, input: Partial<RequestScenario
     updatedAt: new Date().toISOString(),
   };
   db.prepare(
-    'UPDATE tblRequestScenario SET api_id = ?, name = ?, description = ?, headers = ?, query_params = ?, path_params = ?, body = ?, match_type = ?, priority = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
+    'UPDATE tblRequestScenario SET api_id = ?, name = ?, description = ?, headers = ?, query_params = ?, path_params = ?, body = ?, body_type = ?, match_type = ?, priority = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
   ).run(
     updated.apiId,
     updated.name,
@@ -56,6 +57,7 @@ export function updateRequestScenario(id: string, input: Partial<RequestScenario
     stringifyJson(updated.queryParams),
     stringifyJson(updated.pathParams),
     stringifyJson(updated.body),
+    updated.bodyType,
     updated.matchType,
     updated.priority,
     toDbBoolean(updated.status),

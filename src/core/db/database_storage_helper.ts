@@ -139,7 +139,7 @@ export function seedDatabase(data: MockApiDatabase): void {
     }
 
     const insertReq = db.prepare(
-      'INSERT INTO tblRequestScenario (id, api_id, name, description, headers, query_params, path_params, body, match_type, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO tblRequestScenario (id, api_id, name, description, headers, query_params, path_params, body, body_type, match_type, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     for (const item of data.requestScenarios) {
       insertReq.run(
@@ -151,6 +151,7 @@ export function seedDatabase(data: MockApiDatabase): void {
         JSON.stringify(item.queryParams ?? {}),
         JSON.stringify(item.pathParams ?? {}),
         JSON.stringify(item.body ?? {}),
+        item.bodyType ?? 'JSON',
         item.matchType ?? 'EXACT',
         item.priority ?? 0,
         toDbBoolean(item.status),
