@@ -1,4 +1,4 @@
-import { MatchType } from '@/src/core/utils/types';
+import { MatchType, RequestBodyType } from '@/src/core/utils/types';
 
 export interface RequestScenario {
   id: string;
@@ -9,6 +9,7 @@ export interface RequestScenario {
   queryParams: Record<string, unknown>;
   pathParams: Record<string, unknown>;
   body: unknown;
+  bodyType: RequestBodyType;
   matchType: MatchType;
   priority: number;
   status: boolean;
