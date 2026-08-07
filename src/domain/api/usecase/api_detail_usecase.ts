@@ -147,6 +147,7 @@ export class ApiDetailUseCaseImpl implements ApiDetailUseCase {
       queryParams: target.queryParams,
       pathParams: target.pathParams,
       body: target.body,
+      bodyType: target.bodyType,
       matchType: target.matchType,
       priority: target.priority,
       status: target.status,

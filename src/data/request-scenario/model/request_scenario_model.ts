@@ -1,4 +1,4 @@
-import { MatchType } from '@/src/core/utils/types';
+import { MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { parseJson, toBoolean } from '@/src/core/utils/db-converter';
 
@@ -11,6 +11,7 @@ export type RequestScenarioRow = {
   query_params: string | null;
   path_params: string | null;
   body: string | null;
+  body_type: string | null;
   match_type: string | null;
   priority: number | null;
   status: number | null;
@@ -29,6 +30,7 @@ export function requestScenarioFromRow(row: RequestScenarioRow): RequestScenario
     queryParams: parseJson<Record<string, unknown>>(row.query_params, {}),
     pathParams: parseJson<Record<string, unknown>>(row.path_params, {}),
     body: parseJson<unknown>(row.body, {}),
+    bodyType: (row.body_type as RequestBodyType) || 'JSON',
     matchType: (row.match_type as MatchType) || 'EXACT',
     priority: row.priority ?? 0,
     status: toBoolean(row.status),

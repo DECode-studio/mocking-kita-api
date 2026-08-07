@@ -18,3 +18,10 @@ export type MatchType =
   | 'PARTIAL'
   | 'REGEX'
   | 'JSON_SCHEMA';
+
+export type RequestBodyType =
+  | 'JSON'
+  | 'FORM_DATA'
+  | 'URL_ENCODED'
+  | 'NONE';
+
