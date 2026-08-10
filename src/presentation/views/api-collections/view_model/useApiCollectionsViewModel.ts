@@ -120,6 +120,14 @@ export function useApiCollectionsViewModel(
     }
   }, [activeProjectId]);
 
+  useEffect(() => {
+    setApis(initialApis);
+  }, [initialApis]);
+
+  useEffect(() => {
+    setCollections(initialCollections);
+  }, [initialCollections]);
+
   const toggleApiCollectionStatus = async (id: string) => {
     await apiUseCase.toggleStatus(id);
     await reloadApis();

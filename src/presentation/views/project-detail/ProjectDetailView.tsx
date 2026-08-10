@@ -15,6 +15,7 @@ import { PROJECT_DETAIL_TEXT, PROJECT_DETAIL_SEMANTIC_ID } from './constant';
 import {
   ProjectDetailHeader,
   ProjectMetadataCard,
+  OpenApiModal,
 } from './components';
 
 import { Collection } from '@/src/domain/collection/entity/collection';
@@ -32,6 +33,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   initialEnvironments = [],
   initialCollections = [],
 }) => {
+  const [isOpenApiOpen, setIsOpenApiOpen] = React.useState(false);
   const projectUseCase = createProjectUseCase();
   const {
     projectId,
@@ -66,6 +68,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
         onBack={() => router.push('/projects')}
         onToggleStatus={toggleProjectStatus}
         onSoftDelete={handleSoftDelete}
+        onOpenApiClick={() => setIsOpenApiOpen(true)}
+      />
+
+      <OpenApiModal
+        isOpen={isOpenApiOpen}
+        onClose={() => setIsOpenApiOpen(false)}
+        projectId={project.id}
+        projectName={project.name}
       />
 
       {/* Summary Stat Card */}
