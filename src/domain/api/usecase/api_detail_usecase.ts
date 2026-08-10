@@ -151,7 +151,7 @@ export class ApiDetailUseCaseImpl implements ApiDetailUseCase {
       bodyType: target.bodyType,
       matchType: target.matchType,
       priority: target.priority,
-      status: target.status,
+      status: false,
     });
   }
 
