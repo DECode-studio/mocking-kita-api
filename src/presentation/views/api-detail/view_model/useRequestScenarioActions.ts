@@ -32,7 +32,28 @@ type RequestScenarioDeps = {
   addToast: (toast: ToastInput) => void;
   createRequestScenario: (input: CreateRequestScenarioInput) => Promise<RequestScenario>;
   updateRequestScenario: (id: string, input: Partial<RequestScenario>) => Promise<RequestScenario>;
+  requestScenarios: RequestScenario[];
 };
+
+function toComparable(value: unknown): unknown {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) {
+    return value.map(toComparable);
+  }
+  if (typeof value === 'object') {
+    return Object.keys(value as Record<string, unknown>)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = toComparable((value as Record<string, unknown>)[key]);
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+function deepEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(toComparable(a)) === JSON.stringify(toComparable(b));
+}
 
 function parseJsonObject(value: string, fallback: Record<string, unknown>): Record<string, unknown> {
   const trimmed = value.trim();
@@ -57,6 +78,7 @@ export function useRequestScenarioActions({
   addToast,
   createRequestScenario,
   updateRequestScenario,
+  requestScenarios,
 }: RequestScenarioDeps) {
   const handleSaveReqScenario = async (values: RequestScenarioFormValues) => {
     const name = values.name.trim();
@@ -74,6 +96,31 @@ export function useRequestScenarioActions({
       }
     })();
     const matchType: MatchType = 'EXACT';
+
+    if (status) {
+      const duplicate = requestScenarios.find((scenario) => {
+        if (scenario.id === editingReqScenarioId || !scenario.status || scenario.deletedAt) {
+          return false;
+        }
+        return (
+          scenario.matchType === matchType &&
+          scenario.bodyType === values.bodyType &&
+          deepEqual(headers, scenario.headers) &&
+          deepEqual(queryParams, scenario.queryParams) &&
+          deepEqual(scenario.pathParams || {}, {}) &&
+          deepEqual(bodyValue, scenario.body)
+        );
+      });
+
+      if (duplicate) {
+        addToast({
+          type: 'error',
+          title: 'Duplicate Scenario Matchmaking',
+          description: `An active request scenario ("${duplicate.name}") already exists with the exact same matchmaking criteria.`,
+        });
+        return;
+      }
+    }
 
     try {
       if (editingReqScenarioId) {

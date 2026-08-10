@@ -116,6 +116,7 @@ export function useApiDetailViewModel(
     addToast,
     createRequestScenario,
     updateRequestScenario,
+    requestScenarios: reqScenarios,
   });
 
   const { handleSaveRespScenario } = useResponseScenarioActions({
