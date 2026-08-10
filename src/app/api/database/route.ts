@@ -9,6 +9,7 @@ import { createRequestScenario, updateRequestScenario, softDeleteRequestScenario
 import { createResponseScenario, updateResponseScenario, softDeleteResponseScenario } from '@/src/data/response-scenario/data_source/response_scenario_data_source_impl';
 import { generateId } from '@/src/core/utils/uuid';
 import { clearInternalProxyCache } from '@/src/app/api/internal-proxy-cache';
+import { exportProjectOpenApi, importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
 
 export const runtime = 'nodejs';
 
@@ -119,6 +120,14 @@ export async function POST(request: Request) {
       case 'softDeleteRespScenario':
         softDeleteResponseScenario((body.payload as { id: string }).id);
         return respondVoid();
+      case 'exportProjectOpenApi': {
+        const payload = body.payload as { projectId: string };
+        return respond(exportProjectOpenApi(payload.projectId));
+      }
+      case 'importProjectOpenApi': {
+        const payload = body.payload as { projectId: string; openApiJson: any; mode?: 'replace' | 'merge' };
+        return respond(importProjectOpenApi(payload.projectId, payload.openApiJson, payload.mode || 'merge'));
+      }
       default:
         return NextResponse.json({ error: 'Unknown database action' }, { status: 400 });
     }

@@ -34,7 +34,9 @@ export type DatabaseAction =
   | 'softDeleteRespScenario'
   | 'importDatabase'
   | 'resetDatabase'
-  | 'saveDatabase';
+  | 'saveDatabase'
+  | 'exportProjectOpenApi'
+  | 'importProjectOpenApi';
 
 export async function callDatabase<T>(action: DatabaseAction, payload?: unknown): Promise<T> {
   const response = await apiRequest<{ success: boolean; data?: T; error?: string }>('/api/database', {

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileJson, Trash2 } from 'lucide-react';
 import { Project } from '@/src/domain/project/entity/project';
 import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
 import { StatusSwitch } from '@/src/presentation/components/shared/StatusSwitch';
@@ -12,6 +12,7 @@ interface ProjectDetailHeaderProps {
   onBack: () => void;
   onToggleStatus: (id: string) => void;
   onSoftDelete: () => void;
+  onOpenApiClick?: () => void;
 }
 
 export const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
@@ -19,6 +20,7 @@ export const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
   onBack,
   onToggleStatus,
   onSoftDelete,
+  onOpenApiClick,
 }) => {
   return (
     <div id={PROJECT_DETAIL_SEMANTIC_ID.HEADER} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
@@ -44,6 +46,17 @@ export const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-3">
+        {onOpenApiClick && (
+          <button
+            type="button"
+            onClick={onOpenApiClick}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-lg transition-colors"
+            title="Export / Import OpenAPI JSON"
+          >
+            <FileJson className="w-3.5 h-3.5" />
+            OpenAPI Docs
+          </button>
+        )}
         <StatusSwitch
           checked={project.status}
           onCheckedChange={() => onToggleStatus(project.id)}
