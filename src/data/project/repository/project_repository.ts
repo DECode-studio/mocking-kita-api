@@ -2,6 +2,7 @@ import { MockApiDatabase } from '@/src/core/db/mock-api-database';
 import { Project } from '@/src/domain/project/entity/project';
 import { ProjectRepository } from '@/src/domain/project/repository/project_repository';
 import { callDatabase } from '@/src/core/http-client/database-proxy-client';
+import { OpenApiSpec } from '@/src/core/openapi/openapi_converter';
 
 export class ProjectRemoteRepository implements ProjectRepository {
   async getAll(): Promise<Project[]> {
@@ -32,6 +33,21 @@ export class ProjectRemoteRepository implements ProjectRepository {
 
   async hardDelete(id: string): Promise<void> {
     await callDatabase<void>('hardDelete', { id });
+  }
+
+  async exportOpenApi(projectId: string): Promise<OpenApiSpec> {
+    return callDatabase<OpenApiSpec>('exportProjectOpenApi', { projectId });
+  }
+
+  async importOpenApi(
+    projectId: string,
+    openApiJson: unknown,
+    mode: 'merge' | 'replace' = 'merge'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }> {
+    return callDatabase<{ success: boolean; importedApiCount: number; importedCollectionCount: number }>(
+      'importProjectOpenApi',
+      { projectId, openApiJson, mode }
+    );
   }
 
   async getDatabase(): Promise<MockApiDatabase> {
