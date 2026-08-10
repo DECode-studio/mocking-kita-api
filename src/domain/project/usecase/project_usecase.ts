@@ -1,5 +1,6 @@
 import { Project } from '../entity/project';
 import { ProjectRepository } from '../repository/project_repository';
+import { OpenApiSpec } from '@/src/core/openapi/openapi_converter';
 
 export interface ProjectUseCase {
   getAll(): Promise<Project[]>;
@@ -11,6 +12,12 @@ export interface ProjectUseCase {
   hardDelete(id: string): Promise<void>;
   toggleStatus(id: string): Promise<void>;
   duplicate(id: string): Promise<Project | null>;
+  exportOpenApi(projectId: string): Promise<OpenApiSpec>;
+  importOpenApi(
+    projectId: string,
+    openApiJson: unknown,
+    mode?: 'merge' | 'replace'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }>;
 }
 
 export class ProjectUseCaseImpl implements ProjectUseCase {
@@ -59,5 +66,17 @@ export class ProjectUseCaseImpl implements ProjectUseCase {
       description: project.description,
       status: project.status,
     });
+  }
+
+  exportOpenApi(projectId: string): Promise<OpenApiSpec> {
+    return this.projectRepository.exportOpenApi(projectId);
+  }
+
+  importOpenApi(
+    projectId: string,
+    openApiJson: unknown,
+    mode: 'merge' | 'replace' = 'merge'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }> {
+    return this.projectRepository.importOpenApi(projectId, openApiJson, mode);
   }
 }
