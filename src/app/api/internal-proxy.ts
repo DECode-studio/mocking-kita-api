@@ -25,6 +25,7 @@ type ApiMatchResult = {
   apiPath: string;
   params: Record<string, string>;
   specificity: number;
+  matched: boolean;
 };
 
 type CachedResponseEntry = {
@@ -566,14 +567,29 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
     database.environments.filter((environment) => environment.status && !environment.deletedAt).map((environment) => environment.id)
   );
 
+  let targetPathname = pathname;
+  let targetProjectId: string | null = null;
+
+  if (pathname.startsWith('/api/mock/')) {
+    const parts = pathname.slice('/api/mock/'.length).split('/').filter(Boolean);
+    if (parts.length > 0) {
+      targetProjectId = parts[0];
+      targetPathname = '/' + parts.slice(1).join('/');
+    }
+  }
+
   const apiMatches: ApiMatchResult[] = database.apiCollections
-    .filter((api) => api.status && !api.deletedAt)
+    .filter((api) => {
+      if (!api.status || api.deletedAt) return false;
+      if (targetProjectId && api.projectId !== targetProjectId) return false;
+      return true;
+    })
     .flatMap((api) => {
       const candidates: ApiMatchResult[] = [
         {
           apiId: api.id,
           apiPath: api.path,
-          ...matchPathPattern(api.path, pathname),
+          ...matchPathPattern(api.path, targetPathname),
         },
         ...database.apiEnvironments
           .filter(
@@ -586,12 +602,13 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
           .map((apiEnvironment) => ({
             apiId: api.id,
             apiPath: apiEnvironment.pathOverride as string,
-            ...matchPathPattern(apiEnvironment.pathOverride as string, pathname),
+            ...matchPathPattern(apiEnvironment.pathOverride as string, targetPathname),
           })),
       ];
 
       return candidates;
     })
+    .filter((candidate) => candidate.matched)
     .sort((a, b) => b.specificity - a.specificity);
 
   const matchedApi = apiMatches.find((candidate) => {
