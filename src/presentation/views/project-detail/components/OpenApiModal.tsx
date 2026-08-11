@@ -3,8 +3,8 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, X, FileJson, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { createProjectUseCase } from '@/src/domain/project';
-import { useOpenApiViewModel } from '../view_model/useOpenApiViewModel';
+import {  createProjectUseCase  } from '@/src/di/usecase_provider';
+import { useOpenApi } from '../useOpenApi';
 
 interface OpenApiModalProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
     handleExport,
     handleFileUpload,
     handleImport,
-  } = useOpenApiViewModel({
+  } = useOpenApi({
     projectId,
     projectName,
     onClose,

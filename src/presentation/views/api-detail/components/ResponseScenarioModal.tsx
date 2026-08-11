@@ -147,6 +147,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                   Response Name *
                 </label>
                 <input
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_INPUT_NAME}
                   type="text"
                   required
                   value={name}
@@ -161,6 +162,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                   {API_DETAIL_TEXT.LABEL_STATUS_CODE}
                 </label>
                 <input
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_STATUS_CODE}
                   type="number"
                   required
                   value={statusCode}
@@ -191,6 +193,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                   Priority
                 </label>
                 <input
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_PRIORITY}
                   type="number"
                   min={0}
                   value={priority}
@@ -205,6 +208,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                   Weight
                 </label>
                 <input
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_WEIGHT}
                   type="number"
                   min={0}
                   value={weight}
@@ -220,9 +224,13 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
               <label className="block font-semibold text-slate-700 dark:text-slate-300">
                 Response Type
               </label>
-              <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-slate-950 p-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800/50">
+              <div
+                data-tour-response-type={responseType}
+                className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-slate-950 p-1.5 rounded-lg border border-slate-200/50 dark:border-slate-800/50"
+              >
                 <button
                   type="button"
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_TYPE_JSON}
                   onClick={() => setResponseType('JSON')}
                   className={`py-1.5 text-center font-medium rounded-md transition-all ${
                     responseType === 'JSON'
@@ -234,6 +242,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_TYPE_FILE}
                   onClick={() => setResponseType('FILE')}
                   className={`py-1.5 text-center font-medium rounded-md transition-all ${
                     responseType === 'FILE'
@@ -248,7 +257,11 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
 
             {/* Response Content Area */}
             {responseType === 'FILE' ? (
-              <div className="space-y-1.5">
+              <div
+                id={API_DETAIL_SEMANTIC_ID.RESP_FORM_FILE_UPLOAD}
+                data-file-uploaded={filePath ? 'true' : 'false'}
+                className="space-y-1.5"
+              >
                 <label className="block font-semibold text-slate-700 dark:text-slate-300">
                   Response File
                 </label>
@@ -332,6 +345,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                   </button>
                 </div>
                 <textarea
+                  id={API_DETAIL_SEMANTIC_ID.RESP_FORM_BODY}
                   rows={6}
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
@@ -343,6 +357,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
             <div className="flex items-center justify-between pt-2">
               <label className="font-semibold text-slate-700 dark:text-slate-300">{API_DETAIL_TEXT.LABEL_ACTIVE_STATUS}</label>
               <input
+                id={API_DETAIL_SEMANTIC_ID.RESP_FORM_STATUS}
                 type="checkbox"
                 checked={status}
                 onChange={(e) => setStatus(e.target.checked)}
@@ -350,7 +365,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div id={API_DETAIL_SEMANTIC_ID.RESP_FORM_FOOTER} className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -359,6 +374,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                 {API_DETAIL_TEXT.BTN_CANCEL}
               </button>
               <button
+                id={API_DETAIL_SEMANTIC_ID.RESP_FORM_BTN_SUBMIT}
                 type="submit"
                 disabled={responseType === 'FILE' && !filePath && !isUploading}
                 className="px-4 py-1.5 font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -372,4 +388,3 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
     </Dialog.Root>
   );
 };
-

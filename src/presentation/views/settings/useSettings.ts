@@ -5,7 +5,7 @@ import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { DatabaseResetUseCase } from '@/src/domain/database/usecase/database_reset_usecase';
 
-export function useSettingsViewModel(databaseResetUseCase: DatabaseResetUseCase) {
+export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
   const { theme, setTheme } = useThemeStore();
   const { setImportModalOpen, addToast } = useUIStore();
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);

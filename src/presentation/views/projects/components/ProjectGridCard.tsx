@@ -40,6 +40,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
   return (
     <div
       onClick={onNavigateDetail}
+      data-tour="project-item"
       className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/80 dark:hover:border-purple-500/80 rounded-2xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between cursor-pointer"
     >
       <div className="space-y-3">

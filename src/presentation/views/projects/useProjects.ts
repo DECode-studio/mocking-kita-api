@@ -18,7 +18,7 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
-export function useProjectsViewModel(projectUseCase: ProjectUseCase, initialProjects: Project[] = []) {
+export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Project[] = []) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const { addToast } = useUIStore();
   const router = useRouter();

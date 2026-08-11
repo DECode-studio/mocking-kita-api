@@ -1,4 +1,4 @@
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { DatabaseSnapshotRepository } from '../repository/database_snapshot_repository';
 
 export interface DatabaseSnapshotUseCase {

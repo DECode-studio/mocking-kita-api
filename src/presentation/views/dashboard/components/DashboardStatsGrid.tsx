@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FolderGit2, Globe, Layers, FileCode } from 'lucide-react';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { Project } from '@/src/domain/project/entity/project';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';

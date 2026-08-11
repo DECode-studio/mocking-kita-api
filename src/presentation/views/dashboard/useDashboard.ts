@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { DatabaseSnapshotUseCase } from '@/src/domain/database/usecase/database_snapshot_usecase';
 import { ROUTES } from '@/src/core/constants/routes';
 
@@ -16,7 +16,7 @@ const emptyDb: MockApiDatabase = {
   responseScenarios: [],
 };
 
-export function useDashboardViewModel(
+export function useDashboard(
   databaseSnapshotUseCase: DatabaseSnapshotUseCase,
   initialDb: MockApiDatabase = emptyDb
 ) {

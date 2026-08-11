@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatJsonString, minifyJsonString, validateJsonString } from '@/src/core/utils/json';
 
-export function useJsonEditorViewModel(
+export function useJsonEditor(
   value: unknown,
   onChange: (value: unknown) => void
 ) {

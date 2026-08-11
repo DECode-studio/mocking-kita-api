@@ -21,7 +21,7 @@ const emptyDetailState: ApiDetailSnapshot = {
   activeReqScenario: null,
 };
 
-export function useApiDetailViewModel(
+export function useApiDetail(
   apiDetailUseCase: ApiDetailUseCase,
   initialDetail: ApiDetailSnapshot = emptyDetailState
 ) {

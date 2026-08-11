@@ -27,7 +27,7 @@ export const ApiCollectionListItem: React.FC<ApiCollectionListItemProps> = ({
   onDeleteRequest,
 }) => {
   return (
-    <div className="p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between gap-4 group">
+    <div data-tour="api-item" className="p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between gap-4 group">
       <div className="flex items-center gap-3.5 min-w-0 flex-1">
         <HttpMethodBadge method={api.methodRequest} size="md" />
 

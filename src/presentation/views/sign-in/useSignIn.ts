@@ -17,7 +17,7 @@ const signInSchema = z.object({
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
-export function useSignInViewModel() {
+export function useSignIn() {
   const { isAuthenticated, login } = useAuthStore();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);

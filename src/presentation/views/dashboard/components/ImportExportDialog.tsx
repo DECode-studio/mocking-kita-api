@@ -3,8 +3,8 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import { createDatabaseSnapshotUseCase } from '@/src/domain/database';
-import { useImportExportDialogViewModel } from '../view_model/useImportExportDialogViewModel';
+import {  createDatabaseSnapshotUseCase  } from '@/src/di/usecase_provider';
+import { useImportExportDialog } from '../useImportExportDialog';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 export const ImportExportDialog: React.FC = () => {
@@ -20,7 +20,7 @@ export const ImportExportDialog: React.FC = () => {
     handleExport,
     handleFileChange,
     handleApplyImport,
-  } = useImportExportDialogViewModel(databaseSnapshotUseCase);
+  } = useImportExportDialog(databaseSnapshotUseCase);
 
   return (
     <Dialog.Root open={isImportModalOpen} onOpenChange={setImportModalOpen}>

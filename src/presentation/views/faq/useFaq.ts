@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Faq } from '@/src/domain/faq/entity/faq';
 import { FaqUseCase } from '@/src/domain/faq/usecase/faq_usecase';
 
-export function useFaqViewModel(faqUseCase: FaqUseCase, initialFaqs: Faq[]) {
+export function useFaq(faqUseCase: FaqUseCase, initialFaqs: Faq[]) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [faqs, setFaqs] = useState<Faq[]>(initialFaqs);

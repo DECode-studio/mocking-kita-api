@@ -5,7 +5,7 @@ import { Project } from '@/src/domain/project/entity/project';
 import { ProjectUseCase } from '@/src/domain/project/usecase/project_usecase';
 import { ROUTES } from '@/src/core/constants/routes';
 
-export function useProjectDetailViewModel(projectUseCase: ProjectUseCase, initialProject: Project | null = null) {
+export function useProjectDetail(projectUseCase: ProjectUseCase, initialProject: Project | null = null) {
   const { projectId } = useParams<{ projectId: string }>();
   const router = useRouter();
   const { addToast } = useUIStore();

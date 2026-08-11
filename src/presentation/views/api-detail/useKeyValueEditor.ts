@@ -9,7 +9,7 @@ export interface KeyValuePair {
   enabled: boolean;
 }
 
-export function useKeyValueEditorViewModel(
+export function useKeyValueEditor(
   value: Record<string, unknown>,
   onChange: (value: Record<string, unknown>) => void
 ) {

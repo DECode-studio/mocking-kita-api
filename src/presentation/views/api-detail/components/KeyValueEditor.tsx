@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Plus, Trash2, Code2, List } from 'lucide-react';
-import { useKeyValueEditorViewModel } from '../view_model/useKeyValueEditorViewModel';
+import { useKeyValueEditor } from '../useKeyValueEditor';
 
 export interface KeyValuePair {
   id: string;
@@ -38,7 +38,7 @@ export const KeyValueEditor: React.FC<KeyValueEditorProps> = ({
     handleSwitchToRawJson,
     handleSwitchToTable,
     handleRawJsonChange,
-  } = useKeyValueEditorViewModel(value, onChange);
+  } = useKeyValueEditor(value, onChange);
 
   return (
     <div className="space-y-3">

@@ -26,7 +26,7 @@ const apiSchema = z.object({
 
 type ApiFormValues = z.infer<typeof apiSchema>;
 
-export function useApiCollectionsViewModel(
+export function useApiCollections(
   apiUseCase: ApiUseCase,
   collectionUseCase: CollectionUseCase,
   embeddedProjectId?: string,

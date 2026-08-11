@@ -9,7 +9,7 @@ export interface UseOpenApiViewModelProps {
   projectUseCase: ProjectUseCase;
 }
 
-export function useOpenApiViewModel({
+export function useOpenApi({
   projectId,
   projectName,
   onClose,

@@ -19,7 +19,7 @@ const environmentSchema = z.object({
 
 type EnvironmentFormValues = z.infer<typeof environmentSchema>;
 
-export function useEnvironmentsViewModel(
+export function useEnvironments(
   environmentUseCase: EnvironmentUseCase,
   embeddedProjectId?: string,
   initialEnvironments: Environment[] = [],

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { HttpMethodBadge } from '@/src/presentation/components/shared/HttpMethodBadge';
 import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
