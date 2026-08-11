@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -81,12 +81,6 @@ export function useEnvironments(
       // fallback
     }
   };
-
-  useEffect(() => {
-    if (activeProjectId) {
-      reloadEnvironments();
-    }
-  }, [activeProjectId]);
 
   const toggleEnvironmentStatus = async (id: string) => {
     await environmentUseCase.toggleStatus(id);

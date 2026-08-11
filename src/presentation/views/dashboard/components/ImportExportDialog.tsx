@@ -2,17 +2,14 @@
 
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Download, Upload, FileText, AlertCircle, CheckCircle2, X } from 'lucide-react';
-import {  createDatabaseSnapshotUseCase  } from '@/src/di/usecase_provider';
+import { Download, Upload, FileText, AlertCircle, X } from 'lucide-react';
 import { useImportExportDialog } from '../useImportExportDialog';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 export const ImportExportDialog: React.FC = () => {
-  const databaseSnapshotUseCase = createDatabaseSnapshotUseCase();
   const {
     isImportModalOpen,
     setImportModalOpen,
-    importedJson,
     importMode,
     setImportMode,
     fileError,
@@ -20,7 +17,7 @@ export const ImportExportDialog: React.FC = () => {
     handleExport,
     handleFileChange,
     handleApplyImport,
-  } = useImportExportDialog(databaseSnapshotUseCase);
+  } = useImportExportDialog();
 
   return (
     <Dialog.Root open={isImportModalOpen} onOpenChange={setImportModalOpen}>
@@ -83,76 +80,47 @@ export const ImportExportDialog: React.FC = () => {
               </div>
             )}
 
-            {importedJson && (
-              <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60 rounded-xl space-y-3">
-                <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 font-semibold text-xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  {DASHBOARD_TEXT.IMPORT_SUMMARY_TITLE}
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-mono">
-                  <div className="p-2 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/40">
-                    <span className="text-slate-400 block text-[10px]">Projects</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{importedJson.projects?.length || 0}</span>
-                  </div>
-                  <div className="p-2 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/40">
-                    <span className="text-slate-400 block text-[10px]">Environments</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{importedJson.environments?.length || 0}</span>
-                  </div>
-                  <div className="p-2 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/40">
-                    <span className="text-slate-400 block text-[10px]">APIs</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{importedJson.apiCollections?.length || 0}</span>
-                  </div>
-                  <div className="p-2 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/40">
-                    <span className="text-slate-400 block text-[10px]">Request Scenarios</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{importedJson.requestScenarios?.length || 0}</span>
-                  </div>
-                  <div className="p-2 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/40">
-                    <span className="text-slate-400 block text-[10px]">Response Scenarios</span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{importedJson.responseScenarios?.length || 0}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 pt-1">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">{DASHBOARD_TEXT.IMPORT_MODE_LABEL}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setImportMode('merge')}
-                      className={`p-2 rounded-lg border text-left text-xs transition-colors ${
-                        importMode === 'merge'
-                          ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
-                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      <span className="block font-medium">{DASHBOARD_TEXT.IMPORT_MODE_MERGE}</span>
-                      <span className="text-[10px] text-slate-500 font-normal">{DASHBOARD_TEXT.IMPORT_MODE_MERGE_DESC}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setImportMode('replace')}
-                      className={`p-2 rounded-lg border text-left text-xs transition-colors ${
-                        importMode === 'replace'
-                          ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
-                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      <span className="block font-medium">{DASHBOARD_TEXT.IMPORT_MODE_REPLACE}</span>
-                      <span className="text-[10px] text-slate-500 font-normal">{DASHBOARD_TEXT.IMPORT_MODE_REPLACE_DESC}</span>
-                    </button>
-                  </div>
-                </div>
-
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                {DASHBOARD_TEXT.IMPORT_MODE_LABEL}
+              </label>
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  id={DASHBOARD_SEMANTIC_ID.APPLY_IMPORT_BTN}
                   type="button"
-                  onClick={handleApplyImport}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+                  onClick={() => setImportMode('merge')}
+                  className={`p-2 rounded-lg border text-left text-xs transition-colors ${
+                    importMode === 'merge'
+                      ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}
                 >
-                  {DASHBOARD_TEXT.APPLY_IMPORT_BTN}
+                  <span className="block font-medium">{DASHBOARD_TEXT.IMPORT_MODE_MERGE}</span>
+                  <span className="text-[10px] text-slate-500 font-normal">{DASHBOARD_TEXT.IMPORT_MODE_MERGE_DESC}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImportMode('replace')}
+                  className={`p-2 rounded-lg border text-left text-xs transition-colors ${
+                    importMode === 'replace'
+                      ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <span className="block font-medium">{DASHBOARD_TEXT.IMPORT_MODE_REPLACE}</span>
+                  <span className="text-[10px] text-slate-500 font-normal">{DASHBOARD_TEXT.IMPORT_MODE_REPLACE_DESC}</span>
                 </button>
               </div>
-            )}
+            </div>
+
+            <button
+              id={DASHBOARD_SEMANTIC_ID.APPLY_IMPORT_BTN}
+              type="button"
+              onClick={handleApplyImport}
+              disabled={!fileName || !!fileError}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed rounded-md transition-colors"
+            >
+              {DASHBOARD_TEXT.APPLY_IMPORT_BTN}
+            </button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

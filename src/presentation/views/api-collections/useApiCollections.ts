@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect } from 'react';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiUseCase } from '@/src/domain/api/usecase/api_usecase';
@@ -112,13 +111,6 @@ export function useApiCollections(
       // fallback
     }
   };
-
-  useEffect(() => {
-    if (activeProjectId) {
-      reloadApis();
-      reloadCollections();
-    }
-  }, [activeProjectId]);
 
   useEffect(() => {
     setApis(initialApis);

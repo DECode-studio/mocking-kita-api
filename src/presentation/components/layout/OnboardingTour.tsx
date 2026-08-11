@@ -41,7 +41,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 const tooltipWidthFor = (viewportWidth: number) => clamp(Math.round(viewportWidth * 0.36), 300, 420);
 const tooltipHeightEstimate = 230;
-const STEP_PROGRESS_KEY = 'mock_api_studio_onboarding_step_progress';
+const COACH_MARK_STEP_IDS_KEY = 'mock_api_studio_coach_mark_completed_step_ids';
 
 const HOLD_STEP_TO_PROGRESS_KEY: Record<string, OnboardingProgressKey> = {
   'project-submit': 'createProject',
@@ -281,7 +281,7 @@ const BackdropSlice: React.FC<React.CSSProperties & { onBlock: () => void }> = (
 
 export const OnboardingTour: React.FC = () => {
   const pathname = usePathname();
-  const { progress, tourActive, isInitialized, initialize, completeStep, disableTour } = useOnboardingStore();
+  const { progress, tourActive, completedAll, isInitialized, initialize, completeStep, disableTour } = useOnboardingStore();
   const { addToast } = useUIStore();
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -293,6 +293,7 @@ export const OnboardingTour: React.FC = () => {
   const [steps, setSteps] = useState<TourStep[]>([]);
   const [stepIndex, setStepIndex] = useState(0);
   const [completedStepIds, setCompletedStepIds] = useState<string[]>([]);
+  const [isCoachMarkHydrated, setIsCoachMarkHydrated] = useState(false);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [layout, setLayout] = useState<RectLayout | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
@@ -304,8 +305,12 @@ export const OnboardingTour: React.FC = () => {
     pointerEvents: string;
     isolation: string;
   } | null>(null);
-  const previousProgressRef = useRef<string | null>(null);
-  const loadedStepProgressRef = useRef(false);
+  const coachMarkHydratedRef = useRef(false);
+
+  const deriveCompletedStepIds = (savedProgress: OnboardingProgress) =>
+    Object.entries(savedProgress)
+      .filter(([, status]) => status === 'completed')
+      .map(([key]) => key);
 
   const getValue = (selector: string) => {
     const element = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(selector);
@@ -437,6 +442,59 @@ export const OnboardingTour: React.FC = () => {
   }, [initialize]);
 
   useEffect(() => {
+    if (!isInitialized || typeof window === 'undefined' || coachMarkHydratedRef.current) {
+      return;
+    }
+
+    coachMarkHydratedRef.current = true;
+
+    try {
+      const raw = window.localStorage.getItem(COACH_MARK_STEP_IDS_KEY);
+      if (!raw) {
+        setCompletedStepIds(deriveCompletedStepIds(progress));
+        setIsCoachMarkHydrated(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as unknown;
+      const savedCompletedIds = Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === 'string')
+        : [];
+
+      setCompletedStepIds(savedCompletedIds.length > 0 ? savedCompletedIds : deriveCompletedStepIds(progress));
+    } catch {
+      window.localStorage.removeItem(COACH_MARK_STEP_IDS_KEY);
+      setCompletedStepIds(deriveCompletedStepIds(progress));
+    } finally {
+      setIsCoachMarkHydrated(true);
+    }
+  }, [isInitialized, progress]);
+
+  useEffect(() => {
+    if (!isInitialized || !isCoachMarkHydrated || typeof window === 'undefined') return;
+
+    try {
+      window.localStorage.setItem(COACH_MARK_STEP_IDS_KEY, JSON.stringify(completedStepIds));
+    } catch {
+      // Ignore storage failures and keep the guidance functional.
+    }
+  }, [completedStepIds, isCoachMarkHydrated, isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized || !isCoachMarkHydrated || typeof window === 'undefined') return;
+
+    const allPending = Object.values(progress).every((value) => value === 'not-started');
+    if (!allPending) return;
+
+    setCompletedStepIds([]);
+    try {
+      window.localStorage.removeItem(COACH_MARK_STEP_IDS_KEY);
+    } catch {
+      // Ignore storage failures and keep the guidance functional.
+    }
+  }, [isCoachMarkHydrated, isInitialized, progress]);
+
+  useEffect(() => {
     const updateViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     updateViewport();
     window.addEventListener('resize', updateViewport);
@@ -474,45 +532,6 @@ export const OnboardingTour: React.FC = () => {
     const interval = window.setInterval(detectState, 250);
     return () => window.clearInterval(interval);
   }, [tourActive, isInitialized]);
-
-  useEffect(() => {
-    if (!isInitialized || typeof window === 'undefined' || loadedStepProgressRef.current) return;
-
-    const saved = window.localStorage.getItem(STEP_PROGRESS_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setCompletedStepIds(parsed.filter((item): item is string => typeof item === 'string'));
-        }
-      } catch {
-        window.localStorage.removeItem(STEP_PROGRESS_KEY);
-      }
-    }
-
-    loadedStepProgressRef.current = true;
-    previousProgressRef.current = JSON.stringify(progress);
-  }, [isInitialized, progress]);
-
-  useEffect(() => {
-    if (!isInitialized || typeof window === 'undefined') return;
-
-    const snapshot = JSON.stringify(progress);
-    const previous = previousProgressRef.current;
-    const allPending = Object.values(progress).every((value) => value === 'not-started');
-
-    if (previous && previous.includes('"completed"') && allPending) {
-      setCompletedStepIds([]);
-      window.localStorage.removeItem(STEP_PROGRESS_KEY);
-    }
-
-    previousProgressRef.current = snapshot;
-  }, [isInitialized, progress]);
-
-  useEffect(() => {
-    if (!isInitialized || typeof window === 'undefined') return;
-    window.localStorage.setItem(STEP_PROGRESS_KEY, JSON.stringify(completedStepIds));
-  }, [completedStepIds, isInitialized]);
 
   useEffect(() => {
     if (activeModal === 'project') setProjectCreatedDuringTour(true);
@@ -1032,7 +1051,16 @@ export const OnboardingTour: React.FC = () => {
     setStepIndex((current) => Math.min(steps.length - 1, current + 1));
   };
 
-  if (!isInitialized || !tourActive || steps.length === 0 || !currentStep || !layout || viewport.width === 0 || viewport.height === 0) {
+  if (
+    !isInitialized ||
+    !isCoachMarkHydrated ||
+    !tourActive ||
+    steps.length === 0 ||
+    !currentStep ||
+    !layout ||
+    viewport.width === 0 ||
+    viewport.height === 0
+  ) {
     return null;
   }
 

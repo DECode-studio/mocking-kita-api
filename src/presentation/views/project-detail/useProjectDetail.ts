@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { Project } from '@/src/domain/project/entity/project';
@@ -11,6 +11,7 @@ export function useProjectDetail(projectUseCase: ProjectUseCase, initialProject:
   const { addToast } = useUIStore();
   const [activeTab, setActiveTab] = useState('apis');
   const [project, setProject] = useState<Project | null>(initialProject);
+  const [isLoading] = useState(false);
 
   const reloadProject = async () => {
     if (!projectId) return;
@@ -21,10 +22,6 @@ export function useProjectDetail(projectUseCase: ProjectUseCase, initialProject:
       // fallback
     }
   };
-
-  useEffect(() => {
-    reloadProject();
-  }, [projectId]);
 
   const toggleProjectStatus = async (id: string) => {
     if (!project) return;
@@ -42,6 +39,7 @@ export function useProjectDetail(projectUseCase: ProjectUseCase, initialProject:
   return {
     projectId,
     project,
+    isLoading,
     router,
     activeTab,
     setActiveTab,
