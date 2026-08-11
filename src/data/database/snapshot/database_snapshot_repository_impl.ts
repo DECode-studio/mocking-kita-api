@@ -1,5 +1,5 @@
 import { callDatabase } from '@/src/core/http-client/database-proxy-client';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { DatabaseSnapshotRepository } from '@/src/domain/database/repository/database_snapshot_repository';
 
 export class DatabaseSnapshotRepositoryImpl implements DatabaseSnapshotRepository {

@@ -1,5 +1,5 @@
 import { db } from '@/src/core/db/sqlite-client';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { ApiRow, apiFromRow } from '@/src/data/api/model/api_collection_model';
 import { ApiEnvironmentRow, apiEnvironmentFromRow } from '@/src/data/api/model/api_environment_model';
 import { EnvironmentRow, environmentFromRow } from '@/src/data/environment/model/environment_model';
