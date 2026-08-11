@@ -31,7 +31,12 @@ export function useEnvironmentOverrideActions({
         const isEnabled = apiEnv ? apiEnv.enabled : true;
         const pathOverride = apiEnv?.pathOverride || '';
         const resolvedPath = pathOverride || apiPath;
-        const resolvedUrl = env.publicBaseUrl + resolvedPath;
+        const normalizedBaseUrl = env.publicBaseUrl.replace(/\/+$/, '');
+        const normalizedPath = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
+        let resolvedUrl = normalizedBaseUrl + normalizedPath;
+        if (normalizedBaseUrl.includes('localhost:') || normalizedBaseUrl === 'http://localhost') {
+          resolvedUrl = `${normalizedBaseUrl}/api/mock/${env.projectId}${normalizedPath}`;
+        }
 
         return {
           env,
