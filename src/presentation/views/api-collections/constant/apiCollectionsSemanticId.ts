@@ -11,6 +11,7 @@ export const API_COLLECTIONS_SEMANTIC_ID = {
   FORM_INPUT_PATH: 'api-collections-form-input-path',
   FORM_TEXTAREA_DESC: 'api-collections-form-textarea-desc',
   FORM_CHECKBOX_STATUS: 'api-collections-form-checkbox-status',
+  FORM_FOOTER: 'api-collections-form-footer',
   FORM_BTN_SUBMIT: 'api-collections-form-btn-submit',
   FORM_BTN_CANCEL: 'api-collections-form-btn-cancel',
 } as const;

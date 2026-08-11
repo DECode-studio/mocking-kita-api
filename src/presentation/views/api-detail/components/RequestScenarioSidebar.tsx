@@ -77,6 +77,7 @@ export const RequestScenarioSidebar: React.FC<RequestScenarioSidebarProps> = ({
                 <div
                   key={req.id}
                   onClick={() => onSelectScenario(req.id)}
+                  data-tour="req-scenario-item"
                   className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between gap-2 ${
                     isActive
                       ? 'bg-indigo-50/70 dark:bg-indigo-950/60 border-indigo-500/50 shadow-2xs'

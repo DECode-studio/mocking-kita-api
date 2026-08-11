@@ -31,7 +31,7 @@ export const ProjectTableView: React.FC<ProjectTableViewProps> = ({
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {projects.map((project) => (
-            <tr key={project.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+            <tr key={project.id} data-tour="project-item" className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
               <td className="p-3.5">
                 <span
                   onClick={() => onNavigateDetail(project.id)}

@@ -168,6 +168,7 @@ export const AppSidebar: React.FC = () => {
                 return (
                   <Link
                     key={item.name}
+                    id={item.name === 'Projects' ? 'sidebar-projects-link' : undefined}
                     href={item.href}
                     onClick={() => setMobileSidebarOpen(false)}
                     title={isSidebarCollapsed ? item.name : undefined}

@@ -10,6 +10,7 @@ export const PROJECTS_SEMANTIC_ID = {
   FORM_INPUT_NAME: 'projects-form-input-name',
   FORM_TEXTAREA_DESC: 'projects-form-textarea-desc',
   FORM_CHECKBOX_STATUS: 'projects-form-checkbox-status',
+  FORM_FOOTER: 'projects-form-footer',
   FORM_BTN_SUBMIT: 'projects-form-btn-submit',
   FORM_BTN_CANCEL: 'projects-form-btn-cancel',
 } as const;

@@ -138,7 +138,7 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div id={API_COLLECTIONS_SEMANTIC_ID.FORM_FOOTER} className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 id={API_COLLECTIONS_SEMANTIC_ID.FORM_BTN_CANCEL}
                 type="button"
