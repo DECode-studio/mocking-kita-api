@@ -38,12 +38,22 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   const {
     projectId,
     project,
+    isLoading,
     router,
     activeTab,
     setActiveTab,
     handleSoftDelete,
     toggleProjectStatus,
   } = useProjectDetail(projectUseCase, initialProject);
+
+  if (isLoading && !project) {
+    return (
+      <div className="py-16 text-center space-y-3">
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">Loading project...</h2>
+        <p className="text-xs text-slate-500">Fetching project data from the server.</p>
+      </div>
+    );
+  }
 
   if (!project) {
     return (

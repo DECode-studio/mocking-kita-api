@@ -2,39 +2,23 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { getErrorMessage } from '@/src/core/utils/error';
-import { DatabaseSnapshotUseCase } from '@/src/domain/database/usecase/database_snapshot_usecase';
 
-export function useImportExportDialog(databaseSnapshotUseCase: DatabaseSnapshotUseCase) {
+export function useImportExportDialog() {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
 
-  const [importedJson, setImportedJson] = useState<MockApiDatabase | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
 
   const handleExport = async () => {
     try {
-      const db = await databaseSnapshotUseCase.getDatabase();
-      const dataStr = JSON.stringify(db, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-
-      const now = new Date();
-      const YYYY = now.getFullYear();
-      const MM = String(now.getMonth() + 1).padStart(2, '0');
-      const DD = String(now.getDate()).padStart(2, '0');
-      const HH = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-
-      link.href = url;
-      link.download = `mock-api-studio-backup-${YYYY}-${MM}-${DD}-${HH}${mm}.json`;
+      link.href = '/api/database/export';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
       addToast({
         type: 'success',
@@ -52,49 +36,50 @@ export function useImportExportDialog(databaseSnapshotUseCase: DatabaseSnapshotU
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      setSelectedFile(null);
+      setFileName('');
+      setFileError(null);
+      return;
+    }
 
     if (!file.name.endsWith('.json')) {
       setFileError('Invalid file type. Please upload a .json file.');
-      setImportedJson(null);
+      setSelectedFile(null);
+      setFileName('');
       return;
     }
 
     setFileName(file.name);
     setFileError(null);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const text = event.target?.result as string;
-        const parsed = JSON.parse(text) as MockApiDatabase;
-
-        if (!parsed.projects || !Array.isArray(parsed.projects)) {
-          setFileError('Invalid Mock API Database structure. Missing projects array.');
-          setImportedJson(null);
-          return;
-        }
-
-        setImportedJson(parsed);
-      } catch (error: unknown) {
-        setFileError('Failed to parse JSON file. Syntax error detected.');
-        setImportedJson(null);
-      }
-    };
-    reader.readAsText(file);
+    setSelectedFile(file);
   };
 
   const handleApplyImport = async () => {
-    if (!importedJson) return;
+    if (!selectedFile) return;
 
     try {
-      await databaseSnapshotUseCase.importDatabase(importedJson, importMode);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('mode', importMode);
+
+      const response = await fetch('/api/database/import', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      const data = (await response.json()) as { success: boolean; error?: string };
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to import database');
+      }
+
       addToast({
         type: 'success',
         title: 'Import Successful',
         description: `Successfully ${importMode === 'replace' ? 'replaced' : 'merged'} database configurations.`,
       });
-      setImportedJson(null);
+      setSelectedFile(null);
       setFileName('');
       setImportModalOpen(false);
     } catch (error: unknown) {
@@ -109,7 +94,7 @@ export function useImportExportDialog(databaseSnapshotUseCase: DatabaseSnapshotU
   return {
     isImportModalOpen,
     setImportModalOpen,
-    importedJson,
+    selectedFile,
     importMode,
     setImportMode,
     fileError,

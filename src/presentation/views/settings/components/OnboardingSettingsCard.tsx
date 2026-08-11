@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { HelpCircle, RefreshCw } from 'lucide-react';
 import { useOnboardingStore } from '@/src/presentation/stores/onboardingStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
@@ -8,6 +9,7 @@ import { useUIStore } from '@/src/presentation/stores/uiStore';
 export const OnboardingSettingsCard: React.FC = () => {
   const { resetTour } = useOnboardingStore();
   const { addToast } = useUIStore();
+  const router = useRouter();
 
   const handleReset = () => {
     resetTour();
@@ -16,6 +18,7 @@ export const OnboardingSettingsCard: React.FC = () => {
       title: 'Tour Reset Successful',
       description: 'Panduan onboarding telah direset. Silakan ke halaman Dashboard untuk memulai kembali.',
     });
+    router.push('/dashboard');
   };
 
   return (
@@ -36,7 +39,7 @@ export const OnboardingSettingsCard: React.FC = () => {
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 rounded-lg transition-colors border border-purple-200 dark:border-purple-900"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Reset Onboarding Tour
+          Reset & Start Tour
         </button>
       </div>
     </div>

@@ -3,7 +3,6 @@
 import React from 'react';
 import { useDashboard } from './useDashboard';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
-import {  createDatabaseSnapshotUseCase  } from '@/src/di/usecase_provider';
 import { ROUTES } from '@/src/core/constants/routes';
 import { DASHBOARD_SEMANTIC_ID } from './constant';
 import {
@@ -15,7 +14,6 @@ import {
 } from './components';
 
 export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initialDb }) => {
-  const databaseSnapshotUseCase = createDatabaseSnapshotUseCase();
   const {
     db,
     router,
@@ -24,7 +22,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
     methodCounts,
     totalApisCount,
     openImportExport,
-  } = useDashboard(databaseSnapshotUseCase, initialDb);
+  } = useDashboard(initialDb);
 
   return (
     <div id={DASHBOARD_SEMANTIC_ID.CONTAINER} className="space-y-8">
