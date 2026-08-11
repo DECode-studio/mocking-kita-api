@@ -5,8 +5,8 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { ArrowLeft, FileCode } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { createApiDetailUseCase } from '@/src/domain/api';
-import { useApiDetailViewModel } from './view_model/useApiDetailViewModel';
+import {  createApiDetailUseCase  } from '@/src/di/usecase_provider';
+import { useApiDetail } from './useApiDetail';
 import { ApiDetailSnapshot } from '@/src/domain/api/usecase/api_detail_usecase';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from './constant';
 import {
@@ -70,7 +70,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
     duplicateResponseScenario,
     deleteResponseScenario,
     uploadResponseFile,
-  } = useApiDetailViewModel(apiDetailUseCase, initialDetail);
+  } = useApiDetail(apiDetailUseCase, initialDetail);
 
   if (!api || !project) {
     return (

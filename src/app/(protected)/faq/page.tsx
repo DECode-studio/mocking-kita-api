@@ -1,5 +1,5 @@
 import FaqView from '@/src/presentation/views/faq/FaqView';
-import { createFaqUseCase } from '@/src/domain/faq';
+import {  createFaqUseCase  } from '@/src/di/usecase_provider';
 
 export const runtime = 'nodejs';
 

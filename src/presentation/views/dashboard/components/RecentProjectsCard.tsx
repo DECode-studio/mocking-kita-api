@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ArrowRight, Code2 } from 'lucide-react';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { Project } from '@/src/domain/project/entity/project';
 import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
 import { formatDate } from '@/src/core/utils/date';

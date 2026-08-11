@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { useDashboardViewModel } from './view_model/useDashboardViewModel';
-import { MockApiDatabase } from '@/src/core/db/mock-api-database';
-import { createDatabaseSnapshotUseCase } from '@/src/domain/database';
+import { useDashboard } from './useDashboard';
+import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
+import {  createDatabaseSnapshotUseCase  } from '@/src/di/usecase_provider';
 import { ROUTES } from '@/src/core/constants/routes';
 import { DASHBOARD_SEMANTIC_ID } from './constant';
 import {
@@ -24,7 +24,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
     methodCounts,
     totalApisCount,
     openImportExport,
-  } = useDashboardViewModel(databaseSnapshotUseCase, initialDb);
+  } = useDashboard(databaseSnapshotUseCase, initialDb);
 
   return (
     <div id={DASHBOARD_SEMANTIC_ID.CONTAINER} className="space-y-8">

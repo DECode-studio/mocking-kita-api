@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { useFaqViewModel } from './view_model/useFaqViewModel';
+import { useFaq } from './useFaq';
 import { Faq } from '@/src/domain/faq/entity/faq';
-import { createFaqUseCase } from '@/src/domain/faq';
+import {  createFaqUseCase  } from '@/src/di/usecase_provider';
 import { HelpCircle } from 'lucide-react';
 import { FAQ_SEMANTIC_ID, FAQ_TEXT } from './constant';
 import {
@@ -30,7 +30,7 @@ export const FaqView: React.FC<FaqViewProps> = ({ initialFaqs }) => {
     loading,
     expandedId,
     toggleExpand,
-  } = useFaqViewModel(faqUseCase, initialFaqs);
+  } = useFaq(faqUseCase, initialFaqs);
 
   return (
     <div id={FAQ_SEMANTIC_ID.CONTAINER} className="space-y-8 w-full">

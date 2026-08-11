@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Copy, Check, Sparkles, Minimize2, RotateCcw, AlertTriangle } from 'lucide-react';
-import { useJsonEditorViewModel } from '../view_model/useJsonEditorViewModel';
+import { useJsonEditor } from '../useJsonEditor';
 
 interface JsonEditorProps {
   value: unknown;
@@ -28,7 +28,7 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
     handleMinify,
     handleCopy,
     handleReset,
-  } = useJsonEditorViewModel(value, onChange);
+  } = useJsonEditor(value, onChange);
 
   return (
     <div className="space-y-2">

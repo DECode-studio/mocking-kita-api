@@ -4,8 +4,8 @@ import React from 'react';
 import { Globe } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { createEnvironmentUseCase } from '@/src/domain/environment';
-import { useEnvironmentsViewModel } from './view_model/useEnvironmentsViewModel';
+import {  createEnvironmentUseCase  } from '@/src/di/usecase_provider';
+import { useEnvironments } from './useEnvironments';
 import { ENVIRONMENTS_TEXT, ENVIRONMENTS_SEMANTIC_ID } from './constant';
 import {
   EnvironmentHeader,
@@ -41,7 +41,7 @@ export const EnvironmentsView: React.FC<EnvironmentsViewProps> = ({
     handleCopyUrl,
     handleDelete,
     toggleEnvironmentStatus,
-  } = useEnvironmentsViewModel(environmentUseCase, embeddedProjectId, initialEnvironments, initialProject);
+  } = useEnvironments(environmentUseCase, embeddedProjectId, initialEnvironments, initialProject);
 
   return (
     <div id={ENVIRONMENTS_SEMANTIC_ID.CONTAINER} className="space-y-4">

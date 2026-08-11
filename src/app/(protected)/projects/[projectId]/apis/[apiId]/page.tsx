@@ -1,5 +1,5 @@
 import ApiDetailView from '@/src/presentation/views/api-detail/ApiDetailView';
-import { createApiDetailUseCase } from '@/src/domain/api';
+import {  createApiDetailUseCase  } from '@/src/di/usecase_provider';
 
 interface ApiDetailPageProps {
   params: Promise<{ projectId: string; apiId: string }>;

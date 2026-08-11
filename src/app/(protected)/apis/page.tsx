@@ -1,5 +1,5 @@
 import ApiCollectionsView from '@/src/presentation/views/api-collections/ApiCollectionsView';
-import { createDatabaseSnapshotUseCase } from '@/src/domain/database';
+import {  createDatabaseSnapshotUseCase  } from '@/src/di/usecase_provider';
 
 export default async function ApiCollectionsPage() {
   const databaseSnapshotUseCase = createDatabaseSnapshotUseCase();

@@ -4,10 +4,10 @@ import React from 'react';
 import { Layers, Folder, Edit3, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { createApiUseCase } from '@/src/domain/api';
-import { createCollectionUseCase } from '@/src/domain/collection';
+import {  createApiUseCase  } from '@/src/di/usecase_provider';
+import {  createCollectionUseCase  } from '@/src/di/usecase_provider';
 import { Collection } from '@/src/domain/collection/entity/collection';
-import { useApiCollectionsViewModel } from './view_model/useApiCollectionsViewModel';
+import { useApiCollections } from './useApiCollections';
 import { ROUTES } from '@/src/core/constants/routes';
 import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from './constant';
 import {
@@ -71,7 +71,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
     openEditCollectionDialog,
     onSubmitCollectionForm,
     handleDeleteCollection,
-  } = useApiCollectionsViewModel(apiUseCase, collectionUseCase, embeddedProjectId, initialApis, initialCollections);
+  } = useApiCollections(apiUseCase, collectionUseCase, embeddedProjectId, initialApis, initialCollections);
 
   const [collapsedCollections, setCollapsedCollections] = React.useState<Record<string, boolean>>({});
 

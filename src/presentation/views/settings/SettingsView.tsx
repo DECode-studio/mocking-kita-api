@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
-import { createDatabaseResetUseCase } from '@/src/domain/database';
-import { useSettingsViewModel } from './view_model/useSettingsViewModel';
+import {  createDatabaseResetUseCase  } from '@/src/di/usecase_provider';
+import { useSettings } from './useSettings';
 import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from './constant';
 import {
   ThemeSettingsCard,
@@ -20,7 +20,7 @@ export const SettingsView: React.FC = () => {
     isResetConfirmOpen,
     setIsResetConfirmOpen,
     handleReset,
-  } = useSettingsViewModel(databaseResetUseCase);
+  } = useSettings(databaseResetUseCase);
 
   return (
     <div id={SETTINGS_SEMANTIC_ID.CONTAINER} className="space-y-8 w-full">

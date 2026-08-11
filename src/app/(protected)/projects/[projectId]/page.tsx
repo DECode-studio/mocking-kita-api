@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import ProjectDetailView from '@/src/presentation/views/project-detail/ProjectDetailView';
-import { createProjectUseCase } from '@/src/domain/project';
-import { createApiUseCase } from '@/src/domain/api';
-import { createEnvironmentUseCase } from '@/src/domain/environment';
-import { createCollectionUseCase } from '@/src/domain/collection';
+import {  createProjectUseCase  } from '@/src/di/usecase_provider';
+import {  createApiUseCase  } from '@/src/di/usecase_provider';
+import {  createEnvironmentUseCase  } from '@/src/di/usecase_provider';
+import {  createCollectionUseCase  } from '@/src/di/usecase_provider';
 
 interface ProjectDetailPageProps {
   params: Promise<{ projectId: string }>;

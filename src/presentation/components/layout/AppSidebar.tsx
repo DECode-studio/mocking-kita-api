@@ -22,7 +22,7 @@ import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
 import { cn } from '../../../core/utils/cn';
 import { ROUTES } from '@/src/core/constants/routes';
-import { createProjectUseCase } from '@/src/domain/project';
+import {  createProjectUseCase  } from '@/src/di/usecase_provider';
 import { Project } from '@/src/domain/project/entity/project';
 
 export const AppSidebar: React.FC = () => {

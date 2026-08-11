@@ -4,8 +4,8 @@ import React from 'react';
 import { FolderGit2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { createProjectUseCase } from '@/src/domain/project';
-import { useProjectsViewModel } from './view_model/useProjectsViewModel';
+import {  createProjectUseCase  } from '@/src/di/usecase_provider';
+import { useProjects } from './useProjects';
 import { Project } from '@/src/domain/project/entity/project';
 import { ROUTES } from '@/src/core/constants/routes';
 import { PROJECTS_TEXT, PROJECTS_SEMANTIC_ID } from './constant';
@@ -44,7 +44,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
     handleConfirmHardDelete,
     filteredProjects,
     toggleProjectStatus,
-  } = useProjectsViewModel(projectUseCase, initialProjects);
+  } = useProjects(projectUseCase, initialProjects);
 
   return (
     <div id={PROJECTS_SEMANTIC_ID.CONTAINER} className="space-y-6">
