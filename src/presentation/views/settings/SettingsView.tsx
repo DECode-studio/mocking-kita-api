@@ -8,6 +8,7 @@ import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from './constant';
 import {
   ThemeSettingsCard,
   DatabaseSettingsCard,
+  OnboardingSettingsCard,
   AppInfoCard,
 } from './components';
 
@@ -41,6 +42,9 @@ export const SettingsView: React.FC = () => {
         onImportExportClick={() => setImportModalOpen(true)}
         onResetConfirmClick={() => setIsResetConfirmOpen(true)}
       />
+
+      {/* Onboarding Tour Settings Card */}
+      <OnboardingSettingsCard />
 
       {/* Application Info Card */}
       <AppInfoCard />

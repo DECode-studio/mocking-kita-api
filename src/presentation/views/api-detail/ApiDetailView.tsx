@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { ArrowLeft, FileCode } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
@@ -9,6 +9,7 @@ import {  createApiDetailUseCase  } from '@/src/di/usecase_provider';
 import { useApiDetail } from './useApiDetail';
 import { ApiDetailSnapshot } from '@/src/domain/api/usecase/api_detail_usecase';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from './constant';
+import { useOnboardingStore } from '@/src/presentation/stores/onboardingStore';
 import {
   ApiDetailHeader,
   RequestScenarioSidebar,
@@ -71,6 +72,20 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
     deleteResponseScenario,
     uploadResponseFile,
   } = useApiDetail(apiDetailUseCase, initialDetail);
+
+  const { progress, completeStep } = useOnboardingStore();
+
+  useEffect(() => {
+    if (reqScenarios.length > 0 && progress.createRequestScenario === 'not-started') {
+      completeStep('createRequestScenario');
+    }
+  }, [reqScenarios.length, progress.createRequestScenario, completeStep]);
+
+  useEffect(() => {
+    if (respScenarios.length > 0 && progress.createResponseScenario === 'not-started') {
+      completeStep('createResponseScenario');
+    }
+  }, [respScenarios.length, progress.createResponseScenario, completeStep]);
 
   if (!api || !project) {
     return (

@@ -8,6 +8,7 @@ import { ToastContainer } from '../shared/ToastContainer';
 import { ImportExportDialog } from '../../views/dashboard';
 import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '@/src/core/constants/routes';
+import { OnboardingTour } from './OnboardingTour';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuthStore();
@@ -46,6 +47,7 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
       <ToastContainer />
       <ImportExportDialog />
+      <OnboardingTour />
     </div>
   );
 };
