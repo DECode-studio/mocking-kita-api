@@ -59,7 +59,8 @@ const RigidTooltip: React.FC<{
   onBack: () => void;
   onNext: () => void;
   onPass?: () => void;
-}> = ({ step, index, total, completedStepIds, canAdvance, onBack, onNext, onPass }) => {
+  onSkip: () => void;
+}> = ({ step, index, total, completedStepIds, canAdvance, onBack, onNext, onPass, onSkip }) => {
   const showNext = step.mode === 'fill';
   const showBack = index > 0;
   const showPass = step.mode === 'fill' && step.optional;
@@ -113,6 +114,17 @@ const RigidTooltip: React.FC<{
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onSkip();
+          }}
+          className="mr-auto py-1.5 text-xs font-semibold text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
+        >
+          Skip tour
+        </button>
         {showBack && (
           <button
             type="button"
@@ -1143,6 +1155,7 @@ export const OnboardingTour: React.FC = () => {
           onBack={handleBack}
           onNext={handleNext}
           onPass={handlePass}
+          onSkip={disableTour}
         />
         <div
           aria-hidden="true"
