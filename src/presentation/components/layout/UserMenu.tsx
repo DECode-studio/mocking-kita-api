@@ -36,7 +36,7 @@ export const UserMenu: React.FC = () => {
           <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-semibold text-xs flex items-center justify-center shadow-xs">
             {initials}
           </div>
-          <div className="hidden sm:block text-left">
+          <div className="hidden sm:flex flex-col gap-0.5 text-left">
             <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200 leading-none">
               {session.name}
             </span>
