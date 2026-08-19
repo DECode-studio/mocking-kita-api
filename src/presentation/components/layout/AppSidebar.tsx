@@ -17,9 +17,11 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   HelpCircle,
+  Shield,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
+import { useAuthStore } from '../../stores/authStore';
 import { cn } from '../../../core/utils/cn';
 import { ROUTES } from '@/src/core/constants/routes';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
@@ -27,6 +29,7 @@ import { Project } from '@/src/domain/project/entity/project';
 
 export const AppSidebar: React.FC = () => {
   const { theme, setTheme } = useThemeStore();
+  const { session } = useAuthStore();
   const {
     isMobileSidebarOpen,
     setMobileSidebarOpen,
@@ -75,6 +78,16 @@ export const AppSidebar: React.FC = () => {
       icon: HelpCircle,
       isActive: pathname === ROUTES.FAQ,
     },
+    ...(session?.role === 'Administrator'
+      ? [
+          {
+            name: 'Users',
+            href: ROUTES.ADMIN_ACCOUNTS,
+            icon: Shield,
+            isActive: pathname === ROUTES.ADMIN_ACCOUNTS,
+          },
+        ]
+      : []),
     {
       name: 'Settings',
       href: ROUTES.SETTINGS,
