@@ -1,6 +1,6 @@
-# Mocking Kita API
+# Mocking Kita Studio
 
-**Mocking Kita API** adalah platform engine mock API modern berbasis **Next.js (App Router - Node.js Runtime), Clean Architecture, SSR, dan SQLite Native Database (`node:sqlite`)**. Aplikasi ini dirancang untuk memungkinkan pengembang merancang endpoint REST, mengonfigurasi skenario request matching (*Exact, Partial, Regex, JSON Schema*), mensimulasikan skenario respons berbobot (*weighted response scenarios*) dengan latensi dinamis, serta melakukan proxying / mock testing API secara lokal.
+**Mocking Kita Studio** adalah platform engine mock API modern berbasis **Next.js (App Router - Node.js Runtime), Clean Architecture, SSR, dan SQLite Native Database (`node:sqlite`)**. Aplikasi ini dirancang untuk memungkinkan pengembang merancang endpoint REST, mengonfigurasi skenario request matching (*Exact, Partial, Regex, JSON Schema*), mensimulasikan skenario respons berbobot (*weighted response scenarios*) dengan latensi dinamis, serta melakukan proxying / mock testing API secara lokal.
 
 ---
 
