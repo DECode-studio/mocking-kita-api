@@ -7,7 +7,7 @@ import { ResponseScenario } from '@/src/domain/response-scenario/entity/response
 import { MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { responseCache, throttleStates } from './internal-proxy-cache';
 
-const INTERNAL_ROUTE_PREFIXES = ['/api/auth', '/api/database', '/api/settings'];
+const INTERNAL_ROUTE_PREFIXES = ['/api/auth', '/api/database', '/api/settings', '/api/admin'];
 
 type PathMatchResult = {
   matched: boolean;
