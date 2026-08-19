@@ -117,6 +117,16 @@ db.exec(`
 
   CREATE UNIQUE INDEX IF NOT EXISTS tblApi_index_0 ON tblApi (project_id, path, method_request);
   CREATE UNIQUE INDEX IF NOT EXISTS tblApiEnvironment_index_1 ON tblApiEnvironment (api_id, environment_id);
+
+  CREATE TABLE IF NOT EXISTS tblAccount (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 try {
