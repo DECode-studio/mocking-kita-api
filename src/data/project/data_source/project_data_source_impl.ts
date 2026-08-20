@@ -66,5 +66,51 @@ export function restoreProject(id: string): void {
 }
 
 export function hardDeleteProject(id: string): void {
-  db.prepare('DELETE FROM tblProject WHERE id = ?').run(id);
+  db.exec('BEGIN TRANSACTION;');
+  try {
+    // Delete response scenarios associated with request scenarios of APIs of this project
+    db.prepare(`
+      DELETE FROM tblResponseScenario 
+      WHERE request_scenario_id IN (
+        SELECT id FROM tblRequestScenario WHERE api_id IN (
+          SELECT id FROM tblApi WHERE project_id = ?
+        )
+      )
+    `).run(id);
+
+    // Delete request scenarios associated with APIs of this project
+    db.prepare(`
+      DELETE FROM tblRequestScenario 
+      WHERE api_id IN (
+        SELECT id FROM tblApi WHERE project_id = ?
+      )
+    `).run(id);
+
+    // Delete api environments associated with APIs or environments of this project
+    db.prepare(`
+      DELETE FROM tblApiEnvironment 
+      WHERE api_id IN (
+        SELECT id FROM tblApi WHERE project_id = ?
+      ) OR environment_id IN (
+        SELECT id FROM tblEnvironment WHERE project_id = ?
+      )
+    `).run(id, id);
+
+    // Delete APIs associated with this project
+    db.prepare('DELETE FROM tblApi WHERE project_id = ?').run(id);
+
+    // Delete collections associated with this project
+    db.prepare('DELETE FROM tblCollection WHERE project_id = ?').run(id);
+
+    // Delete environments associated with this project
+    db.prepare('DELETE FROM tblEnvironment WHERE project_id = ?').run(id);
+
+    // Finally, delete the project
+    db.prepare('DELETE FROM tblProject WHERE id = ?').run(id);
+
+    db.exec('COMMIT;');
+  } catch (error) {
+    db.exec('ROLLBACK;');
+    throw error;
+  }
 }
