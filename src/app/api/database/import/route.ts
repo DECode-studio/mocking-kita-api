@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { importDatabaseData } from '@/src/core/db/database_storage_helper';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
+import { logChange, getDatabaseSummary } from '@/src/core/db/change_log_helper';
 
 export const runtime = 'nodejs';
 
@@ -36,7 +37,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Invalid database structure' }, { status: 400 });
     }
 
+    const before = getDatabaseSummary();
     importDatabaseData(parsed, importMode);
+    const after = getDatabaseSummary();
+
+    await logChange({
+      action: 'IMPORT',
+      entityType: 'database',
+      beforeState: before,
+      afterState: after,
+      metadata: { mode: importMode, fileName: file.name },
+      description: `Imported database JSON file '${file.name}' (mode: ${importMode})`,
+    });
 
     return NextResponse.json({
       success: true,
