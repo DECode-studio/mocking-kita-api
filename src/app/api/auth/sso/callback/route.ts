@@ -69,7 +69,7 @@ export async function GET(request: Request) {
       return new Response(`SSO Authentication error: ${err.message}`, { status: 500 });
     }
   }
-  // Case 2: Mock redirect callback
+  // Case 2: Registration success callback
   else if (success === 'true') {
     return new Response(getCloseScriptHtml(), {
       headers: { 'Content-Type': 'text/html' },
