@@ -124,10 +124,19 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
 
   const handleConfirmHardDelete = async () => {
     if (!deletingProject) return;
-    await projectUseCase.hardDelete(deletingProject.id);
-    await reloadProjects();
-    addToast({ type: 'success', title: 'Project Permanently Deleted', description: 'Project and all endpoints removed.' });
-    setDeletingProject(null);
+    try {
+      await projectUseCase.hardDelete(deletingProject.id);
+      await reloadProjects();
+      addToast({ type: 'success', title: 'Project Permanently Deleted', description: 'Project and all endpoints removed.' });
+    } catch (error: unknown) {
+      addToast({
+        type: 'error',
+        title: 'Delete Failed',
+        description: getErrorMessage(error, 'Failed to permanently delete project'),
+      });
+    } finally {
+      setDeletingProject(null);
+    }
   };
 
   const toggleProjectStatus = async (id: string) => {

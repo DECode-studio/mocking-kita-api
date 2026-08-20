@@ -21,6 +21,10 @@ import { DatabaseResetUseCaseImpl } from '@/src/domain/database/usecase/database
 import { EnvironmentUseCaseImpl } from '@/src/domain/environment/usecase/environment_usecase';
 import { FaqUseCaseImpl } from '@/src/domain/faq/usecase/faq_usecase';
 import { ProjectUseCaseImpl } from '@/src/domain/project/usecase/project_usecase';
+import { AccountAdminUseCaseImpl } from '@/src/domain/account/usecase/account_admin_usecase';
+import { AccountAdminRemoteRepository } from '@/src/data/account/repository/account_admin_remote_repository';
+import { ChangeLogUseCaseImpl } from '@/src/domain/change-log/usecase/change_log_usecase';
+import { ChangeLogRemoteRepository } from '@/src/data/change-log/repository/change_log_remote_repository';
 
 // Factories
 export function createApiUseCase() {
@@ -64,4 +68,12 @@ export function createFaqUseCase() {
 
 export function createProjectUseCase() {
   return new ProjectUseCaseImpl(new ProjectRemoteRepository());
+}
+
+export function createAccountAdminUseCase() {
+  return new AccountAdminUseCaseImpl(new AccountAdminRemoteRepository());
+}
+
+export function createChangeLogUseCase() {
+  return new ChangeLogUseCaseImpl(new ChangeLogRemoteRepository());
 }

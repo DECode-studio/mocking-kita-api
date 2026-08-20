@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Account } from '@/src/domain/account/entity/account';
-import { apiRequest } from '@/src/core/http-client/api-client';
+import { createAccountAdminUseCase } from '@/src/di/usecase_provider';
 
 export function useAdminAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -8,19 +8,16 @@ export function useAdminAccounts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const accountAdminUseCase = useMemo(() => createAccountAdminUseCase(), []);
+
   const fetchAccounts = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiRequest<{ success: boolean; accounts: Account[]; ssoDomains?: string[] }>('/api/admin/accounts');
-      if (res.success) {
-        setAccounts(res.accounts);
-        if (res.ssoDomains) {
-          setSsoDomains(res.ssoDomains);
-        }
-      } else {
-        setError('Failed to load accounts');
-      }
+      const data = await accountAdminUseCase.getAll();
+      const domains = await accountAdminUseCase.getSsoDomains();
+      setAccounts(data);
+      setSsoDomains(domains);
     } catch (err: any) {
       setError(err?.message || 'Failed to load accounts');
     } finally {
@@ -34,15 +31,9 @@ export function useAdminAccounts() {
 
   const createAccount = async (data: { username: string; password?: string; name: string; role: string }) => {
     try {
-      const res = await apiRequest<{ success: boolean; account: Account; error?: string }>('/api/admin/accounts', {
-        method: 'POST',
-        body: data,
-      });
-      if (res.success) {
-        setAccounts((prev) => [...prev, res.account]);
-        return { success: true };
-      }
-      return { success: false, error: res.error || 'Failed to create account' };
+      const account = await accountAdminUseCase.create(data);
+      setAccounts((prev) => [...prev, account]);
+      return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to create account' };
     }
@@ -50,15 +41,9 @@ export function useAdminAccounts() {
 
   const updateAccount = async (id: string, data: { username?: string; password?: string; name?: string; role?: string }) => {
     try {
-      const res = await apiRequest<{ success: boolean; account: Account; error?: string }>('/api/admin/accounts', {
-        method: 'PUT',
-        body: { id, ...data },
-      });
-      if (res.success) {
-        setAccounts((prev) => prev.map((acc) => (acc.id === id ? res.account : acc)));
-        return { success: true };
-      }
-      return { success: false, error: res.error || 'Failed to update account' };
+      const account = await accountAdminUseCase.update(id, data);
+      setAccounts((prev) => prev.map((acc) => (acc.id === id ? account : acc)));
+      return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to update account' };
     }
@@ -66,15 +51,9 @@ export function useAdminAccounts() {
 
   const deleteAccount = async (id: string) => {
     try {
-      const res = await apiRequest<{ success: boolean; error?: string }>('/api/admin/accounts', {
-        method: 'DELETE',
-        body: { id },
-      });
-      if (res.success) {
-        setAccounts((prev) => prev.filter((acc) => acc.id !== id));
-        return { success: true };
-      }
-      return { success: false, error: res.error || 'Failed to delete account' };
+      await accountAdminUseCase.delete(id);
+      setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+      return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || 'Failed to delete account' };
     }

@@ -127,6 +127,25 @@ db.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS tblChangeLog (
+    id TEXT PRIMARY KEY,
+    action TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT,
+    project_id TEXT,
+    user_id TEXT,
+    operator TEXT NOT NULL,
+    description TEXT,
+    before_state TEXT,
+    after_state TEXT,
+    metadata TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES tblAccount (id) ON DELETE SET NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS tblChangeLog_project_id_idx ON tblChangeLog (project_id);
+  CREATE INDEX IF NOT EXISTS tblChangeLog_created_at_idx ON tblChangeLog (created_at DESC);
 `);
 
 try {
