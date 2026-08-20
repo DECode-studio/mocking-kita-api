@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
   HelpCircle,
   Shield,
+  History,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -77,6 +78,12 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.FAQ,
       icon: HelpCircle,
       isActive: pathname === ROUTES.FAQ,
+    },
+    {
+      name: 'Change Logs',
+      href: ROUTES.CHANGE_LOGS,
+      icon: History,
+      isActive: pathname === ROUTES.CHANGE_LOGS,
     },
     ...(session?.role === 'Administrator'
       ? [
