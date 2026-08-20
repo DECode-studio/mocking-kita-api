@@ -152,3 +152,11 @@ Pastikan nilai `APP_USERNAME` dan `APP_PASSWORD` di `.env` sama dengan kredensia
 Contoh:
 - **Username**: `admin`
 - **Password**: `admin123`
+
+### Google Workspace SSO Configuration
+
+Untuk mengaktifkan autentikasi SSO asli (Google Workspace), lengkapi variabel berikut di `.env`:
+- **`GOOGLE_CLIENT_ID`**: OAuth Client ID dari Google Cloud Console.
+- **`GOOGLE_CLIENT_SECRET`**: OAuth Client Secret dari Google Cloud Console.
+- **`GOOGLE_CALLBACK_ROUTE`**: `/api/auth/sso/callback` (Wajib didaftarkan sebagai *Authorized Redirect URI* di Google Cloud Console, contoh: `http://localhost:3000/api/auth/sso/callback`).
+- **`SSO_DOMAINS`**: Whitelist domain yang diizinkan masuk, dipisahkan koma (contoh: `finansia.com,kpvendor.id`).

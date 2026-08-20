@@ -10,15 +10,15 @@ import { getErrorMessage } from '@/src/core/utils/error';
 import { ROUTES } from '@/src/core/constants/routes';
 
 const signInSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(1, 'Password is required'),
+  username: z.string().min(1, 'Username or Email is required'),
+  password: z.string().optional(),
   rememberMe: z.boolean().optional(),
 });
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function useSignIn() {
-  const { isAuthenticated, login } = useAuthStore();
+  const { isAuthenticated, login, checkAuth } = useAuthStore();
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -39,7 +39,7 @@ export function useSignIn() {
   const onSubmit = async (data: SignInFormValues) => {
     setAuthError(null);
     try {
-      const res = await login(data.username, data.password, data.rememberMe);
+      const res = await login(data.username, data.password || '', data.rememberMe);
       if (res.success) {
         router.replace(ROUTES.DASHBOARD);
       } else {
@@ -48,6 +48,43 @@ export function useSignIn() {
     } catch (error: unknown) {
       setAuthError(getErrorMessage(error, 'Authentication failed'));
     }
+  };
+
+  const handleGoogleSso = () => {
+    const width = 500;
+    const height = 650;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
+
+    const popup = window.open(
+      '/api/auth/sso',
+      'GoogleWorkspaceSSO',
+      `width=${width},height=${height},top=${top},left=${left},status=no,menubar=no,toolbar=no`
+    );
+
+    // Listen for completion message from popup
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data === 'sso-success') {
+        window.removeEventListener('message', handleMessage);
+        await checkAuth(); // Refetch session status
+        router.replace(ROUTES.DASHBOARD);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    // Fallback: poll popup close status in case message is missed
+    const interval = setInterval(() => {
+      if (!popup || popup.closed) {
+        clearInterval(interval);
+        window.removeEventListener('message', handleMessage);
+        checkAuth().then(() => {
+          if (useAuthStore.getState().isAuthenticated) {
+            router.replace(ROUTES.DASHBOARD);
+          }
+        });
+      }
+    }, 1000);
   };
 
   return {
@@ -60,5 +97,6 @@ export function useSignIn() {
     errors,
     isSubmitting,
     onSubmit,
+    handleGoogleSso,
   };
 }

@@ -8,7 +8,6 @@ import { SIGN_IN_TEXT, SIGN_IN_SEMANTIC_ID } from './constant';
 import { ROUTES } from '@/src/core/constants/routes';
 import {
   SignInHeroPanel,
-  SignInInfoBanner,
   SignInFormCard,
 } from './components';
 
@@ -24,6 +23,7 @@ export const SignInView: React.FC = () => {
     errors,
     isSubmitting,
     onSubmit,
+    handleGoogleSso,
   } = useSignIn();
 
   useEffect(() => {
@@ -63,9 +63,6 @@ export const SignInView: React.FC = () => {
             <p className="text-xs text-slate-400">{SIGN_IN_TEXT.WELCOME_SUBTITLE}</p>
           </div>
 
-          {/* Info Banner Card */}
-          <SignInInfoBanner />
-
           {/* Form Card */}
           <SignInFormCard
             authError={authError}
@@ -76,6 +73,7 @@ export const SignInView: React.FC = () => {
             errors={errors}
             isSubmitting={isSubmitting}
             onSubmit={onSubmit}
+            onGoogleSsoClick={handleGoogleSso}
           />
 
           <p className="text-center text-[11px] text-slate-500 font-mono">

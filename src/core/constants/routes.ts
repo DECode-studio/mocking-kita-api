@@ -6,6 +6,7 @@ export const ROUTES = {
   APIS: '/apis',
   SETTINGS: '/settings',
   FAQ: '/faq',
+  ADMIN_ACCOUNTS: '/admin/accounts',
   PROJECT_DETAIL: (projectId: string) => `/projects/${projectId}`,
   PROJECT_ENVIRONMENTS: (projectId: string) => `/projects/${projectId}/environments`,
   PROJECT_APIS: (projectId: string) => `/projects/${projectId}/apis`,
