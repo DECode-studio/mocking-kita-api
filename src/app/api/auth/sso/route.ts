@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { GOOGLE_OAUTH_API } from '@/src/core/constants/api';
 
 export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
 
   if (clientId && clientSecret) {
     // Real Google OAuth Redirect
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&prompt=select_account`;
+    const googleAuthUrl = `${GOOGLE_OAUTH_API.AUTHORIZE}?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&prompt=select_account`;
     return NextResponse.redirect(googleAuthUrl);
   } else {
     // Redirect to Mock Google Sign-In Page

@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { accountRepository } from '@/src/data/account/repository/account_repository_impl';
-import { generateId } from '@/src/core/utils/uuid';
-import { randomBytes } from 'node:crypto';
-import { hashPassword } from '@/src/core/utils/password-hash';
+import fs from 'node:fs';
+import { ASSET_PATHS } from '@/src/core/constants/assets';
+import { GOOGLE_OAUTH_API } from '@/src/core/constants/api';
 
 const AUTH_COOKIE = 'mock-api-studio-auth';
 
@@ -37,7 +36,7 @@ export async function GET(request: Request) {
 
     try {
       // Exchange code for tokens
-      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      const tokenResponse = await fetch(GOOGLE_OAUTH_API.TOKEN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -55,7 +54,7 @@ export async function GET(request: Request) {
       }
 
       // Fetch user profile info
-      const profileResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      const profileResponse = await fetch(GOOGLE_OAUTH_API.USER_INFO, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
 
@@ -92,17 +91,20 @@ export async function GET(request: Request) {
     let account = await accountRepository.getByUsername(email);
 
     if (!account) {
-      // Auto-provision Google SSO user
-      const id = generateId();
-      const randomPassword = randomBytes(32).toString('hex');
-      const passwordHash = hashPassword(randomPassword);
+      // If the account does not exist, render the profile completion HTML page from assets
+      const { ROLES_LIST } = await import('@/src/core/constants/roles');
+      const rolesOptions = ROLES_LIST.map(role => `<option value="${role}">${role}</option>`).join('');
 
-      account = await accountRepository.create({
-        id,
-        username: email,
-        passwordHash,
-        name,
-        role: 'Manager', // Default role
+      let html = fs.readFileSync(ASSET_PATHS.SSO_REGISTER_TEMPLATE, 'utf8');
+
+      // Replace placeholders
+      html = html
+        .replaceAll('{{email}}', email)
+        .replaceAll('{{name}}', name)
+        .replaceAll('{{rolesOptions}}', rolesOptions);
+
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html' },
       });
     }
 
@@ -133,25 +135,5 @@ export async function GET(request: Request) {
 }
 
 function getCloseScriptHtml() {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Authentication Successful</title>
-</head>
-<body style="background-color: #020617; color: #f8fafc; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
-  <div style="text-align: center;">
-    <p style="font-size: 14px; font-weight: 500; margin-bottom: 5px;">SSO Authentication Successful!</p>
-    <p style="font-size: 12px; color: #94a3b8; margin-top: 0;">Closing this window...</p>
-  </div>
-  <script>
-    if (window.opener) {
-      window.opener.postMessage('sso-success', '*');
-    }
-    window.close();
-  </script>
-</body>
-</html>
-  `;
+  return fs.readFileSync(ASSET_PATHS.SSO_SUCCESS_TEMPLATE, 'utf8');
 }
