@@ -2,6 +2,7 @@ import { db } from '@/src/core/db/sqlite-client';
 import { generateId } from '@/src/core/utils/uuid';
 import { cookies } from 'next/headers';
 import { UserSession } from '@/src/domain/auth/entity/user_session';
+import { sendGoogleSpaceNotification } from '@/src/core/notification/google_space_notifier';
 
 export type ChangeLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
 export type ChangeLogEntityType =
@@ -112,6 +113,24 @@ export async function logChange(input: ChangeLogInput) {
     input.metadata ? JSON.stringify(input.metadata) : null,
     createdAt
   );
+
+  // Dispatch Google Space notification
+  try {
+    await sendGoogleSpaceNotification({
+      action: input.action,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      projectId: input.projectId,
+      userId,
+      operator,
+      description,
+      beforeState: input.beforeState,
+      afterState: input.afterState,
+      metadata: input.metadata,
+    });
+  } catch (notificationErr) {
+    console.error('[logChange] Notification dispatch error:', notificationErr);
+  }
 }
 
 export function getDatabaseSummary() {
