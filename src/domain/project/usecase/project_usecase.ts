@@ -16,8 +16,8 @@ export interface ProjectUseCase {
   importOpenApi(
     projectId: string,
     openApiJson: unknown,
-    mode?: 'merge' | 'replace'
-  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }>;
+    mode?: 'upsert' | 'merge' | 'replace'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>;
 }
 
 export class ProjectUseCaseImpl implements ProjectUseCase {
@@ -75,8 +75,8 @@ export class ProjectUseCaseImpl implements ProjectUseCase {
   importOpenApi(
     projectId: string,
     openApiJson: unknown,
-    mode: 'merge' | 'replace' = 'merge'
-  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }> {
+    mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
     return this.projectRepository.importOpenApi(projectId, openApiJson, mode);
   }
 }

@@ -134,7 +134,22 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Import Mode
                 </label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setImportMode('upsert')}
+                    className={`p-2.5 rounded-lg border text-left transition-colors ${
+                      importMode === 'upsert'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 font-semibold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1">
+                      <span>Upsert</span>
+                      <span className="text-[9px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1 py-0.5 rounded font-bold">Default</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-normal">Update existing & insert new</div>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setImportMode('merge')}
@@ -145,7 +160,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                     }`}
                   >
                     <div>Merge</div>
-                    <div className="text-[10px] text-slate-500 font-normal">Add/Update endpoints without deleting existing ones</div>
+                    <div className="text-[10px] text-slate-500 font-normal">Add all endpoints as new</div>
                   </button>
                   <button
                     type="button"
@@ -157,7 +172,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                     }`}
                   >
                     <div>Replace</div>
-                    <div className="text-[10px] text-slate-500 font-normal">Overwrite endpoints in this project only</div>
+                    <div className="text-[10px] text-slate-500 font-normal">Overwrite all endpoints</div>
                   </button>
                 </div>
               </div>

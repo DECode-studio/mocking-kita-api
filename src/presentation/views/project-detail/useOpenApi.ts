@@ -17,7 +17,7 @@ export function useOpenApi({
 }: UseOpenApiViewModelProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
-  const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
+  const [importMode, setImportMode] = useState<'upsert' | 'merge' | 'replace'>('upsert');
   const [jsonText, setJsonText] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,7 +82,11 @@ export function useOpenApi({
         throw new Error('Failed to import OpenAPI spec.');
       }
 
-      setSuccessMsg(`Successfully imported ${result.importedApiCount} endpoints & ${result.importedCollectionCount} collections.`);
+      if (result.updatedApiCount && result.updatedApiCount > 0) {
+        setSuccessMsg(`Successfully processed OpenAPI: ${result.importedApiCount} created, ${result.updatedApiCount} updated endpoints & ${result.importedCollectionCount} collections.`);
+      } else {
+        setSuccessMsg(`Successfully imported ${result.importedApiCount} endpoints & ${result.importedCollectionCount} collections.`);
+      }
       setTimeout(() => {
         router.refresh();
         onClose();

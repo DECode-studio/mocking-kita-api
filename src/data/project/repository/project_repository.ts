@@ -42,9 +42,9 @@ export class ProjectRemoteRepository implements ProjectRepository {
   async importOpenApi(
     projectId: string,
     openApiJson: unknown,
-    mode: 'merge' | 'replace' = 'merge'
-  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }> {
-    return callDatabase<{ success: boolean; importedApiCount: number; importedCollectionCount: number }>(
+    mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
+    return callDatabase<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>(
       'importProjectOpenApi',
       { projectId, openApiJson, mode }
     );
