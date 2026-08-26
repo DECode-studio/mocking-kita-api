@@ -14,6 +14,20 @@ function getSsoDomains(): string[] {
     .filter(Boolean);
 }
 
+function getRedirectUri(request: Request): string {
+  const envAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (envAppUrl) {
+    const baseUrl = envAppUrl.replace(/\/$/, '');
+    return `${baseUrl}/api/auth/sso/callback`;
+  }
+  const requestUrl = new URL(request.url);
+  let host = requestUrl.host;
+  if (host.includes('0.0.0.0')) {
+    host = host.replace('0.0.0.0', 'localhost');
+  }
+  return `${requestUrl.protocol}//${host}/api/auth/sso/callback`;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
@@ -22,8 +36,7 @@ export async function GET(request: Request) {
   let email = '';
   let name = '';
 
-  const requestUrl = new URL(request.url);
-  const redirectUri = `${requestUrl.protocol}//${requestUrl.host}/api/auth/sso/callback`;
+  const redirectUri = getRedirectUri(request);
 
   // Case 1: Real Google OAuth callback
   if (code) {
