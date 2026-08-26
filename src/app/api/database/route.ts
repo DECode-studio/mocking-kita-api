@@ -417,7 +417,7 @@ export async function POST(request: Request) {
           projectId: payload.projectId,
           beforeState: { apiCount: beforeApis?.count || 0 },
           afterState: { apiCount: afterApis?.count || 0 },
-          metadata: { mode },
+          metadata: { mode, openApiImport: true },
           description: `Imported OpenAPI spec into project '${project?.name || payload.projectId}' (mode: ${mode})`,
         });
         return respond(res);
