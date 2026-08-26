@@ -13,6 +13,6 @@ export interface ProjectRepository {
   importOpenApi(
     projectId: string,
     openApiJson: unknown,
-    mode?: 'merge' | 'replace'
-  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number }>;
+    mode?: 'upsert' | 'merge' | 'replace'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>;
 }
