@@ -14,7 +14,7 @@ export async function POST(
   try {
     const { id: projectId } = await params;
     const body = await request.json();
-    const mode = (body.mode === 'replace' ? 'replace' : 'merge') as 'replace' | 'merge';
+    const mode = (body.mode === 'replace' ? 'replace' : body.mode === 'merge' ? 'merge' : 'upsert') as 'upsert' | 'merge' | 'replace';
     const openApiJson = body.openApiJson || body;
 
     const project = getProjectById(projectId);

@@ -402,9 +402,9 @@ export async function POST(request: Request) {
         return respond(exportProjectOpenApi(payload.projectId));
       }
       case 'importProjectOpenApi': {
-        const payload = body.payload as { projectId: string; openApiJson: any; mode?: 'replace' | 'merge' };
+        const payload = body.payload as { projectId: string; openApiJson: any; mode?: 'upsert' | 'merge' | 'replace' };
         const project = getProjectById(payload.projectId);
-        const mode = payload.mode || 'merge';
+        const mode = payload.mode || 'upsert';
         const beforeApis = db.prepare('SELECT COUNT(*) as count FROM tblApi WHERE project_id = ?').get(payload.projectId) as { count: number };
         
         const res = importProjectOpenApi(payload.projectId, payload.openApiJson, mode);
