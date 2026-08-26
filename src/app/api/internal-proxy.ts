@@ -375,6 +375,26 @@ function toHeaderValue(value: unknown): string {
 }
 
 
+function matchHeaders(expectedHeaders: unknown, actualHeaders: Record<string, string>): boolean {
+  if (isEmptyValue(expectedHeaders)) return true;
+  if (!expectedHeaders || typeof expectedHeaders !== 'object') return true;
+
+  const normalizedExpected: Record<string, string> = {};
+  for (const [key, value] of Object.entries(expectedHeaders as Record<string, unknown>)) {
+    if (!isEmptyValue(value)) {
+      normalizedExpected[key.toLowerCase()] = toHeaderValue(value);
+    }
+  }
+
+  if (Object.keys(normalizedExpected).length === 0) return true;
+
+  return Object.entries(normalizedExpected).every(([key, expectedVal]) => {
+    const actualVal = actualHeaders[key];
+    if (actualVal === undefined) return false;
+    return matchesValue(expectedVal, actualVal, 'EXACT', true) || matchesValue(expectedVal, actualVal, 'PARTIAL', true);
+  });
+}
+
 function scoreScenarioMatch(
   scenario: RequestScenario,
   actual: {
@@ -393,7 +413,7 @@ function scoreScenarioMatch(
     }
   }
 
-  const headerMatch = matchesValue(scenario.headers, actual.headers, scenario.matchType, true);
+  const headerMatch = matchHeaders(scenario.headers, actual.headers);
   const queryMatch = matchesValue(scenario.queryParams, actual.queryParams, scenario.matchType, true);
   const pathMatch = matchesValue(scenario.pathParams, actual.pathParams, scenario.matchType, true);
   
@@ -655,7 +675,17 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
     .filter((value): value is ScenarioMatchResult => value !== null)
     .sort((a, b) => b.score - a.score);
 
-  const matchedRequestScenario = requestScenarios[0]?.scenario || null;
+  let matchedRequestScenario = requestScenarios[0]?.scenario || null;
+
+  if (!matchedRequestScenario) {
+    const allActiveScenarios = database.requestScenarios
+      .filter((scenario) => scenario.apiId === matchedApi.apiId && scenario.status && !scenario.deletedAt)
+      .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+
+    if (allActiveScenarios.length > 0) {
+      matchedRequestScenario = allActiveScenarios[0];
+    }
+  }
 
   if (!matchedRequestScenario) {
     return NextResponse.json(
