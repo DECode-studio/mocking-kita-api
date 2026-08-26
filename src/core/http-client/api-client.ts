@@ -7,7 +7,7 @@ type RequestOptions = {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   let url = path;
   if (typeof window === 'undefined' && path.startsWith('/')) {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+    const baseUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'http://localhost:3000';
     url = `${baseUrl.replace(/\/$/, '')}${path}`;
   }
 
