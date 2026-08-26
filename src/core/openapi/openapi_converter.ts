@@ -267,8 +267,8 @@ export function parseOpenApiSpecToProjectData(
   for (const [pathStr, pathItem] of Object.entries(pathsObj)) {
     if (!pathItem || typeof pathItem !== 'object') continue;
 
-    // Convert path template if needed (OpenAPI uses /users/{id})
-    const normalizedPath = pathStr.trim();
+    // Convert path template if needed (OpenAPI uses /users/{id} -> /users/:id)
+    const normalizedPath = pathStr.trim().replace(/\{([^}]+)\}/g, ':$1');
 
     for (const methodKey of Object.keys(pathItem)) {
       const lowerMethod = methodKey.toLowerCase();
@@ -357,7 +357,7 @@ export function parseOpenApiSpecToProjectData(
         pathParams,
         body: requestBodyContent,
         bodyType,
-        matchType: 'EXACT' as MatchType,
+        matchType: 'PARTIAL' as MatchType,
         priority: 0,
         status: true,
       });
@@ -389,7 +389,16 @@ export function parseOpenApiSpecToProjectData(
           let respBody: unknown = { message: respName };
           if (respObj.content && respObj.content['application/json']) {
             const jsonResp = respObj.content['application/json'];
-            respBody = jsonResp.example !== undefined ? jsonResp.example : jsonResp.schema || respBody;
+            const rawExample = jsonResp.example !== undefined ? jsonResp.example : jsonResp.schema || respBody;
+            if (typeof rawExample === 'string') {
+              try {
+                respBody = JSON.parse(rawExample);
+              } catch {
+                respBody = rawExample;
+              }
+            } else {
+              respBody = rawExample;
+            }
           }
 
           responseScenariosToCreate.push({
