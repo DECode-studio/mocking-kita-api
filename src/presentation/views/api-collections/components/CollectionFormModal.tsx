@@ -4,6 +4,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { Collection } from '@/src/domain/collection/entity/collection';
+import { API_COLLECTIONS_TEXT } from '../constant';
 
 interface CollectionFormModalProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl z-50 space-y-4 focus:outline-none">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <Dialog.Title className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {editingCollection ? 'Edit Folder / Collection' : 'Create Folder / Collection'}
+              {editingCollection ? API_COLLECTIONS_TEXT.MODAL_EDIT_COLLECTION_TITLE : API_COLLECTIONS_TEXT.MODAL_CREATE_COLLECTION_TITLE}
             </Dialog.Title>
             <button
               type="button"
@@ -52,13 +53,13 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
           <form onSubmit={handleFormSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Folder Name
+                {API_COLLECTIONS_TEXT.LABEL_NAME}
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => onNameChange(e.target.value)}
-                placeholder="e.g. Users, Checkout, Admin Panel"
+                placeholder={API_COLLECTIONS_TEXT.PLACEHOLDER_COLLECTION_NAME}
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                 required
               />
@@ -66,13 +67,13 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Description
+                {API_COLLECTIONS_TEXT.LABEL_DESCRIPTION}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => onDescriptionChange(e.target.value)}
                 rows={3}
-                placeholder="Optional description of the endpoints in this folder"
+                placeholder={API_COLLECTIONS_TEXT.PLACEHOLDER_COLLECTION_DESC}
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               />
             </div>
@@ -83,13 +84,13 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
                 onClick={() => onOpenChange(false)}
                 className="px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-md"
               >
-                Cancel
+                {API_COLLECTIONS_TEXT.BTN_CANCEL}
               </button>
               <button
                 type="submit"
                 className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-xs transition-colors"
               >
-                {editingCollection ? 'Save Changes' : 'Create Folder'}
+                {editingCollection ? API_COLLECTIONS_TEXT.BTN_SAVE : API_COLLECTIONS_TEXT.CREATE_FOLDER_BTN}
               </button>
             </div>
           </form>

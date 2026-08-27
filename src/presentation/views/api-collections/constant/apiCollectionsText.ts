@@ -28,4 +28,11 @@ export const API_COLLECTIONS_TEXT = {
   DELETE_DIALOG_TITLE: 'Delete API Endpoint?',
   DELETE_DIALOG_DESC: 'Are you sure you want to delete this API endpoint? All associated request and response scenarios will be deleted.',
   DELETE_DIALOG_CONFIRM: 'Delete',
+  MODAL_CREATE_COLLECTION_TITLE: 'Create Collection',
+  MODAL_EDIT_COLLECTION_TITLE: 'Edit Collection',
+  PLACEHOLDER_COLLECTION_NAME: 'e.g. Users, Checkout, Admin Panel',
+  PLACEHOLDER_COLLECTION_DESC: 'Optional description of the endpoints in this folder',
+  ENDPOINTS_COUNT_SUFFIX: 'endpoints',
+  DEFAULT_COLLECTION_TAG: 'Default Collection',
+  CREATE_FOLDER_BTN: 'Create Folder',
 } as const;

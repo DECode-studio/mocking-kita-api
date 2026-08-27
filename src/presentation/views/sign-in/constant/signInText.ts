@@ -16,7 +16,7 @@ export const SIGN_IN_TEXT = {
   USERNAME_PLACEHOLDER: 'username or name@finansia.com',
   PASSWORD_LABEL: 'Password',
   PASSWORD_PLACEHOLDER: '••••••••',
-  PASSWORD_HINT: '* Password is only required for Administrator accounts. Leave blank for SSO login.',
+  PASSWORD_HINT: '* Password is required for Administrator and Manager accounts. Leave blank for SSO login.',
   REMEMBER_ME: 'Remember me',
   SUBMIT_BTN: 'Sign In to Dashboard',
   SUBMITTING_BTN: 'Authenticating...',

@@ -15,4 +15,8 @@ export const SETTINGS_TEXT = {
   RESET_DIALOG_TITLE: 'Reset Database to Default Seed Data?',
   RESET_DIALOG_DESC: 'Are you sure you want to reset all mock projects, environments, and API endpoints back to default seed data? Current unsaved modifications will be replaced.',
   RESET_DIALOG_CONFIRM: 'Reset Everything',
+  ONBOARDING_TITLE: 'Onboarding & Coach Marks',
+  ONBOARDING_LABEL: 'Re-enable Onboarding Tour',
+  ONBOARDING_DESC: 'Reset tour progress and show guide tooltips again across the application.',
+  RESTART_TOUR_BTN: 'Restart Tour',
 } as const;

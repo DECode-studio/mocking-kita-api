@@ -36,7 +36,7 @@ export const ApiCollectionHeader: React.FC<ApiCollectionHeaderProps> = ({
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-xs transition-colors shrink-0"
         >
           <FolderPlus className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-          New Folder
+          {API_COLLECTIONS_TEXT.CREATE_FOLDER_BTN}
         </button>
 
         <button

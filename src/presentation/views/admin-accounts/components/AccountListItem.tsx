@@ -3,7 +3,8 @@
 import React from 'react';
 import { Shield, User, Edit2, Trash2 } from 'lucide-react';
 import { Account } from '@/src/domain/account/entity/account';
-import { ADMIN_ACCOUNTS_SEMANTIC_ID } from '../constant';
+import { hasAdminAuthority } from '@/src/core/constants/roles';
+import { ADMIN_ACCOUNTS_TEXT, ADMIN_ACCOUNTS_SEMANTIC_ID } from '../constant';
 
 interface AccountListItemProps {
   account: Account;
@@ -24,7 +25,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
     >
       <div className="flex items-start gap-3.5">
         <div className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-          {account.role === 'Administrator' ? (
+          {hasAdminAuthority(account.role) ? (
             <Shield className="w-5 h-5" />
           ) : (
             <User className="w-5 h-5" />
@@ -42,7 +43,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
               {account.role}
             </span>
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-sans">
-              Joined {new Date(account.createdAt).toLocaleDateString()}
+              {ADMIN_ACCOUNTS_TEXT.JOINED_PREFIX} {new Date(account.createdAt).toLocaleDateString()}
             </span>
           </div>
         </div>

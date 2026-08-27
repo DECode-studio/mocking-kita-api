@@ -54,7 +54,7 @@ export const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
             title="Export / Import OpenAPI JSON"
           >
             <FileJson className="w-3.5 h-3.5" />
-            OpenAPI Docs
+            {PROJECT_DETAIL_TEXT.EXPORT_IMPORT_JSON_BTN}
           </button>
         )}
         <StatusSwitch
