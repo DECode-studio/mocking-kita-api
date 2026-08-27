@@ -1,3 +1,3 @@
 export { ProjectsView, default } from './ProjectsView';
-export * from './useProjects';
+export * from './hook/useProjects';
 export * from './constant';

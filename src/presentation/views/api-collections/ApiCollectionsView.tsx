@@ -7,7 +7,7 @@ import { EmptyState } from '../../components/shared/EmptyState';
 import {  createApiUseCase  } from '@/src/di/usecase_provider';
 import {  createCollectionUseCase  } from '@/src/di/usecase_provider';
 import { Collection } from '@/src/domain/collection/entity/collection';
-import { useApiCollections } from './useApiCollections';
+import { useApiCollections } from './hook/useApiCollections';
 import { ROUTES } from '@/src/core/constants/routes';
 import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from './constant';
 import {

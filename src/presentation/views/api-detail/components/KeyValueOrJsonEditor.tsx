@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Sparkles, Plus, Trash2 } from 'lucide-react';
-import { useKeyValueOrJsonEditor } from '../useKeyValueOrJsonEditor';
+import { useKeyValueOrJsonEditor } from '../hook/useKeyValueOrJsonEditor';
 
 interface KeyValueOrJsonEditorProps {
   label: string;

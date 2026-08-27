@@ -3,7 +3,7 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, FileText, AlertCircle, X } from 'lucide-react';
-import { useImportExportDialog } from '../useImportExportDialog';
+import { useImportExportDialog } from '../hook/useImportExportDialog';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 export const ImportExportDialog: React.FC = () => {

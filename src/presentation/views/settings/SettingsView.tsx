@@ -3,7 +3,7 @@
 import React from 'react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import {  createDatabaseResetUseCase  } from '@/src/di/usecase_provider';
-import { useSettings } from './useSettings';
+import { useSettings } from './hook/useSettings';
 import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from './constant';
 import {
   ThemeSettingsCard,

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useAdminChangeLogs } from './useAdminChangeLogs';
+import { useAdminChangeLogs } from './hook/useAdminChangeLogs';
 import { ChangeLogsAdminHeader } from './components/ChangeLogsAdminHeader';
 import { ChangeLogsSearchFilterBar } from './components/ChangeLogsSearchFilterBar';
 import { ChangeLogsTable } from './components/ChangeLogsTable';

@@ -14,7 +14,7 @@ Dokumen panduan aturan pengkodean (*Coding Standards*) untuk proyek **Mock API S
    - **`src/core/`**: Driver tingkat rendah (SQLite Client, Axios/Fetch HTTP Client).
    - **`src/domain/`**: Pure Business Entities, Business Interfaces, dan Use Cases (Bebas dari React/Next.js).
    - **`src/data/`**: Data Mappers, DTO Models, Concrete Repositories, Data Sources.
-   - **`src/presentation/`**: Views (Murni UI) & View Models (Hook pemegang UI State & Logic).
+   - **`src/presentation/`**: Views (Murni UI) & View Models (Hook di dalam folder `hook/` pemegang UI State & Logic).
 3. **No LocalStorage**:
    - Seluruh data wajib disimpan & dibaca dari **SQLite Database** via Data Layer. `LocalStorage` atau `SessionStorage` dilarang digunakan untuk persistence data.
 
@@ -82,12 +82,12 @@ Dokumen panduan aturan pengkodean (*Coding Standards*) untuk proyek **Mock API S
 * **DOs**:
   - ✅ Terapkan **Feature Co-location MVVM**:
     - `[Feature]View.tsx`: Murni UI Layout & Render JSX (`'use client'`).
-    - `use[Feature].ts`: Custom Hook sebagai View Model. Tempat untuk `useState`, `useForm`, routing, dan memanggil Use Cases.
+    - `hook/use[Feature].ts`: Custom Hook sebagai View Model (semua hook disimpan di dalam folder `hook/`). Tempat untuk `useState`, `useForm`, routing, dan memanggil Use Cases.
     - `components/`: Sub-widget lokal spesifik modul tersebut.
   - ✅ Operkan state dan event handler dari View Model hook ke View Component (`const vm = useSignIn()`).
 * **DON'Ts**:
-  - ❌ **JANGAN** menuliskan inline business logic atau panggil API HTTP langsung dari `View.tsx`. Semua harus melalui `use[Feature].ts` View Model hook.
-  - ❌ **JANGAN** menempatkan `use[Feature].ts` di folder global jika hook tersebut hanya digunakan oleh 1 halaman spesifik.
+  - ❌ **JANGAN** menuliskan inline business logic atau panggil API HTTP langsung dari `View.tsx`. Semua harus melalui `hook/use[Feature].ts` View Model hook.
+  - ❌ **JANGAN** menempatkan `hook/use[Feature].ts` di luar folder `hook/` pada tiap module presentation layer atau di folder global jika hook tersebut hanya digunakan oleh 1 halaman spesifik.
 
 ---
 
@@ -115,4 +115,4 @@ Dokumen panduan aturan pengkodean (*Coding Standards*) untuk proyek **Mock API S
 1. **DILARANG** menggunakan `LocalStorage` atau `SessionStorage` untuk menyimpan data aplikasi.
 2. **DILARANG** mengimpor `better-sqlite3` atau query database langsung di dalam Client Component (`'use client'`) atau View Model.
 3. **DILARANG** mengimpor infrastruktur / framework di dalam `src/domain/`.
-4. **DILARANG** mencampur View Model hook global jika modul hanya dipakai secara lokal (gunakan Co-location `src/presentation/views/[feature]/use[Feature].ts`).
+4. **DILARANG** mencampur View Model hook global jika modul hanya dipakai secara lokal (gunakan Co-location `src/presentation/views/[feature]/hook/use[Feature].ts`).

@@ -4,7 +4,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, X, FileJson, AlertCircle, CheckCircle2 } from 'lucide-react';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
-import { useOpenApi } from '../useOpenApi';
+import { useOpenApi } from '../hook/useOpenApi';
 import { PROJECT_DETAIL_TEXT } from '../constant';
 
 interface OpenApiModalProps {

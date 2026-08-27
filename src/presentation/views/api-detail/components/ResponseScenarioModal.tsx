@@ -6,7 +6,7 @@ import { X, Sparkles } from 'lucide-react';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 import { formatJsonString } from '@/src/core/utils/json';
-import { useResponseScenarioModal } from '../useResponseScenarioModal';
+import { useResponseScenarioModal } from '../hook/useResponseScenarioModal';
 
 interface ResponseScenarioModalProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useDashboard } from './useDashboard';
+import { useDashboard } from './hook/useDashboard';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { ROUTES } from '@/src/core/constants/routes';
 import { DASHBOARD_SEMANTIC_ID } from './constant';

@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { RequestBodyType } from '@/src/core/utils/types';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
-import { useRequestScenarioModal } from '../useRequestScenarioModal';
+import { useRequestScenarioModal } from '../hook/useRequestScenarioModal';
 import { KeyValueOrJsonEditor } from './KeyValueOrJsonEditor';
 
 interface RequestScenarioModalProps {

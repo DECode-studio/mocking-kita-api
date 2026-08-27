@@ -5,7 +5,7 @@ import { Globe } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import {  createEnvironmentUseCase  } from '@/src/di/usecase_provider';
-import { useEnvironments } from './useEnvironments';
+import { useEnvironments } from './hook/useEnvironments';
 import { ENVIRONMENTS_TEXT, ENVIRONMENTS_SEMANTIC_ID } from './constant';
 import {
   EnvironmentHeader,
