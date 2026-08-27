@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Terminal } from 'lucide-react';
-import { useSignIn } from './useSignIn';
+import { useSignIn } from './hook/useSignIn';
 import { SIGN_IN_TEXT, SIGN_IN_SEMANTIC_ID } from './constant';
 import { ROUTES } from '@/src/core/constants/routes';
 import {

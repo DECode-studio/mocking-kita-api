@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAdminAccounts } from './useAdminAccounts';
+import { useAdminAccounts } from './hook/useAdminAccounts';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { Plus, Shield, User, RefreshCw, AlertCircle, Search } from 'lucide-react';
 import { Account } from '@/src/domain/account/entity/account';

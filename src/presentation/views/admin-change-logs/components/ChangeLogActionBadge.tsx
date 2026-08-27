@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/src/core/utils/cn';
-import { ChangeLogEntry } from '../useAdminChangeLogs';
+import { ChangeLogEntry } from '../hook/useAdminChangeLogs';
 
 interface ChangeLogActionBadgeProps {
   action: ChangeLogEntry['action'];

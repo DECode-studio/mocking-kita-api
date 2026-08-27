@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Plus, Trash2, Code2, List } from 'lucide-react';
-import { useKeyValueEditor } from '../useKeyValueEditor';
+import { useKeyValueEditor } from '../hook/useKeyValueEditor';
 
 export interface KeyValuePair {
   id: string;

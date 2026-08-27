@@ -5,7 +5,7 @@ import { FolderGit2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
-import { useProjects } from './useProjects';
+import { useProjects } from './hook/useProjects';
 import { Project } from '@/src/domain/project/entity/project';
 import { ROUTES } from '@/src/core/constants/routes';
 import { PROJECTS_TEXT, PROJECTS_SEMANTIC_ID } from './constant';

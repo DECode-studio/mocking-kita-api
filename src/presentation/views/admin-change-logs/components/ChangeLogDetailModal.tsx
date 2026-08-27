@@ -3,7 +3,7 @@
 import React from 'react';
 import { Clock, X } from 'lucide-react';
 import { formatDate } from '@/src/core/utils/date';
-import { ChangeLogEntry } from '../useAdminChangeLogs';
+import { ChangeLogEntry } from '../hook/useAdminChangeLogs';
 import { ChangeLogActionBadge } from './ChangeLogActionBadge';
 import { CHANGE_LOGS_ADMIN_TEXT, CHANGE_LOGS_ADMIN_SEMANTIC_ID } from '../constant';
 

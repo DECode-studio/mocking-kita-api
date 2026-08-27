@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Copy, Check, Sparkles, Minimize2, RotateCcw, AlertTriangle } from 'lucide-react';
-import { useJsonEditor } from '../useJsonEditor';
+import { useJsonEditor } from '../hook/useJsonEditor';
 
 interface JsonEditorProps {
   value: unknown;

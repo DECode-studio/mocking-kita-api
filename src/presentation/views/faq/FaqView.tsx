@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useFaq } from './useFaq';
+import { useFaq } from './hook/useFaq';
 import { Faq } from '@/src/domain/faq/entity/faq';
 import {  createFaqUseCase  } from '@/src/di/usecase_provider';
 import { HelpCircle } from 'lucide-react';

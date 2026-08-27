@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { RefreshCw, Clock, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ChangeLogEntry } from '../useAdminChangeLogs';
+import { ChangeLogEntry } from '../hook/useAdminChangeLogs';
 import { ChangeLogListItem } from './ChangeLogListItem';
 import { CHANGE_LOGS_ADMIN_TEXT, CHANGE_LOGS_ADMIN_SEMANTIC_ID } from '../constant';
 

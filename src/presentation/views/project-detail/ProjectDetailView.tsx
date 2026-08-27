@@ -7,7 +7,7 @@ import { EnvironmentsView } from '../environments/EnvironmentsView';
 import { ApiCollectionsView } from '../api-collections/ApiCollectionsView';
 import { formatDate } from '../../../core/utils/date';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
-import { useProjectDetail } from './useProjectDetail';
+import { useProjectDetail } from './hook/useProjectDetail';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { Project } from '@/src/domain/project/entity/project';
