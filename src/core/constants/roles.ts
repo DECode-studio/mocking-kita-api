@@ -8,13 +8,29 @@ export enum AccountRole {
   QUALITY_ASSURANCE = 'Quality Assurance',
 }
 
-export const ROLES_LIST = [
+/**
+ * Roles offered to new users during initial registration / sign-in (excludes Admin/Manager authority).
+ */
+export const INITIAL_USER_ROLES = [
   AccountRole.PRODUCT_PROJECT_MANAGER,
   AccountRole.BACKEND_DEVELOPER,
   AccountRole.FRONTEND_DEVELOPER,
   AccountRole.MOBILE_DEVELOPER,
   AccountRole.QUALITY_ASSURANCE,
 ];
+
+/**
+ * All roles available for management in /admin/accounts (includes Manager and Administrator).
+ */
+export const ADMIN_ACCOUNT_ROLES = [
+  ...INITIAL_USER_ROLES,
+  AccountRole.MANAGER,
+];
+
+/**
+ * Default alias for initial registration roles list.
+ */
+export const ROLES_LIST = INITIAL_USER_ROLES;
 
 export function hasAdminAuthority(role?: string | null): boolean {
   if (!role) return false;
@@ -25,5 +41,3 @@ export function hasAdminAuthority(role?: string | null): boolean {
 export function canResetDatabase(role?: string | null): boolean {
   return hasAdminAuthority(role);
 }
-
-
