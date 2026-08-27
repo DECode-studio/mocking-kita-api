@@ -4,6 +4,7 @@ import { UserSession } from '@/src/domain/auth/entity/user_session';
 import { accountRepository } from '@/src/data/account/repository/account_repository_impl';
 import { verifyPassword, hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
+import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { randomBytes } from 'node:crypto';
 
 export const runtime = 'nodejs';
@@ -161,10 +162,10 @@ export async function POST(request: Request) {
         loginAt: new Date().toISOString(),
       };
     } else {
-      // Check database if there's any old administrator accounts
+      // Check database if there's any admin or manager accounts
       try {
         const account = await accountRepository.getByUsername(cleanUsername);
-        if (account && account.role === 'Administrator') {
+        if (account && hasAdminAuthority(account.role)) {
           const hash = await accountRepository.getPasswordHash(account.id);
           if (hash && verifyPassword(cleanPassword, hash)) {
             session = {
