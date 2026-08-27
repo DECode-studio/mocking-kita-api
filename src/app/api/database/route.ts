@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { readDatabase, resetDatabaseToSeed, importDatabaseData, seedDatabase } from '@/src/core/db/database_storage_helper';
 import { createProject, updateProject, softDeleteProject, restoreProject, hardDeleteProject, getProjectById } from '@/src/data/project/data_source/project_data_source_impl';
@@ -12,6 +13,7 @@ import { clearInternalProxyCache } from '@/src/app/api/internal-proxy-cache';
 import { exportProjectOpenApi, importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
 import { logChange, getDatabaseSummary } from '@/src/core/db/change_log_helper';
 import { db } from '@/src/core/db/sqlite-client';
+import { canResetDatabase } from '@/src/core/constants/roles';
 
 export const runtime = 'nodejs';
 
@@ -53,6 +55,23 @@ export async function POST(request: Request) {
         return respondVoid();
       }
       case 'resetDatabase': {
+        const cookieStore = await cookies();
+        const rawSession = cookieStore.get('mock-api-studio-auth')?.value;
+        let userRole: string | undefined;
+        if (rawSession) {
+          try {
+            const session = JSON.parse(rawSession);
+            userRole = session?.role;
+          } catch {}
+        }
+
+        if (!canResetDatabase(userRole)) {
+          return NextResponse.json(
+            { success: false, error: 'Forbidden: Reset database action requires Admin or Manager role' },
+            { status: 403 }
+          );
+        }
+
         const before = getDatabaseSummary();
         const res = resetDatabaseToSeed();
         const after = getDatabaseSummary();

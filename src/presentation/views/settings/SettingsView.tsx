@@ -21,6 +21,7 @@ export const SettingsView: React.FC = () => {
     isResetConfirmOpen,
     setIsResetConfirmOpen,
     handleReset,
+    canResetDb,
   } = useSettings(databaseResetUseCase);
 
   return (
@@ -41,6 +42,7 @@ export const SettingsView: React.FC = () => {
       <DatabaseSettingsCard
         onImportExportClick={() => setImportModalOpen(true)}
         onResetConfirmClick={() => setIsResetConfirmOpen(true)}
+        canResetDb={canResetDb}
       />
 
       {/* Onboarding Tour Settings Card */}
