@@ -50,7 +50,7 @@ Dokumen arsitektur Clean Architecture + SSR (Next.js App Router) dengan pemisaha
    - Setiap module menyimpan data source seperti `<module>_data_source.ts` dan `<module>_data_source_impl.ts`.
 
 4. **Presentation Layer (`src/presentation/views/`)**:
-   - **Feature Co-located MVVM**: `View.tsx`, `use[Feature].ts` (View Model), dan `components/` (Sub-widgets UI).
+   - **Feature Co-located MVVM**: `View.tsx`, `hook/use[Feature].ts` (View Model), dan `components/` (Sub-widgets UI).
 
 ---
 
@@ -61,7 +61,7 @@ Dokumen arsitektur Clean Architecture + SSR (Next.js App Router) dengan pemisaha
 [ View Component (SignInView.tsx) ]
          │
          ▼
-[ View Model Hook (useSignIn.ts) ]
+[ View Model Hook (hook/useSignIn.ts) ]
          │
          ▼
 [ Use Case (LoginUseCase - Domain) ]
@@ -197,12 +197,14 @@ mock-api-studio/
         ├── views/                      # Feature Views Co-located
         │   ├── sign-in/
         │   │   ├── SignInView.tsx      # Page View (Pure Layout & Render UI)
-        │   │   ├── useSignIn.ts        # View Model Hook (UI State & Event Logic)
+        │   │   ├── hook/
+        │   │   │   └── useSignIn.ts    # View Model Hook (UI State & Event Logic)
         │   │   └── components/         # Sub-widgets (SignInHeader, SignInForm, etc.)
         │   │
         │   └── dashboard/
         │       ├── DashboardView.tsx
-        │       ├── useDashboard.ts     # View Model Hook
+        │       ├── hook/
+        │       │   └── useDashboard.ts # View Model Hook
         │       └── components/         # Sub-widgets (MetricCards, RecentProjects)
         │
         └── components/                 # Shared UI Components (Button, Input, UserMenu)
