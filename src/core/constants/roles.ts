@@ -8,3 +8,10 @@ export enum AccountRole {
 }
 
 export const ROLES_LIST = Object.values(AccountRole);
+
+export function canResetDatabase(role?: string | null): boolean {
+  if (!role) return false;
+  const normalized = role.trim().toLowerCase();
+  return ['administrator', 'admin', 'manager'].includes(normalized);
+}
+
