@@ -43,7 +43,7 @@ export const AccountsAdminView: React.FC = () => {
   const openAddModal = () => {
     setEditingAccount(null);
     setUsername('');
-    setEmailDomain(ssoDomains[0] || 'finansia.com');
+    setEmailDomain(ssoDomains[0] || '');
     setPassword('');
     setName('');
     setRole(ROLES_LIST[0] || 'Product / Project Manager');
@@ -58,19 +58,13 @@ export const AccountsAdminView: React.FC = () => {
     setRole(account.role);
     setFormError(null);
 
-    if (hasAdminAuthority(account.role)) {
-      if (account.username.includes('@')) {
-        const parts = account.username.split('@');
-        setUsername(parts[0] || '');
-        setEmailDomain(parts[1] || ssoDomains[0] || 'finansia.com');
-      } else {
-        setUsername(account.username);
-        setEmailDomain('');
-      }
+    if (account.username.includes('@')) {
+      const atIndex = account.username.indexOf('@');
+      setUsername(account.username.substring(0, atIndex));
+      setEmailDomain(account.username.substring(atIndex + 1));
     } else {
-      const parts = account.username.split('@');
-      setUsername(parts[0] || '');
-      setEmailDomain(parts[1] || ssoDomains[0] || 'finansia.com');
+      setUsername(account.username);
+      setEmailDomain('');
     }
 
     setIsFormOpen(true);
@@ -92,9 +86,9 @@ export const AccountsAdminView: React.FC = () => {
       return;
     }
 
-    const targetUsername = hasAdminAuthority(role) && !emailDomain
-      ? username.trim()
-      : `${username.trim()}@${emailDomain.trim()}`;
+    const targetUsername = emailDomain.trim()
+      ? `${username.trim()}@${emailDomain.trim()}`
+      : username.trim();
 
     const payload = {
       username: targetUsername,
