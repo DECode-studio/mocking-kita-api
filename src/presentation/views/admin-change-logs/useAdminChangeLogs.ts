@@ -13,6 +13,7 @@ export function useAdminChangeLogs() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeLogDetails, setActiveLogDetails] = useState<ChangeLogEntry | null>(null);
 
   // UseCases
   const changeLogUseCase = useMemo(() => createChangeLogUseCase(), []);
@@ -81,6 +82,14 @@ export function useAdminChangeLogs() {
 
   const totalPages = Math.ceil(totalCount / limit);
 
+  const openLogDetails = (log: ChangeLogEntry) => {
+    setActiveLogDetails(log);
+  };
+
+  const closeLogDetails = () => {
+    setActiveLogDetails(null);
+  };
+
   return {
     changeLogs,
     projects,
@@ -96,6 +105,9 @@ export function useAdminChangeLogs() {
     page,
     setPage,
     totalPages,
+    activeLogDetails,
+    openLogDetails,
+    closeLogDetails,
     refresh: fetchChangeLogs,
   };
 }
