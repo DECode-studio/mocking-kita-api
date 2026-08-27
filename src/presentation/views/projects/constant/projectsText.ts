@@ -31,4 +31,12 @@ export const PROJECTS_TEXT = {
   DELETE_DIALOG_DESC_PREFIX: 'Are you sure you want to permanently delete',
   DELETE_DIALOG_DESC_SUFFIX: '? All associated environments, API definitions, and scenarios will be removed permanently.',
   DELETE_DIALOG_CONFIRM: 'Permanently Delete',
+  STATUS_ALL: 'All Status',
+  STATUS_ACTIVE: 'Active',
+  STATUS_DISABLED: 'Disabled',
+  STATUS_DELETED: 'Deleted',
+  VIEW_GRID: 'Grid View',
+  VIEW_TABLE: 'Table View',
+  ENDPOINTS_COUNT_SUFFIX: 'Endpoints',
+  ENVIRONMENTS_COUNT_SUFFIX: 'Environments',
 } as const;

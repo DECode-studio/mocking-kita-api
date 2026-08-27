@@ -71,7 +71,7 @@ export const ProjectsFilterBar: React.FC<ProjectsFilterBarProps> = ({
             type="button"
             onClick={() => onViewModeChange('grid')}
             className={`p-1 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-xs' : 'text-slate-400'}`}
-            title="Grid View"
+            title={PROJECTS_TEXT.VIEW_GRID}
           >
             <Grid className="w-3.5 h-3.5" />
           </button>
@@ -79,7 +79,7 @@ export const ProjectsFilterBar: React.FC<ProjectsFilterBarProps> = ({
             type="button"
             onClick={() => onViewModeChange('table')}
             className={`p-1 rounded ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-xs' : 'text-slate-400'}`}
-            title="Table View"
+            title={PROJECTS_TEXT.VIEW_TABLE}
           >
             <ListIcon className="w-3.5 h-3.5" />
           </button>

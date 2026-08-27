@@ -25,6 +25,7 @@ import { useUIStore } from '../../stores/uiStore';
 import { useAuthStore } from '../../stores/authStore';
 import { cn } from '../../../core/utils/cn';
 import { ROUTES } from '@/src/core/constants/routes';
+import { hasAdminAuthority } from '@/src/core/constants/roles';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
 import { Project } from '@/src/domain/project/entity/project';
 
@@ -85,7 +86,7 @@ export const AppSidebar: React.FC = () => {
       icon: History,
       isActive: pathname === ROUTES.CHANGE_LOGS,
     },
-    ...(session?.role === 'Administrator'
+    ...(hasAdminAuthority(session?.role)
       ? [
           {
             name: 'Users',

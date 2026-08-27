@@ -1,4 +1,5 @@
 export enum AccountRole {
+  ADMINISTRATOR = 'Administrator',
   MANAGER = 'Manager',
   PRODUCT_PROJECT_MANAGER = 'Product / Project Manager',
   BACKEND_DEVELOPER = 'Backend Developer',
@@ -7,11 +8,36 @@ export enum AccountRole {
   QUALITY_ASSURANCE = 'Quality Assurance',
 }
 
-export const ROLES_LIST = Object.values(AccountRole);
+/**
+ * Roles offered to new users during initial registration / sign-in (excludes Admin/Manager authority).
+ */
+export const INITIAL_USER_ROLES = [
+  AccountRole.PRODUCT_PROJECT_MANAGER,
+  AccountRole.BACKEND_DEVELOPER,
+  AccountRole.FRONTEND_DEVELOPER,
+  AccountRole.MOBILE_DEVELOPER,
+  AccountRole.QUALITY_ASSURANCE,
+];
 
-export function canResetDatabase(role?: string | null): boolean {
+/**
+ * All roles available for management in /admin/accounts (includes Manager and Administrator).
+ */
+export const ADMIN_ACCOUNT_ROLES = [
+  ...INITIAL_USER_ROLES,
+  AccountRole.MANAGER,
+];
+
+/**
+ * Default alias for initial registration roles list.
+ */
+export const ROLES_LIST = INITIAL_USER_ROLES;
+
+export function hasAdminAuthority(role?: string | null): boolean {
   if (!role) return false;
   const normalized = role.trim().toLowerCase();
   return ['administrator', 'admin', 'manager'].includes(normalized);
 }
 
+export function canResetDatabase(role?: string | null): boolean {
+  return hasAdminAuthority(role);
+}

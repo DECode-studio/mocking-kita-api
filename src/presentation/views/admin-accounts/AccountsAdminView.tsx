@@ -5,7 +5,7 @@ import { useAdminAccounts } from './useAdminAccounts';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { Plus, Shield, User, RefreshCw, AlertCircle, Search } from 'lucide-react';
 import { Account } from '@/src/domain/account/entity/account';
-import { ROLES_LIST } from '@/src/core/constants/roles';
+import { ROLES_LIST, hasAdminAuthority } from '@/src/core/constants/roles';
 import { AccountsSearchFilter, AccountFormModal, AccountListItem } from './components';
 import { ADMIN_ACCOUNTS_TEXT, ADMIN_ACCOUNTS_SEMANTIC_ID } from './constant';
 
@@ -36,17 +36,17 @@ export const AccountsAdminView: React.FC = () => {
   const [emailDomain, setEmailDomain] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState(ROLES_LIST[0] || 'Manager');
+  const [role, setRole] = useState(ROLES_LIST[0] || 'Product / Project Manager');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const openAddModal = () => {
     setEditingAccount(null);
     setUsername('');
-    setEmailDomain(ssoDomains[0] || 'finansia.com');
+    setEmailDomain(ssoDomains[0] || '');
     setPassword('');
     setName('');
-    setRole(ROLES_LIST[0] || 'Manager');
+    setRole(ROLES_LIST[0] || 'Product / Project Manager');
     setFormError(null);
     setIsFormOpen(true);
   };
@@ -58,13 +58,13 @@ export const AccountsAdminView: React.FC = () => {
     setRole(account.role);
     setFormError(null);
 
-    if (account.role === 'Administrator') {
+    if (account.username.includes('@')) {
+      const atIndex = account.username.indexOf('@');
+      setUsername(account.username.substring(0, atIndex));
+      setEmailDomain(account.username.substring(atIndex + 1));
+    } else {
       setUsername(account.username);
       setEmailDomain('');
-    } else {
-      const parts = account.username.split('@');
-      setUsername(parts[0] || '');
-      setEmailDomain(parts[1] || ssoDomains[0] || 'finansia.com');
     }
 
     setIsFormOpen(true);
@@ -80,15 +80,15 @@ export const AccountsAdminView: React.FC = () => {
     setFormError(null);
     setIsSubmitting(true);
 
-    if (!username.trim() || !name.trim() || (!editingAccount && role === 'Administrator' && !password)) {
-      setFormError('Please fill out all required fields');
+    if (!username.trim() || !name.trim() || (!editingAccount && hasAdminAuthority(role) && !password)) {
+      setFormError(ADMIN_ACCOUNTS_TEXT.REQUIRED_FIELDS_ERROR);
       setIsSubmitting(false);
       return;
     }
 
-    const targetUsername = role === 'Administrator'
-      ? username.trim()
-      : `${username.trim()}@${emailDomain.trim()}`;
+    const targetUsername = emailDomain.trim()
+      ? `${username.trim()}@${emailDomain.trim()}`
+      : username.trim();
 
     const payload = {
       username: targetUsername,
@@ -109,7 +109,7 @@ export const AccountsAdminView: React.FC = () => {
     if (result.success) {
       setIsFormOpen(false);
     } else {
-      setFormError(result.error || 'Operation failed');
+      setFormError(result.error || ADMIN_ACCOUNTS_TEXT.OPERATION_FAILED_ERROR);
     }
   };
 

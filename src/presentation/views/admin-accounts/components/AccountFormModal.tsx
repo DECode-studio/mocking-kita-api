@@ -4,6 +4,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Plus, Edit2, Key, AlertCircle, X } from 'lucide-react';
 import { Account } from '@/src/domain/account/entity/account';
+import { hasAdminAuthority, ADMIN_ACCOUNT_ROLES } from '@/src/core/constants/roles';
 import { ADMIN_ACCOUNTS_TEXT, ADMIN_ACCOUNTS_SEMANTIC_ID } from '../constant';
 
 interface AccountFormModalProps {
@@ -47,6 +48,15 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
   ssoDomains,
   rolesList,
 }) => {
+  const isAdmin = hasAdminAuthority(role);
+  const isEmailAccount = Boolean(emailDomain) || (editingAccount ? editingAccount.username.includes('@') : !isAdmin);
+  const availableDomains = Array.from(
+    new Set([
+      ...ssoDomains,
+      ...(emailDomain ? [emailDomain] : []),
+    ])
+  ).filter(Boolean);
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -88,23 +98,14 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
             {/* Username / Email */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                {role === 'Administrator' ? 'Username *' : 'Email Address (SSO) *'}
+                {isEmailAccount ? ADMIN_ACCOUNTS_TEXT.LABEL_EMAIL_SSO : ADMIN_ACCOUNTS_TEXT.LABEL_USERNAME}
               </label>
-              {role === 'Administrator' ? (
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. jdoe"
-                  value={username}
-                  onChange={(e) => onUsernameChange(e.target.value)}
-                  className="w-full text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                />
-              ) : (
+              {isEmailAccount ? (
                 <div className="flex gap-2 items-center">
                   <input
                     type="text"
                     required
-                    placeholder="username"
+                    placeholder={ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_SSO_USERNAME}
                     value={username}
                     onChange={(e) => onUsernameChange(e.target.value)}
                     className="flex-1 text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
@@ -113,51 +114,53 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
                   <select
                     value={emailDomain}
                     onChange={(e) => onEmailDomainChange(e.target.value)}
-                    className="w-44 text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shrink-0"
+                    className="w-44 text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shrink-0 cursor-pointer"
                   >
-                    {ssoDomains.length > 0 ? (
-                      ssoDomains.map((domain) => (
-                        <option key={domain} value={domain}>
-                          {domain}
-                        </option>
-                      ))
-                    ) : (
-                      <>
-                        <option value="finansia.com">finansia.com</option>
-                        <option value="kpvendor.id">kpvendor.id</option>
-                      </>
-                    )}
+                    {availableDomains.map((domain) => (
+                      <option key={domain} value={domain}>
+                        {domain}
+                      </option>
+                    ))}
                   </select>
                 </div>
+              ) : (
+                <input
+                  type="text"
+                  required
+                  placeholder={ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_ADMIN_USERNAME}
+                  value={username}
+                  onChange={(e) => onUsernameChange(e.target.value)}
+                  className="w-full text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                />
               )}
             </div>
 
             {/* Display Name */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                Display Name *
+                {ADMIN_ACCOUNTS_TEXT.LABEL_DISPLAY_NAME}
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. John Doe"
+                placeholder={ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_DISPLAY_NAME}
                 value={name}
                 onChange={(e) => onNameChange(e.target.value)}
                 className="w-full text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
               />
             </div>
 
-            {/* Password (only for Admin) */}
-            {role === 'Administrator' ? (
+            {/* Password (only for Admin authority roles) */}
+            {isAdmin ? (
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                  Password {editingAccount ? '(Optional)' : '*'}
+                  {ADMIN_ACCOUNTS_TEXT.LABEL_PASSWORD} {editingAccount ? ADMIN_ACCOUNTS_TEXT.LABEL_OPTIONAL : ADMIN_ACCOUNTS_TEXT.LABEL_REQUIRED}
                 </label>
                 <div className="relative flex items-center">
                   <Key className="absolute left-3 w-4 h-4 text-slate-400" />
                   <input
                     type="password"
-                    placeholder={editingAccount ? 'Leave blank to keep current password' : '••••••••'}
+                    placeholder={editingAccount ? ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_EDIT : ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_NEW}
                     required={!editingAccount}
                     value={password}
                     onChange={(e) => onPasswordChange(e.target.value)}
@@ -167,36 +170,31 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
               </div>
             ) : (
               <div className="p-3.5 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 rounded-xl text-[11px] leading-relaxed border border-indigo-100/50 dark:border-indigo-900/30">
-                Non-admin accounts sign in securely via SSO. Passwords are automatically managed.
+                {ADMIN_ACCOUNTS_TEXT.SSO_INFO_HINT}
               </div>
             )}
 
             {/* Role */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                Account Role *
+                {ADMIN_ACCOUNTS_TEXT.LABEL_ACCOUNT_ROLE}
               </label>
               <select
                 value={role}
                 onChange={(e) => {
                   const newRole = e.target.value;
                   onRoleChange(newRole);
-                  if (newRole === 'Administrator') {
-                    onEmailDomainChange('');
-                  } else if (!emailDomain) {
-                    onEmailDomainChange(ssoDomains[0] || 'finansia.com');
+                  if (!emailDomain && availableDomains.length > 0) {
+                    onEmailDomainChange(availableDomains[0]);
                   }
                 }}
-                className="w-full text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                className="w-full text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 cursor-pointer"
               >
-                {rolesList.map((r) => (
+                {ADMIN_ACCOUNT_ROLES.map((r) => (
                   <option key={r} value={r}>
                     {r}
                   </option>
                 ))}
-                {editingAccount && editingAccount.role === 'Administrator' && (
-                  <option value="Administrator">Administrator</option>
-                )}
               </select>
             </div>
 

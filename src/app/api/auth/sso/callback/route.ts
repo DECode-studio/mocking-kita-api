@@ -105,8 +105,8 @@ export async function GET(request: Request) {
 
     if (!account) {
       // If the account does not exist, render the profile completion HTML page from assets
-      const { ROLES_LIST } = await import('@/src/core/constants/roles');
-      const rolesOptions = ROLES_LIST.map(role => `<option value="${role}">${role}</option>`).join('');
+      const { INITIAL_USER_ROLES } = await import('@/src/core/constants/roles');
+      const rolesOptions = INITIAL_USER_ROLES.map(role => `<option value="${role}">${role}</option>`).join('');
 
       let html = fs.readFileSync(ASSET_PATHS.SSO_REGISTER_TEMPLATE, 'utf8');
 

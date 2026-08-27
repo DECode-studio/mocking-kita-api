@@ -4,6 +4,7 @@ import { UserSession } from '@/src/domain/auth/entity/user_session';
 import { accountRepository } from '@/src/data/account/repository/account_repository_impl';
 import { hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
+import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { randomBytes } from 'node:crypto';
 
 export const runtime = 'nodejs';
@@ -21,7 +22,7 @@ function isValidEmail(email: string): boolean {
 }
 
 function validateNonAdminAccount(username: string, role: string): { valid: boolean; error?: string } {
-  if (role === 'Administrator') {
+  if (hasAdminAuthority(role)) {
     return { valid: true };
   }
 
@@ -48,7 +49,7 @@ async function verifyAdminSession(): Promise<UserSession | null> {
   if (!rawSession) return null;
   try {
     const session = JSON.parse(rawSession) as UserSession;
-    if (session.role === 'Administrator') {
+    if (hasAdminAuthority(session.role)) {
       return session;
     }
   } catch {}
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
       role?: string;
     };
 
-    if (!username || !name || !role || (role === 'Administrator' && !password)) {
+    if (!username || !name || !role || (hasAdminAuthority(role) && !password)) {
       return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -103,7 +104,7 @@ export async function POST(request: Request) {
     }
 
     // Generate random secure password for non-admins since they log in via SSO
-    const finalPassword = role !== 'Administrator' && !password 
+    const finalPassword = !hasAdminAuthority(role) && !password 
       ? randomBytes(32).toString('hex')
       : (password || '');
 
