@@ -7,11 +7,13 @@ import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from '../constant';
 interface DatabaseSettingsCardProps {
   onImportExportClick: () => void;
   onResetConfirmClick: () => void;
+  canResetDb?: boolean;
 }
 
 export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
   onImportExportClick,
   onResetConfirmClick,
+  canResetDb = false,
 }) => {
   return (
     <div id={SETTINGS_SEMANTIC_ID.DATABASE_CARD} className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-4 shadow-xs">
@@ -35,15 +37,17 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
           <Upload className="w-3.5 h-3.5" />
           {SETTINGS_TEXT.IMPORT_EXPORT_BTN}
         </button>
-        <button
-          id={SETTINGS_SEMANTIC_ID.RESET_DATABASE_BTN}
-          type="button"
-          onClick={onResetConfirmClick}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors border border-rose-200 dark:border-rose-900"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          {SETTINGS_TEXT.RESET_DATABASE_BTN}
-        </button>
+        {canResetDb && (
+          <button
+            id={SETTINGS_SEMANTIC_ID.RESET_DATABASE_BTN}
+            type="button"
+            onClick={onResetConfirmClick}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors border border-rose-200 dark:border-rose-900"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            {SETTINGS_TEXT.RESET_DATABASE_BTN}
+          </button>
+        )}
       </div>
     </div>
   );
