@@ -1,13 +1,13 @@
 import { Project } from '@/src/domain/project/entity/project';
 
 export interface ProjectDataSource {
-  getAllProjects(): Project[];
-  getProjectById(id: string): Project | null;
+  getAllProjects(): Promise<Project[]>;
+  getProjectById(id: string): Promise<Project | null>;
   createProject(
     input: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-  ): Project;
-  updateProject(id: string, input: Partial<Project>): Project;
-  softDeleteProject(id: string): void;
-  restoreProject(id: string): void;
-  hardDeleteProject(id: string): void;
+  ): Promise<Project>;
+  updateProject(id: string, input: Partial<Project>): Promise<Project>;
+  softDeleteProject(id: string): Promise<void>;
+  restoreProject(id: string): Promise<void>;
+  hardDeleteProject(id: string): Promise<void>;
 }

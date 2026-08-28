@@ -1,72 +1,98 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
-import { ApiRow, apiFromRow } from '@/src/data/api/model/api_collection_model';
-import { toDbBoolean } from '@/src/core/utils/db-converter';
 
-export function getApisByProjectId(projectId: string): ApiCollection[] {
-  return (
-    db.prepare('SELECT * FROM tblApi WHERE project_id = ? ORDER BY created_at ASC, id ASC').all(projectId) as ApiRow[]
-  ).map(apiFromRow);
-}
-
-export function getApiById(id: string): ApiCollection | null {
-  const row = db.prepare('SELECT * FROM tblApi WHERE id = ? LIMIT 1').get(id) as ApiRow | undefined;
-  return row ? apiFromRow(row) : null;
-}
-
-export function createApi(
-  input: Omit<ApiCollection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): ApiCollection {
-  db.prepare(
-    'INSERT INTO tblApi (id, project_id, collection_id, name, description, path, method_request, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    input.id,
-    input.projectId,
-    input.collectionId ?? null,
-    input.name,
-    input.description ?? null,
-    input.path,
-    input.methodRequest,
-    toDbBoolean(input.status),
-    input.createdAt,
-    input.updatedAt,
-    input.deletedAt ?? null
-  );
-  return input;
-}
-
-export function updateApi(id: string, input: Partial<ApiCollection>): ApiCollection {
-  const current = getApiById(id);
-  if (!current) throw new Error(`API Collection ${id} not found`);
-  const updated: ApiCollection = {
-    ...current,
-    ...input,
-    updatedAt: new Date().toISOString(),
+function toApiDomain(api: {
+  id: string;
+  projectId: string;
+  collectionId: string | null;
+  name: string;
+  description: string | null;
+  path: string;
+  methodRequest: string;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}): ApiCollection {
+  return {
+    id: api.id,
+    projectId: api.projectId,
+    collectionId: api.collectionId ?? undefined,
+    name: api.name,
+    description: api.description ?? undefined,
+    path: api.path,
+    methodRequest: api.methodRequest as any,
+    status: api.status,
+    createdAt: api.createdAt.toISOString(),
+    updatedAt: api.updatedAt.toISOString(),
+    deletedAt: api.deletedAt ? api.deletedAt.toISOString() : null,
   };
-  db.prepare(
-    'UPDATE tblApi SET project_id = ?, collection_id = ?, name = ?, description = ?, path = ?, method_request = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
-  ).run(
-    updated.projectId,
-    updated.collectionId ?? null,
-    updated.name,
-    updated.description ?? null,
-    updated.path,
-    updated.methodRequest,
-    toDbBoolean(updated.status),
-    updated.createdAt,
-    updated.updatedAt,
-    updated.deletedAt ?? null,
-    id
-  );
-  return updated;
 }
 
-export function softDeleteApi(id: string): void {
-  const current = getApiById(id);
+export async function getApisByProjectId(projectId: string): Promise<ApiCollection[]> {
+  const rows = await prisma.api.findMany({
+    where: { projectId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toApiDomain);
+}
+
+export async function getApiById(id: string): Promise<ApiCollection | null> {
+  const row = await prisma.api.findUnique({
+    where: { id },
+  });
+  return row ? toApiDomain(row) : null;
+}
+
+export async function createApi(
+  input: Omit<ApiCollection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
+): Promise<ApiCollection> {
+  const row = await prisma.api.create({
+    data: {
+      id: input.id,
+      projectId: input.projectId,
+      collectionId: input.collectionId ?? null,
+      name: input.name,
+      description: input.description ?? null,
+      path: input.path,
+      methodRequest: input.methodRequest,
+      status: input.status,
+      createdAt: new Date(input.createdAt),
+      updatedAt: new Date(input.updatedAt),
+      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+    },
+  });
+  return toApiDomain(row);
+}
+
+export async function updateApi(id: string, input: Partial<ApiCollection>): Promise<ApiCollection> {
+  const current = await getApiById(id);
   if (!current) throw new Error(`API Collection ${id} not found`);
-  updateApi(id, { deletedAt: new Date().toISOString(), status: false });
+
+  const updatedRow = await prisma.api.update({
+    where: { id },
+    data: {
+      ...(input.projectId !== undefined && { projectId: input.projectId }),
+      ...(input.collectionId !== undefined && { collectionId: input.collectionId ?? null }),
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.description !== undefined && { description: input.description ?? null }),
+      ...(input.path !== undefined && { path: input.path }),
+      ...(input.methodRequest !== undefined && { methodRequest: input.methodRequest }),
+      ...(input.status !== undefined && { status: input.status }),
+      ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
+      ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
+      ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
+    },
+  });
+  return toApiDomain(updatedRow);
 }
 
-export function removeApisByProjectId(projectId: string): void {
-  db.prepare('DELETE FROM tblApi WHERE project_id = ?').run(projectId);
+export async function softDeleteApi(id: string): Promise<void> {
+  await updateApi(id, { deletedAt: new Date().toISOString(), status: false });
+}
+
+export async function removeApisByProjectId(projectId: string): Promise<void> {
+  await prisma.api.deleteMany({
+    where: { projectId },
+  });
 }

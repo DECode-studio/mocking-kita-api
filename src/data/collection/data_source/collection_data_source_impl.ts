@@ -1,70 +1,94 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { Collection } from '@/src/domain/collection/entity/collection';
-import { CollectionRow, collectionFromRow } from '@/src/data/collection/model/collection_model';
-import { toDbBoolean } from '@/src/core/utils/db-converter';
 
-export function getCollectionsByProjectId(projectId: string): Collection[] {
-  return (
-    db.prepare('SELECT * FROM tblCollection WHERE project_id = ? ORDER BY created_at ASC, id ASC').all(projectId) as CollectionRow[]
-  ).map(collectionFromRow);
-}
-
-export function getCollectionById(id: string): Collection | null {
-  const row = db.prepare('SELECT * FROM tblCollection WHERE id = ? LIMIT 1').get(id) as CollectionRow | undefined;
-  return row ? collectionFromRow(row) : null;
-}
-
-export function createCollection(
-  input: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): Collection {
-  db.prepare(
-    'INSERT INTO tblCollection (id, project_id, name, description, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    input.id,
-    input.projectId,
-    input.name,
-    input.description ?? null,
-    toDbBoolean(input.status),
-    input.createdAt,
-    input.updatedAt,
-    input.deletedAt ?? null
-  );
-  return input;
-}
-
-export function updateCollection(id: string, input: Partial<Collection>): Collection {
-  const current = getCollectionById(id);
-  if (!current) throw new Error(`Collection ${id} not found`);
-  const updated: Collection = {
-    ...current,
-    ...input,
-    updatedAt: new Date().toISOString(),
+function toCollectionDomain(c: {
+  id: string;
+  projectId: string;
+  name: string;
+  description: string | null;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}): Collection {
+  return {
+    id: c.id,
+    projectId: c.projectId,
+    name: c.name,
+    description: c.description ?? undefined,
+    status: c.status,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+    deletedAt: c.deletedAt ? c.deletedAt.toISOString() : null,
   };
-  db.prepare(
-    'UPDATE tblCollection SET project_id = ?, name = ?, description = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
-  ).run(
-    updated.projectId,
-    updated.name,
-    updated.description ?? null,
-    toDbBoolean(updated.status),
-    updated.createdAt,
-    updated.updatedAt,
-    updated.deletedAt ?? null,
-    id
-  );
-  return updated;
 }
 
-export function softDeleteCollection(id: string): void {
-  const current = getCollectionById(id);
+export async function getCollectionsByProjectId(projectId: string): Promise<Collection[]> {
+  const rows = await prisma.collection.findMany({
+    where: { projectId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toCollectionDomain);
+}
+
+export async function getCollectionById(id: string): Promise<Collection | null> {
+  const row = await prisma.collection.findUnique({
+    where: { id },
+  });
+  return row ? toCollectionDomain(row) : null;
+}
+
+export async function createCollection(
+  input: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
+): Promise<Collection> {
+  const row = await prisma.collection.create({
+    data: {
+      id: input.id,
+      projectId: input.projectId,
+      name: input.name,
+      description: input.description ?? null,
+      status: input.status,
+      createdAt: new Date(input.createdAt),
+      updatedAt: new Date(input.updatedAt),
+      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+    },
+  });
+  return toCollectionDomain(row);
+}
+
+export async function updateCollection(id: string, input: Partial<Collection>): Promise<Collection> {
+  const current = await getCollectionById(id);
   if (!current) throw new Error(`Collection ${id} not found`);
-  
-  // Clean up collection_id mapping in tblApi by setting to null
-  db.prepare('UPDATE tblApi SET collection_id = NULL WHERE collection_id = ?').run(id);
 
-  updateCollection(id, { deletedAt: new Date().toISOString(), status: false });
+  const updatedRow = await prisma.collection.update({
+    where: { id },
+    data: {
+      ...(input.projectId !== undefined && { projectId: input.projectId }),
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.description !== undefined && { description: input.description ?? null }),
+      ...(input.status !== undefined && { status: input.status }),
+      ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
+      ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
+      ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
+    },
+  });
+  return toCollectionDomain(updatedRow);
 }
 
-export function removeCollectionsByProjectId(projectId: string): void {
-  db.prepare('DELETE FROM tblCollection WHERE project_id = ?').run(projectId);
+export async function softDeleteCollection(id: string): Promise<void> {
+  const current = await getCollectionById(id);
+  if (!current) throw new Error(`Collection ${id} not found`);
+
+  await prisma.api.updateMany({
+    where: { collectionId: id },
+    data: { collectionId: null },
+  });
+
+  await updateCollection(id, { deletedAt: new Date().toISOString(), status: false });
+}
+
+export async function removeCollectionsByProjectId(projectId: string): Promise<void> {
+  await prisma.collection.deleteMany({
+    where: { projectId },
+  });
 }

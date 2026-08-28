@@ -1,71 +1,94 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { Environment } from '@/src/domain/environment/entity/environment';
-import { EnvironmentRow, environmentFromRow } from '@/src/data/environment/model/environment_model';
-import { toDbBoolean } from '@/src/core/utils/db-converter';
 
-export function getEnvironmentsByProjectId(projectId: string): Environment[] {
-  return (
-    db.prepare('SELECT * FROM tblEnvironment WHERE project_id = ? ORDER BY created_at ASC, id ASC').all(projectId) as
-      EnvironmentRow[]
-  ).map(environmentFromRow);
-}
-
-export function getEnvironmentById(id: string): Environment | null {
-  const row = db.prepare('SELECT * FROM tblEnvironment WHERE id = ? LIMIT 1').get(id) as EnvironmentRow | undefined;
-  return row ? environmentFromRow(row) : null;
-}
-
-export function createEnvironment(
-  input: Omit<Environment, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): Environment {
-  db.prepare(
-    'INSERT INTO tblEnvironment (id, project_id, name, environment_type, public_base_url, origin_base_url, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    input.id,
-    input.projectId,
-    input.name,
-    input.environmentType,
-    input.publicBaseUrl,
-    input.originBaseUrl ?? null,
-    toDbBoolean(input.status),
-    input.createdAt,
-    input.updatedAt,
-    input.deletedAt ?? null
-  );
-  return input;
-}
-
-export function updateEnvironment(id: string, input: Partial<Environment>): Environment {
-  const current = getEnvironmentById(id);
-  if (!current) throw new Error(`Environment ${id} not found`);
-  const updated: Environment = {
-    ...current,
-    ...input,
-    updatedAt: new Date().toISOString(),
+function toEnvironmentDomain(env: {
+  id: string;
+  projectId: string;
+  name: string;
+  environmentType: string;
+  publicBaseUrl: string | null;
+  originBaseUrl: string | null;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}): Environment {
+  return {
+    id: env.id,
+    projectId: env.projectId,
+    name: env.name,
+    environmentType: env.environmentType as any,
+    publicBaseUrl: env.publicBaseUrl ?? undefined,
+    originBaseUrl: env.originBaseUrl ?? undefined,
+    status: env.status,
+    createdAt: env.createdAt.toISOString(),
+    updatedAt: env.updatedAt.toISOString(),
+    deletedAt: env.deletedAt ? env.deletedAt.toISOString() : null,
   };
-  db.prepare(
-    'UPDATE tblEnvironment SET project_id = ?, name = ?, environment_type = ?, public_base_url = ?, origin_base_url = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
-  ).run(
-    updated.projectId,
-    updated.name,
-    updated.environmentType,
-    updated.publicBaseUrl,
-    updated.originBaseUrl ?? null,
-    toDbBoolean(updated.status),
-    updated.createdAt,
-    updated.updatedAt,
-    updated.deletedAt ?? null,
-    id
-  );
-  return updated;
 }
 
-export function softDeleteEnvironment(id: string): void {
-  const current = getEnvironmentById(id);
+export async function getEnvironmentsByProjectId(projectId: string): Promise<Environment[]> {
+  const rows = await prisma.environment.findMany({
+    where: { projectId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toEnvironmentDomain);
+}
+
+export async function getEnvironmentById(id: string): Promise<Environment | null> {
+  const row = await prisma.environment.findUnique({
+    where: { id },
+  });
+  return row ? toEnvironmentDomain(row) : null;
+}
+
+export async function createEnvironment(
+  input: Omit<Environment, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
+): Promise<Environment> {
+  const row = await prisma.environment.create({
+    data: {
+      id: input.id,
+      projectId: input.projectId,
+      name: input.name,
+      environmentType: input.environmentType,
+      publicBaseUrl: input.publicBaseUrl ?? null,
+      originBaseUrl: input.originBaseUrl ?? null,
+      status: input.status,
+      createdAt: new Date(input.createdAt),
+      updatedAt: new Date(input.updatedAt),
+      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+    },
+  });
+  return toEnvironmentDomain(row);
+}
+
+export async function updateEnvironment(id: string, input: Partial<Environment>): Promise<Environment> {
+  const current = await getEnvironmentById(id);
   if (!current) throw new Error(`Environment ${id} not found`);
-  updateEnvironment(id, { deletedAt: new Date().toISOString(), status: false });
+
+  const updatedRow = await prisma.environment.update({
+    where: { id },
+    data: {
+      ...(input.projectId !== undefined && { projectId: input.projectId }),
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.environmentType !== undefined && { environmentType: input.environmentType }),
+      ...(input.publicBaseUrl !== undefined && { publicBaseUrl: input.publicBaseUrl ?? null }),
+      ...(input.originBaseUrl !== undefined && { originBaseUrl: input.originBaseUrl ?? null }),
+      ...(input.status !== undefined && { status: input.status }),
+      ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
+      ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
+      ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
+    },
+  });
+  return toEnvironmentDomain(updatedRow);
 }
 
-export function removeEnvironmentsByProjectId(projectId: string): void {
-  db.prepare('DELETE FROM tblEnvironment WHERE project_id = ?').run(projectId);
+export async function softDeleteEnvironment(id: string): Promise<void> {
+  await updateEnvironment(id, { deletedAt: new Date().toISOString(), status: false });
+}
+
+export async function removeEnvironmentsByProjectId(projectId: string): Promise<void> {
+  await prisma.environment.deleteMany({
+    where: { projectId },
+  });
 }

@@ -1,80 +1,117 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
-import { RequestScenarioRow, requestScenarioFromRow } from '@/src/data/request-scenario/model/request_scenario_model';
-import { stringifyJson, toDbBoolean } from '@/src/core/utils/db-converter';
+import { Prisma } from '@prisma/client';
 
-export function getRequestScenariosByApiId(apiId: string): RequestScenario[] {
-  return (
-    db.prepare('SELECT * FROM tblRequestScenario WHERE api_id = ? ORDER BY priority DESC, created_at ASC, id ASC').all(apiId) as RequestScenarioRow[]
-  ).map(requestScenarioFromRow);
-}
-
-export function getRequestScenarioById(id: string): RequestScenario | null {
-  const row = db.prepare('SELECT * FROM tblRequestScenario WHERE id = ? LIMIT 1').get(id) as RequestScenarioRow | undefined;
-  return row ? requestScenarioFromRow(row) : null;
-}
-
-export function createRequestScenario(
-  input: Omit<RequestScenario, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): RequestScenario {
-  db.prepare(
-    'INSERT INTO tblRequestScenario (id, api_id, name, description, headers, query_params, path_params, body, body_type, match_type, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    input.id,
-    input.apiId,
-    input.name,
-    input.description ?? null,
-    stringifyJson(input.headers),
-    stringifyJson(input.queryParams),
-    stringifyJson(input.pathParams),
-    stringifyJson(input.body),
-    input.bodyType,
-    input.matchType,
-    input.priority,
-    toDbBoolean(input.status),
-    input.createdAt,
-    input.updatedAt,
-    input.deletedAt ?? null
-  );
-  return input;
-}
-
-export function updateRequestScenario(id: string, input: Partial<RequestScenario>): RequestScenario {
-  const current = getRequestScenarioById(id);
-  if (!current) throw new Error(`Request scenario ${id} not found`);
-  const updated: RequestScenario = {
-    ...current,
-    ...input,
-    updatedAt: new Date().toISOString(),
+function toRequestScenarioDomain(r: {
+  id: string;
+  apiId: string;
+  name: string;
+  description: string | null;
+  headers: any;
+  queryParams: any;
+  pathParams: any;
+  body: any;
+  bodyType: string;
+  matchType: string;
+  priority: number;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}): RequestScenario {
+  return {
+    id: r.id,
+    apiId: r.apiId,
+    name: r.name,
+    description: r.description ?? undefined,
+    headers: r.headers ?? {},
+    queryParams: r.queryParams ?? {},
+    pathParams: r.pathParams ?? {},
+    body: r.body ?? {},
+    bodyType: r.bodyType as any,
+    matchType: r.matchType as any,
+    priority: r.priority,
+    status: r.status,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+    deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
   };
-  db.prepare(
-    'UPDATE tblRequestScenario SET api_id = ?, name = ?, description = ?, headers = ?, query_params = ?, path_params = ?, body = ?, body_type = ?, match_type = ?, priority = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
-  ).run(
-    updated.apiId,
-    updated.name,
-    updated.description ?? null,
-    stringifyJson(updated.headers),
-    stringifyJson(updated.queryParams),
-    stringifyJson(updated.pathParams),
-    stringifyJson(updated.body),
-    updated.bodyType,
-    updated.matchType,
-    updated.priority,
-    toDbBoolean(updated.status),
-    updated.createdAt,
-    updated.updatedAt,
-    updated.deletedAt ?? null,
-    id
-  );
-  return updated;
 }
 
-export function softDeleteRequestScenario(id: string): void {
-  const current = getRequestScenarioById(id);
+export async function getRequestScenariosByApiId(apiId: string): Promise<RequestScenario[]> {
+  const rows = await prisma.requestScenario.findMany({
+    where: { apiId },
+    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toRequestScenarioDomain);
+}
+
+export async function getRequestScenarioById(id: string): Promise<RequestScenario | null> {
+  const row = await prisma.requestScenario.findUnique({
+    where: { id },
+  });
+  return row ? toRequestScenarioDomain(row) : null;
+}
+
+export async function createRequestScenario(
+  input: Omit<RequestScenario, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
+): Promise<RequestScenario> {
+  const row = await prisma.requestScenario.create({
+    data: {
+      id: input.id,
+      apiId: input.apiId,
+      name: input.name,
+      description: input.description ?? null,
+      headers: (input.headers as Prisma.InputJsonValue) ?? {},
+      queryParams: (input.queryParams as Prisma.InputJsonValue) ?? {},
+      pathParams: (input.pathParams as Prisma.InputJsonValue) ?? {},
+      body: (input.body as Prisma.InputJsonValue) ?? {},
+      bodyType: input.bodyType ?? 'JSON',
+      matchType: input.matchType ?? 'EXACT',
+      priority: input.priority ?? 0,
+      status: input.status,
+      createdAt: new Date(input.createdAt),
+      updatedAt: new Date(input.updatedAt),
+      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+    },
+  });
+  return toRequestScenarioDomain(row);
+}
+
+export async function updateRequestScenario(id: string, input: Partial<RequestScenario>): Promise<RequestScenario> {
+  const current = await getRequestScenarioById(id);
   if (!current) throw new Error(`Request scenario ${id} not found`);
-  updateRequestScenario(id, { deletedAt: new Date().toISOString(), status: false });
+
+  const updateData: Prisma.RequestScenarioUncheckedUpdateInput = {
+    ...(input.apiId !== undefined && { apiId: input.apiId }),
+    ...(input.name !== undefined && { name: input.name }),
+    ...(input.description !== undefined && { description: input.description ?? null }),
+    ...(input.headers !== undefined && { headers: (input.headers as Prisma.InputJsonValue) ?? {} }),
+    ...(input.queryParams !== undefined && { queryParams: (input.queryParams as Prisma.InputJsonValue) ?? {} }),
+    ...(input.pathParams !== undefined && { pathParams: (input.pathParams as Prisma.InputJsonValue) ?? {} }),
+    ...(input.body !== undefined && { body: (input.body as Prisma.InputJsonValue) ?? {} }),
+    ...(input.bodyType !== undefined && { bodyType: input.bodyType }),
+    ...(input.matchType !== undefined && { matchType: input.matchType }),
+    ...(input.priority !== undefined && { priority: input.priority }),
+    ...(input.status !== undefined && { status: input.status }),
+    ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
+    ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
+    ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
+  };
+
+  const updatedRow = await prisma.requestScenario.update({
+    where: { id },
+    data: updateData,
+  });
+  return toRequestScenarioDomain(updatedRow);
 }
 
-export function removeRequestScenariosByApiId(apiId: string): void {
-  db.prepare('DELETE FROM tblRequestScenario WHERE api_id = ?').run(apiId);
+export async function softDeleteRequestScenario(id: string): Promise<void> {
+  await updateRequestScenario(id, { deletedAt: new Date().toISOString(), status: false });
+}
+
+export async function removeRequestScenariosByApiId(apiId: string): Promise<void> {
+  await prisma.requestScenario.deleteMany({
+    where: { apiId },
+  });
 }
