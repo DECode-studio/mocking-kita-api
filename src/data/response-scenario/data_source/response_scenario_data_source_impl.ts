@@ -1,86 +1,125 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import { ResponseScenarioRow, responseScenarioFromRow } from '@/src/data/response-scenario/model/response_scenario_model';
-import { stringifyJson, toDbBoolean } from '@/src/core/utils/db-converter';
+import { Prisma } from '@prisma/client';
 
-export function getResponseScenariosByRequestScenarioId(requestScenarioId: string): ResponseScenario[] {
-  return (
-    db.prepare('SELECT * FROM tblResponseScenario WHERE request_scenario_id = ? ORDER BY priority DESC, created_at ASC, id ASC').all(requestScenarioId) as ResponseScenarioRow[]
-  ).map(responseScenarioFromRow);
-}
-
-export function getResponseScenarioById(id: string): ResponseScenario | null {
-  const row = db
-    .prepare('SELECT * FROM tblResponseScenario WHERE id = ? LIMIT 1')
-    .get(id) as ResponseScenarioRow | undefined;
-  return row ? responseScenarioFromRow(row) : null;
-}
-
-export function createResponseScenario(
-  input: Omit<ResponseScenario, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): ResponseScenario {
-  db.prepare(
-    'INSERT INTO tblResponseScenario (id, request_scenario_id, name, description, status_code, headers, body, response_type, file_path, file_name, delay_ms, weight, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    input.id,
-    input.requestScenarioId,
-    input.name,
-    input.description ?? null,
-    input.statusCode,
-    stringifyJson(input.headers),
-    stringifyJson(input.body),
-    input.responseType ?? 'JSON',
-    input.filePath ?? null,
-    input.fileName ?? null,
-    input.delayMs,
-    input.weight,
-    input.priority,
-    toDbBoolean(input.status),
-    input.createdAt,
-    input.updatedAt,
-    input.deletedAt ?? null
-  );
-  return input;
-}
-
-export function updateResponseScenario(id: string, input: Partial<ResponseScenario>): ResponseScenario {
-  const current = getResponseScenarioById(id);
-  if (!current) throw new Error(`Response scenario ${id} not found`);
-  const updated: ResponseScenario = {
-    ...current,
-    ...input,
-    updatedAt: new Date().toISOString(),
+function toResponseScenarioDomain(r: {
+  id: string;
+  requestScenarioId: string;
+  name: string;
+  description: string | null;
+  statusCode: number | null;
+  headers: any;
+  body: any;
+  responseType: string;
+  filePath: string | null;
+  fileName: string | null;
+  delayMs: number;
+  weight: number;
+  priority: number;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}): ResponseScenario {
+  return {
+    id: r.id,
+    requestScenarioId: r.requestScenarioId,
+    name: r.name,
+    description: r.description ?? undefined,
+    statusCode: r.statusCode ?? 200,
+    headers: r.headers ?? {},
+    body: r.body ?? {},
+    responseType: r.responseType as any,
+    filePath: r.filePath ?? undefined,
+    fileName: r.fileName ?? undefined,
+    delayMs: r.delayMs,
+    weight: r.weight,
+    priority: r.priority,
+    status: r.status,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: r.updatedAt.toISOString(),
+    deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
   };
-  db.prepare(
-    'UPDATE tblResponseScenario SET request_scenario_id = ?, name = ?, description = ?, status_code = ?, headers = ?, body = ?, response_type = ?, file_path = ?, file_name = ?, delay_ms = ?, weight = ?, priority = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
-  ).run(
-    updated.requestScenarioId,
-    updated.name,
-    updated.description ?? null,
-    updated.statusCode,
-    stringifyJson(updated.headers),
-    stringifyJson(updated.body),
-    updated.responseType,
-    updated.filePath ?? null,
-    updated.fileName ?? null,
-    updated.delayMs,
-    updated.weight,
-    updated.priority,
-    toDbBoolean(updated.status),
-    updated.createdAt,
-    updated.updatedAt,
-    updated.deletedAt ?? null,
-    id
-  );
-  return updated;
 }
 
-export function softDeleteResponseScenario(id: string): void {
-  const current = getResponseScenarioById(id);
+export async function getResponseScenariosByRequestScenarioId(requestScenarioId: string): Promise<ResponseScenario[]> {
+  const rows = await prisma.responseScenario.findMany({
+    where: { requestScenarioId },
+    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toResponseScenarioDomain);
+}
+
+export async function getResponseScenarioById(id: string): Promise<ResponseScenario | null> {
+  const row = await prisma.responseScenario.findUnique({
+    where: { id },
+  });
+  return row ? toResponseScenarioDomain(row) : null;
+}
+
+export async function createResponseScenario(
+  input: Omit<ResponseScenario, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
+): Promise<ResponseScenario> {
+  const row = await prisma.responseScenario.create({
+    data: {
+      id: input.id,
+      requestScenarioId: input.requestScenarioId,
+      name: input.name,
+      description: input.description ?? null,
+      statusCode: input.statusCode,
+      headers: (input.headers as Prisma.InputJsonValue) ?? {},
+      body: (input.body as Prisma.InputJsonValue) ?? {},
+      responseType: input.responseType ?? 'JSON',
+      filePath: input.filePath ?? null,
+      fileName: input.fileName ?? null,
+      delayMs: input.delayMs ?? 0,
+      weight: input.weight ?? 100,
+      priority: input.priority ?? 0,
+      status: input.status,
+      createdAt: new Date(input.createdAt),
+      updatedAt: new Date(input.updatedAt),
+      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+    },
+  });
+  return toResponseScenarioDomain(row);
+}
+
+export async function updateResponseScenario(id: string, input: Partial<ResponseScenario>): Promise<ResponseScenario> {
+  const current = await getResponseScenarioById(id);
   if (!current) throw new Error(`Response scenario ${id} not found`);
-  updateResponseScenario(id, { deletedAt: new Date().toISOString(), status: false });
+
+  const updateData: Prisma.ResponseScenarioUncheckedUpdateInput = {
+    ...(input.requestScenarioId !== undefined && { requestScenarioId: input.requestScenarioId }),
+    ...(input.name !== undefined && { name: input.name }),
+    ...(input.description !== undefined && { description: input.description ?? null }),
+    ...(input.statusCode !== undefined && { statusCode: input.statusCode }),
+    ...(input.headers !== undefined && { headers: (input.headers as Prisma.InputJsonValue) ?? {} }),
+    ...(input.body !== undefined && { body: (input.body as Prisma.InputJsonValue) ?? {} }),
+    ...(input.responseType !== undefined && { responseType: input.responseType }),
+    ...(input.filePath !== undefined && { filePath: input.filePath ?? null }),
+    ...(input.fileName !== undefined && { fileName: input.fileName ?? null }),
+    ...(input.delayMs !== undefined && { delayMs: input.delayMs }),
+    ...(input.weight !== undefined && { weight: input.weight }),
+    ...(input.priority !== undefined && { priority: input.priority }),
+    ...(input.status !== undefined && { status: input.status }),
+    ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
+    ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
+    ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
+  };
+
+  const updatedRow = await prisma.responseScenario.update({
+    where: { id },
+    data: updateData,
+  });
+  return toResponseScenarioDomain(updatedRow);
 }
 
-export function removeResponseScenariosByRequestScenarioId(requestScenarioId: string): void {
-  db.prepare('DELETE FROM tblResponseScenario WHERE request_scenario_id = ?').run(requestScenarioId);
+export async function softDeleteResponseScenario(id: string): Promise<void> {
+  await updateResponseScenario(id, { deletedAt: new Date().toISOString(), status: false });
+}
+
+export async function removeResponseScenariosByRequestScenarioId(requestScenarioId: string): Promise<void> {
+  await prisma.responseScenario.deleteMany({
+    where: { requestScenarioId },
+  });
 }

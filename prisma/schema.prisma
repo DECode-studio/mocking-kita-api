@@ -1,0 +1,179 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  environments Environment[]
+  collections  Collection[]
+  apis         Api[]
+
+  @@map("tblProject")
+}
+
+model Environment {
+  id              String    @id @default(uuid())
+  projectId       String    @map("project_id")
+  name            String
+  environmentType String    @map("environment_type")
+  publicBaseUrl   String?   @map("public_base_url")
+  originBaseUrl   String?   @map("origin_base_url")
+  status          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiEnvironments ApiEnvironment[]
+
+  @@map("tblEnvironment")
+}
+
+model Collection {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  name        String
+  description String?
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apis    Api[]
+
+  @@map("tblCollection")
+}
+
+model Api {
+  id            String    @id @default(uuid())
+  projectId     String    @map("project_id")
+  collectionId  String?   @map("collection_id")
+  name          String
+  description   String?
+  path          String
+  methodRequest String    @map("method_request")
+  status        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  collection       Collection?       @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  apiEnvironments  ApiEnvironment[]
+  requestScenarios RequestScenario[]
+
+  @@unique([projectId, path, methodRequest], name: "tblApi_index_0")
+  @@map("tblApi")
+}
+
+model ApiEnvironment {
+  id            String   @id @default(uuid())
+  apiId         String   @map("api_id")
+  environmentId String   @map("environment_id")
+  enabled       Boolean  @default(true)
+  pathOverride  String?  @map("path_override")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  api         Api         @relation(fields: [apiId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([apiId, environmentId], name: "tblApiEnvironment_index_1")
+  @@map("tblApiEnvironment")
+}
+
+model RequestScenario {
+  id          String    @id @default(uuid())
+  apiId       String    @map("api_id")
+  name        String
+  description String?
+  headers     Json?
+  queryParams Json?     @map("query_params")
+  pathParams  Json?     @map("path_params")
+  body        Json?
+  bodyType    String    @default("JSON") @map("body_type")
+  matchType   String    @default("EXACT") @map("match_type")
+  priority    Int       @default(0)
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  api               Api                @relation(fields: [apiId], references: [id], onDelete: Cascade)
+  responseScenarios ResponseScenario[]
+
+  @@map("tblRequestScenario")
+}
+
+model ResponseScenario {
+  id                String    @id @default(uuid())
+  requestScenarioId String    @map("request_scenario_id")
+  name              String
+  description       String?
+  statusCode        Int?      @map("status_code")
+  headers           Json?
+  body              Json?
+  responseType      String    @default("JSON") @map("response_type")
+  filePath          String?   @map("file_path")
+  fileName          String?   @map("file_name")
+  delayMs           Int       @default(0) @map("delay_ms")
+  weight            Int       @default(100)
+  priority          Int       @default(0)
+  status            Boolean   @default(true)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  requestScenario RequestScenario @relation(fields: [requestScenarioId], references: [id], onDelete: Cascade)
+
+  @@map("tblResponseScenario")
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  changeLogs ChangeLog[]
+
+  @@map("tblAccount")
+}
+
+model ChangeLog {
+  id          String   @id @default(uuid())
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
+  projectId   String?  @map("project_id")
+  userId      String?  @map("user_id")
+  operator    String
+  description String?
+  beforeState Json?    @map("before_state")
+  afterState  Json?    @map("after_state")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user Account? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([projectId], map: "tblChangeLog_project_id_idx")
+  @@index([createdAt(sort: Desc)], map: "tblChangeLog_created_at_idx")
+  @@map("tblChangeLog")
+}
+

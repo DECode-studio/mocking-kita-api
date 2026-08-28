@@ -1,4 +1,4 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { generateId } from '@/src/core/utils/uuid';
 import { cookies } from 'next/headers';
 import { UserSession } from '@/src/domain/auth/entity/user_session';
@@ -40,7 +40,6 @@ export async function getCurrentSession(): Promise<UserSession | null> {
 
 export async function logChange(input: ChangeLogInput) {
   const id = generateId();
-  const createdAt = new Date().toISOString();
 
   let operator = input.operator || 'system';
   let userId = input.userId || null;
@@ -52,9 +51,10 @@ export async function logChange(input: ChangeLogInput) {
       operator = session.username || session.name || 'system';
       if (!userId && session.username) {
         try {
-          const account = db
-            .prepare('SELECT id FROM tblAccount WHERE username = ? LIMIT 1')
-            .get(session.username) as { id: string } | undefined;
+          const account = await prisma.account.findUnique({
+            where: { username: session.username },
+            select: { id: true },
+          });
           if (account) {
             userId = account.id;
           }
@@ -70,7 +70,7 @@ export async function logChange(input: ChangeLogInput) {
   if (!description) {
     const entityName = input.afterState?.name || input.beforeState?.name || '';
     const nameStr = entityName ? ` '${entityName}'` : '';
-    
+
     switch (input.action) {
       case 'CREATE':
         description = `Created ${input.entityType}${nameStr}`;
@@ -95,24 +95,21 @@ export async function logChange(input: ChangeLogInput) {
     }
   }
 
-  db.prepare(`
-    INSERT INTO tblChangeLog (
-      id, action, entity_type, entity_id, project_id, user_id, operator, description, before_state, after_state, metadata, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    id,
-    input.action,
-    input.entityType,
-    input.entityId ?? null,
-    input.projectId ?? null,
-    userId,
-    operator,
-    description,
-    input.beforeState ? JSON.stringify(input.beforeState) : null,
-    input.afterState ? JSON.stringify(input.afterState) : null,
-    input.metadata ? JSON.stringify(input.metadata) : null,
-    createdAt
-  );
+  await prisma.changeLog.create({
+    data: {
+      id,
+      action: input.action,
+      entityType: input.entityType,
+      entityId: input.entityId ?? null,
+      projectId: input.projectId ?? null,
+      userId,
+      operator,
+      description,
+      beforeState: input.beforeState ?? undefined,
+      afterState: input.afterState ?? undefined,
+      metadata: input.metadata ?? undefined,
+    },
+  });
 
   // Dispatch Google Space notification
   try {
@@ -133,20 +130,20 @@ export async function logChange(input: ChangeLogInput) {
   }
 }
 
-export function getDatabaseSummary() {
+export async function getDatabaseSummary() {
   try {
-    const projects = db.prepare('SELECT COUNT(*) as count FROM tblProject').get() as { count: number };
-    const collections = db.prepare('SELECT COUNT(*) as count FROM tblCollection').get() as { count: number };
-    const apis = db.prepare('SELECT COUNT(*) as count FROM tblApi').get() as { count: number };
-    const requestScenarios = db.prepare('SELECT COUNT(*) as count FROM tblRequestScenario').get() as { count: number };
-    const responseScenarios = db.prepare('SELECT COUNT(*) as count FROM tblResponseScenario').get() as { count: number };
-    
+    const projects = await prisma.project.count();
+    const collections = await prisma.collection.count();
+    const apis = await prisma.api.count();
+    const requestScenarios = await prisma.requestScenario.count();
+    const responseScenarios = await prisma.responseScenario.count();
+
     return {
-      projects: projects?.count || 0,
-      collections: collections?.count || 0,
-      apis: apis?.count || 0,
-      requestScenarios: requestScenarios?.count || 0,
-      responseScenarios: responseScenarios?.count || 0,
+      projects,
+      collections,
+      apis,
+      requestScenarios,
+      responseScenarios,
     };
   } catch (error) {
     return { projects: 0, collections: 0, apis: 0, requestScenarios: 0, responseScenarios: 0 };

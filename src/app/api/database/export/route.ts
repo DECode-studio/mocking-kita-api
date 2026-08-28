@@ -3,7 +3,7 @@ import { readDatabase } from '@/src/core/db/database_storage_helper';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const database = readDatabase();
+  const database = await readDatabase();
   const now = new Date();
   const YYYY = now.getFullYear();
   const MM = String(now.getMonth() + 1).padStart(2, '0');

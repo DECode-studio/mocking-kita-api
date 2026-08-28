@@ -1,210 +1,266 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
-import { ApiRow, apiFromRow } from '@/src/data/api/model/api_collection_model';
-import { ApiEnvironmentRow, apiEnvironmentFromRow } from '@/src/data/api/model/api_environment_model';
-import { EnvironmentRow, environmentFromRow } from '@/src/data/environment/model/environment_model';
-import { ProjectRow, projectFromRow } from '@/src/data/project/model/project_model';
-import { CollectionRow, collectionFromRow } from '@/src/data/collection/model/collection_model';
-import { RequestScenarioRow, requestScenarioFromRow } from '@/src/data/request-scenario/model/request_scenario_model';
-import {
-  ResponseScenarioRow,
-  responseScenarioFromRow,
-} from '@/src/data/response-scenario/model/response_scenario_model';
 import { INITIAL_SEED_DATA } from './seed-data';
-import { toDbBoolean } from '@/src/core/utils/db-converter';
+import { Prisma } from '@prisma/client';
 
-export function readDatabase(): MockApiDatabase {
-  const projects = db.prepare('SELECT * FROM tblProject ORDER BY created_at ASC, id ASC').all() as ProjectRow[];
-  const environments = db
-    .prepare('SELECT * FROM tblEnvironment ORDER BY created_at ASC, id ASC')
-    .all() as EnvironmentRow[];
-  const collections = db
-    .prepare('SELECT * FROM tblCollection ORDER BY created_at ASC, id ASC')
-    .all() as CollectionRow[];
-  const apiCollections = db.prepare('SELECT * FROM tblApi ORDER BY created_at ASC, id ASC').all() as ApiRow[];
-  const apiEnvironments = db
-    .prepare('SELECT * FROM tblApiEnvironment ORDER BY created_at ASC, id ASC')
-    .all() as ApiEnvironmentRow[];
-  const requestScenarios = db
-    .prepare('SELECT * FROM tblRequestScenario ORDER BY priority DESC, created_at ASC, id ASC')
-    .all() as RequestScenarioRow[];
-  const responseScenarios = db
-    .prepare('SELECT * FROM tblResponseScenario ORDER BY priority DESC, created_at ASC, id ASC')
-    .all() as ResponseScenarioRow[];
+export async function readDatabase(): Promise<MockApiDatabase> {
+  const projectsRaw = await prisma.project.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const environmentsRaw = await prisma.environment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const collectionsRaw = await prisma.collection.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const apisRaw = await prisma.api.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const apiEnvironmentsRaw = await prisma.apiEnvironment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
+  const requestScenariosRaw = await prisma.requestScenario.findMany({
+    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+  });
+  const responseScenariosRaw = await prisma.responseScenario.findMany({
+    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+  });
 
   return {
     version: '1.0.0',
-    projects: projects.map(projectFromRow),
-    environments: environments.map(environmentFromRow),
-    collections: collections.map(collectionFromRow),
-    apiCollections: apiCollections.map(apiFromRow),
-    apiEnvironments: apiEnvironments.map(apiEnvironmentFromRow),
-    requestScenarios: requestScenarios.map(requestScenarioFromRow),
-    responseScenarios: responseScenarios.map(responseScenarioFromRow),
+    projects: projectsRaw.map((p) => ({
+      id: p.id,
+      name: p.name ?? '',
+      description: p.description ?? undefined,
+      status: p.status,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+      deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
+    })),
+    environments: environmentsRaw.map((e) => ({
+      id: e.id,
+      projectId: e.projectId,
+      name: e.name,
+      environmentType: e.environmentType as any,
+      publicBaseUrl: e.publicBaseUrl ?? undefined,
+      originBaseUrl: e.originBaseUrl ?? undefined,
+      status: e.status,
+      createdAt: e.createdAt.toISOString(),
+      updatedAt: e.updatedAt.toISOString(),
+      deletedAt: e.deletedAt ? e.deletedAt.toISOString() : null,
+    })),
+    collections: collectionsRaw.map((c) => ({
+      id: c.id,
+      projectId: c.projectId,
+      name: c.name,
+      description: c.description ?? undefined,
+      status: c.status,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+      deletedAt: c.deletedAt ? c.deletedAt.toISOString() : null,
+    })),
+    apiCollections: apisRaw.map((a) => ({
+      id: a.id,
+      projectId: a.projectId,
+      collectionId: a.collectionId ?? undefined,
+      name: a.name,
+      description: a.description ?? undefined,
+      path: a.path,
+      methodRequest: a.methodRequest as any,
+      status: a.status,
+      createdAt: a.createdAt.toISOString(),
+      updatedAt: a.updatedAt.toISOString(),
+      deletedAt: a.deletedAt ? a.deletedAt.toISOString() : null,
+    })),
+    apiEnvironments: apiEnvironmentsRaw.map((ae) => ({
+      id: ae.id,
+      apiId: ae.apiId,
+      environmentId: ae.environmentId,
+      enabled: ae.enabled,
+      pathOverride: ae.pathOverride ?? undefined,
+      createdAt: ae.createdAt.toISOString(),
+      updatedAt: ae.updatedAt.toISOString(),
+    })),
+    requestScenarios: requestScenariosRaw.map((r) => ({
+      id: r.id,
+      apiId: r.apiId,
+      name: r.name,
+      description: r.description ?? undefined,
+      headers: (r.headers as any) ?? {},
+      queryParams: (r.queryParams as any) ?? {},
+      pathParams: (r.pathParams as any) ?? {},
+      body: (r.body as any) ?? {},
+      bodyType: r.bodyType as any,
+      matchType: r.matchType as any,
+      priority: r.priority,
+      status: r.status,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+    })),
+    responseScenarios: responseScenariosRaw.map((r) => ({
+      id: r.id,
+      requestScenarioId: r.requestScenarioId,
+      name: r.name,
+      description: r.description ?? undefined,
+      statusCode: r.statusCode ?? 200,
+      headers: (r.headers as any) ?? {},
+      body: (r.body as any) ?? {},
+      responseType: r.responseType as any,
+      filePath: r.filePath ?? undefined,
+      fileName: r.fileName ?? undefined,
+      delayMs: r.delayMs,
+      weight: r.weight,
+      priority: r.priority,
+      status: r.status,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+    })),
   };
 }
 
-export function seedDatabase(data: MockApiDatabase): void {
-  db.exec('BEGIN TRANSACTION;');
-  try {
-    db.prepare('DELETE FROM tblResponseScenario').run();
-    db.prepare('DELETE FROM tblRequestScenario').run();
-    db.prepare('DELETE FROM tblApiEnvironment').run();
-    db.prepare('DELETE FROM tblApi').run();
-    db.prepare('DELETE FROM tblCollection').run();
-    db.prepare('DELETE FROM tblEnvironment').run();
-    db.prepare('DELETE FROM tblProject').run();
+export async function seedDatabase(data: MockApiDatabase): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    await tx.responseScenario.deleteMany({});
+    await tx.requestScenario.deleteMany({});
+    await tx.apiEnvironment.deleteMany({});
+    await tx.api.deleteMany({});
+    await tx.collection.deleteMany({});
+    await tx.environment.deleteMany({});
+    await tx.project.deleteMany({});
 
-    const insertProject = db.prepare(
-      'INSERT INTO tblProject (id, name, description, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.projects) {
-      insertProject.run(
-        item.id,
-        item.name,
-        item.description ?? null,
-        toDbBoolean(item.status),
-        item.createdAt,
-        item.updatedAt,
-        item.deletedAt ?? null
-      );
+      await tx.project.create({
+        data: {
+          id: item.id,
+          name: item.name,
+          description: item.description ?? null,
+          status: item.status,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+          deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+        },
+      });
     }
 
-    const insertEnv = db.prepare(
-      'INSERT INTO tblEnvironment (id, project_id, name, environment_type, public_base_url, origin_base_url, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.environments) {
-      insertEnv.run(
-        item.id,
-        item.projectId,
-        item.name,
-        item.environmentType,
-        item.publicBaseUrl ?? null,
-        item.originBaseUrl ?? null,
-        toDbBoolean(item.status),
-        item.createdAt,
-        item.updatedAt,
-        item.deletedAt ?? null
-      );
+      await tx.environment.create({
+        data: {
+          id: item.id,
+          projectId: item.projectId,
+          name: item.name,
+          environmentType: item.environmentType,
+          publicBaseUrl: item.publicBaseUrl ?? null,
+          originBaseUrl: item.originBaseUrl ?? null,
+          status: item.status,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+          deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+        },
+      });
     }
 
-    const insertCollection = db.prepare(
-      'INSERT INTO tblCollection (id, project_id, name, description, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.collections || []) {
-      insertCollection.run(
-        item.id,
-        item.projectId,
-        item.name,
-        item.description ?? null,
-        toDbBoolean(item.status),
-        item.createdAt,
-        item.updatedAt,
-        item.deletedAt ?? null
-      );
+      await tx.collection.create({
+        data: {
+          id: item.id,
+          projectId: item.projectId,
+          name: item.name,
+          description: item.description ?? null,
+          status: item.status,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+          deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+        },
+      });
     }
 
-    const insertApi = db.prepare(
-      'INSERT INTO tblApi (id, project_id, collection_id, name, description, path, method_request, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.apiCollections) {
-      insertApi.run(
-        item.id,
-        item.projectId,
-        item.collectionId ?? null,
-        item.name,
-        item.description ?? null,
-        item.path,
-        item.methodRequest,
-        toDbBoolean(item.status),
-        item.createdAt,
-        item.updatedAt,
-        item.deletedAt ?? null
-      );
+      await tx.api.create({
+        data: {
+          id: item.id,
+          projectId: item.projectId,
+          collectionId: item.collectionId ?? null,
+          name: item.name,
+          description: item.description ?? null,
+          path: item.path,
+          methodRequest: item.methodRequest,
+          status: item.status,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+          deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+        },
+      });
     }
 
-    const insertApiEnv = db.prepare(
-      'INSERT INTO tblApiEnvironment (id, api_id, environment_id, enabled, path_override, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.apiEnvironments) {
-      insertApiEnv.run(
-        item.id,
-        item.apiId,
-        item.environmentId,
-        toDbBoolean(item.enabled),
-        item.pathOverride ?? null,
-        item.createdAt,
-        item.updatedAt
-      );
+      await tx.apiEnvironment.create({
+        data: {
+          id: item.id,
+          apiId: item.apiId,
+          environmentId: item.environmentId,
+          enabled: item.enabled,
+          pathOverride: item.pathOverride ?? null,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+        },
+      });
     }
 
-    const insertReq = db.prepare(
-      'INSERT INTO tblRequestScenario (id, api_id, name, description, headers, query_params, path_params, body, body_type, match_type, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.requestScenarios) {
-      insertReq.run(
-        item.id,
-        item.apiId,
-        item.name,
-        item.description ?? null,
-        JSON.stringify(item.headers ?? {}),
-        JSON.stringify(item.queryParams ?? {}),
-        JSON.stringify(item.pathParams ?? {}),
-        JSON.stringify(item.body ?? {}),
-        item.bodyType ?? 'JSON',
-        item.matchType ?? 'EXACT',
-        item.priority ?? 0,
-        toDbBoolean(item.status),
-        item.createdAt,
-        item.updatedAt,
-        item.deletedAt ?? null
-      );
+      await tx.requestScenario.create({
+        data: {
+          id: item.id,
+          apiId: item.apiId,
+          name: item.name,
+          description: item.description ?? null,
+          headers: (item.headers as Prisma.InputJsonValue) ?? {},
+          queryParams: (item.queryParams as Prisma.InputJsonValue) ?? {},
+          pathParams: (item.pathParams as Prisma.InputJsonValue) ?? {},
+          body: (item.body as Prisma.InputJsonValue) ?? {},
+          bodyType: item.bodyType ?? 'JSON',
+          matchType: item.matchType ?? 'EXACT',
+          priority: item.priority ?? 0,
+          status: item.status,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+          deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+        },
+      });
     }
 
-    const insertResp = db.prepare(
-      'INSERT INTO tblResponseScenario (id, request_scenario_id, name, description, status_code, headers, body, response_type, file_path, file_name, delay_ms, weight, priority, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    );
     for (const item of data.responseScenarios) {
-      insertResp.run(
-        item.id,
-        item.requestScenarioId,
-        item.name,
-        item.description ?? null,
-        item.statusCode,
-        JSON.stringify(item.headers ?? {}),
-        JSON.stringify(item.body ?? {}),
-        item.responseType ?? 'JSON',
-        item.filePath ?? null,
-        item.fileName ?? null,
-        item.delayMs ?? 0,
-        item.weight ?? 100,
-        item.priority ?? 0,
-        toDbBoolean(item.status),
-        item.createdAt,
-        item.updatedAt,
-        item.deletedAt ?? null
-      );
+      await tx.responseScenario.create({
+        data: {
+          id: item.id,
+          requestScenarioId: item.requestScenarioId,
+          name: item.name,
+          description: item.description ?? null,
+          statusCode: item.statusCode,
+          headers: (item.headers as Prisma.InputJsonValue) ?? {},
+          body: (item.body as Prisma.InputJsonValue) ?? {},
+          responseType: item.responseType ?? 'JSON',
+          filePath: item.filePath ?? null,
+          fileName: item.fileName ?? null,
+          delayMs: item.delayMs ?? 0,
+          weight: item.weight ?? 100,
+          priority: item.priority ?? 0,
+          status: item.status,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
+          deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+        },
+      });
     }
-
-    db.exec('COMMIT;');
-  } catch (error) {
-    db.exec('ROLLBACK;');
-    throw error;
-  }
+  });
 }
 
-export function resetDatabaseToSeed(): MockApiDatabase {
-  seedDatabase(INITIAL_SEED_DATA);
+export async function resetDatabaseToSeed(): Promise<MockApiDatabase> {
+  await seedDatabase(INITIAL_SEED_DATA);
   return readDatabase();
 }
 
-export function importDatabaseData(importedData: MockApiDatabase, mode: 'replace' | 'merge'): MockApiDatabase {
+export async function importDatabaseData(
+  importedData: MockApiDatabase,
+  mode: 'replace' | 'merge'
+): Promise<MockApiDatabase> {
   if (mode === 'replace') {
-    seedDatabase(importedData);
+    await seedDatabase(importedData);
     return readDatabase();
   }
 
-  const current = readDatabase();
+  const current = await readDatabase();
 
   const mergeByMap = <T extends { id: string }>(source: T[], incoming: T[] = []) => {
     const map = new Map<string, T>();
@@ -224,6 +280,6 @@ export function importDatabaseData(importedData: MockApiDatabase, mode: 'replace
     responseScenarios: mergeByMap(current.responseScenarios, importedData.responseScenarios),
   };
 
-  seedDatabase(mergedDatabase);
+  await seedDatabase(mergedDatabase);
   return readDatabase();
 }

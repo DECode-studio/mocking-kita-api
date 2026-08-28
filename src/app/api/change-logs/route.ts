@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { UserSession } from '@/src/domain/auth/entity/user_session';
+import { Prisma } from '@prisma/client';
 
 export const runtime = 'nodejs';
 
@@ -29,43 +30,52 @@ export async function GET(request: Request) {
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10), 1), 100);
     const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
 
-    const conditions: string[] = [];
-    const params: any[] = [];
+    const where: Prisma.ChangeLogWhereInput = {};
 
     if (search) {
-      conditions.push('(description LIKE ? OR operator LIKE ? OR entity_type LIKE ?)');
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      where.OR = [
+        { description: { contains: search, mode: 'insensitive' } },
+        { operator: { contains: search, mode: 'insensitive' } },
+        { entityType: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (action) {
-      conditions.push('action = ?');
-      params.push(action);
+      where.action = action;
     }
 
     if (projectId) {
-      conditions.push('project_id = ?');
-      params.push(projectId);
+      where.projectId = projectId;
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const [totalCount, logs] = await Promise.all([
+      prisma.changeLog.count({ where }),
+      prisma.changeLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+    ]);
 
-    // Get total count for pagination
-    const countQuery = `SELECT COUNT(*) as count FROM tblChangeLog ${whereClause}`;
-    const countRow = db.prepare(countQuery).get(...params) as { count: number } | undefined;
-    const totalCount = countRow?.count || 0;
-
-    // Get logs with limit and offset
-    const query = `
-      SELECT * FROM tblChangeLog 
-      ${whereClause} 
-      ORDER BY created_at DESC 
-      LIMIT ? OFFSET ?
-    `;
-    const logs = db.prepare(query).all(...params, limit, offset);
+    const formattedLogs = logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      entity_type: log.entityType,
+      entity_id: log.entityId,
+      project_id: log.projectId,
+      user_id: log.userId,
+      operator: log.operator,
+      description: log.description,
+      before_state: log.beforeState ? JSON.stringify(log.beforeState) : null,
+      after_state: log.afterState ? JSON.stringify(log.afterState) : null,
+      metadata: log.metadata ? JSON.stringify(log.metadata) : null,
+      created_at: log.createdAt.toISOString(),
+    }));
 
     return NextResponse.json({
       success: true,
-      changeLogs: logs,
+      changeLogs: formattedLogs,
       totalCount,
     });
   } catch (error: any) {

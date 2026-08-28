@@ -1,4 +1,4 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 
 export interface NotificationPayload {
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
@@ -108,9 +108,10 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   const resolvedProjectId = projectId || state.projectId;
   if (resolvedProjectId) {
     try {
-      const proj = db.prepare('SELECT name FROM tblProject WHERE id = ? LIMIT 1').get(resolvedProjectId) as
-        | { name: string }
-        | undefined;
+      const proj = await prisma.project.findUnique({
+        where: { id: resolvedProjectId },
+        select: { name: true },
+      });
       if (proj) {
         projectName = proj.name;
       }
@@ -125,9 +126,10 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
 
   if (userId) {
     try {
-      const acc = db
-        .prepare('SELECT username, name FROM tblAccount WHERE id = ? LIMIT 1')
-        .get(userId) as { username: string; name: string } | undefined;
+      const acc = await prisma.account.findUnique({
+        where: { id: userId },
+        select: { username: true, name: true },
+      });
       if (acc) {
         userName = acc.name;
         userHandle = acc.username;
@@ -139,9 +141,10 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
 
   if (!userName && operator && operator !== 'system') {
     try {
-      const acc = db
-        .prepare('SELECT username, name FROM tblAccount WHERE username = ? LIMIT 1')
-        .get(operator) as { username: string; name: string } | undefined;
+      const acc = await prisma.account.findUnique({
+        where: { username: operator.toLowerCase() },
+        select: { username: true, name: true },
+      });
       if (acc) {
         userName = acc.name;
         userHandle = acc.username;

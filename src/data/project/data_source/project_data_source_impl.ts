@@ -1,116 +1,86 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { Project } from '@/src/domain/project/entity/project';
-import { ProjectRow, projectFromRow } from '@/src/data/project/model/project_model';
-import { toDbBoolean } from '@/src/core/utils/db-converter';
 
-export function getAllProjects(): Project[] {
-  return (db.prepare('SELECT * FROM tblProject ORDER BY created_at ASC, id ASC').all() as ProjectRow[]).map(
-    projectFromRow
-  );
-}
-
-export function getProjectById(id: string): Project | null {
-  const row = db.prepare('SELECT * FROM tblProject WHERE id = ? LIMIT 1').get(id) as ProjectRow | undefined;
-  return row ? projectFromRow(row) : null;
-}
-
-export function createProject(
-  input: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): Project {
-  db.prepare(
-    'INSERT INTO tblProject (id, name, description, status, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    input.id,
-    input.name,
-    input.description ?? null,
-    toDbBoolean(input.status),
-    input.createdAt,
-    input.updatedAt,
-    input.deletedAt ?? null
-  );
-  return input;
-}
-
-export function updateProject(id: string, input: Partial<Project>): Project {
-  const current = getProjectById(id);
-  if (!current) throw new Error(`Project ${id} not found`);
-  const updated: Project = {
-    ...current,
-    ...input,
-    updatedAt: new Date().toISOString(),
+function toProjectDomain(p: {
+  id: string;
+  name: string;
+  description: string | null;
+  status: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+}): Project {
+  return {
+    id: p.id,
+    name: p.name ?? '',
+    description: p.description ?? undefined,
+    status: p.status,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+    deletedAt: p.deletedAt ? p.deletedAt.toISOString() : null,
   };
-  db.prepare(
-    'UPDATE tblProject SET name = ?, description = ?, status = ?, created_at = ?, updated_at = ?, deleted_at = ? WHERE id = ?'
-  ).run(
-    updated.name,
-    updated.description ?? null,
-    toDbBoolean(updated.status),
-    updated.createdAt,
-    updated.updatedAt,
-    updated.deletedAt ?? null,
-    id
-  );
-  return updated;
 }
 
-export function softDeleteProject(id: string): void {
-  const current = getProjectById(id);
+export async function getAllProjects(): Promise<Project[]> {
+  const rows = await prisma.project.findMany({
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toProjectDomain);
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  const row = await prisma.project.findUnique({
+    where: { id },
+  });
+  return row ? toProjectDomain(row) : null;
+}
+
+export async function createProject(
+  input: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
+): Promise<Project> {
+  const row = await prisma.project.create({
+    data: {
+      id: input.id,
+      name: input.name,
+      description: input.description ?? null,
+      status: input.status,
+      createdAt: new Date(input.createdAt),
+      updatedAt: new Date(input.updatedAt),
+      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+    },
+  });
+  return toProjectDomain(row);
+}
+
+export async function updateProject(id: string, input: Partial<Project>): Promise<Project> {
+  const current = await getProjectById(id);
   if (!current) throw new Error(`Project ${id} not found`);
-  updateProject(id, { deletedAt: new Date().toISOString(), status: false });
+
+  const updatedRow = await prisma.project.update({
+    where: { id },
+    data: {
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.description !== undefined && { description: input.description ?? null }),
+      ...(input.status !== undefined && { status: input.status }),
+      ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
+      ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
+      ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
+    },
+  });
+  return toProjectDomain(updatedRow);
 }
 
-export function restoreProject(id: string): void {
-  const current = getProjectById(id);
-  if (!current) throw new Error(`Project ${id} not found`);
-  updateProject(id, { deletedAt: null, status: true });
+export async function softDeleteProject(id: string): Promise<void> {
+  await updateProject(id, { deletedAt: new Date().toISOString(), status: false });
 }
 
-export function hardDeleteProject(id: string): void {
-  db.exec('BEGIN TRANSACTION;');
-  try {
-    // Delete response scenarios associated with request scenarios of APIs of this project
-    db.prepare(`
-      DELETE FROM tblResponseScenario 
-      WHERE request_scenario_id IN (
-        SELECT id FROM tblRequestScenario WHERE api_id IN (
-          SELECT id FROM tblApi WHERE project_id = ?
-        )
-      )
-    `).run(id);
+export async function restoreProject(id: string): Promise<void> {
+  await updateProject(id, { deletedAt: null, status: true });
+}
 
-    // Delete request scenarios associated with APIs of this project
-    db.prepare(`
-      DELETE FROM tblRequestScenario 
-      WHERE api_id IN (
-        SELECT id FROM tblApi WHERE project_id = ?
-      )
-    `).run(id);
-
-    // Delete api environments associated with APIs or environments of this project
-    db.prepare(`
-      DELETE FROM tblApiEnvironment 
-      WHERE api_id IN (
-        SELECT id FROM tblApi WHERE project_id = ?
-      ) OR environment_id IN (
-        SELECT id FROM tblEnvironment WHERE project_id = ?
-      )
-    `).run(id, id);
-
-    // Delete APIs associated with this project
-    db.prepare('DELETE FROM tblApi WHERE project_id = ?').run(id);
-
-    // Delete collections associated with this project
-    db.prepare('DELETE FROM tblCollection WHERE project_id = ?').run(id);
-
-    // Delete environments associated with this project
-    db.prepare('DELETE FROM tblEnvironment WHERE project_id = ?').run(id);
-
-    // Finally, delete the project
-    db.prepare('DELETE FROM tblProject WHERE id = ?').run(id);
-
-    db.exec('COMMIT;');
-  } catch (error) {
-    db.exec('ROLLBACK;');
-    throw error;
-  }
+export async function hardDeleteProject(id: string): Promise<void> {
+  // Cascading deletes are configured in Prisma schema (onDelete: Cascade)
+  await prisma.project.delete({
+    where: { id },
+  });
 }

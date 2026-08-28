@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
+import prisma from '@/src/core/db/prisma-client';
 import { importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
 import { clearInternalProxyCache } from '@/src/app/api/internal-proxy-cache';
 import { logChange } from '@/src/core/db/change_log_helper';
 import { getProjectById } from '@/src/data/project/data_source/project_data_source_impl';
-import { db } from '@/src/core/db/sqlite-client';
 
 export const runtime = 'nodejs';
 
@@ -17,21 +17,21 @@ export async function POST(
     const mode = (body.mode === 'replace' ? 'replace' : body.mode === 'merge' ? 'merge' : 'upsert') as 'upsert' | 'merge' | 'replace';
     const openApiJson = body.openApiJson || body;
 
-    const project = getProjectById(projectId);
-    const beforeApis = db.prepare('SELECT COUNT(*) as count FROM tblApi WHERE project_id = ?').get(projectId) as { count: number };
+    const project = await getProjectById(projectId);
+    const beforeApiCount = await prisma.api.count({ where: { projectId } });
 
-    const result = importProjectOpenApi(projectId, openApiJson, mode);
+    const result = await importProjectOpenApi(projectId, openApiJson, mode);
     clearInternalProxyCache();
 
-    const afterApis = db.prepare('SELECT COUNT(*) as count FROM tblApi WHERE project_id = ?').get(projectId) as { count: number };
+    const afterApiCount = await prisma.api.count({ where: { projectId } });
 
     await logChange({
       action: 'IMPORT',
       entityType: 'project',
       entityId: projectId,
       projectId: projectId,
-      beforeState: { apiCount: beforeApis?.count || 0 },
-      afterState: { apiCount: afterApis?.count || 0 },
+      beforeState: { apiCount: beforeApiCount },
+      afterState: { apiCount: afterApiCount },
       metadata: { mode, openApiImport: true },
       description: `Imported OpenAPI spec into project '${project?.name || projectId}' (mode: ${mode})`,
     });

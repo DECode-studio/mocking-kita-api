@@ -581,7 +581,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
     return responseFromCache(cached);
   }
 
-  const database = readDatabase();
+  const database = await readDatabase();
   const headers = normalizeHeaders(request.headers);
   const activeEnvironmentIds = new Set(
     database.environments.filter((environment) => environment.status && !environment.deletedAt).map((environment) => environment.id)

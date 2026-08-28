@@ -1,28 +1,52 @@
-import { db } from '@/src/core/db/sqlite-client';
+import prisma from '@/src/core/db/prisma-client';
 import { Account } from '@/src/domain/account/entity/account';
 import { AccountRepository } from '@/src/domain/account/repository/account_repository';
-import { AccountRow, accountFromRow } from '../model/account_model';
+
+function toAccountDomain(acc: {
+  id: string;
+  username: string;
+  role: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}): Account {
+  return {
+    id: acc.id,
+    username: acc.username,
+    role: acc.role as any,
+    name: acc.name,
+    createdAt: acc.createdAt.toISOString(),
+    updatedAt: acc.updatedAt.toISOString(),
+  };
+}
 
 export class AccountRepositoryImpl implements AccountRepository {
   async getAll(): Promise<Account[]> {
-    const rows = db.prepare('SELECT * FROM tblAccount ORDER BY username ASC').all() as unknown as AccountRow[];
-    return rows.map(accountFromRow);
+    const rows = await prisma.account.findMany({
+      orderBy: { username: 'asc' },
+    });
+    return rows.map(toAccountDomain);
   }
 
   async getById(id: string): Promise<Account | null> {
-    const row = db.prepare('SELECT * FROM tblAccount WHERE id = ? LIMIT 1').get(id) as unknown as AccountRow | undefined;
-    return row ? accountFromRow(row) : null;
+    const row = await prisma.account.findUnique({
+      where: { id },
+    });
+    return row ? toAccountDomain(row) : null;
   }
 
   async getByUsername(username: string): Promise<Account | null> {
-    const row = db
-      .prepare('SELECT * FROM tblAccount WHERE LOWER(username) = ? LIMIT 1')
-      .get(username.toLowerCase()) as unknown as AccountRow | undefined;
-    return row ? accountFromRow(row) : null;
+    const row = await prisma.account.findUnique({
+      where: { username: username.toLowerCase() },
+    });
+    return row ? toAccountDomain(row) : null;
   }
 
   async getPasswordHash(id: string): Promise<string | null> {
-    const row = db.prepare('SELECT password FROM tblAccount WHERE id = ? LIMIT 1').get(id) as unknown as { password?: string } | undefined;
+    const row = await prisma.account.findUnique({
+      where: { id },
+      select: { password: true },
+    });
     return row?.password || null;
   }
 
@@ -33,19 +57,17 @@ export class AccountRepositoryImpl implements AccountRepository {
     name: string;
     role: string;
   }): Promise<Account> {
-    const now = new Date().toISOString();
-    db.prepare(
-      'INSERT INTO tblAccount (id, username, password, role, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(params.id, params.username.toLowerCase(), params.passwordHash, params.role, params.name, now, now);
+    const row = await prisma.account.create({
+      data: {
+        id: params.id,
+        username: params.username.toLowerCase(),
+        password: params.passwordHash,
+        role: params.role,
+        name: params.name,
+      },
+    });
 
-    return {
-      id: params.id,
-      username: params.username,
-      name: params.name,
-      role: params.role,
-      createdAt: now,
-      updatedAt: now,
-    };
+    return toAccountDomain(row);
   }
 
   async update(
@@ -57,50 +79,23 @@ export class AccountRepositoryImpl implements AccountRepository {
       role?: string;
     }
   ): Promise<Account> {
-    const current = await this.getById(id);
-    if (!current) throw new Error(`Account ${id} not found`);
+    const updated = await prisma.account.update({
+      where: { id },
+      data: {
+        ...(params.username !== undefined && { username: params.username.toLowerCase() }),
+        ...(params.passwordHash !== undefined && { password: params.passwordHash }),
+        ...(params.name !== undefined && { name: params.name }),
+        ...(params.role !== undefined && { role: params.role }),
+      },
+    });
 
-    const now = new Date().toISOString();
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    if (params.username !== undefined) {
-      updates.push('username = ?');
-      values.push(params.username.toLowerCase());
-    }
-    if (params.passwordHash !== undefined) {
-      updates.push('password = ?');
-      values.push(params.passwordHash);
-    }
-    if (params.name !== undefined) {
-      updates.push('name = ?');
-      values.push(params.name);
-    }
-    if (params.role !== undefined) {
-      updates.push('role = ?');
-      values.push(params.role);
-    }
-
-    updates.push('updated_at = ?');
-    values.push(now);
-
-    values.push(id);
-
-    const query = `UPDATE tblAccount SET ${updates.join(', ')} WHERE id = ?`;
-    db.prepare(query).run(...values);
-
-    return {
-      id,
-      username: params.username !== undefined ? params.username : current.username,
-      name: params.name !== undefined ? params.name : current.name,
-      role: params.role !== undefined ? params.role : current.role,
-      createdAt: current.createdAt,
-      updatedAt: now,
-    };
+    return toAccountDomain(updated);
   }
 
   async delete(id: string): Promise<void> {
-    db.prepare('DELETE FROM tblAccount WHERE id = ?').run(id);
+    await prisma.account.delete({
+      where: { id },
+    });
   }
 }
 
