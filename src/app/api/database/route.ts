@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import prisma from '@/src/core/db/prisma-client';
 import { readDatabase, resetDatabaseToSeed, importDatabaseData, seedDatabase } from '@/src/core/db/database_storage_helper';
 import { createProject, updateProject, softDeleteProject, restoreProject, hardDeleteProject, getProjectById } from '@/src/data/project/data_source/project_data_source_impl';
 import { createEnvironment, updateEnvironment, softDeleteEnvironment, getEnvironmentById } from '@/src/data/environment/data_source/environment_data_source_impl';
@@ -12,13 +13,12 @@ import { generateId } from '@/src/core/utils/uuid';
 import { clearInternalProxyCache } from '@/src/app/api/internal-proxy-cache';
 import { exportProjectOpenApi, importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
 import { logChange, getDatabaseSummary } from '@/src/core/db/change_log_helper';
-import { db } from '@/src/core/db/sqlite-client';
 import { canResetDatabase } from '@/src/core/constants/roles';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  const database = readDatabase();
+  const database = await readDatabase();
   return NextResponse.json({ success: true, data: database });
 }
 
@@ -40,11 +40,11 @@ export async function POST(request: Request) {
 
     switch (action) {
       case 'getDatabase':
-        return NextResponse.json({ success: true, data: readDatabase() });
+        return NextResponse.json({ success: true, data: await readDatabase() });
       case 'saveDatabase': {
-        const before = getDatabaseSummary();
-        seedDatabase(body.payload as any);
-        const after = getDatabaseSummary();
+        const before = await getDatabaseSummary();
+        await seedDatabase(body.payload as any);
+        const after = await getDatabaseSummary();
         await logChange({
           action: 'IMPORT',
           entityType: 'database',
@@ -72,9 +72,9 @@ export async function POST(request: Request) {
           );
         }
 
-        const before = getDatabaseSummary();
-        const res = resetDatabaseToSeed();
-        const after = getDatabaseSummary();
+        const before = await getDatabaseSummary();
+        const res = await resetDatabaseToSeed();
+        const after = await getDatabaseSummary();
         await logChange({
           action: 'RESET',
           entityType: 'database',
@@ -86,9 +86,9 @@ export async function POST(request: Request) {
       }
       case 'importDatabase': {
         const payload = body.payload as { data: any; mode: 'replace' | 'merge' };
-        const before = getDatabaseSummary();
-        const res = importDatabaseData(payload.data, payload.mode);
-        const after = getDatabaseSummary();
+        const before = await getDatabaseSummary();
+        const res = await importDatabaseData(payload.data, payload.mode);
+        const after = await getDatabaseSummary();
         await logChange({
           action: 'IMPORT',
           entityType: 'database',
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       case 'create': {
         const input = body.payload as any;
         const id = generateId();
-        const res = createProject({ ...input, id, createdAt: now, updatedAt: now });
+        const res = await createProject({ ...input, id, createdAt: now, updatedAt: now });
         await logChange({
           action: 'CREATE',
           entityType: 'project',
@@ -115,8 +115,8 @@ export async function POST(request: Request) {
       }
       case 'update': {
         const payload = body.payload as { id: string; input: any };
-        const before = getProjectById(payload.id);
-        const res = updateProject(payload.id, payload.input);
+        const before = await getProjectById(payload.id);
+        const res = await updateProject(payload.id, payload.input);
         await logChange({
           action: 'UPDATE',
           entityType: 'project',
@@ -130,9 +130,9 @@ export async function POST(request: Request) {
       }
       case 'softDelete': {
         const id = (body.payload as { id: string }).id;
-        const before = getProjectById(id);
-        softDeleteProject(id);
-        const after = getProjectById(id);
+        const before = await getProjectById(id);
+        await softDeleteProject(id);
+        const after = await getProjectById(id);
         await logChange({
           action: 'DELETE',
           entityType: 'project',
@@ -146,9 +146,9 @@ export async function POST(request: Request) {
       }
       case 'restore': {
         const id = (body.payload as { id: string }).id;
-        const before = getProjectById(id);
-        restoreProject(id);
-        const after = getProjectById(id);
+        const before = await getProjectById(id);
+        await restoreProject(id);
+        const after = await getProjectById(id);
         await logChange({
           action: 'RESTORE',
           entityType: 'project',
@@ -162,8 +162,8 @@ export async function POST(request: Request) {
       }
       case 'hardDelete': {
         const id = (body.payload as { id: string }).id;
-        const before = getProjectById(id);
-        hardDeleteProject(id);
+        const before = await getProjectById(id);
+        await hardDeleteProject(id);
         await logChange({
           action: 'DELETE',
           entityType: 'project',
@@ -179,7 +179,7 @@ export async function POST(request: Request) {
       case 'createEnvironment': {
         const input = body.payload as any;
         const id = generateId();
-        const res = createEnvironment({ ...input, id, createdAt: now, updatedAt: now });
+        const res = await createEnvironment({ ...input, id, createdAt: now, updatedAt: now });
         await logChange({
           action: 'CREATE',
           entityType: 'environment',
@@ -192,8 +192,8 @@ export async function POST(request: Request) {
       }
       case 'updateEnvironment': {
         const payload = body.payload as { id: string; input: any };
-        const before = getEnvironmentById(payload.id);
-        const res = updateEnvironment(payload.id, payload.input);
+        const before = await getEnvironmentById(payload.id);
+        const res = await updateEnvironment(payload.id, payload.input);
         await logChange({
           action: 'UPDATE',
           entityType: 'environment',
@@ -207,9 +207,9 @@ export async function POST(request: Request) {
       }
       case 'softDeleteEnvironment': {
         const id = (body.payload as { id: string }).id;
-        const before = getEnvironmentById(id);
-        softDeleteEnvironment(id);
-        const after = getEnvironmentById(id);
+        const before = await getEnvironmentById(id);
+        await softDeleteEnvironment(id);
+        const after = await getEnvironmentById(id);
         await logChange({
           action: 'DELETE',
           entityType: 'environment',
@@ -224,7 +224,7 @@ export async function POST(request: Request) {
       case 'createApi': {
         const input = body.payload as any;
         const id = generateId();
-        const res = createApi({ ...input, id, createdAt: now, updatedAt: now });
+        const res = await createApi({ ...input, id, createdAt: now, updatedAt: now });
         await logChange({
           action: 'CREATE',
           entityType: 'api',
@@ -237,8 +237,8 @@ export async function POST(request: Request) {
       }
       case 'updateApi': {
         const payload = body.payload as { id: string; input: any };
-        const before = getApiById(payload.id);
-        const res = updateApi(payload.id, payload.input);
+        const before = await getApiById(payload.id);
+        const res = await updateApi(payload.id, payload.input);
         await logChange({
           action: 'UPDATE',
           entityType: 'api',
@@ -252,9 +252,9 @@ export async function POST(request: Request) {
       }
       case 'softDeleteApi': {
         const id = (body.payload as { id: string }).id;
-        const before = getApiById(id);
-        softDeleteApi(id);
-        const after = getApiById(id);
+        const before = await getApiById(id);
+        await softDeleteApi(id);
+        const after = await getApiById(id);
         await logChange({
           action: 'DELETE',
           entityType: 'api',
@@ -269,7 +269,7 @@ export async function POST(request: Request) {
       case 'createCollection': {
         const input = body.payload as any;
         const id = generateId();
-        const res = createCollection({ ...input, id, createdAt: now, updatedAt: now });
+        const res = await createCollection({ ...input, id, createdAt: now, updatedAt: now });
         await logChange({
           action: 'CREATE',
           entityType: 'collection',
@@ -282,8 +282,8 @@ export async function POST(request: Request) {
       }
       case 'updateCollection': {
         const payload = body.payload as { id: string; input: any };
-        const before = getCollectionById(payload.id);
-        const res = updateCollection(payload.id, payload.input);
+        const before = await getCollectionById(payload.id);
+        const res = await updateCollection(payload.id, payload.input);
         await logChange({
           action: 'UPDATE',
           entityType: 'collection',
@@ -297,9 +297,9 @@ export async function POST(request: Request) {
       }
       case 'softDeleteCollection': {
         const id = (body.payload as { id: string }).id;
-        const before = getCollectionById(id);
-        softDeleteCollection(id);
-        const after = getCollectionById(id);
+        const before = await getCollectionById(id);
+        await softDeleteCollection(id);
+        const after = await getCollectionById(id);
         await logChange({
           action: 'DELETE',
           entityType: 'collection',
@@ -312,12 +312,12 @@ export async function POST(request: Request) {
         return respondVoid();
       }
       case 'upsertApiEnv':
-        return respond(upsertApiEnvironment(body.payload as any));
+        return respond(await upsertApiEnvironment(body.payload as any));
       case 'createReqScenario': {
         const input = body.payload as any;
         const id = generateId();
-        const res = createRequestScenario({ ...input, id, createdAt: now, updatedAt: now });
-        const api = getApiById(res.apiId);
+        const res = await createRequestScenario({ ...input, id, createdAt: now, updatedAt: now });
+        const api = await getApiById(res.apiId);
         await logChange({
           action: 'CREATE',
           entityType: 'request_scenario',
@@ -330,9 +330,9 @@ export async function POST(request: Request) {
       }
       case 'updateReqScenario': {
         const payload = body.payload as { id: string; input: any };
-        const before = getRequestScenarioById(payload.id);
-        const res = updateRequestScenario(payload.id, payload.input);
-        const api = getApiById(res.apiId);
+        const before = await getRequestScenarioById(payload.id);
+        const res = await updateRequestScenario(payload.id, payload.input);
+        const api = await getApiById(res.apiId);
         await logChange({
           action: 'UPDATE',
           entityType: 'request_scenario',
@@ -346,11 +346,11 @@ export async function POST(request: Request) {
       }
       case 'softDeleteReqScenario': {
         const id = (body.payload as { id: string }).id;
-        const before = getRequestScenarioById(id);
-        softDeleteRequestScenario(id);
-        const after = getRequestScenarioById(id);
+        const before = await getRequestScenarioById(id);
+        await softDeleteRequestScenario(id);
+        const after = await getRequestScenarioById(id);
         let api = null;
-        if (before) api = getApiById(before.apiId);
+        if (before) api = await getApiById(before.apiId);
         await logChange({
           action: 'DELETE',
           entityType: 'request_scenario',
@@ -365,9 +365,9 @@ export async function POST(request: Request) {
       case 'createRespScenario': {
         const input = body.payload as any;
         const id = generateId();
-        const res = createResponseScenario({ ...input, id, createdAt: now, updatedAt: now });
-        const reqSec = getRequestScenarioById(res.requestScenarioId);
-        const api = reqSec ? getApiById(reqSec.apiId) : null;
+        const res = await createResponseScenario({ ...input, id, createdAt: now, updatedAt: now });
+        const reqSec = await getRequestScenarioById(res.requestScenarioId);
+        const api = reqSec ? await getApiById(reqSec.apiId) : null;
         await logChange({
           action: 'CREATE',
           entityType: 'response_scenario',
@@ -380,10 +380,10 @@ export async function POST(request: Request) {
       }
       case 'updateRespScenario': {
         const payload = body.payload as { id: string; input: any };
-        const before = getResponseScenarioById(payload.id);
-        const res = updateResponseScenario(payload.id, payload.input);
-        const reqSec = getRequestScenarioById(res.requestScenarioId);
-        const api = reqSec ? getApiById(reqSec.apiId) : null;
+        const before = await getResponseScenarioById(payload.id);
+        const res = await updateResponseScenario(payload.id, payload.input);
+        const reqSec = await getRequestScenarioById(res.requestScenarioId);
+        const api = reqSec ? await getApiById(reqSec.apiId) : null;
         await logChange({
           action: 'UPDATE',
           entityType: 'response_scenario',
@@ -397,13 +397,13 @@ export async function POST(request: Request) {
       }
       case 'softDeleteRespScenario': {
         const id = (body.payload as { id: string }).id;
-        const before = getResponseScenarioById(id);
-        softDeleteResponseScenario(id);
-        const after = getResponseScenarioById(id);
+        const before = await getResponseScenarioById(id);
+        await softDeleteResponseScenario(id);
+        const after = await getResponseScenarioById(id);
         let api = null;
         if (before) {
-          const reqSec = getRequestScenarioById(before.requestScenarioId);
-          if (reqSec) api = getApiById(reqSec.apiId);
+          const reqSec = await getRequestScenarioById(before.requestScenarioId);
+          if (reqSec) api = await getApiById(reqSec.apiId);
         }
         await logChange({
           action: 'DELETE',
@@ -418,24 +418,24 @@ export async function POST(request: Request) {
       }
       case 'exportProjectOpenApi': {
         const payload = body.payload as { projectId: string };
-        return respond(exportProjectOpenApi(payload.projectId));
+        return respond(await exportProjectOpenApi(payload.projectId));
       }
       case 'importProjectOpenApi': {
         const payload = body.payload as { projectId: string; openApiJson: any; mode?: 'upsert' | 'merge' | 'replace' };
-        const project = getProjectById(payload.projectId);
+        const project = await getProjectById(payload.projectId);
         const mode = payload.mode || 'upsert';
-        const beforeApis = db.prepare('SELECT COUNT(*) as count FROM tblApi WHERE project_id = ?').get(payload.projectId) as { count: number };
-        
-        const res = importProjectOpenApi(payload.projectId, payload.openApiJson, mode);
-        
-        const afterApis = db.prepare('SELECT COUNT(*) as count FROM tblApi WHERE project_id = ?').get(payload.projectId) as { count: number };
+        const beforeApiCount = await prisma.api.count({ where: { projectId: payload.projectId } });
+
+        const res = await importProjectOpenApi(payload.projectId, payload.openApiJson, mode);
+
+        const afterApiCount = await prisma.api.count({ where: { projectId: payload.projectId } });
         await logChange({
           action: 'IMPORT',
           entityType: 'project',
           entityId: payload.projectId,
           projectId: payload.projectId,
-          beforeState: { apiCount: beforeApis?.count || 0 },
-          afterState: { apiCount: afterApis?.count || 0 },
+          beforeState: { apiCount: beforeApiCount },
+          afterState: { apiCount: afterApiCount },
           metadata: { mode, openApiImport: true },
           description: `Imported OpenAPI spec into project '${project?.name || payload.projectId}' (mode: ${mode})`,
         });
