@@ -53,6 +53,35 @@ export interface ExtractedProjectData {
   responseScenarios: Array<Omit<ResponseScenario, 'createdAt' | 'updatedAt'> & { id?: string }>;
 }
 
+function sanitizeImportedPath(path: string): string {
+  const rawPath = path.trim();
+  if (!rawPath) return '/';
+
+  try {
+    const parsedUrl = new URL(rawPath);
+    return parsedUrl.pathname || '/';
+  } catch {}
+
+  const hostLikeEnvToken =
+    '(?:base[_-]?url|baseurl|host|hostname|domain|server|origin|env(?:ironment)?[_-]?url|api[_-]?url)';
+  const schemePrefix = '(?:[a-z][a-z0-9+.-]*:\\/\\/)?';
+  const wrappedEnvToken = new RegExp(
+    `^\\s*\\/?\\s*${schemePrefix}(?:<\\s*[^>]*${hostLikeEnvToken}[^>]*\\s*>|\\{\\{\\s*[^}]*${hostLikeEnvToken}[^}]*\\s*\\}\\}|\\$\\{\\s*[^}]*${hostLikeEnvToken}[^}]*\\s*\\})(?::\\d+)?\\s*`,
+    'i'
+  );
+  const bareEnvToken = new RegExp(`^\\s*\\/?\\s*${schemePrefix}${hostLikeEnvToken}(?::\\d+)?(?=\\/|$)`, 'i');
+  const hostWithOptionalPort = /^\s*\/?\s*(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?=\/|$)/i;
+
+  const withoutHost = rawPath
+    .replace(wrappedEnvToken, '')
+    .replace(bareEnvToken, '')
+    .replace(hostWithOptionalPort, '')
+    .trim();
+
+  const pathOnly = withoutHost.split(/[?#]/, 1)[0] || '/';
+  return pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`;
+}
+
 /**
  * Converts Project entities into an OpenAPI 3.0.3 specification object.
  */
@@ -268,7 +297,7 @@ export function parseOpenApiSpecToProjectData(
     if (!pathItem || typeof pathItem !== 'object') continue;
 
     // Convert path template if needed (OpenAPI uses /users/{id} -> /users/:id)
-    const normalizedPath = pathStr.trim().replace(/\{([^}]+)\}/g, ':$1');
+    const normalizedPath = sanitizeImportedPath(pathStr).replace(/\{([^}]+)\}/g, ':$1');
 
     for (const methodKey of Object.keys(pathItem)) {
       const lowerMethod = methodKey.toLowerCase();
@@ -318,6 +347,8 @@ export function parseOpenApiSpecToProjectData(
       const queryParams: Record<string, unknown> = {};
       const pathParams: Record<string, unknown> = {};
       const headers: Record<string, unknown> = {};
+      let requestBodyContent: unknown = {};
+      let bodyType: RequestBodyType = 'NONE';
 
       const parametersList = Array.isArray(operation.parameters) ? operation.parameters : [];
       for (const param of parametersList) {
@@ -332,11 +363,11 @@ export function parseOpenApiSpecToProjectData(
           pathParams[pName] = pExample;
         } else if (pIn === 'header') {
           headers[pName] = pExample;
+        } else if (pIn === 'body') {
+          bodyType = 'JSON';
+          requestBodyContent = param.example !== undefined ? param.example : param.schema?.example !== undefined ? param.schema.example : param.schema || {};
         }
       }
-
-      let requestBodyContent: unknown = {};
-      let bodyType: RequestBodyType = 'NONE';
 
       if (operation.requestBody && operation.requestBody.content) {
         bodyType = 'JSON';
@@ -387,9 +418,20 @@ export function parseOpenApiSpecToProjectData(
           const respName = respObj.description || `${statusCode} Response`;
 
           let respBody: unknown = { message: respName };
-          if (respObj.content && respObj.content['application/json']) {
-            const jsonResp = respObj.content['application/json'];
+          if (respObj.content && (respObj.content['application/json'] || respObj.content['*/*'])) {
+            const jsonResp = respObj.content['application/json'] || respObj.content['*/*'];
             const rawExample = jsonResp.example !== undefined ? jsonResp.example : jsonResp.schema || respBody;
+            if (typeof rawExample === 'string') {
+              try {
+                respBody = JSON.parse(rawExample);
+              } catch {
+                respBody = rawExample;
+              }
+            } else {
+              respBody = rawExample;
+            }
+          } else if (respObj.schema) {
+            const rawExample = respObj.schema.example !== undefined ? respObj.schema.example : (respObj.examples?.['application/json'] ?? respObj.schema);
             if (typeof rawExample === 'string') {
               try {
                 respBody = JSON.parse(rawExample);
