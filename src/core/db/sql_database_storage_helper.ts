@@ -343,6 +343,49 @@ function escapeJsonControlCharacters(jsonText: string): string {
   return result;
 }
 
+function repairUnclosedTrailingJsonString(jsonText: string): string {
+  let inJsonString = false;
+  let escaped = false;
+
+  for (const char of jsonText) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (inJsonString && char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inJsonString = !inJsonString;
+    }
+  }
+
+  if (!inJsonString) return jsonText;
+
+  const trailingClosersMatch = jsonText.match(/[\s}\]]*$/);
+  const trailingStart = trailingClosersMatch ? jsonText.length - trailingClosersMatch[0].length : jsonText.length;
+  return `${jsonText.slice(0, trailingStart)}"${jsonText.slice(trailingStart)}`;
+}
+
+function normalizeJsonbText(jsonText: string): string {
+  const escapedJsonText = escapeJsonControlCharacters(jsonText);
+  try {
+    JSON.parse(escapedJsonText);
+    return escapedJsonText;
+  } catch {}
+
+  const repairedJsonText = repairUnclosedTrailingJsonString(escapedJsonText);
+  try {
+    JSON.parse(repairedJsonText);
+    return repairedJsonText;
+  } catch {}
+
+  return JSON.stringify(jsonText);
+}
+
 function sanitizeJsonbLiterals(statement: string): string {
   let result = '';
 
@@ -387,7 +430,7 @@ function sanitizeJsonbLiterals(statement: string): string {
     }
 
     const jsonText = sqlLiteral.replace(/''/g, "'");
-    const sanitizedJsonText = escapeJsonControlCharacters(jsonText);
+    const sanitizedJsonText = normalizeJsonbText(jsonText);
     result += `'${sanitizedJsonText.replace(/'/g, "''")}'`;
     i = j;
   }
