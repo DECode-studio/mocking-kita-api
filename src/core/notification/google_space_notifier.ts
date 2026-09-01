@@ -13,6 +13,33 @@ export interface NotificationPayload {
   metadata?: any;
 }
 
+const ICONS = {
+  PROJECT: 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png',
+  API: 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png',
+  REQUEST_SCENARIO: 'https://cdn-icons-png.flaticon.com/512/2164/2164832.png',
+  RESPONSE_JSON: 'https://cdn-icons-png.flaticon.com/512/136/136525.png',
+  RESPONSE_FILE: 'https://cdn-icons-png.flaticon.com/512/2965/2965335.png',
+  RESPONSE_IMAGE: 'https://cdn-icons-png.flaticon.com/512/3342/3342137.png',
+  OPENAPI_IMPORT: 'https://cdn-icons-png.flaticon.com/512/875/875615.png',
+};
+
+function isImageResponse(state: any): boolean {
+  if (!state) return false;
+  if (state.responseType !== 'FILE') return false;
+  const target = (state.fileName || state.filePath || '').toLowerCase();
+  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.tiff', '.avif'];
+  if (imageExtensions.some((ext) => target.endsWith(ext))) {
+    return true;
+  }
+  if (state.headers && typeof state.headers === 'object') {
+    const contentType = (state.headers['content-type'] || state.headers['Content-Type'] || '') as string;
+    if (typeof contentType === 'string' && contentType.toLowerCase().startsWith('image/')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Sends a pure Card v2 notification (without chat balloon container) to Google Space webhook when target operations occur:
  * - CRUD on Project, Api, Request Scenario, Response Scenario
@@ -42,52 +69,28 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   }
 
   // Determine Action Emoji, Title and Accent Color
-  let actionEmoji = '⚡';
   let actionTitle = action as string;
 
   if (isOpenApiImport) {
-    actionEmoji = '📥';
     actionTitle = 'IMPORT OPENAPI';
   } else {
     switch (action) {
       case 'CREATE':
-        actionEmoji = '✨';
         actionTitle = 'CREATE';
         break;
       case 'UPDATE':
-        actionEmoji = '✏️';
         actionTitle = 'UPDATE';
         break;
       case 'DELETE':
-        actionEmoji = '🗑️';
         actionTitle = 'DELETE';
         break;
       case 'RESTORE':
-        actionEmoji = '🔄';
         actionTitle = 'RESTORE';
         break;
       case 'IMPORT':
-        actionEmoji = '📥';
         actionTitle = 'IMPORT';
         break;
     }
-  }
-
-  // Friendly Entity Type Label
-  let entityLabel = entityType as string;
-  switch (entityType) {
-    case 'project':
-      entityLabel = 'Project';
-      break;
-    case 'api':
-      entityLabel = 'API';
-      break;
-    case 'request_scenario':
-      entityLabel = 'Request Scenario';
-      break;
-    case 'response_scenario':
-      entityLabel = 'Response Scenario';
-      break;
   }
 
   // Extract Entity Target Name / Info
@@ -101,6 +104,45 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     }
   } else if (entityType === 'response_scenario' && state.statusCode) {
     targetInfo = `${targetInfo ? `${targetInfo} ` : ''}(HTTP ${state.statusCode})`.trim();
+  }
+
+  // Friendly Entity Type Label & Card Header Icon
+  let entityLabel = entityType as string;
+  let cardHeaderImageUrl = ICONS.PROJECT;
+
+  if (isOpenApiImport) {
+    cardHeaderImageUrl = ICONS.OPENAPI_IMPORT;
+    entityLabel = 'OpenAPI';
+  } else {
+    switch (entityType) {
+      case 'project':
+        entityLabel = 'Project';
+        cardHeaderImageUrl = ICONS.PROJECT;
+        break;
+      case 'api':
+        entityLabel = 'API';
+        cardHeaderImageUrl = ICONS.API;
+        break;
+      case 'request_scenario':
+        entityLabel = 'Request Scenario';
+        cardHeaderImageUrl = ICONS.REQUEST_SCENARIO;
+        break;
+      case 'response_scenario': {
+        const isFile = state.responseType === 'FILE';
+        const isImage = isImageResponse(state);
+        if (isImage) {
+          entityLabel = 'Response (Image)';
+          cardHeaderImageUrl = ICONS.RESPONSE_IMAGE;
+        } else if (isFile) {
+          entityLabel = 'Response (File)';
+          cardHeaderImageUrl = ICONS.RESPONSE_FILE;
+        } else {
+          entityLabel = 'Response Scenario';
+          cardHeaderImageUrl = ICONS.RESPONSE_JSON;
+        }
+        break;
+      }
+    }
   }
 
   // Resolve Project Name if available
@@ -193,6 +235,20 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     });
   }
 
+  if (entityType === 'response_scenario' && state.responseType === 'FILE') {
+    const isImage = isImageResponse(state);
+    const attachmentName = state.fileName || state.filePath;
+    if (attachmentName) {
+      cardWidgets.push({
+        decoratedText: {
+          topLabel: isImage ? 'IMAGE ATTACHMENT' : 'FILE ATTACHMENT',
+          text: `<code>${attachmentName}</code>`,
+          startIcon: { knownIcon: 'DESCRIPTION' },
+        },
+      });
+    }
+  }
+
   if (entityType !== 'project' && projectName && projectName !== targetInfo) {
     cardWidgets.push({
       decoratedText: {
@@ -216,7 +272,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
       decoratedText: {
         topLabel: 'DETAILS',
         text: description,
-        startIcon: { knownIcon: 'MEMO' },
+        startIcon: { knownIcon: 'DESCRIPTION' },
       },
     });
   }
@@ -236,7 +292,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
         header: {
           title: cardHeaderTitle,
           subtitle: cardHeaderSubtitle,
-          imageUrl: 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png',
+          imageUrl: cardHeaderImageUrl,
           imageType: 'CIRCLE',
         },
         sections: [
