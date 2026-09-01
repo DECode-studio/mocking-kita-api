@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const before = getDatabaseSummary();
-    importDatabaseData(parsed, importMode);
+    await importDatabaseData(parsed, importMode);
     const after = getDatabaseSummary();
 
     await logChange({
