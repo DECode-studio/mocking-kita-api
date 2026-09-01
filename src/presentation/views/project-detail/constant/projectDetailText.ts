@@ -25,4 +25,8 @@ export const PROJECT_DETAIL_TEXT = {
   OPENAPI_BTN_EXPORT: 'Export OpenAPI',
   OPENAPI_BTN_IMPORT: 'Import OpenAPI',
   OPENAPI_BTN_IMPORTING: 'Importing...',
+  OPENAPI_LOADING_EXPORT_TITLE: 'Preparing OpenAPI export',
+  OPENAPI_LOADING_EXPORT_DESC: 'Please wait while the project specification is generated.',
+  OPENAPI_LOADING_IMPORT_TITLE: 'Importing Swagger JSON',
+  OPENAPI_LOADING_IMPORT_DESC: 'Large files are processed in smaller batches. Please keep this window open.',
 } as const;
