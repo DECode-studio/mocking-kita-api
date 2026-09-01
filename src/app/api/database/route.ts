@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import prisma from '@/src/core/db/prisma-client';
-import { readDatabase, resetDatabaseToSeed, importDatabaseData, seedDatabase } from '@/src/core/db/database_storage_helper';
+import { readDatabase, resetDatabaseToSeed, wipeAllDatabaseData, importDatabaseData, seedDatabase } from '@/src/core/db/database_storage_helper';
 import { createProject, updateProject, softDeleteProject, restoreProject, hardDeleteProject, getProjectById } from '@/src/data/project/data_source/project_data_source_impl';
 import { createEnvironment, updateEnvironment, softDeleteEnvironment, getEnvironmentById } from '@/src/data/environment/data_source/environment_data_source_impl';
 import { createApi, updateApi, softDeleteApi, getApiById } from '@/src/data/api/data_source/api_data_source_impl';
@@ -73,14 +73,14 @@ export async function POST(request: Request) {
         }
 
         const before = await getDatabaseSummary();
-        const res = await resetDatabaseToSeed();
+        const res = await wipeAllDatabaseData();
         const after = await getDatabaseSummary();
         await logChange({
           action: 'RESET',
           entityType: 'database',
           beforeState: before,
           afterState: after,
-          description: 'Reset database to initial seed data',
+          description: 'Wiped all database records (empty database)',
         });
         return respond(res);
       }
