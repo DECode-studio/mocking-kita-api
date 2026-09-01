@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { importDatabaseData } from '@/src/core/db/database_storage_helper';
+import { importDatabaseSql } from '@/src/core/db/sql_database_storage_helper';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { logChange, getDatabaseSummary } from '@/src/core/db/change_log_helper';
 
@@ -30,32 +31,69 @@ export async function POST(request: Request) {
     }
 
     const importMode = mode === 'replace' ? 'replace' : 'merge';
+    const fileName = file.name.toLowerCase();
     const text = await file.text();
-    const parsed = JSON.parse(text) as unknown;
 
-    if (!isMockApiDatabase(parsed)) {
-      return NextResponse.json({ success: false, error: 'Invalid database structure' }, { status: 400 });
+    const before = await getDatabaseSummary();
+
+    if (fileName.endsWith('.sql')) {
+      const result = await importDatabaseSql(text, importMode);
+      const after = await getDatabaseSummary();
+
+      await logChange({
+        action: 'IMPORT',
+        entityType: 'database',
+        beforeState: before,
+        afterState: after,
+        metadata: {
+          mode: importMode,
+          fileName: file.name,
+          format: 'sql',
+          statementsCount: result.statementsExecuted,
+          chunksCount: result.chunksExecuted,
+        },
+        description: `Imported database SQL file '${file.name}' (${result.statementsExecuted} statements executed in ${result.chunksExecuted} chunks, mode: ${importMode})`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          message: `Database imported successfully (${result.statementsExecuted} SQL statements in ${result.chunksExecuted} chunks)`,
+        },
+      });
     }
 
-    const before = getDatabaseSummary();
-    await importDatabaseData(parsed, importMode);
-    const after = getDatabaseSummary();
+    if (fileName.endsWith('.json')) {
+      const parsed = JSON.parse(text) as unknown;
 
-    await logChange({
-      action: 'IMPORT',
-      entityType: 'database',
-      beforeState: before,
-      afterState: after,
-      metadata: { mode: importMode, fileName: file.name },
-      description: `Imported database JSON file '${file.name}' (mode: ${importMode})`,
-    });
+      if (!isMockApiDatabase(parsed)) {
+        return NextResponse.json({ success: false, error: 'Invalid database structure in JSON file' }, { status: 400 });
+      }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        message: 'Database imported successfully',
-      },
-    });
+      await importDatabaseData(parsed, importMode);
+      const after = await getDatabaseSummary();
+
+      await logChange({
+        action: 'IMPORT',
+        entityType: 'database',
+        beforeState: before,
+        afterState: after,
+        metadata: { mode: importMode, fileName: file.name, format: 'json' },
+        description: `Imported database JSON file '${file.name}' (mode: ${importMode})`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          message: 'Database imported successfully',
+        },
+      });
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Unsupported file format. Please upload a .sql or .json backup file.' },
+      { status: 400 }
+    );
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message || 'Import failed' }, { status: 500 });
   }

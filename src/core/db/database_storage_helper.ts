@@ -110,6 +110,16 @@ export async function readDatabase(): Promise<MockApiDatabase> {
   };
 }
 
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+const CHUNK_SIZE = 100;
+
 export async function seedDatabase(data: MockApiDatabase): Promise<void> {
   await prisma.$transaction(
     async (tx) => {
@@ -122,139 +132,171 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
       await tx.project.deleteMany({});
 
       if (data.projects && data.projects.length > 0) {
-        await tx.project.createMany({
-          data: data.projects.map((item) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description ?? null,
-            status: item.status,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-            deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-          })),
-        });
+        for (const chunk of chunkArray(data.projects, CHUNK_SIZE)) {
+          await tx.project.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              name: item.name,
+              description: item.description ?? null,
+              status: item.status,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
       }
 
       if (data.environments && data.environments.length > 0) {
-        await tx.environment.createMany({
-          data: data.environments.map((item) => ({
-            id: item.id,
-            projectId: item.projectId,
-            name: item.name,
-            environmentType: item.environmentType,
-            publicBaseUrl: item.publicBaseUrl ?? null,
-            originBaseUrl: item.originBaseUrl ?? null,
-            status: item.status,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-            deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-          })),
-        });
+        for (const chunk of chunkArray(data.environments, CHUNK_SIZE)) {
+          await tx.environment.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId,
+              name: item.name,
+              environmentType: item.environmentType,
+              publicBaseUrl: item.publicBaseUrl ?? null,
+              originBaseUrl: item.originBaseUrl ?? null,
+              status: item.status,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
       }
 
       if (data.collections && data.collections.length > 0) {
-        await tx.collection.createMany({
-          data: data.collections.map((item) => ({
-            id: item.id,
-            projectId: item.projectId,
-            name: item.name,
-            description: item.description ?? null,
-            status: item.status,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-            deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-          })),
-        });
+        for (const chunk of chunkArray(data.collections, CHUNK_SIZE)) {
+          await tx.collection.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId,
+              name: item.name,
+              description: item.description ?? null,
+              status: item.status,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
       }
 
       if (data.apiCollections && data.apiCollections.length > 0) {
-        await tx.api.createMany({
-          data: data.apiCollections.map((item) => ({
-            id: item.id,
-            projectId: item.projectId,
-            collectionId: item.collectionId ?? null,
-            name: item.name,
-            description: item.description ?? null,
-            path: item.path,
-            methodRequest: item.methodRequest,
-            status: item.status,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-            deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-          })),
-        });
+        for (const chunk of chunkArray(data.apiCollections, CHUNK_SIZE)) {
+          await tx.api.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId,
+              collectionId: item.collectionId ?? null,
+              name: item.name,
+              description: item.description ?? null,
+              path: item.path,
+              methodRequest: item.methodRequest,
+              status: item.status,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
       }
 
       if (data.apiEnvironments && data.apiEnvironments.length > 0) {
-        await tx.apiEnvironment.createMany({
-          data: data.apiEnvironments.map((item) => ({
-            id: item.id,
-            apiId: item.apiId,
-            environmentId: item.environmentId,
-            enabled: item.enabled,
-            pathOverride: item.pathOverride ?? null,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-          })),
-        });
+        for (const chunk of chunkArray(data.apiEnvironments, CHUNK_SIZE)) {
+          await tx.apiEnvironment.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              apiId: item.apiId,
+              environmentId: item.environmentId,
+              enabled: item.enabled,
+              pathOverride: item.pathOverride ?? null,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+            })),
+          });
+        }
       }
 
       if (data.requestScenarios && data.requestScenarios.length > 0) {
-        await tx.requestScenario.createMany({
-          data: data.requestScenarios.map((item) => ({
-            id: item.id,
-            apiId: item.apiId,
-            name: item.name,
-            description: item.description ?? null,
-            headers: (item.headers as Prisma.InputJsonValue) ?? {},
-            queryParams: (item.queryParams as Prisma.InputJsonValue) ?? {},
-            pathParams: (item.pathParams as Prisma.InputJsonValue) ?? {},
-            body: (item.body as Prisma.InputJsonValue) ?? {},
-            bodyType: item.bodyType ?? 'JSON',
-            matchType: item.matchType ?? 'EXACT',
-            priority: item.priority ?? 0,
-            status: item.status,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-            deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-          })),
-        });
+        for (const chunk of chunkArray(data.requestScenarios, CHUNK_SIZE)) {
+          await tx.requestScenario.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              apiId: item.apiId,
+              name: item.name,
+              description: item.description ?? null,
+              headers: (item.headers as Prisma.InputJsonValue) ?? {},
+              queryParams: (item.queryParams as Prisma.InputJsonValue) ?? {},
+              pathParams: (item.pathParams as Prisma.InputJsonValue) ?? {},
+              body: (item.body as Prisma.InputJsonValue) ?? {},
+              bodyType: item.bodyType ?? 'JSON',
+              matchType: item.matchType ?? 'EXACT',
+              priority: item.priority ?? 0,
+              status: item.status,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
       }
 
       if (data.responseScenarios && data.responseScenarios.length > 0) {
-        await tx.responseScenario.createMany({
-          data: data.responseScenarios.map((item) => ({
-            id: item.id,
-            requestScenarioId: item.requestScenarioId,
-            name: item.name,
-            description: item.description ?? null,
-            statusCode: item.statusCode ?? 200,
-            headers: (item.headers as Prisma.InputJsonValue) ?? {},
-            body: (item.body as Prisma.InputJsonValue) ?? {},
-            responseType: item.responseType ?? 'JSON',
-            filePath: item.filePath ?? null,
-            fileName: item.fileName ?? null,
-            delayMs: item.delayMs ?? 0,
-            weight: item.weight ?? 100,
-            priority: item.priority ?? 0,
-            status: item.status,
-            createdAt: new Date(item.createdAt),
-            updatedAt: new Date(item.updatedAt),
-            deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-          })),
-        });
+        for (const chunk of chunkArray(data.responseScenarios, CHUNK_SIZE)) {
+          await tx.responseScenario.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              requestScenarioId: item.requestScenarioId,
+              name: item.name,
+              description: item.description ?? null,
+              statusCode: item.statusCode ?? 200,
+              headers: (item.headers as Prisma.InputJsonValue) ?? {},
+              body: (item.body as Prisma.InputJsonValue) ?? {},
+              responseType: item.responseType ?? 'JSON',
+              filePath: item.filePath ?? null,
+              fileName: item.fileName ?? null,
+              delayMs: item.delayMs ?? 0,
+              weight: item.weight ?? 100,
+              priority: item.priority ?? 0,
+              status: item.status,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
       }
+    },
+    {
+      maxWait: 30000,
+      timeout: 300000, // 5 minutes
+    }
+  );
+}
+
+export async function wipeAllDatabaseData(): Promise<MockApiDatabase> {
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.responseScenario.deleteMany({});
+      await tx.requestScenario.deleteMany({});
+      await tx.apiEnvironment.deleteMany({});
+      await tx.api.deleteMany({});
+      await tx.collection.deleteMany({});
+      await tx.environment.deleteMany({});
+      await tx.project.deleteMany({});
     },
     {
       maxWait: 15000,
       timeout: 60000,
     }
   );
+  return readDatabase();
 }
 
 export async function resetDatabaseToSeed(): Promise<MockApiDatabase> {
-  await seedDatabase(INITIAL_SEED_DATA);
-  return readDatabase();
+  return wipeAllDatabaseData();
 }
 
 export async function importDatabaseData(

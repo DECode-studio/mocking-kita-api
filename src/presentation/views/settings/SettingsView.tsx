@@ -2,12 +2,13 @@
 
 import React from 'react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
-import {  createDatabaseResetUseCase  } from '@/src/di/usecase_provider';
+import { createDatabaseResetUseCase } from '@/src/di/usecase_provider';
 import { useSettings } from './hook/useSettings';
 import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from './constant';
 import {
   ThemeSettingsCard,
   DatabaseSettingsCard,
+  DatabaseImportModal,
   OnboardingSettingsCard,
   AppInfoCard,
 } from './components';
@@ -17,15 +18,36 @@ export const SettingsView: React.FC = () => {
   const {
     theme,
     setTheme,
-    setImportModalOpen,
+    // Reset state
     isResetConfirmOpen,
     setIsResetConfirmOpen,
+    isResetting,
     handleReset,
     canResetDb,
+    // Download Backup
+    isDownloading,
+    downloadFormat,
+    handleDownloadBackup,
+    // Import Backup
+    isImportModalOpen,
+    setIsImportModalOpen,
+    selectedFile,
+    fileName,
+    fileSize,
+    fileSummary,
+    importFileFormat,
+    fileError,
+    importMode,
+    setImportMode,
+    isImporting,
+    handleFileChange,
+    handleFileDrop,
+    handleClearFile,
+    handleApplyImport,
   } = useSettings(databaseResetUseCase);
 
   return (
-    <div id={SETTINGS_SEMANTIC_ID.CONTAINER} className="space-y-8 w-full">
+    <div id={SETTINGS_SEMANTIC_ID.CONTAINER} className="space-y-8 w-full max-w-5xl mx-auto pb-10">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           {SETTINGS_TEXT.TITLE}
@@ -38,10 +60,14 @@ export const SettingsView: React.FC = () => {
       {/* Theme Settings Card */}
       <ThemeSettingsCard theme={theme} onThemeChange={setTheme} />
 
-      {/* Database Engine Settings Card */}
+      {/* Database Engine & Backup Settings Card */}
       <DatabaseSettingsCard
-        onImportExportClick={() => setImportModalOpen(true)}
+        onDownloadBackupClick={handleDownloadBackup}
+        isDownloading={isDownloading}
+        downloadFormat={downloadFormat}
+        onImportBackupClick={() => setIsImportModalOpen(true)}
         onResetConfirmClick={() => setIsResetConfirmOpen(true)}
+        isResetting={isResetting}
         canResetDb={canResetDb}
       />
 
@@ -51,7 +77,26 @@ export const SettingsView: React.FC = () => {
       {/* Application Info Card */}
       <AppInfoCard />
 
-      {/* Database Reset Dialog */}
+      {/* Database Backup Import Modal */}
+      <DatabaseImportModal
+        isOpen={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+        selectedFile={selectedFile}
+        fileName={fileName}
+        fileSize={fileSize}
+        fileSummary={fileSummary}
+        importFileFormat={importFileFormat}
+        fileError={fileError}
+        importMode={importMode}
+        onImportModeChange={setImportMode}
+        isImporting={isImporting}
+        onFileChange={handleFileChange}
+        onFileDrop={handleFileDrop}
+        onClearFile={handleClearFile}
+        onApplyImport={handleApplyImport}
+      />
+
+      {/* Database Reset Confirmation Dialog */}
       <ConfirmDialog
         isOpen={isResetConfirmOpen}
         onClose={() => setIsResetConfirmOpen(false)}

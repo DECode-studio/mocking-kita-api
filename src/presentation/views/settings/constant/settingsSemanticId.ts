@@ -4,5 +4,13 @@ export const SETTINGS_SEMANTIC_ID = {
   DATABASE_CARD: 'settings-database-card',
   APP_INFO_CARD: 'settings-app-info-card',
   IMPORT_EXPORT_BTN: 'settings-import-export-btn',
+  DOWNLOAD_BACKUP_BTN: 'settings-download-backup-btn',
+  IMPORT_BACKUP_BTN: 'settings-import-backup-btn',
+  IMPORT_BACKUP_MODAL: 'settings-import-backup-modal',
+  IMPORT_FILE_INPUT: 'settings-import-file-input',
+  APPLY_IMPORT_BTN: 'settings-apply-import-btn',
+  IMPORT_CANCEL_BTN: 'settings-import-cancel-btn',
+  IMPORT_MODE_MERGE_BTN: 'settings-import-mode-merge-btn',
+  IMPORT_MODE_REPLACE_BTN: 'settings-import-mode-replace-btn',
   RESET_DATABASE_BTN: 'settings-reset-database-btn',
 } as const;
