@@ -245,6 +245,156 @@ export function exportProjectToOpenApiSpec(
   };
 }
 
+function resolveRef(refStr: string, rootSpec: any, visitedRefs: Set<string> = new Set()): any {
+  if (!refStr || typeof refStr !== 'string' || !rootSpec || typeof rootSpec !== 'object') {
+    return null;
+  }
+  if (visitedRefs.has(refStr)) {
+    return null;
+  }
+  visitedRefs.add(refStr);
+
+  const parts = refStr
+    .replace(/^#\//, '')
+    .split('/')
+    .map((p) => p.replace(/~1/g, '/').replace(/~0/g, '~'));
+
+  let curr = rootSpec;
+  for (const part of parts) {
+    if (curr && typeof curr === 'object' && part in curr) {
+      curr = curr[part];
+    } else {
+      return null;
+    }
+  }
+
+  if (curr && typeof curr === 'object' && typeof curr.$ref === 'string') {
+    return resolveRef(curr.$ref, rootSpec, visitedRefs);
+  }
+  return curr;
+}
+
+function resolveSchema(schema: any, rootSpec: any, visitedRefs: Set<string> = new Set()): any {
+  if (!schema || typeof schema !== 'object') return schema;
+
+  let current = schema;
+  if (typeof current.$ref === 'string') {
+    const deref = resolveRef(current.$ref, rootSpec, new Set(visitedRefs));
+    if (deref && typeof deref === 'object') {
+      const { $ref, ...rest } = current;
+      current = { ...deref, ...rest };
+    }
+  }
+
+  if (Array.isArray(current.allOf) && current.allOf.length > 0) {
+    let mergedProps: Record<string, any> = {};
+    let mergedType = current.type;
+    let mergedExample = current.example;
+
+    for (const sub of current.allOf) {
+      const resSub = resolveSchema(sub, rootSpec, visitedRefs);
+      if (resSub && typeof resSub === 'object') {
+        if (resSub.properties && typeof resSub.properties === 'object') {
+          mergedProps = { ...mergedProps, ...resSub.properties };
+        }
+        if (resSub.type && !mergedType) {
+          mergedType = resSub.type;
+        }
+        if (resSub.example !== undefined && mergedExample === undefined) {
+          mergedExample = resSub.example;
+        }
+      }
+    }
+
+    const { allOf, ...rest } = current;
+    current = {
+      ...rest,
+      type: mergedType || (Object.keys(mergedProps).length > 0 ? 'object' : rest.type),
+      properties: { ...mergedProps, ...(current.properties || {}) },
+      example: mergedExample,
+    };
+  }
+
+  return current;
+}
+
+function generateSampleFromSchema(schema: any, rootSpec: any, visitedRefs: Set<string> = new Set()): any {
+  const s = resolveSchema(schema, rootSpec, visitedRefs);
+  if (!s || typeof s !== 'object') return s;
+
+  if (s.example !== undefined) return s.example;
+  if (s.default !== undefined) return s.default;
+  if (s['x-example'] !== undefined) return s['x-example'];
+
+  if (Array.isArray(s.enum) && s.enum.length > 0) {
+    return s.enum[0];
+  }
+
+  if (s.type === 'array' || (!s.type && s.items)) {
+    if (s.items) {
+      return [generateSampleFromSchema(s.items, rootSpec, visitedRefs)];
+    }
+    return [];
+  }
+
+  if (s.type === 'object' || s.properties || (!s.type && !s.items)) {
+    if (s.properties && typeof s.properties === 'object') {
+      const obj: Record<string, any> = {};
+      for (const [propName, propSchema] of Object.entries(s.properties)) {
+        obj[propName] = generateSampleFromSchema(propSchema, rootSpec, visitedRefs);
+      }
+      return obj;
+    }
+    if (s.type === 'object' && !s.properties) {
+      return {};
+    }
+  }
+
+  if (s.type === 'string') {
+    if (s.format === 'binary' || s.format === 'byte') return { filename: '(binary_file_data)' };
+    if (s.format === 'date' || s.format === 'date-time') return '2026-09-02T00:00:00Z';
+    if (s.format === 'email') return 'user@example.com';
+    if (s.format === 'uri' || s.format === 'url') return 'https://example.com';
+    return 'string';
+  }
+  if (s.type === 'integer' || s.type === 'number') {
+    return 0;
+  }
+  if (s.type === 'boolean') {
+    return true;
+  }
+
+  return {};
+}
+
+function extractParamExample(param: any, rawSpec: any): unknown {
+  if (param.example !== undefined) return param.example;
+  if (param.default !== undefined) return param.default;
+  if (param.schema) {
+    const sample = generateSampleFromSchema(param.schema, rawSpec);
+    if (sample !== undefined && (typeof sample !== 'object' || Object.keys(sample).length > 0)) {
+      return sample;
+    }
+  }
+
+  if (param.description && typeof param.description === 'string' && param.description.includes('=>')) {
+    const hintPart = param.description.split('=>')[1]?.split(/[,;|\n]/)[0]?.trim();
+    if (hintPart) {
+      const cleanHint = hintPart.replace(/^["']|["']$/g, '').trim();
+      if (cleanHint) return cleanHint;
+    }
+  }
+
+  if (param.type === 'file') return { filename: '(binary_file_data)' };
+  if (Array.isArray(param.enum) && param.enum.length > 0) return param.enum[0];
+
+  if (param.type === 'string') return 'sample_text';
+  if (param.type === 'integer' || param.type === 'number') return 0;
+  if (param.type === 'boolean') return true;
+
+  return 'sample';
+}
+
 /**
  * Parses an OpenAPI / Swagger JSON document and converts it into Mock API Studio entity objects scoped to target projectId.
  */
@@ -347,15 +497,35 @@ export function parseOpenApiSpecToProjectData(
       const queryParams: Record<string, unknown> = {};
       const pathParams: Record<string, unknown> = {};
       const headers: Record<string, unknown> = {};
+      const formDataBody: Record<string, unknown> = {};
       let requestBodyContent: unknown = {};
       let bodyType: RequestBodyType = 'NONE';
 
-      const parametersList = Array.isArray(operation.parameters) ? operation.parameters : [];
-      for (const param of parametersList) {
+      const consumes = Array.isArray(operation.consumes) ? operation.consumes : [];
+      const isUrlEncoded = consumes.some((c: string) => typeof c === 'string' && c.toLowerCase().includes('x-www-form-urlencoded'));
+
+      const parametersList: any[] = [];
+      if (Array.isArray((pathItem as any).parameters)) {
+        parametersList.push(...(pathItem as any).parameters);
+      }
+      if (Array.isArray(operation.parameters)) {
+        parametersList.push(...operation.parameters);
+      }
+
+      for (let param of parametersList) {
+        if (!param) continue;
+        if (typeof param === 'object' && typeof param.$ref === 'string') {
+          const resolved = resolveRef(param.$ref, rawSpec);
+          if (resolved) param = resolved;
+        }
         if (!param || !param.name) continue;
         const pName = String(param.name);
         const pIn = String(param.in || 'query').toLowerCase();
-        const pExample = param.example !== undefined ? param.example : param.schema?.default || 'sample';
+        let pExample = extractParamExample(param, rawSpec);
+
+        if (typeof pExample === 'object' && pExample !== null && (pExample as any).$ref) {
+          pExample = generateSampleFromSchema(pExample, rawSpec);
+        }
 
         if (pIn === 'query') {
           queryParams[pName] = pExample;
@@ -365,16 +535,54 @@ export function parseOpenApiSpecToProjectData(
           headers[pName] = pExample;
         } else if (pIn === 'body') {
           bodyType = 'JSON';
-          requestBodyContent = param.example !== undefined ? param.example : param.schema?.example !== undefined ? param.schema.example : param.schema || {};
+          requestBodyContent = pExample;
+        } else if (pIn === 'formdata' || pIn === 'form') {
+          bodyType = isUrlEncoded ? 'URL_ENCODED' : 'FORM_DATA';
+          formDataBody[pName] = pExample;
+        }
+      }
+
+      if (Object.keys(formDataBody).length > 0) {
+        requestBodyContent = formDataBody;
+        if (bodyType === 'NONE') {
+          bodyType = isUrlEncoded ? 'URL_ENCODED' : 'FORM_DATA';
         }
       }
 
       if (operation.requestBody && operation.requestBody.content) {
-        bodyType = 'JSON';
-        const jsonContent = operation.requestBody.content['application/json'] || operation.requestBody.content['*/*'];
-        if (jsonContent) {
-          requestBodyContent = jsonContent.example !== undefined ? jsonContent.example : jsonContent.schema || {};
+        const contentObj = operation.requestBody.content;
+        const jsonContent = contentObj['application/json'] || contentObj['*/*'];
+        const multipartContent = contentObj['multipart/form-data'];
+        const urlEncodedContent = contentObj['application/x-www-form-urlencoded'];
+
+        if (multipartContent) {
+          bodyType = 'FORM_DATA';
+          requestBodyContent = multipartContent.example !== undefined
+            ? multipartContent.example
+            : multipartContent.schema
+              ? generateSampleFromSchema(multipartContent.schema, rawSpec)
+              : {};
+        } else if (urlEncodedContent) {
+          bodyType = 'URL_ENCODED';
+          requestBodyContent = urlEncodedContent.example !== undefined
+            ? urlEncodedContent.example
+            : urlEncodedContent.schema
+              ? generateSampleFromSchema(urlEncodedContent.schema, rawSpec)
+              : {};
+        } else if (jsonContent) {
+          bodyType = 'JSON';
+          requestBodyContent = jsonContent.example !== undefined
+            ? jsonContent.example
+            : jsonContent.schema
+              ? generateSampleFromSchema(jsonContent.schema, rawSpec)
+              : {};
         }
+      }
+
+      if (typeof requestBodyContent === 'string') {
+        try {
+          requestBodyContent = JSON.parse(requestBodyContent);
+        } catch {}
       }
 
       const reqScenarioId = generateId();
@@ -420,27 +628,31 @@ export function parseOpenApiSpecToProjectData(
           let respBody: unknown = { message: respName };
           if (respObj.content && (respObj.content['application/json'] || respObj.content['*/*'])) {
             const jsonResp = respObj.content['application/json'] || respObj.content['*/*'];
-            const rawExample = jsonResp.example !== undefined ? jsonResp.example : jsonResp.schema || respBody;
-            if (typeof rawExample === 'string') {
-              try {
-                respBody = JSON.parse(rawExample);
-              } catch {
-                respBody = rawExample;
-              }
-            } else {
-              respBody = rawExample;
+            if (jsonResp.example !== undefined) {
+              respBody = jsonResp.example;
+            } else if (jsonResp.examples && typeof jsonResp.examples === 'object') {
+              const firstKey = Object.keys(jsonResp.examples)[0];
+              const exObj = jsonResp.examples[firstKey];
+              respBody = exObj?.value !== undefined ? exObj.value : exObj;
+            } else if (jsonResp.schema) {
+              respBody = generateSampleFromSchema(jsonResp.schema, rawSpec);
             }
           } else if (respObj.schema) {
-            const rawExample = respObj.schema.example !== undefined ? respObj.schema.example : (respObj.examples?.['application/json'] ?? respObj.schema);
-            if (typeof rawExample === 'string') {
-              try {
-                respBody = JSON.parse(rawExample);
-              } catch {
-                respBody = rawExample;
-              }
+            if (respObj.example !== undefined) {
+              respBody = respObj.example;
+            } else if (respObj.examples && respObj.examples['application/json']) {
+              respBody = respObj.examples['application/json'];
             } else {
-              respBody = rawExample;
+              respBody = generateSampleFromSchema(respObj.schema, rawSpec);
             }
+          }
+
+          if (typeof respBody === 'string') {
+            try {
+              respBody = JSON.parse(respBody);
+            } catch {}
+          } else if (typeof respBody === 'object' && respBody !== null && (respBody as any).$ref) {
+            respBody = generateSampleFromSchema(respBody, rawSpec);
           }
 
           responseScenariosToCreate.push({
@@ -453,8 +665,8 @@ export function parseOpenApiSpecToProjectData(
             responseType: 'JSON',
             delayMs: 0,
             weight: 100,
-            priority: 0,
-            status: true,
+            priority: statusCode >= 200 && statusCode < 300 ? 100 : 0,
+            status: statusCode >= 200 && statusCode < 300,
           });
         }
       }
@@ -468,3 +680,4 @@ export function parseOpenApiSpecToProjectData(
     responseScenarios: responseScenariosToCreate,
   };
 }
+
