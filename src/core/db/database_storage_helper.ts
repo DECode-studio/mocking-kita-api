@@ -4,17 +4,27 @@ import { INITIAL_SEED_DATA } from './seed-data';
 import { Prisma } from '@prisma/client';
 
 export async function readDatabase(): Promise<MockApiDatabase> {
-  const projectsRaw = await prisma.project.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
-  const environmentsRaw = await prisma.environment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
-  const collectionsRaw = await prisma.collection.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
-  const apisRaw = await prisma.api.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
-  const apiEnvironmentsRaw = await prisma.apiEnvironment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] });
-  const requestScenariosRaw = await prisma.requestScenario.findMany({
-    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
-  });
-  const responseScenariosRaw = await prisma.responseScenario.findMany({
-    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
-  });
+  const [
+    projectsRaw,
+    environmentsRaw,
+    collectionsRaw,
+    apisRaw,
+    apiEnvironmentsRaw,
+    requestScenariosRaw,
+    responseScenariosRaw,
+  ] = await Promise.all([
+    prisma.project.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+    prisma.environment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+    prisma.collection.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+    prisma.api.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+    prisma.apiEnvironment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
+    prisma.requestScenario.findMany({
+      orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.responseScenario.findMany({
+      orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+    }),
+  ]);
 
   return {
     version: '1.0.0',
