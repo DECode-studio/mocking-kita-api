@@ -26,6 +26,9 @@ export function useKeyValueOrJsonEditor(
           if (supportFiles && v && typeof v === 'object' && 'filename' in v) {
             return { key: k, value: String((v as any).filename || ''), isFile: true };
           }
+          if (supportFiles && typeof v === 'string' && (v === '(binary_file_data)' || v.startsWith('(binary_file'))) {
+            return { key: k, value: v, isFile: true };
+          }
           return { key: k, value: typeof v === 'object' ? JSON.stringify(v) : String(v), isFile: false };
         });
         setRows(parsedRows.length > 0 ? parsedRows : [{ key: '', value: '', isFile: false }]);

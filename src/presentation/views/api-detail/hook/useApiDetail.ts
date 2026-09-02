@@ -142,8 +142,16 @@ export function useApiDetail(
   });
 
   const toggleRequestScenarioStatus = async (id: string) => {
-    await apiDetailUseCase.toggleRequestScenarioStatus(id);
-    await reloadApiDetail();
+    try {
+      await apiDetailUseCase.toggleRequestScenarioStatus(id);
+      await reloadApiDetail();
+    } catch {
+      addToast({
+        type: 'error',
+        title: 'Status Update Failed',
+        description: 'Failed to update scenario status. Please refresh the page and try again.',
+      });
+    }
   };
 
   const duplicateRequestScenario = async (id: string) => {
@@ -157,8 +165,16 @@ export function useApiDetail(
   };
 
   const toggleResponseScenarioStatus = async (id: string) => {
-    await apiDetailUseCase.toggleResponseScenarioStatus(id);
-    await reloadApiDetail();
+    try {
+      await apiDetailUseCase.toggleResponseScenarioStatus(id);
+      await reloadApiDetail();
+    } catch {
+      addToast({
+        type: 'error',
+        title: 'Status Update Failed',
+        description: 'Failed to update response status. Please refresh the page and try again.',
+      });
+    }
   };
 
   const duplicateResponseScenario = async (id: string) => {
