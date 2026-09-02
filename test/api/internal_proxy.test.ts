@@ -64,4 +64,88 @@ describe('internal-proxy and cache', () => {
     expect(res.status).toBe(200);
     expect(json).toEqual({ users: ['Alice'] });
   });
+
+  it('handleInternalApiRequest should match API endpoint regardless of /api prefix', async () => {
+    const mockDb = {
+      projects: [{ id: 'p1', status: true }],
+      environments: [{ id: 'env1', projectId: 'p1', status: true }],
+      apiCollections: [
+        { id: 'a1', projectId: 'p1', path: '/media/upload-stream', methodRequest: 'POST', status: true },
+      ],
+      apiEnvironments: [],
+      requestScenarios: [
+        { id: 'r1', apiId: 'a1', name: 'Req 1', headers: {}, queryParams: {}, pathParams: {}, body: {}, bodyType: 'NONE', matchType: 'PARTIAL', priority: 10, status: true },
+      ],
+      responseScenarios: [
+        { id: 'res1', requestScenarioId: 'r1', name: '200 OK', statusCode: 200, headers: {}, body: { code: 'PLT-MSP-200' }, responseType: 'JSON', delayMs: 0, weight: 100, priority: 10, status: true },
+      ],
+    };
+
+    (readDatabase as any).mockResolvedValue(mockDb);
+
+    // Test calling with /api/ prefix when DB path is /media/upload-stream
+    const reqWithApi = new NextRequest('http://localhost/api/media/upload-stream', { method: 'POST' });
+    const resWithApi = await handleInternalApiRequest(reqWithApi);
+    expect(resWithApi.status).toBe(200);
+    expect(await resWithApi.json()).toEqual({ code: 'PLT-MSP-200' });
+
+    // Test calling without /api/ prefix when DB path is /media/upload-stream
+    const reqWithoutApi = new NextRequest('http://localhost/media/upload-stream', { method: 'POST' });
+    const resWithoutApi = await handleInternalApiRequest(reqWithoutApi);
+    expect(resWithoutApi.status).toBe(200);
+    expect(await resWithoutApi.json()).toEqual({ code: 'PLT-MSP-200' });
+  });
+
+  it('handleInternalApiRequest should match form-data containing binary file placeholder', async () => {
+    const mockDb = {
+      projects: [{ id: 'p1', status: true }],
+      environments: [{ id: 'env1', projectId: 'p1', status: true }],
+      apiCollections: [
+        { id: 'a1', projectId: 'p1', path: '/media/upload-stream', methodRequest: 'POST', status: true },
+      ],
+      apiEnvironments: [],
+      requestScenarios: [
+        {
+          id: 'r1',
+          apiId: 'a1',
+          name: 'Req 1',
+          headers: {},
+          queryParams: {},
+          pathParams: {},
+          body: {
+            file: { filename: '(binary_file_data)' },
+            type: 'ktp',
+            total_part: 0,
+            reference_no: 'Ecommerce001',
+            use_versioning: true,
+          },
+          bodyType: 'FORM_DATA',
+          matchType: 'EXACT',
+          priority: 10,
+          status: true,
+        },
+      ],
+      responseScenarios: [
+        { id: 'res1', requestScenarioId: 'r1', name: '200 OK', statusCode: 200, headers: {}, body: { code: 'PLT-MSP-200' }, responseType: 'JSON', delayMs: 0, weight: 100, priority: 10, status: true },
+      ],
+    };
+
+    (readDatabase as any).mockResolvedValue(mockDb);
+
+    const formData = new FormData();
+    formData.append('file', new File(['content'], 'images.jpeg', { type: 'image/jpeg' }));
+    formData.append('type', 'ktp');
+    formData.append('total_part', '0');
+    formData.append('reference_no', 'Ecommerce001');
+    formData.append('use_versioning', 'true');
+
+    const req = new NextRequest('http://localhost/media/upload-stream', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await handleInternalApiRequest(req);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ code: 'PLT-MSP-200' });
+  });
 });

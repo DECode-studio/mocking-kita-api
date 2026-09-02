@@ -7,7 +7,16 @@ import { ResponseScenario } from '@/src/domain/response-scenario/entity/response
 import { MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { responseCache, throttleStates } from './internal-proxy-cache';
 
-const INTERNAL_ROUTE_PREFIXES = ['/api/auth', '/api/database', '/api/settings', '/api/admin'];
+const INTERNAL_ROUTE_PREFIXES = [
+  '/api/auth',
+  '/api/database',
+  '/api/settings',
+  '/api/admin',
+  '/api/upload',
+  '/api/projects',
+  '/api/change-logs',
+  '/api/faq',
+];
 
 type PathMatchResult = {
   matched: boolean;
@@ -176,16 +185,32 @@ function countSpecifiedFields(value: unknown): number {
   return nestedCount || Object.keys(objectValue).length;
 }
 
+function isBinaryFilePlaceholder(value: unknown): boolean {
+  if (typeof value === 'string' && (value === '(binary_file_data)' || value.startsWith('(binary_file'))) {
+    return true;
+  }
+  if (value && typeof value === 'object' && 'filename' in (value as Record<string, unknown>)) {
+    const fn = String((value as Record<string, unknown>).filename || '');
+    return fn === '(binary_file_data)' || fn.startsWith('(binary_file');
+  }
+  return false;
+}
+
 function matchesExact(expected: unknown, actual: unknown, looseScalars = false): boolean {
   if (isEmptyValue(expected)) return true;
+  if (isBinaryFilePlaceholder(expected)) return actual != null && !isEmptyValue(actual);
   if (Array.isArray(expected) || (expected && typeof expected === 'object')) {
-    return looseScalars ? deepEqualLoose(expected, actual) : deepEqual(expected, actual);
+    if (looseScalars) {
+      return matchesPartial(expected, actual, true);
+    }
+    return deepEqual(expected, actual);
   }
   return String(actual ?? '') === String(expected ?? '');
 }
 
 function matchesPartial(expected: unknown, actual: unknown, looseScalars = false): boolean {
   if (isEmptyValue(expected)) return true;
+  if (isBinaryFilePlaceholder(expected)) return actual != null && !isEmptyValue(actual);
 
   if (Array.isArray(expected)) {
     if (!Array.isArray(actual)) return false;
@@ -205,6 +230,7 @@ function matchesPartial(expected: unknown, actual: unknown, looseScalars = false
 
 function matchesRegex(expected: unknown, actual: unknown, looseScalars = false): boolean {
   if (isEmptyValue(expected)) return true;
+  if (isBinaryFilePlaceholder(expected)) return actual != null && !isEmptyValue(actual);
 
   if (Array.isArray(expected)) {
     if (!Array.isArray(actual)) return false;
@@ -439,9 +465,26 @@ function scoreScenarioMatch(
 function chooseWeightedResponse(responses: ResponseScenario[]): ResponseScenario | null {
   if (!responses.length) return null;
 
-  const highestPriority = Math.max(...responses.map((item) => item.priority ?? 0));
-  const priorityGroup = responses.filter((item) => (item.priority ?? 0) === highestPriority);
+  const sorted = [...responses].sort((a, b) => {
+    const pDiff = (b.priority ?? 0) - (a.priority ?? 0);
+    if (pDiff !== 0) return pDiff;
+
+    const aIsSuccess = a.statusCode >= 200 && a.statusCode < 300 ? 1 : 0;
+    const bIsSuccess = b.statusCode >= 200 && b.statusCode < 300 ? 1 : 0;
+    if (bIsSuccess !== aIsSuccess) return bIsSuccess - aIsSuccess;
+
+    return (b.weight ?? 0) - (a.weight ?? 0);
+  });
+
+  const highestPriority = Math.max(...sorted.map((item) => item.priority ?? 0));
+  const priorityGroup = sorted.filter((item) => (item.priority ?? 0) === highestPriority);
   if (priorityGroup.length === 1) return priorityGroup[0];
+
+  const firstWeight = priorityGroup[0].weight ?? 100;
+  const allWeightsEqual = priorityGroup.every((item) => (item.weight ?? 100) === firstWeight);
+  if (allWeightsEqual) {
+    return priorityGroup[0];
+  }
 
   const totalWeight = priorityGroup.reduce((sum, item) => sum + Math.max(item.weight ?? 0, 0), 0);
   if (totalWeight <= 0) {
@@ -583,6 +626,9 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
 
   const database = await readDatabase();
   const headers = normalizeHeaders(request.headers);
+  const activeProjectIds = new Set(
+    database.projects.filter((project) => project.status && !project.deletedAt).map((project) => project.id)
+  );
   const activeEnvironmentIds = new Set(
     database.environments.filter((environment) => environment.status && !environment.deletedAt).map((environment) => environment.id)
   );
@@ -601,15 +647,21 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
   const apiMatches: ApiMatchResult[] = database.apiCollections
     .filter((api) => {
       if (!api.status || api.deletedAt) return false;
+      if (!activeProjectIds.has(api.projectId)) return false;
       if (targetProjectId && api.projectId !== targetProjectId) return false;
       return true;
     })
     .flatMap((api) => {
-      const candidates: ApiMatchResult[] = [
+      const pathVariations = [
+        targetPathname,
+        targetPathname.startsWith('/api/') ? targetPathname.replace(/^\/api/, '') : `/api${targetPathname}`,
+      ];
+
+      const candidates: ApiMatchResult[] = pathVariations.flatMap((currPathname) => [
         {
           apiId: api.id,
           apiPath: api.path,
-          ...matchPathPattern(api.path, targetPathname),
+          ...matchPathPattern(api.path, currPathname),
         },
         ...database.apiEnvironments
           .filter(
@@ -622,9 +674,9 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
           .map((apiEnvironment) => ({
             apiId: api.id,
             apiPath: apiEnvironment.pathOverride as string,
-            ...matchPathPattern(apiEnvironment.pathOverride as string, targetPathname),
+            ...matchPathPattern(apiEnvironment.pathOverride as string, currPathname),
           })),
-      ];
+      ]);
 
       return candidates;
     })
@@ -680,7 +732,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
   if (!matchedRequestScenario) {
     const allActiveScenarios = database.requestScenarios
       .filter((scenario) => scenario.apiId === matchedApi.apiId && scenario.status && !scenario.deletedAt)
-      .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
     if (allActiveScenarios.length > 0) {
       matchedRequestScenario = allActiveScenarios[0];
