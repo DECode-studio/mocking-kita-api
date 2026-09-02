@@ -51,7 +51,7 @@ export const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
             type="button"
             onClick={onOpenApiClick}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-lg transition-colors"
-            title="Export / Import OpenAPI JSON"
+            title={PROJECT_DETAIL_TEXT.EXPORT_IMPORT_JSON_BTN}
           >
             <FileJson className="w-3.5 h-3.5" />
             {PROJECT_DETAIL_TEXT.EXPORT_IMPORT_JSON_BTN}
