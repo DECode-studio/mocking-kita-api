@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleInternalApiRequest } from '@/src/app/api/internal-proxy';
-import { clearInternalProxyCache, responseCache } from '@/src/app/api/internal-proxy-cache';
+import { handleInternalApiRequest, clearInternalProxyCache, proxyConfigCache, responseCache } from '@/src/modules/mock-proxy';
 import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { NextRequest } from 'next/server';
 
@@ -11,16 +10,20 @@ vi.mock('@/src/core/db/database_storage_helper', () => ({
 describe('internal-proxy and cache', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
     clearInternalProxyCache();
   });
 
-  it('clearInternalProxyCache should empty responseCache Map', () => {
+  it('clearInternalProxyCache should empty response and proxy config caches', () => {
     responseCache.set('key-1', { status: 200, headers: {}, body: 'ok', expiresAt: Date.now() + 10000 });
+    proxyConfigCache.set('config', { value: {}, expiresAt: Date.now() + 10000 });
     expect(responseCache.size).toBe(1);
+    expect(proxyConfigCache.size).toBe(1);
 
     clearInternalProxyCache();
 
     expect(responseCache.size).toBe(0);
+    expect(proxyConfigCache.size).toBe(0);
   });
 
   it('handleInternalApiRequest should return 404 if path does not match any mock API', async () => {
@@ -147,5 +150,70 @@ describe('internal-proxy and cache', () => {
     const res = await handleInternalApiRequest(req);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ code: 'PLT-MSP-200' });
+  });
+
+  it('handleInternalApiRequest should sanitize blocked response headers from scenario config', async () => {
+    const mockDb = {
+      projects: [{ id: 'p1', status: true }],
+      environments: [{ id: 'env1', projectId: 'p1', status: true }],
+      apiCollections: [
+        { id: 'a1', projectId: 'p1', path: '/users', methodRequest: 'GET', status: true },
+      ],
+      apiEnvironments: [],
+      requestScenarios: [
+        { id: 'r1', apiId: 'a1', name: 'Req 1', headers: {}, queryParams: {}, pathParams: {}, body: {}, bodyType: 'NONE', matchType: 'EXACT', priority: 10, status: true },
+      ],
+      responseScenarios: [
+        {
+          id: 'res1',
+          requestScenarioId: 'r1',
+          name: '200 OK',
+          statusCode: 200,
+          headers: { 'Set-Cookie': 'session=bad', 'Content-Length': '999', 'X-Safe': 'ok' },
+          body: { users: ['Alice'] },
+          responseType: 'JSON',
+          delayMs: 0,
+          weight: 100,
+          priority: 10,
+          status: true,
+        },
+      ],
+    };
+
+    (readDatabase as any).mockResolvedValue(mockDb);
+
+    const req = new NextRequest('http://localhost/users');
+    const res = await handleInternalApiRequest(req);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('set-cookie')).toBeNull();
+    expect(res.headers.get('content-length')).toBeNull();
+    expect(res.headers.get('x-safe')).toBe('ok');
+  });
+
+  it('handleInternalApiRequest should reuse proxy config cache across non-cacheable requests', async () => {
+    const mockDb = {
+      projects: [{ id: 'p1', status: true }],
+      environments: [{ id: 'env1', projectId: 'p1', status: true }],
+      apiCollections: [
+        { id: 'a1', projectId: 'p1', path: '/submit', methodRequest: 'POST', status: true },
+      ],
+      apiEnvironments: [],
+      requestScenarios: [
+        { id: 'r1', apiId: 'a1', name: 'Req 1', headers: {}, queryParams: {}, pathParams: {}, body: {}, bodyType: 'NONE', matchType: 'EXACT', priority: 10, status: true },
+      ],
+      responseScenarios: [
+        { id: 'res1', requestScenarioId: 'r1', name: '200 OK', statusCode: 200, headers: {}, body: { ok: true }, responseType: 'JSON', delayMs: 0, weight: 100, priority: 10, status: true },
+      ],
+    };
+
+    (readDatabase as any).mockResolvedValue(mockDb);
+
+    const first = await handleInternalApiRequest(new NextRequest('http://localhost/submit', { method: 'POST' }));
+    const second = await handleInternalApiRequest(new NextRequest('http://localhost/submit', { method: 'POST' }));
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(readDatabase).toHaveBeenCalledTimes(1);
   });
 });

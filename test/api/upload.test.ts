@@ -4,14 +4,14 @@ import { NextRequest } from 'next/server';
 import fs from 'node:fs';
 
 vi.mock('node:fs', () => {
-  const writeFileSync = vi.fn();
+  const writeFile = vi.fn().mockResolvedValue(undefined);
+  const mkdir = vi.fn().mockResolvedValue(undefined);
   const existsSync = vi.fn().mockReturnValue(true);
-  const mkdirSync = vi.fn();
+  const promises = { mkdir, writeFile };
   return {
-    default: { existsSync, mkdirSync, writeFileSync },
+    default: { existsSync, promises },
     existsSync,
-    mkdirSync,
-    writeFileSync,
+    promises,
   };
 });
 
@@ -50,6 +50,22 @@ describe('/api/upload route', () => {
     expect(json.success).toBe(true);
     expect(json.fileName).toBe('test.png');
     expect(json.filePath).toContain('.data/uploads/');
-    expect(fs.writeFileSync).toHaveBeenCalled();
+    expect(fs.promises.writeFile).toHaveBeenCalled();
+  });
+
+  it('POST should reject unsupported file extensions', async () => {
+    const file = new File(['sample content'], 'test.exe', { type: 'application/octet-stream' });
+    const formDataMap = new Map();
+    formDataMap.set('file', file);
+
+    const req = {
+      formData: vi.fn().mockResolvedValue(formDataMap),
+    } as unknown as NextRequest;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(415);
+    expect(json.error).toBe('File type is not allowed');
   });
 });

@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET, POST, PUT, DELETE } from '@/src/app/api/admin/accounts/route';
 import { cookies } from 'next/headers';
-import { accountRepository } from '@/src/data/account/repository/account_repository_impl';
+import { accountRepository } from '@/src/modules/account/account.repository';
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }));
 
-vi.mock('@/src/data/account/repository/account_repository_impl', () => ({
+vi.mock('@/src/modules/account/account.repository', () => ({
   accountRepository: {
     getAll: vi.fn(),
     getByUsername: vi.fn(),

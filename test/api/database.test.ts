@@ -15,7 +15,7 @@ vi.mock('@/src/core/db/database_storage_helper', () => ({
   seedDatabase: vi.fn(),
 }));
 
-vi.mock('@/src/data/project/data_source/project_data_source_impl', () => ({
+vi.mock('@/src/modules/project', () => ({
   createProject: vi.fn(),
   updateProject: vi.fn(),
   softDeleteProject: vi.fn(),
@@ -24,12 +24,48 @@ vi.mock('@/src/data/project/data_source/project_data_source_impl', () => ({
   getProjectById: vi.fn(),
 }));
 
+vi.mock('@/src/modules/environment', () => ({
+  createEnvironment: vi.fn(),
+  updateEnvironment: vi.fn(),
+  softDeleteEnvironment: vi.fn(),
+  getEnvironmentById: vi.fn(),
+}));
+
+vi.mock('@/src/modules/api', () => ({
+  createApi: vi.fn(),
+  updateApi: vi.fn(),
+  softDeleteApi: vi.fn(),
+  getApiById: vi.fn(),
+  upsertApiEnvironment: vi.fn(),
+}));
+
+vi.mock('@/src/modules/collection', () => ({
+  createCollection: vi.fn(),
+  updateCollection: vi.fn(),
+  softDeleteCollection: vi.fn(),
+  getCollectionById: vi.fn(),
+}));
+
+vi.mock('@/src/modules/request-scenario', () => ({
+  createRequestScenario: vi.fn(),
+  updateRequestScenario: vi.fn(),
+  softDeleteRequestScenario: vi.fn(),
+  getRequestScenarioById: vi.fn(),
+}));
+
+vi.mock('@/src/modules/response-scenario', () => ({
+  createResponseScenario: vi.fn(),
+  updateResponseScenario: vi.fn(),
+  softDeleteResponseScenario: vi.fn(),
+  getResponseScenarioById: vi.fn(),
+}));
+
 vi.mock('@/src/core/db/change_log_helper', () => ({
   logChange: vi.fn(),
   getDatabaseSummary: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('@/src/app/api/internal-proxy-cache', () => ({
+vi.mock('@/src/modules/mock-proxy', () => ({
   clearInternalProxyCache: vi.fn(),
 }));
 

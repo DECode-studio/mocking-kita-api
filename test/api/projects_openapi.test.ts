@@ -17,7 +17,7 @@ vi.mock('@/src/core/db/prisma-client', () => ({
   },
 }));
 
-vi.mock('@/src/data/project/data_source/project_data_source_impl', () => ({
+vi.mock('@/src/modules/project', () => ({
   getProjectById: vi.fn().mockResolvedValue({ id: 'p1', name: 'Test Project' }),
 }));
 
@@ -25,7 +25,7 @@ vi.mock('@/src/core/db/change_log_helper', () => ({
   logChange: vi.fn(),
 }));
 
-vi.mock('@/src/app/api/internal-proxy-cache', () => ({
+vi.mock('@/src/modules/mock-proxy', () => ({
   clearInternalProxyCache: vi.fn(),
 }));
 
