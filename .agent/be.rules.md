@@ -3,7 +3,8 @@
 Dokumen ini adalah aturan backend yang wajib diikuti untuk proyek **Mocking Kta Api Studio** per **2026-09-03**.
 
 Tujuan utama:
-- menjaga boundary Clean Architecture: `app/api`, `domain`, `data`, `core`, dan `presentation`
+- menjaga boundary FE dan BE: `presentation/domain/data/di` untuk FE, `app/api`, `modules`, dan `core/server` untuk BE
+- memastikan backend feature logic dimiliki module ala NestJS: controller/adapter -> service -> repository
 - memastikan semua akses database berjalan di server melalui API internal resmi
 - menjaga dynamic mock proxy tetap deterministic, aman, dan mudah dites
 - mencegah kebocoran Prisma, credential, raw error, dan detail internal ke client
@@ -12,23 +13,33 @@ Tujuan utama:
 
 ## 1. Prinsip Inti
 
-1. **`src/app/api/**` adalah backend/BFF resmi**
+1. **`src/app/api/**` adalah backend/BFF resmi sebagai HTTP adapter**
    - Semua operasi mutasi dan read database dari UI wajib lewat endpoint internal di `src/app/api/**`.
    - Presentation layer tidak boleh memanggil Prisma, SQL, filesystem database, atau storage helper langsung.
+   - Route handler harus tipis dan mendelegasikan feature logic ke `src/modules/<module>/**` untuk code baru/refactor besar.
 
-2. **Domain tetap murni**
+2. **FE domain tetap murni**
    - `src/domain/**` berisi entity, repository interface, dan use case.
-   - Domain tidak boleh import Next.js, React, Prisma, cookies, `NextRequest`, `NextResponse`, atau HTTP client.
+   - Domain tidak boleh import Next.js, React, Prisma, cookies, `NextRequest`, `NextResponse`, HTTP client, atau BE module.
+   - FE use case boleh mengatur flow client/UX, tetapi bukan sumber kebenaran security/authorization.
 
-3. **Data layer adalah implementasi repository**
-   - `src/data/**` menerjemahkan contract domain ke datasource/API/storage.
-   - Repository yang dipakai presentation harus remote-style dan lewat API internal, mengikuti pola `callDatabase` atau client API yang setara.
+3. **FE data layer hanya remote/client infrastructure**
+   - `src/data/**` menerjemahkan contract domain FE ke DTO/API internal.
+   - Repository yang dipakai presentation harus remote-style dan lewat API internal, mengikuti pola `callDatabase`, `apiRequest`, atau client API yang setara.
+   - `src/data/**` tidak boleh menjadi BE persistence layer, import Prisma, atau import `src/modules/**`.
 
-4. **Core hanya untuk infrastruktur lintas modul**
-   - `src/core/db/**`, `src/core/http-client/**`, `src/core/openapi/**`, `src/core/utils/**`, constants, notification, dan theme helper boleh dipakai sebagai shared infrastructure.
-   - Module core yang mengakses Prisma, filesystem, cookie, atau Node API harus dianggap server-only.
+4. **BE module adalah ownership feature backend**
+   - `src/modules/<module>/**` berisi service, repository, schema, mapper, policy, audit, errors, dan test BE.
+   - BE module tidak boleh import FE presentation, FE hook, atau FE remote repository.
+   - Cross-module dependency harus lewat public API `src/modules/<module>/index.ts` atau interface kecil.
 
-5. **Fail closed**
+5. **Core dipisah berdasarkan runtime**
+   - `src/core/shared/**` untuk pure helper/type/constant yang aman untuk browser dan server.
+   - `src/core/client/**` untuk HTTP client/browser-safe helper.
+   - `src/core/server/**` untuk Prisma, filesystem, cookies/session, server crypto, safe-path, logger, dan rate limit.
+   - Struktur existing `src/core/db/**`, `src/core/http-client/**`, `src/core/utils/**` boleh dipakai selama migrasi, tetapi module yang mengakses Prisma, filesystem, cookie, atau Node API harus dianggap server-only.
+
+6. **Fail closed**
    - Error database, auth, validation, import/export, proxy matching, dan upload harus menghasilkan error eksplisit.
    - Jangan membuat fallback sukses palsu, persistence mock diam-diam, atau bypass auth pada production path.
 
@@ -57,9 +68,27 @@ src/
       projects/[id]/import-openapi/
       settings/
       upload/
+  modules/                        # Target BE module ownership untuk code baru/refactor
+    auth/
+    account/
+    project/
+    environment/
+    collection/
+    api/
+    request-scenario/
+    response-scenario/
+    mock-proxy/
+    database/
+    openapi/
+    upload/
+    change-log/
+    settings/
   core/
-    db/                           # Prisma client, storage helpers, seed, change log, OpenAPI storage
-    http-client/                  # API clients used by repositories
+    shared/                       # Target pure shared helper/type/constant
+    client/                       # Target browser-safe client helper
+    server/                       # Target server-only helper: Prisma/session/security/logger
+    db/                           # Existing server-only Prisma/storage helpers during migration
+    http-client/                  # Existing FE API clients during migration
     openapi/                      # OpenAPI converter
     utils/
     constants/
@@ -92,7 +121,9 @@ src/
 ```
 
 Catatan:
-- Jangan menambahkan struktur generik seperti `src/server/modules/**` kecuali memang diputuskan sebagai refactor arsitektur besar.
+- Jangan menambahkan struktur generik seperti `src/server/modules/**`; gunakan `src/modules/**` untuk BE module.
+- Existing `src/domain/**`, `src/data/**`, dan `src/di/**` diperlakukan sebagai flow FE/client application selama migrasi.
+- Backend persistence logic baru/refactor besar harus masuk `src/modules/<module>/**`, bukan menambah coupling di `src/data/**`.
 - `prisma/schema.prisma` saat ini memakai provider `postgresql`; jangan mengasumsikan SQLite untuk code baru tanpa memeriksa config aktif.
 - Jika README atau dokumen lain berbeda dengan kode aktual, ikuti kode aktual dan rapikan dokumentasinya pada perubahan terpisah.
 
@@ -121,7 +152,8 @@ Catatan:
 **Boleh**
 - parsing request, params, query, cookie
 - validasi input
-- memanggil use case, repository server, atau helper backend yang sudah ada
+- memanggil public controller/service dari `src/modules/<module>/index.ts`
+- memanggil helper backend existing hanya untuk route legacy selama migrasi
 - mapping output ke JSON/Response
 - memilih status code HTTP
 
@@ -130,6 +162,8 @@ Catatan:
 - return raw Prisma record jika ada field sensitif atau shape internal
 - expose stack trace/raw database error
 - import component/hook dari `src/presentation/**`
+- import FE remote repository dari `src/data/**`
+- import repository internal module lain secara langsung
 - mengubah error infra menjadi `{ success: true }`
 
 ### C. Domain (`src/domain/**`)
@@ -148,17 +182,34 @@ Catatan:
 ### D. Data (`src/data/**`)
 
 **Boleh**
-- implement repository domain
-- mapping model persistence/API ke entity domain
-- memanggil `callDatabase`, `apiRequest`, atau datasource server sesuai boundary
-- menyimpan detail endpoint internal
+- implement FE remote repository untuk interface `src/domain/**/repository`
+- mapping DTO/API response ke entity/domain object yang aman untuk FE
+- memanggil `callDatabase`, `apiRequest`, atau HTTP client internal
+- menyimpan detail endpoint internal yang dipakai FE
 
 **Dilarang**
-- dipakai langsung oleh UI jika implementasinya mengakses DB/server-only module
+- menjadi BE persistence repository
+- import Prisma, `src/core/db/**`, `src/core/server/**`, filesystem, cookies, atau Node-only API
+- import `src/modules/**`
+- dipakai langsung oleh UI jika melewati use case/repository contract
 - mengekspor raw persistence model sebagai domain entity tanpa mapper
 - fallback ke data local/memory untuk operasi yang seharusnya persistent
 
-### E. Core DB (`src/core/db/**`)
+### E. BE Modules (`src/modules/**`)
+
+**Boleh**
+- berisi controller/handler, service, repository, schema, mapper, policy, audit, errors, dan test per module
+- import Prisma melalui repository atau server infrastructure
+- import `src/core/server/**` dan pure shared helper
+- import module lain hanya melalui public `index.ts` atau interface kecil
+
+**Dilarang**
+- import `src/presentation/**`, FE hook/view model, atau FE remote repository
+- export raw Prisma helper sebagai API publik module
+- membuat dependency cycle antar module
+- mencampur business logic final ke route adapter
+
+### F. Core DB / Server Infrastructure (`src/core/db/**`, `src/core/server/**`)
 
 **Boleh**
 - import Prisma client
@@ -167,6 +218,7 @@ Catatan:
 
 **Dilarang**
 - diimport oleh presentation/client component
+- diimport oleh `src/data/**` FE remote layer
 - memuat behavior UI
 - mengabaikan soft delete/status rules tanpa alasan eksplisit
 
@@ -174,7 +226,7 @@ Catatan:
 
 ## 4. Data Access Rules
 
-1. Prisma hanya boleh diakses dari backend/server infrastructure, terutama `src/core/db/**`, route handler backend, atau datasource server yang tidak masuk bundle client.
+1. Prisma hanya boleh diakses dari backend/server infrastructure, terutama `src/core/db/**`, `src/core/server/**`, atau `src/modules/**` repository.
 2. `src/core/db/prisma-client.ts` adalah satu-satunya tempat membuat `PrismaClient`.
 3. Jangan membuat Prisma client baru di repository, route handler, test helper, atau script aplikasi tanpa alasan kuat.
 4. Semua operasi untuk tabel berikut harus melewati repository/helper yang jelas:
@@ -190,15 +242,18 @@ Catatan:
 5. Mutasi dari UI harus menjaga alur:
 
 ```text
-View/Hook -> UseCase -> Remote Repository -> /api/... -> DB helper/datasource -> Prisma
+View/Hook -> FE UseCase -> FE Repository -> FE Data/API Client -> /api/...
+  -> Route Adapter/Controller -> BE Service -> BE Repository -> Prisma/Core Server
 ```
 
-6. Jika menambah resource baru, tambahkan minimal:
-   - domain entity
-   - repository interface
-   - use case
-   - data repository/datasource
-   - route handler/API gateway
+6. FE dan BE tidak boleh memakai repository/data implementation yang sama:
+   - FE repository adalah remote repository yang hanya bicara HTTP/API client.
+   - BE repository adalah persistence adapter yang hanya dipakai BE service/module.
+7. Jika menambah resource baru, tambahkan minimal:
+   - FE domain entity/repository interface/use case bila dibutuhkan UI
+   - FE remote repository/data source bila dibutuhkan UI
+   - BE module schema/service/repository/mapper/policy
+   - route handler/API adapter
    - tests sesuai risiko
 
 ---
@@ -327,10 +382,11 @@ View/Hook -> UseCase -> Remote Repository -> /api/... -> DB helper/datasource ->
 ## 10. Model, DTO, dan Mapping
 
 1. Pisahkan dengan jelas:
-   - domain entity (`src/domain/**/entity`)
-   - repository interface (`src/domain/**/repository`)
+   - FE domain entity (`src/domain/**/entity`)
+   - FE repository interface (`src/domain/**/repository`)
    - Prisma model (`prisma/schema.prisma`)
-   - data model/mapper (`src/data/**/model`)
+   - FE data model/mapper (`src/data/**/model`)
+   - BE module mapper (`src/modules/<module>/<module>.mapper.ts`)
    - HTTP request/response DTO
 2. Jangan jadikan Prisma model sebagai API contract publik.
 3. Mapping harus eksplisit, terutama untuk:
@@ -384,7 +440,9 @@ View/Hook -> UseCase -> Remote Repository -> /api/... -> DB helper/datasource ->
 
 1. API route yang memakai Prisma/Node API wajib `export const runtime = 'nodejs'`.
 2. Client component/hook tidak boleh import server-only module.
-3. Server component boleh membaca data awal hanya lewat use case/repository yang aman untuk server.
+3. Server component tidak boleh bypass boundary persistent data.
+   - Untuk halaman FE existing, prefer render page shell lalu ViewModel/FE repository memanggil API internal.
+   - Jika perlu initial data server-side, gunakan service/module BE lewat adapter yang jelas dan jangan import FE remote repository.
 4. Middleware/proxy auth tidak boleh melakukan query DB berat.
 5. Dynamic import server module di route handler boleh dipakai untuk menjaga bundling, seperti pola `internal-proxy`.
 6. Jangan letakkan business flow besar di `page.tsx`.
@@ -401,9 +459,9 @@ pnpm lint
 ```
 
 Coverage minimum untuk perubahan backend:
-1. use case test untuk aturan domain/orchestration
-2. repository/datasource test untuk mapping dan persistence behavior
-3. route handler test untuk happy path dan failure path
+1. service/use case test untuk aturan backend orchestration
+2. module repository test untuk mapping dan persistence behavior
+3. route/controller handler test untuk happy path dan failure path
 4. proxy engine test untuk matching/cache/throttle bila menyentuh `internal-proxy`
 5. auth/admin test untuk role, cookie/session, dan forbidden path
 6. import/export test untuk shape valid, invalid, dan edge case relasi
@@ -412,7 +470,75 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 15. Performance Rules
+## 15. Modular BE Module Rules
+
+1. Backend feature baru atau refactor besar harus memakai module ownership di `src/modules/<module>/**`.
+2. Struktur module yang disarankan:
+
+```text
+src/modules/<module>/
+  index.ts
+  <module>.controller.ts
+  <module>.service.ts
+  <module>.repository.ts
+  <module>.schema.ts
+  <module>.mapper.ts
+  <module>.policy.ts
+  <module>.audit.ts
+  <module>.errors.ts
+  __tests__/
+```
+
+3. `index.ts` module hanya boleh export public service/controller/type/schema yang dibutuhkan route atau module lain.
+4. Module lain tidak boleh import file internal secara langsung seperti `<module>.repository.ts` kecuali memang berada dalam module yang sama.
+5. BE service bertanggung jawab atas:
+   - business rule final
+   - authorization/policy check
+   - orchestration transaction
+   - audit metadata
+   - cache invalidation
+   - mapping output aman
+6. BE repository bertanggung jawab hanya untuk persistence/query.
+   - Repository tidak boleh tahu UI/view model.
+   - Repository tidak boleh return raw Prisma record ke route.
+7. Controller/route adapter bertanggung jawab hanya untuk:
+   - parse params/query/body
+   - ambil session/request context
+   - validasi schema
+   - panggil service
+   - return response helper
+
+---
+
+## 16. FE/BE Separation Rules
+
+1. FE flow wajib tetap terpisah:
+
+```text
+View -> ViewModel/Hook -> UseCase -> Repository Interface -> Remote Repository -> Data/API Client -> /api
+```
+
+2. BE flow wajib tetap terpisah:
+
+```text
+/api Route Adapter -> Module Controller/Handler -> Module Service -> Module Repository -> Prisma/Core Server
+```
+
+3. `src/data/**` adalah FE/client infrastructure selama migrasi.
+   - Jangan menambahkan DB query baru di `src/data/**`.
+   - Jangan import `src/data/**` dari `src/modules/**`.
+4. `src/modules/**` adalah BE/server application.
+   - Jangan import `src/modules/**` dari `src/presentation/**`, `src/domain/**`, `src/data/**`, atau `src/di/**`.
+5. Core helper boleh dipakai bersama hanya jika runtime-safe.
+   - Pure helper/type/constant boleh shared.
+   - Prisma, filesystem, cookies, env secret, password hash, rate limit, dan storage path harus server-only.
+6. Existing feature flow tidak boleh rusak saat migrasi.
+   - API response shape harus backward compatible.
+   - Remote repository FE boleh tetap memanggil legacy endpoint sampai route/module baru siap.
+
+---
+
+## 17. Performance Rules
 
 1. Dynamic mock proxy tidak boleh membaca full database aggregate pada setiap request cache miss jika data sudah besar.
    - Gunakan proxy config cache terpisah dari response cache.
@@ -435,7 +561,7 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 16. Security Hardening Rules
+## 18. Security Hardening Rules
 
 1. Semua route mutasi wajib punya authorization server-side.
    - Role/permission harus diambil dari session server, bukan dari payload client.
@@ -462,14 +588,14 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 17. Maintainability Rules
+## 19. Maintainability Rules
 
 1. `/api/database` action gateway tidak boleh terus bertambah untuk flow besar.
    - Action kecil legacy boleh tetap ada.
    - Resource baru harus memakai route khusus seperti `/api/projects`, `/api/apis`, atau `/api/scenarios`.
 2. Route handler harus tipis.
-   - Route hanya parsing request, validasi, auth check, panggil use case/helper, dan mapping response.
-   - Business logic kompleks wajib dipindahkan ke use case/service/helper yang bisa dites.
+   - Route hanya parsing request, validasi, auth check, panggil controller/service/helper, dan mapping response.
+   - Business logic kompleks wajib dipindahkan ke module service/helper yang bisa dites.
 3. Hindari `any` untuk payload backend baru.
    - Definisikan DTO/schema request dan response.
    - Gunakan mapper eksplisit dari DTO ke domain/input persistence.
@@ -488,7 +614,7 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 18. Observability Rules
+## 20. Observability Rules
 
 1. Endpoint backend penting harus punya structured log minimal:
    - route/action
@@ -506,9 +632,11 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 19. DOs
+## 21. DOs
 
-- Ikuti alur `View/Hook -> UseCase -> Repository -> API -> DB`.
+- Ikuti alur FE: `View/Hook -> UseCase -> Repository -> Data/API Client -> /api`.
+- Ikuti alur BE: `/api -> Controller/Adapter -> Service -> Repository -> Prisma/Core Server`.
+- Pisahkan FE remote repository dan BE persistence repository.
 - Tambahkan validasi server untuk contract baru.
 - Gunakan mapper eksplisit antar layer.
 - Clear proxy cache setelah mutasi yang mempengaruhi mock response.
@@ -524,10 +652,13 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 20. DON'Ts
+## 22. DON'Ts
 
 - Jangan import Prisma dari `src/presentation/**`.
 - Jangan import `src/core/db/**` dari client hook/component.
+- Jangan import `src/modules/**` dari FE layer.
+- Jangan import FE `src/data/**` repository dari BE module.
+- Jangan memakai repository implementation yang sama untuk FE remote flow dan BE persistence flow.
 - Jangan hardcode credential atau bypass auth.
 - Jangan return raw error Prisma/stack trace.
 - Jangan membuat success palsu ketika DB/import/proxy gagal.
@@ -541,11 +672,14 @@ Jika tidak bisa menjalankan seluruh test, jalankan test terdekat dan sebutkan ga
 
 ---
 
-## 21. Red Flags Yang Wajib Direfactor
+## 23. Red Flags Yang Wajib Direfactor
 
 Jika ditemukan kondisi berikut, anggap sebagai pelanggaran:
 
 - presentation hook mengimport Prisma/core DB/server route
+- FE layer mengimport `src/modules/**`
+- BE module mengimport FE `src/data/**` remote repository
+- repository implementation dipakai bersama oleh FE dan BE
 - route handler berisi switch/action besar yang terus bertambah tanpa validasi schema
 - raw Prisma record dikembalikan ke client
 - password plaintext comparison
@@ -562,19 +696,20 @@ Jika ditemukan kondisi berikut, anggap sebagai pelanggaran:
 
 ---
 
-## 22. Definition of Done Backend
+## 24. Definition of Done Backend
 
 Sebuah perubahan backend dianggap selesai jika:
 
 1. boundary layer tidak bocor
-2. input divalidasi di server
-3. business logic berada di use case/helper yang bisa dites
-4. Prisma hanya hidup di server infrastructure
-5. response dan error aman
-6. auth/authorization diterapkan bila endpoint sensitif
-7. change log dibuat untuk mutasi penting
-8. proxy cache diperbarui/di-clear bila data mock berubah
-9. request/response contract jelas
-10. test relevan ditambahkan atau dijalankan
-11. hot path tidak melakukan query/scan besar yang tidak perlu
-12. file/header/regex handling aman untuk input user
+2. FE remote flow dan BE persistence flow terpisah
+3. input divalidasi di server
+4. business logic final berada di BE service/helper yang bisa dites
+5. Prisma hanya hidup di server infrastructure/repository BE
+6. response dan error aman
+7. auth/authorization diterapkan bila endpoint sensitif
+8. change log dibuat untuk mutasi penting
+9. proxy cache diperbarui/di-clear bila data mock berubah
+10. request/response contract jelas
+11. test relevan ditambahkan atau dijalankan
+12. hot path tidak melakukan query/scan besar yang tidak perlu
+13. file/header/regex handling aman untuk input user
