@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { generateId } from '@/src/core/utils/uuid';
+import { ENV } from '@/src/core/constants/env';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +18,8 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const uploadsDir = path.resolve(process.cwd(), '.data/uploads');
+    const uploadPath = ENV.UPLOAD_PATH;
+    const uploadsDir = path.resolve(process.cwd(), uploadPath);
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
     const uniqueId = generateId();
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const storedFileName = `${uniqueId}-${sanitizedFileName}`;
-    const relativeFilePath = `.data/uploads/${storedFileName}`;
+    const relativeFilePath = `${uploadPath}/${storedFileName}`;
     const absoluteFilePath = path.resolve(uploadsDir, storedFileName);
 
     fs.writeFileSync(absoluteFilePath, buffer);

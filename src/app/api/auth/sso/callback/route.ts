@@ -3,29 +3,25 @@ import { accountRepository } from '@/src/data/account/repository/account_reposit
 import fs from 'node:fs';
 import { ASSET_PATHS } from '@/src/core/constants/assets';
 import { GOOGLE_OAUTH_API } from '@/src/core/constants/api';
+import { ENV } from '@/src/core/constants/env';
 
 const AUTH_COOKIE = 'mock-api-studio-auth';
 
 function getSsoDomains(): string[] {
-  const domainsStr = process.env.SSO_DOMAINS || '';
-  return domainsStr
-    .split(',')
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
+  return ENV.SSO_DOMAINS;
 }
 
 function getRedirectUri(request: Request): string {
-  const envAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (envAppUrl) {
-    const baseUrl = envAppUrl.replace(/\/$/, '');
-    return `${baseUrl}/api/auth/sso/callback`;
+  if (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL) {
+    const baseUrl = ENV.APP_URL.replace(/\/$/, '');
+    return `${baseUrl}${ENV.GOOGLE_CALLBACK_ROUTE}`;
   }
   const requestUrl = new URL(request.url);
   let host = requestUrl.host;
   if (host.includes('0.0.0.0')) {
     host = host.replace('0.0.0.0', 'localhost');
   }
-  return `${requestUrl.protocol}//${host}/api/auth/sso/callback`;
+  return `${requestUrl.protocol}//${host}${ENV.GOOGLE_CALLBACK_ROUTE}`;
 }
 
 export async function GET(request: Request) {
@@ -40,8 +36,8 @@ export async function GET(request: Request) {
 
   // Case 1: Real Google OAuth callback
   if (code) {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const clientId = ENV.GOOGLE_CLIENT_ID;
+    const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
       return new Response('SSO config error: client ID or secret is missing', { status: 400 });
@@ -134,7 +130,7 @@ export async function GET(request: Request) {
     cookieStore.set(AUTH_COOKIE, JSON.stringify(session), {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: ENV.IS_PRODUCTION,
       path: '/',
       maxAge: 60 * 60 * 24, // 1 day session
     });

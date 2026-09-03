@@ -5,6 +5,7 @@ import { accountRepository } from '@/src/data/account/repository/account_reposit
 import { verifyPassword, hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
+import { ENV } from '@/src/core/constants/env';
 import { randomBytes } from 'node:crypto';
 
 export const runtime = 'nodejs';
@@ -12,8 +13,8 @@ export const runtime = 'nodejs';
 const AUTH_COOKIE = 'mock-api-studio-auth';
 
 function getAuthCredentials() {
-  const username = process.env.APP_USERNAME?.trim();
-  const password = process.env.APP_PASSWORD?.trim();
+  const username = ENV.APP_USERNAME;
+  const password = ENV.APP_PASSWORD;
 
   if (!username || !password) {
     throw new Error('APP_USERNAME and APP_PASSWORD must be configured');
@@ -23,11 +24,7 @@ function getAuthCredentials() {
 }
 
 function getSsoDomains(): string[] {
-  const domainsStr = process.env.SSO_DOMAINS || '';
-  return domainsStr
-    .split(',')
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
+  return ENV.SSO_DOMAINS;
 }
 
 function isValidEmail(email: string): boolean {
@@ -189,7 +186,7 @@ export async function POST(request: Request) {
     cookieStore.set(AUTH_COOKIE, JSON.stringify(session), {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: ENV.IS_PRODUCTION,
       path: '/',
       maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
     });
@@ -205,7 +202,7 @@ export async function DELETE() {
   cookieStore.set(AUTH_COOKIE, '', {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: ENV.IS_PRODUCTION,
     path: '/',
     maxAge: 0,
   });

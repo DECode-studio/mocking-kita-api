@@ -5,16 +5,13 @@ import { accountRepository } from '@/src/data/account/repository/account_reposit
 import { hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
+import { ENV } from '@/src/core/constants/env';
 import { randomBytes } from 'node:crypto';
 
 export const runtime = 'nodejs';
 
 function getSsoDomains(): string[] {
-  const domainsStr = process.env.SSO_DOMAINS || '';
-  return domainsStr
-    .split(',')
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
+  return ENV.SSO_DOMAINS;
 }
 
 function isValidEmail(email: string): boolean {
