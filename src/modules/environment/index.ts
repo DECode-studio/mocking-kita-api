@@ -1,6 +1,7 @@
 export {
   createEnvironment,
   getEnvironmentById,
+  getAllEnvironments,
   getEnvironmentsByProjectId,
   removeEnvironmentsByProjectId,
   softDeleteEnvironment,

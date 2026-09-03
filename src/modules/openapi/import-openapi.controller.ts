@@ -1,20 +1,36 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/core/db/prisma-client';
 import { importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
-import { clearInternalProxyCache } from '@/src/modules/mock-proxy';
+import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
 import { logChange } from '@/src/core/db/change_log_helper';
 import { getProjectById } from '@/src/modules/project';
-
-export const runtime = 'nodejs';
+import { requireAdminSession } from '@/src/core/server/auth/session';
+import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
+import { OpenApiImportSchema, ProjectParamsSchema } from './openapi.schema';
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const adminSession = await requireAdminSession();
+  if (!adminSession) {
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
+  }
+
   try {
-    const { id: projectId } = await params;
-    const body = await request.json();
-    const mode = (body.mode === 'replace' ? 'replace' : body.mode === 'merge' ? 'merge' : 'upsert') as 'upsert' | 'merge' | 'replace';
+    const parsedParams = ProjectParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return jsonFail('Invalid project id', 400, 'INVALID_PROJECT_ID');
+    }
+
+    const parsedBody = OpenApiImportSchema.safeParse(await request.json().catch(() => ({})));
+    if (!parsedBody.success) {
+      return jsonFail('Invalid OpenAPI import request', 400, 'INVALID_OPENAPI_IMPORT_REQUEST');
+    }
+
+    const projectId = parsedParams.data.id;
+    const body = parsedBody.data;
+    const mode = body.mode;
     const openApiJson = body.openApiJson || body;
 
     const project = await getProjectById(projectId);
@@ -40,10 +56,7 @@ export async function POST(
       success: true,
       data: result,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to import OpenAPI spec' },
-      { status: 400 }
-    );
+  } catch (error) {
+    return jsonUnknownError('OpenAPI import failed', error, 'Failed to import OpenAPI spec', 'OPENAPI_IMPORT_FAILED');
   }
 }

@@ -3,8 +3,12 @@ import { importDatabaseData } from '@/src/core/db/database_storage_helper';
 import { importDatabaseSql } from '@/src/core/db/sql_database_storage_helper';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { logChange, getDatabaseSummary } from '@/src/core/db/change_log_helper';
+import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
+import { requireAdminSession } from '@/src/core/server/auth/session';
+import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
+import { checkRateLimit, getRequestRateLimitKey } from '@/src/core/server/security/rate-limit';
 
-export const runtime = 'nodejs';
+const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
 
 function isMockApiDatabase(value: unknown): value is MockApiDatabase {
   return (
@@ -21,16 +25,37 @@ function isMockApiDatabase(value: unknown): value is MockApiDatabase {
 }
 
 export async function POST(request: Request) {
+  const adminSession = await requireAdminSession();
+  if (!adminSession) {
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
+  }
+
+  const rateLimit = checkRateLimit(getRequestRateLimitKey(request, 'database-import'), 10, 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'Too many import requests', code: 'IMPORT_RATE_LIMITED' },
+      { status: 429, headers: { 'retry-after': String(rateLimit.retryAfterSeconds ?? 1) } }
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file');
     const mode = formData.get('mode');
 
     if (!(file instanceof File)) {
-      return NextResponse.json({ success: false, error: 'Missing import file' }, { status: 400 });
+      return jsonFail('Missing import file', 400, 'IMPORT_FILE_REQUIRED');
     }
 
-    const importMode = mode === 'replace' ? 'replace' : 'merge';
+    if (file.size > MAX_IMPORT_BYTES) {
+      return jsonFail('Import file is too large', 413, 'IMPORT_FILE_TOO_LARGE');
+    }
+
+    const importMode = mode === 'replace' ? 'replace' : mode === 'merge' ? 'merge' : null;
+    if (!importMode) {
+      return jsonFail('Invalid import mode', 400, 'INVALID_IMPORT_MODE');
+    }
+
     const fileName = file.name.toLowerCase();
     const text = await file.text();
 
@@ -54,6 +79,7 @@ export async function POST(request: Request) {
         },
         description: `Imported database SQL file '${file.name}' (${result.statementsExecuted} statements executed in ${result.chunksExecuted} chunks, mode: ${importMode})`,
       });
+      clearInternalProxyCache();
 
       return NextResponse.json({
         success: true,
@@ -67,7 +93,7 @@ export async function POST(request: Request) {
       const parsed = JSON.parse(text) as unknown;
 
       if (!isMockApiDatabase(parsed)) {
-        return NextResponse.json({ success: false, error: 'Invalid database structure in JSON file' }, { status: 400 });
+        return jsonFail('Invalid database structure in JSON file', 400, 'INVALID_DATABASE_IMPORT_SHAPE');
       }
 
       await importDatabaseData(parsed, importMode);
@@ -81,6 +107,7 @@ export async function POST(request: Request) {
         metadata: { mode: importMode, fileName: file.name, format: 'json' },
         description: `Imported database JSON file '${file.name}' (mode: ${importMode})`,
       });
+      clearInternalProxyCache();
 
       return NextResponse.json({
         success: true,
@@ -90,11 +117,11 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Unsupported file format. Please upload a .sql or .json backup file.' },
-      { status: 400 }
-    );
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message || 'Import failed' }, { status: 500 });
+    return jsonFail('Unsupported file format. Please upload a .sql or .json backup file.', 400, 'UNSUPPORTED_IMPORT_FORMAT');
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return jsonFail('Invalid JSON import file', 400, 'INVALID_JSON_IMPORT');
+    }
+    return jsonUnknownError('Database import failed', error, 'Import failed', 'DATABASE_IMPORT_FAILED');
   }
 }

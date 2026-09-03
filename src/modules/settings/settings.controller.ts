@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { ThemeMode } from '@/src/core/theme/theme-types';
-
-export const runtime = 'nodejs';
+import { ENV } from '@/src/core/constants/env';
+import { jsonFail } from '@/src/core/server/http/responses';
+import { ThemeSchema } from './settings.schema';
 
 const SETTINGS_COOKIE = 'mock-api-studio-settings';
 
@@ -25,14 +26,18 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const { theme } = (await request.json()) as { theme?: ThemeMode };
-  const normalized: ThemeMode = theme === 'light' || theme === 'dark' || theme === 'system' ? theme : 'dark';
+  const parsed = ThemeSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return jsonFail('Invalid settings request', 400, 'INVALID_SETTINGS_REQUEST');
+  }
+
+  const normalized: ThemeMode = parsed.data.theme;
 
   const cookieStore = await cookies();
   cookieStore.set(SETTINGS_COOKIE, JSON.stringify({ theme: normalized }), {
     httpOnly: false,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: ENV.IS_PRODUCTION,
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
   });

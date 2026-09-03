@@ -10,6 +10,13 @@ export async function getEnvironmentsByProjectId(projectId: string): Promise<Env
   return rows.map(toEnvironmentDomain);
 }
 
+export async function getAllEnvironments(): Promise<Environment[]> {
+  const rows = await prisma.environment.findMany({
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toEnvironmentDomain);
+}
+
 export async function getEnvironmentById(id: string): Promise<Environment | null> {
   const row = await prisma.environment.findUnique({
     where: { id },

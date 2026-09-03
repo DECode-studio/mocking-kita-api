@@ -1,5 +1,6 @@
 export {
   createApi,
+  getAllApis,
   getApiById,
   getApisByProjectId,
   removeApisByProjectId,

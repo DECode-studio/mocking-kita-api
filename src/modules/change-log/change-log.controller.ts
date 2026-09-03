@@ -1,24 +1,14 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { UserSession } from '@/src/domain/auth/entity/user_session';
+import { getServerSession } from '@/src/core/server/auth/session';
+import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
 import { getChangeLogs } from './change-log.service';
 
 export const runtime = 'nodejs';
 
-async function verifySession(): Promise<UserSession | null> {
-  try {
-    const cookieStore = await cookies();
-    const rawSession = cookieStore.get('mock-api-studio-auth')?.value;
-    if (!rawSession) return null;
-    return JSON.parse(rawSession) as UserSession;
-  } catch {}
-  return null;
-}
-
 export async function GET(request: Request) {
-  const session = await verifySession();
+  const session = await getServerSession();
   if (!session) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    return jsonFail('Unauthorized', 401, 'UNAUTHORIZED');
   }
 
   try {
@@ -36,10 +26,7 @@ export async function GET(request: Request) {
       changeLogs,
       totalCount,
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to fetch change logs' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return jsonUnknownError('Failed to fetch change logs', error, 'Failed to fetch change logs', 'CHANGE_LOG_FETCH_FAILED');
   }
 }

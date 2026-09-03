@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { exportProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
-
-export const runtime = 'nodejs';
+import { jsonFail, logServerError } from '@/src/core/server/http/responses';
+import { ProjectParamsSchema } from './openapi.schema';
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: projectId } = await params;
+    const parsedParams = ProjectParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return jsonFail('Invalid project id', 400, 'INVALID_PROJECT_ID');
+    }
+
+    const projectId = parsedParams.data.id;
     const openApiSpec = exportProjectOpenApi(projectId);
 
     return new NextResponse(JSON.stringify(openApiSpec, null, 2), {
@@ -18,10 +23,8 @@ export async function GET(
         'Content-Disposition': `attachment; filename="openapi-${projectId}.json"`,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error?.message || 'Failed to export OpenAPI spec' },
-      { status: 400 }
-    );
+  } catch (error) {
+    logServerError('OpenAPI export failed', error);
+    return jsonFail('Failed to export OpenAPI spec', 500, 'OPENAPI_EXPORT_FAILED');
   }
 }

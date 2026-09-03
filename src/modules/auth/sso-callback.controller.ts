@@ -1,31 +1,14 @@
-import { cookies } from 'next/headers';
 import { accountRepository } from '@/src/modules/account';
 import fs from 'node:fs';
 import { ASSET_PATHS } from '@/src/core/constants/assets';
 import { GOOGLE_OAUTH_API } from '@/src/core/constants/api';
-
-const AUTH_COOKIE = 'mock-api-studio-auth';
+import { ENV } from '@/src/core/constants/env';
+import { setServerSession } from '@/src/core/server/auth/session';
+import { logServerError } from '@/src/core/server/http/responses';
+import { getRedirectUri } from './sso-utils';
 
 function getSsoDomains(): string[] {
-  const domainsStr = process.env.SSO_DOMAINS || '';
-  return domainsStr
-    .split(',')
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function getRedirectUri(request: Request): string {
-  const envAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (envAppUrl) {
-    const baseUrl = envAppUrl.replace(/\/$/, '');
-    return `${baseUrl}/api/auth/sso/callback`;
-  }
-  const requestUrl = new URL(request.url);
-  let host = requestUrl.host;
-  if (host.includes('0.0.0.0')) {
-    host = host.replace('0.0.0.0', 'localhost');
-  }
-  return `${requestUrl.protocol}//${host}/api/auth/sso/callback`;
+  return ENV.SSO_DOMAINS;
 }
 
 export async function GET(request: Request) {
@@ -40,8 +23,8 @@ export async function GET(request: Request) {
 
   // Case 1: Real Google OAuth callback
   if (code) {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const clientId = ENV.GOOGLE_CLIENT_ID;
+    const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
       return new Response('SSO config error: client ID or secret is missing', { status: 400 });
@@ -63,7 +46,7 @@ export async function GET(request: Request) {
 
       const tokenData = await tokenResponse.json();
       if (!tokenResponse.ok) {
-        return new Response(`Token exchange failed: ${tokenData.error_description || tokenData.error}`, { status: 400 });
+        return new Response('Token exchange failed', { status: 400 });
       }
 
       // Fetch user profile info
@@ -78,8 +61,9 @@ export async function GET(request: Request) {
 
       email = profileData.email?.toLowerCase();
       name = profileData.name || email.split('@')[0];
-    } catch (err: any) {
-      return new Response(`SSO Authentication error: ${err.message}`, { status: 500 });
+    } catch (err) {
+      logServerError('SSO authentication callback failed', err);
+      return new Response('SSO Authentication error', { status: 500 });
     }
   }
   // Case 2: Registration success callback
@@ -130,20 +114,14 @@ export async function GET(request: Request) {
       loginAt: new Date().toISOString(),
     };
 
-    const cookieStore = await cookies();
-    cookieStore.set(AUTH_COOKIE, JSON.stringify(session), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: 60 * 60 * 24, // 1 day session
-    });
+    await setServerSession(session);
 
     return new Response(getCloseScriptHtml(), {
       headers: { 'Content-Type': 'text/html' },
     });
-  } catch (err: any) {
-    return new Response(`Database provisioning error: ${err.message}`, { status: 500 });
+  } catch (err) {
+    logServerError('SSO database provisioning failed', err);
+    return new Response('Database provisioning error', { status: 500 });
   }
 }
 

@@ -1,20 +1,16 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { UserSession } from '@/src/domain/auth/entity/user_session';
 import { accountRepository } from './account.repository';
 import { hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
+import { ENV } from '@/src/core/constants/env';
+import { requireAdminSession } from '@/src/core/server/auth/session';
+import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
 import { randomBytes } from 'node:crypto';
-
-export const runtime = 'nodejs';
+import { AccountCreateSchema, AccountDeleteSchema, AccountUpdateSchema } from './account.schema';
 
 function getSsoDomains(): string[] {
-  const domainsStr = process.env.SSO_DOMAINS || '';
-  return domainsStr
-    .split(',')
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
+  return ENV.SSO_DOMAINS;
 }
 
 function isValidEmail(email: string): boolean {
@@ -43,50 +39,37 @@ function validateNonAdminAccount(username: string, role: string): { valid: boole
   return { valid: true };
 }
 
-async function verifyAdminSession(): Promise<UserSession | null> {
-  const cookieStore = await cookies();
-  const rawSession = cookieStore.get('mock-api-studio-auth')?.value;
-  if (!rawSession) return null;
-  try {
-    const session = JSON.parse(rawSession) as UserSession;
-    if (hasAdminAuthority(session.role)) {
-      return session;
-    }
-  } catch {}
-  return null;
-}
-
 export async function GET() {
-  const adminSession = await verifyAdminSession();
+  const adminSession = await requireAdminSession();
   if (!adminSession) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
   }
 
   try {
     const accounts = await accountRepository.getAll();
     const ssoDomains = getSsoDomains();
     return NextResponse.json({ success: true, accounts, ssoDomains });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message || 'Failed to fetch accounts' }, { status: 500 });
+  } catch (error) {
+    return jsonUnknownError('Admin accounts fetch failed', error, 'Failed to fetch accounts', 'ACCOUNT_FETCH_FAILED');
   }
 }
 
 export async function POST(request: Request) {
-  const adminSession = await verifyAdminSession();
+  const adminSession = await requireAdminSession();
   if (!adminSession) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
   }
 
   try {
-    const { username, password, name, role } = (await request.json()) as {
-      username?: string;
-      password?: string;
-      name?: string;
-      role?: string;
-    };
+    const parsed = AccountCreateSchema.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) {
+      return jsonFail('Missing required fields', 400, 'INVALID_ACCOUNT_CREATE_REQUEST');
+    }
+
+    const { username, password, name, role } = parsed.data;
 
     if (!username || !name || !role || (hasAdminAuthority(role) && !password)) {
-      return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
+      return jsonFail('Missing required fields', 400, 'MISSING_REQUIRED_FIELDS');
     }
 
     const cleanUsername = username.trim().toLowerCase();
@@ -94,13 +77,13 @@ export async function POST(request: Request) {
     // Validate email format and domain for non-admin roles
     const validation = validateNonAdminAccount(cleanUsername, role);
     if (!validation.valid) {
-      return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
+      return jsonFail(validation.error || 'Invalid account data', 400, 'INVALID_ACCOUNT_DATA');
     }
 
     // Check if account already exists
     const existing = await accountRepository.getByUsername(cleanUsername);
     if (existing) {
-      return NextResponse.json({ success: false, error: 'Username or email already exists' }, { status: 400 });
+      return jsonFail('Username or email already exists', 409, 'ACCOUNT_ALREADY_EXISTS');
     }
 
     // Generate random secure password for non-admins since they log in via SSO
@@ -120,34 +103,33 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, account: newAccount });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message || 'Failed to create account' }, { status: 500 });
+  } catch (error) {
+    return jsonUnknownError('Admin account create failed', error, 'Failed to create account', 'ACCOUNT_CREATE_FAILED');
   }
 }
 
 export async function PUT(request: Request) {
-  const adminSession = await verifyAdminSession();
+  const adminSession = await requireAdminSession();
   if (!adminSession) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
   }
 
   try {
-    const { id, username, password, name, role } = (await request.json()) as {
-      id?: string;
-      username?: string;
-      password?: string;
-      name?: string;
-      role?: string;
-    };
+    const parsed = AccountUpdateSchema.safeParse(await request.json().catch(() => ({})));
+    if (!parsed.success) {
+      return jsonFail('Missing account ID', 400, 'INVALID_ACCOUNT_UPDATE_REQUEST');
+    }
+
+    const { id, username, password, name, role } = parsed.data;
 
     if (!id) {
-      return NextResponse.json({ success: false, error: 'Missing account ID' }, { status: 400 });
+      return jsonFail('Missing account ID', 400, 'MISSING_ACCOUNT_ID');
     }
 
     // Verify account exists
     const existing = await accountRepository.getById(id);
     if (!existing) {
-      return NextResponse.json({ success: false, error: 'Account not found' }, { status: 404 });
+      return jsonFail('Account not found', 404, 'ACCOUNT_NOT_FOUND');
     }
 
     const targetRole = role !== undefined ? role : existing.role;
@@ -157,7 +139,7 @@ export async function PUT(request: Request) {
     if (role !== undefined || username !== undefined) {
       const validation = validateNonAdminAccount(targetUsername, targetRole);
       if (!validation.valid) {
-        return NextResponse.json({ success: false, error: validation.error }, { status: 400 });
+        return jsonFail(validation.error || 'Invalid account data', 400, 'INVALID_ACCOUNT_DATA');
       }
     }
 
@@ -172,7 +154,7 @@ export async function PUT(request: Request) {
       if (targetUsername !== existing.username) {
         const duplicate = await accountRepository.getByUsername(targetUsername);
         if (duplicate) {
-          return NextResponse.json({ success: false, error: 'Username or email already exists' }, { status: 400 });
+          return jsonFail('Username or email already exists', 409, 'ACCOUNT_ALREADY_EXISTS');
         }
       }
       params.username = targetUsername;
@@ -192,15 +174,15 @@ export async function PUT(request: Request) {
 
     const updatedAccount = await accountRepository.update(id, params);
     return NextResponse.json({ success: true, account: updatedAccount });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message || 'Failed to update account' }, { status: 500 });
+  } catch (error) {
+    return jsonUnknownError('Admin account update failed', error, 'Failed to update account', 'ACCOUNT_UPDATE_FAILED');
   }
 }
 
 export async function DELETE(request: Request) {
-  const adminSession = await verifyAdminSession();
+  const adminSession = await requireAdminSession();
   if (!adminSession) {
-    return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
   }
 
   try {
@@ -208,22 +190,22 @@ export async function DELETE(request: Request) {
     let id = url.searchParams.get('id');
 
     if (!id) {
-      const body = await request.json().catch(() => ({}));
-      id = body.id;
+      const parsed = AccountDeleteSchema.safeParse(await request.json().catch(() => ({})));
+      id = parsed.success ? parsed.data.id : '';
     }
 
     if (!id) {
-      return NextResponse.json({ success: false, error: 'Missing account ID' }, { status: 400 });
+      return jsonFail('Missing account ID', 400, 'MISSING_ACCOUNT_ID');
     }
 
     // Prevent admin from deleting their own database account if they log in through it
     if (id === adminSession.username) {
-      return NextResponse.json({ success: false, error: 'Cannot delete currently logged in account' }, { status: 400 });
+      return jsonFail('Cannot delete currently logged in account', 400, 'CANNOT_DELETE_CURRENT_ACCOUNT');
     }
 
     await accountRepository.delete(id);
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message || 'Failed to delete account' }, { status: 500 });
+  } catch (error) {
+    return jsonUnknownError('Admin account delete failed', error, 'Failed to delete account', 'ACCOUNT_DELETE_FAILED');
   }
 }

@@ -933,7 +933,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
 
     let fileStat: fs.Stats;
     try {
-      fileStat = await fs.promises.stat(resolvedPath);
+      fileStat = await fs.promises.stat(/*turbopackIgnore: true*/ resolvedPath);
     } catch {
       return NextResponse.json(
         { success: false, error: `File not found: ${selectedResponse.fileName || 'unknown file'}` },
@@ -982,7 +982,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
       });
     }
 
-    const stream = Readable.toWeb(fs.createReadStream(resolvedPath)) as ReadableStream;
+    const stream = Readable.toWeb(fs.createReadStream(/*turbopackIgnore: true*/ resolvedPath)) as ReadableStream;
     return new NextResponse(stream, {
       status: selectedResponse.statusCode,
       headers: responseHeaders,

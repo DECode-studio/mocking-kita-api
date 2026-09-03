@@ -10,6 +10,13 @@ export async function getApisByProjectId(projectId: string): Promise<ApiCollecti
   return rows.map(toApiDomain);
 }
 
+export async function getAllApis(): Promise<ApiCollection[]> {
+  const rows = await prisma.api.findMany({
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+  return rows.map(toApiDomain);
+}
+
 export async function getApiById(id: string): Promise<ApiCollection | null> {
   const row = await prisma.api.findUnique({
     where: { id },

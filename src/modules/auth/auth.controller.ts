@@ -1,19 +1,19 @@
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { UserSession } from '@/src/domain/auth/entity/user_session';
 import { accountRepository } from '@/src/modules/account';
 import { verifyPassword, hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
+import { ENV } from '@/src/core/constants/env';
+import { clearServerSession, getServerSession, setServerSession } from '@/src/core/server/auth/session';
+import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
+import { checkRateLimit, getRequestRateLimitKey } from '@/src/core/server/security/rate-limit';
 import { randomBytes } from 'node:crypto';
-
-export const runtime = 'nodejs';
-
-const AUTH_COOKIE = 'mock-api-studio-auth';
+import { AuthLoginSchema } from './auth.schema';
 
 function getAuthCredentials() {
-  const username = process.env.APP_USERNAME?.trim();
-  const password = process.env.APP_PASSWORD?.trim();
+  const username = ENV.APP_USERNAME;
+  const password = ENV.APP_PASSWORD;
 
   if (!username || !password) {
     throw new Error('APP_USERNAME and APP_PASSWORD must be configured');
@@ -23,11 +23,7 @@ function getAuthCredentials() {
 }
 
 function getSsoDomains(): string[] {
-  const domainsStr = process.env.SSO_DOMAINS || '';
-  return domainsStr
-    .split(',')
-    .map((d) => d.trim().toLowerCase())
-    .filter(Boolean);
+  return ENV.SSO_DOMAINS;
 }
 
 function isValidEmail(email: string): boolean {
@@ -42,34 +38,32 @@ function beautifyEmailName(email: string): string {
     .join(' ');
 }
 
-function parseSession(raw: string | undefined): UserSession | null {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as UserSession;
-  } catch {
-    return null;
-  }
-}
-
 export async function GET() {
-  const cookieStore = await cookies();
-  const session = parseSession(cookieStore.get(AUTH_COOKIE)?.value);
+  const session = await getServerSession();
   return NextResponse.json({ session });
 }
 
 export async function POST(request: Request) {
-  const { username, password, rememberMe = false, registerExtra } = (await request.json()) as {
-    username?: string;
-    password?: string;
-    rememberMe?: boolean;
-    registerExtra?: { name: string; role: string };
-  };
+  const rateLimit = checkRateLimit(getRequestRateLimitKey(request, 'auth'), 20, 15 * 60 * 1000);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'Too many authentication attempts', code: 'AUTH_RATE_LIMITED' },
+      { status: 429, headers: { 'retry-after': String(rateLimit.retryAfterSeconds ?? 1) } }
+    );
+  }
+
+  const parsed = AuthLoginSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return jsonFail(parsed.error.issues[0]?.message || 'Invalid login request', 400, 'INVALID_LOGIN_REQUEST');
+  }
+
+  const { username, password, rememberMe, registerExtra } = parsed.data;
 
   const cleanUsername = (username || '').trim().toLowerCase();
   const cleanPassword = (password || '').trim();
 
   if (!cleanUsername) {
-    return NextResponse.json({ success: false, error: 'Username or Email is required' }, { status: 400 });
+    return jsonFail('Username or Email is required', 400, 'USERNAME_REQUIRED');
   }
 
   let session: UserSession | null = null;
@@ -77,17 +71,14 @@ export async function POST(request: Request) {
   // Case A: User logs in using Email (Non-Admin -> SSO login)
   if (cleanUsername.includes('@')) {
     if (!isValidEmail(cleanUsername)) {
-      return NextResponse.json({ success: false, error: 'Invalid email address format' }, { status: 400 });
+      return jsonFail('Invalid email address format', 400, 'INVALID_EMAIL');
     }
 
     const domain = cleanUsername.split('@')[1];
     const allowedDomains = getSsoDomains();
 
     if (allowedDomains.length > 0 && (!domain || !allowedDomains.includes(domain))) {
-      return NextResponse.json({
-        success: false,
-        error: `Only whitelisted email domains are allowed to sign in. Whitelisted: ${allowedDomains.join(', ')}`
-      }, { status: 400 });
+      return jsonFail(`Only whitelisted email domains are allowed to sign in. Whitelisted: ${allowedDomains.join(', ')}`, 400, 'SSO_DOMAIN_NOT_ALLOWED');
     }
 
     try {
@@ -106,10 +97,10 @@ export async function POST(request: Request) {
 
         const { name, role } = registerExtra;
         if (!name || !name.trim()) {
-          return NextResponse.json({ success: false, error: 'Display Name is required' }, { status: 400 });
+          return jsonFail('Display Name is required', 400, 'DISPLAY_NAME_REQUIRED');
         }
         if (!role || !role.trim()) {
-          return NextResponse.json({ success: false, error: 'Role is required' }, { status: 400 });
+          return jsonFail('Role is required', 400, 'ROLE_REQUIRED');
         }
 
         // Auto-create account for new SSO user (using user-provided name & role)
@@ -134,8 +125,8 @@ export async function POST(request: Request) {
         rememberMe,
         loginAt: new Date().toISOString(),
       };
-    } catch (err: any) {
-      return NextResponse.json({ success: false, error: err?.message || 'Database error during SSO' }, { status: 500 });
+    } catch (err) {
+      return jsonUnknownError('Auth SSO login failed', err, 'Authentication failed', 'AUTH_SSO_FAILED');
     }
   } 
   // Case B: User logs in using Username (Admin -> Password login)
@@ -148,7 +139,7 @@ export async function POST(request: Request) {
         isEnvAuthenticated = true;
         adminUsername = credentials.username;
       }
-    } catch (error: any) {
+    } catch {
       // Environment credentials not configured, fallback to database check
     }
 
@@ -178,38 +169,23 @@ export async function POST(request: Request) {
             };
           }
         }
-      } catch (err: any) {
-        return NextResponse.json({ success: false, error: err?.message || 'Database error' }, { status: 500 });
+      } catch (err) {
+        return jsonUnknownError('Auth database login failed', err, 'Authentication failed', 'AUTH_DATABASE_FAILED');
       }
     }
   }
 
   if (session) {
-    const cookieStore = await cookies();
-    cookieStore.set(AUTH_COOKIE, JSON.stringify(session), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
-    });
+    await setServerSession(session);
 
     return NextResponse.json({ success: true, session });
   }
 
-  return NextResponse.json({ success: false, error: 'Invalid username or password' }, { status: 401 });
+  return jsonFail('Invalid username or password', 401, 'INVALID_CREDENTIALS');
 }
 
 export async function DELETE() {
-  const cookieStore = await cookies();
-  cookieStore.set(AUTH_COOKIE, '', {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 0,
-  });
+  await clearServerSession();
 
   return NextResponse.json({ success: true });
 }
-
