@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { ThemeMode } from '@/src/core/theme/theme-types';
+import { ENV } from '@/src/core/constants/env';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,7 @@ export async function PUT(request: Request) {
   cookieStore.set(SETTINGS_COOKIE, JSON.stringify({ theme: normalized }), {
     httpOnly: false,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: ENV.IS_PRODUCTION,
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
   });

@@ -1,23 +1,23 @@
 import { NextResponse } from 'next/server';
 import { GOOGLE_OAUTH_API } from '@/src/core/constants/api';
+import { ENV } from '@/src/core/constants/env';
 
 function getRedirectUri(request: Request): string {
-  const envAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
-  if (envAppUrl) {
-    const baseUrl = envAppUrl.replace(/\/$/, '');
-    return `${baseUrl}/api/auth/sso/callback`;
+  if (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL) {
+    const baseUrl = ENV.APP_URL.replace(/\/$/, '');
+    return `${baseUrl}${ENV.GOOGLE_CALLBACK_ROUTE}`;
   }
   const requestUrl = new URL(request.url);
   let host = requestUrl.host;
   if (host.includes('0.0.0.0')) {
     host = host.replace('0.0.0.0', 'localhost');
   }
-  return `${requestUrl.protocol}//${host}/api/auth/sso/callback`;
+  return `${requestUrl.protocol}//${host}${ENV.GOOGLE_CALLBACK_ROUTE}`;
 }
 
 export async function GET(request: Request) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = ENV.GOOGLE_CLIENT_ID;
+  const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 
   const redirectUri = getRedirectUri(request);
 

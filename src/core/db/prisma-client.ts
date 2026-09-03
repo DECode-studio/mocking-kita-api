@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { ENV } from '@/src/core/constants/env';
 
 function getDatabaseUrl(): string {
-  if (process.env.DATABASE_URL) {
-    return process.env.DATABASE_URL;
+  if (ENV.DATABASE_URL) {
+    return ENV.DATABASE_URL;
   }
 
   try {
@@ -36,9 +37,9 @@ export const prisma =
         url: dbUrl,
       },
     },
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: ENV.IS_DEVELOPMENT ? ['query', 'error', 'warn'] : ['error'],
   });
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (!ENV.IS_PRODUCTION) globalForPrisma.prisma = prisma;
 
 export default prisma;

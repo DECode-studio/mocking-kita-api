@@ -1,4 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
+import { ENV } from '@/src/core/constants/env';
 
 export interface NotificationPayload {
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
@@ -46,7 +47,7 @@ function isImageResponse(state: any): boolean {
  * - Import OpenAPI / Swagger JSON
  */
 export async function sendGoogleSpaceNotification(payload: NotificationPayload): Promise<void> {
-  const webhookUrl = process.env.GOOGLE_SPACE_WEBHOOK_URL;
+  const webhookUrl = ENV.GOOGLE_SPACE_WEBHOOK_URL;
   if (!webhookUrl || !webhookUrl.trim()) {
     return;
   }
