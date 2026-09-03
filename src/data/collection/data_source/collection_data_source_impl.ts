@@ -1,26 +1,24 @@
 import { Collection } from '@/src/domain/collection/entity/collection';
-import { callDatabase } from '@/src/core/http-client/database-proxy-client';
+import { createCollectionRemote, getCollection, listCollectionsByProject, softDeleteCollectionRemote, updateCollectionRemote } from '../api/collection_api_client';
 
 export async function getCollectionsByProjectId(projectId: string): Promise<Collection[]> {
-  const database = await callDatabase<{ collections: Collection[] }>('getDatabase');
-  return database.collections.filter((collection) => collection.projectId === projectId);
+  return listCollectionsByProject(projectId);
 }
 
 export async function getCollectionById(id: string): Promise<Collection | null> {
-  const database = await callDatabase<{ collections: Collection[] }>('getDatabase');
-  return database.collections.find((collection) => collection.id === id) || null;
+  return getCollection(id);
 }
 
 export async function createCollection(input: Omit<Collection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }): Promise<Collection> {
-  return callDatabase<Collection>('createCollection', input);
+  return createCollectionRemote(input);
 }
 
 export async function updateCollection(id: string, input: Partial<Collection>): Promise<Collection> {
-  return callDatabase<Collection>('updateCollection', { id, input });
+  return updateCollectionRemote(id, input);
 }
 
 export async function softDeleteCollection(id: string): Promise<void> {
-  await callDatabase<void>('softDeleteCollection', { id });
+  await softDeleteCollectionRemote(id);
 }
 
 export async function removeCollectionsByProjectId(_projectId: string): Promise<void> {

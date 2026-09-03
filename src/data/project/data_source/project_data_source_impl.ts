@@ -1,32 +1,30 @@
 import { Project } from '@/src/domain/project/entity/project';
-import { callDatabase } from '@/src/core/http-client/database-proxy-client';
+import { createProjectRemote, getProject, hardDeleteProjectRemote, listProjects, restoreProjectRemote, softDeleteProjectRemote, updateProjectRemote } from '../api/project_api_client';
 
 export async function getAllProjects(): Promise<Project[]> {
-  const database = await callDatabase<{ projects: Project[] }>('getDatabase');
-  return database.projects;
+  return listProjects();
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-  const projects = await getAllProjects();
-  return projects.find((project) => project.id === id) || null;
+  return getProject(id);
 }
 
 export async function createProject(input: Omit<Project, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }): Promise<Project> {
-  return callDatabase<Project>('create', input);
+  return createProjectRemote(input);
 }
 
 export async function updateProject(id: string, input: Partial<Project>): Promise<Project> {
-  return callDatabase<Project>('update', { id, input });
+  return updateProjectRemote(id, input);
 }
 
 export async function softDeleteProject(id: string): Promise<void> {
-  await callDatabase<void>('softDelete', { id });
+  await softDeleteProjectRemote(id);
 }
 
 export async function restoreProject(id: string): Promise<void> {
-  await callDatabase<void>('restore', { id });
+  await restoreProjectRemote(id);
 }
 
 export async function hardDeleteProject(id: string): Promise<void> {
-  await callDatabase<void>('hardDelete', { id });
+  await hardDeleteProjectRemote(id);
 }

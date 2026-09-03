@@ -1,42 +1,49 @@
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
 import { Project } from '@/src/domain/project/entity/project';
 import { ProjectRepository } from '@/src/domain/project/repository/project_repository';
-import { callDatabase } from '@/src/core/http-client/database-proxy-client';
 import { OpenApiSpec } from '@/src/core/openapi/openapi_converter';
+import {
+  createProjectRemote,
+  exportProjectOpenApiRemote,
+  getProject,
+  hardDeleteProjectRemote,
+  importProjectOpenApiRemote,
+  listProjects,
+  restoreProjectRemote,
+  softDeleteProjectRemote,
+  updateProjectRemote,
+} from '../api/project_api_client';
 
 export class ProjectRemoteRepository implements ProjectRepository {
   async getAll(): Promise<Project[]> {
-    const database = await this.getDatabase();
-    return database.projects;
+    return listProjects();
   }
 
   async getById(id: string): Promise<Project | null> {
-    const database = await this.getDatabase();
-    return database.projects.find((project) => project.id === id) || null;
+    return getProject(id);
   }
 
   async create(input: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<Project> {
-    return callDatabase<Project>('create', input);
+    return createProjectRemote(input);
   }
 
   async update(id: string, input: Partial<Project>): Promise<Project> {
-    return callDatabase<Project>('update', { id, input });
+    return updateProjectRemote(id, input);
   }
 
   async softDelete(id: string): Promise<void> {
-    await callDatabase<void>('softDelete', { id });
+    await softDeleteProjectRemote(id);
   }
 
   async restore(id: string): Promise<void> {
-    await callDatabase<void>('restore', { id });
+    await restoreProjectRemote(id);
   }
 
   async hardDelete(id: string): Promise<void> {
-    await callDatabase<void>('hardDelete', { id });
+    await hardDeleteProjectRemote(id);
   }
 
   async exportOpenApi(projectId: string): Promise<OpenApiSpec> {
-    return callDatabase<OpenApiSpec>('exportProjectOpenApi', { projectId });
+    return exportProjectOpenApiRemote(projectId);
   }
 
   async importOpenApi(
@@ -44,13 +51,6 @@ export class ProjectRemoteRepository implements ProjectRepository {
     openApiJson: unknown,
     mode: 'upsert' | 'merge' | 'replace' = 'upsert'
   ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
-    return callDatabase<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>(
-      'importProjectOpenApi',
-      { projectId, openApiJson, mode }
-    );
-  }
-
-  async getDatabase(): Promise<MockApiDatabase> {
-    return callDatabase<MockApiDatabase>('getDatabase');
+    return importProjectOpenApiRemote(projectId, openApiJson, mode);
   }
 }
