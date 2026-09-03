@@ -20,8 +20,22 @@ vi.mock('@/src/modules/account/account.repository', () => ({
 
 describe('/api/admin/accounts route', () => {
   let mockCookieStore: any;
-  const adminSession = { username: 'admin', role: 'ADMIN' };
-  const userSession = { username: 'user1', role: 'USER' };
+  const adminSession = {
+    username: 'admin',
+    name: 'Admin',
+    role: 'ADMIN',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
+  const userSession = {
+    username: 'user1',
+    name: 'User',
+    role: 'USER',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
 
   beforeEach(() => {
     vi.restoreAllMocks();

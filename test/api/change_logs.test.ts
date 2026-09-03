@@ -18,6 +18,14 @@ vi.mock('@/src/core/db/prisma-client', () => ({
 
 describe('/api/change-logs route', () => {
   let mockCookieStore: any;
+  const session = {
+    username: 'user1',
+    name: 'User 1',
+    role: 'USER',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
 
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -37,7 +45,7 @@ describe('/api/change-logs route', () => {
   });
 
   it('GET should return change logs and totalCount when session exists', async () => {
-    mockCookieStore.get.mockReturnValue({ value: JSON.stringify({ username: 'user1' }) });
+    mockCookieStore.get.mockReturnValue({ value: JSON.stringify(session) });
 
     const now = new Date();
     const mockLog = {

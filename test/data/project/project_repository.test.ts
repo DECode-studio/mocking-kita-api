@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ProjectRemoteRepository } from '@/src/data/project/repository/project_repository';
-import * as dbClient from '@/src/core/http-client/database-proxy-client';
+import * as apiClient from '@/src/core/http-client/api-client';
 
 describe('ProjectRemoteRepository', () => {
   let repository: ProjectRemoteRepository;
@@ -11,40 +11,44 @@ describe('ProjectRemoteRepository', () => {
     vi.restoreAllMocks();
   });
 
-  it('getAll and getById should fetch database and return project', async () => {
-    vi.spyOn(dbClient, 'callDatabase').mockResolvedValue({ projects: [mockProject] });
+  it('getAll and getById should fetch only the requested project data', async () => {
+    vi.spyOn(apiClient, 'apiRequest')
+      .mockResolvedValueOnce({ success: true, data: [mockProject] })
+      .mockResolvedValueOnce({ success: true, data: mockProject });
 
     const list = await repository.getAll();
     expect(list).toEqual([mockProject]);
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects');
 
     const item = await repository.getById('p1');
     expect(item).toEqual(mockProject);
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1');
   });
 
   it('create, update, softDelete, restore, hardDelete, exportOpenApi, importOpenApi should call database proxy', async () => {
-    vi.spyOn(dbClient, 'callDatabase').mockResolvedValue(mockProject);
+    vi.spyOn(apiClient, 'apiRequest').mockResolvedValue({ success: true, data: mockProject });
 
     await repository.create(mockProject as any);
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('create', mockProject);
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects', { method: 'POST', body: mockProject });
 
     await repository.update('p1', { name: 'Updated' });
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('update', { id: 'p1', input: { name: 'Updated' } });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1', { method: 'PUT', body: { name: 'Updated' } });
 
     await repository.softDelete('p1');
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('softDelete', { id: 'p1' });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1', { method: 'DELETE' });
 
     await repository.restore('p1');
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('restore', { id: 'p1' });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1/restore', { method: 'POST' });
 
     await repository.hardDelete('p1');
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('hardDelete', { id: 'p1' });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1/hard', { method: 'DELETE' });
 
-    vi.spyOn(dbClient, 'callDatabase').mockResolvedValue({ openapi: '3.0.0' });
+    vi.spyOn(apiClient, 'apiRequest').mockResolvedValue({ openapi: '3.0.0' });
     await repository.exportOpenApi('p1');
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('exportProjectOpenApi', { projectId: 'p1' });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1/export-openapi');
 
-    vi.spyOn(dbClient, 'callDatabase').mockResolvedValue({ success: true, importedApiCount: 1, importedCollectionCount: 1 });
+    vi.spyOn(apiClient, 'apiRequest').mockResolvedValue({ success: true, data: { importedApiCount: 1, importedCollectionCount: 1 } });
     await repository.importOpenApi('p1', {}, 'upsert');
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('importProjectOpenApi', { projectId: 'p1', openApiJson: {}, mode: 'upsert' });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/projects/p1/import-openapi', { method: 'POST', body: { openApiJson: {}, mode: 'upsert' } });
   });
 });

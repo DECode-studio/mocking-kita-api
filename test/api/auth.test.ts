@@ -35,7 +35,14 @@ describe('/api/auth route', () => {
   });
 
   it('GET should return current session from cookie', async () => {
-    const sessionData = { username: 'admin', role: 'ADMIN' };
+    const sessionData = {
+      username: 'admin',
+      name: 'Admin',
+      role: 'ADMIN',
+      token: 'test-token',
+      rememberMe: false,
+      loginAt: '2026-09-03T00:00:00.000Z',
+    };
     mockCookieStore.get.mockReturnValue({ value: JSON.stringify(sessionData) });
 
     const res = await GET();

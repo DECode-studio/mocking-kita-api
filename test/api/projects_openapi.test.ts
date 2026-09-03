@@ -3,6 +3,11 @@ import { GET as EXPORT_GET } from '@/src/app/api/projects/[id]/export-openapi/ro
 import { POST as IMPORT_POST } from '@/src/app/api/projects/[id]/import-openapi/route';
 import { exportProjectOpenApi, importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
 import prisma from '@/src/core/db/prisma-client';
+import { cookies } from 'next/headers';
+
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(),
+}));
 
 vi.mock('@/src/core/db/openapi_storage_helper', () => ({
   exportProjectOpenApi: vi.fn(),
@@ -30,8 +35,20 @@ vi.mock('@/src/modules/mock-proxy', () => ({
 }));
 
 describe('OpenAPI Export & Import API routes', () => {
+  const adminSession = {
+    username: 'admin',
+    name: 'Admin',
+    role: 'ADMIN',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
+
   beforeEach(() => {
     vi.restoreAllMocks();
+    (cookies as any).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: JSON.stringify(adminSession) }),
+    });
   });
 
   it('EXPORT_GET should return OpenAPI JSON spec Attachment', async () => {

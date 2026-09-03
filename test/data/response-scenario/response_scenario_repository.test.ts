@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ResponseScenarioRemoteRepository } from '@/src/data/response-scenario/repository/response_scenario_repository';
-import * as dbClient from '@/src/core/http-client/database-proxy-client';
+import * as apiClient from '@/src/core/http-client/api-client';
 
 describe('ResponseScenarioRemoteRepository', () => {
   let repository: ResponseScenarioRemoteRepository;
@@ -11,30 +11,36 @@ describe('ResponseScenarioRemoteRepository', () => {
     vi.restoreAllMocks();
   });
 
-  it('getByRequestScenarioId and getById should call getDatabase and filter', async () => {
-    vi.spyOn(dbClient, 'callDatabase').mockResolvedValue({ responseScenarios: [mockResp] });
+  it('getByRequestScenarioId and getById should request only response scenario data needed', async () => {
+    vi.spyOn(apiClient, 'apiRequest')
+      .mockResolvedValueOnce({ success: true, data: [mockResp] })
+      .mockResolvedValueOnce({ success: true, data: mockResp })
+      .mockResolvedValueOnce({ success: true, data: null });
 
     const list = await repository.getByRequestScenarioId('req-1');
     expect(list).toEqual([mockResp]);
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/request-scenarios/req-1/response-scenarios');
 
     const item = await repository.getById('res-1');
     expect(item).toEqual(mockResp);
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/response-scenarios/res-1');
 
     const nullItem = await repository.getById('invalid');
     expect(nullItem).toBeNull();
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/response-scenarios/invalid');
   });
 
-  it('create, update, and softDelete should call callDatabase procedure', async () => {
-    vi.spyOn(dbClient, 'callDatabase').mockResolvedValue(mockResp);
+  it('create, update, and softDelete should call REST endpoints', async () => {
+    vi.spyOn(apiClient, 'apiRequest').mockResolvedValue({ success: true, data: mockResp });
 
     await repository.create(mockResp as any);
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('createRespScenario', mockResp);
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/response-scenarios', { method: 'POST', body: mockResp });
 
     await repository.update('res-1', { name: 'Updated' });
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('updateRespScenario', { id: 'res-1', input: { name: 'Updated' } });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/response-scenarios/res-1', { method: 'PUT', body: { name: 'Updated' } });
 
     await repository.softDelete('res-1');
-    expect(dbClient.callDatabase).toHaveBeenCalledWith('softDeleteRespScenario', { id: 'res-1' });
+    expect(apiClient.apiRequest).toHaveBeenCalledWith('/api/response-scenarios/res-1', { method: 'DELETE' });
   });
 
   it('uploadFile should send FormData to /api/upload and return file details', async () => {
