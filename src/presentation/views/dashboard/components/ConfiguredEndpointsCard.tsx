@@ -1,21 +1,18 @@
 'use client';
 
 import React from 'react';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
-import { ApiCollection } from '@/src/domain/api/entity/api_collection';
+import { DashboardEndpointSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 import { HttpMethodBadge } from '@/src/presentation/components/shared/HttpMethodBadge';
 import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 interface ConfiguredEndpointsCardProps {
-  db: MockApiDatabase;
-  activeApis: ApiCollection[];
+  endpoints: DashboardEndpointSummary[];
   onNavigateApiDetail: (projectId: string, apiId: string) => void;
 }
 
 export const ConfiguredEndpointsCard: React.FC<ConfiguredEndpointsCardProps> = ({
-  db,
-  activeApis,
+  endpoints,
   onNavigateApiDetail,
 }) => {
   return (
@@ -25,17 +22,12 @@ export const ConfiguredEndpointsCard: React.FC<ConfiguredEndpointsCardProps> = (
           {DASHBOARD_TEXT.CONFIGURED_ENDPOINTS_TITLE}
         </h3>
         <span className="text-xs font-mono text-slate-500">
-          Showing {activeApis.slice(0, 5).length} of {activeApis.length}
+          Showing {endpoints.length} of {endpoints.length}
         </span>
       </div>
 
       <div className="space-y-3">
-        {activeApis.slice(0, 5).map((api) => {
-          const reqCount = db.requestScenarios.filter(
-            (r) => r.apiId === api.id && !r.deletedAt
-          ).length;
-
-          return (
+        {endpoints.map((api) => (
             <div
               key={api.id}
               onClick={() => onNavigateApiDetail(api.projectId, api.id)}
@@ -55,13 +47,12 @@ export const ConfiguredEndpointsCard: React.FC<ConfiguredEndpointsCardProps> = (
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-mono text-slate-500 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {reqCount} rules
+                  {api.requestScenarioCount} rules
                 </span>
                 <StatusBadge status={api.status} />
               </div>
             </div>
-          );
-        })}
+        ))}
       </div>
     </div>
   );

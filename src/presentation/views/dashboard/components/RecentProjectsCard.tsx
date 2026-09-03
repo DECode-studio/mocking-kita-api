@@ -2,22 +2,19 @@
 
 import React from 'react';
 import { ArrowRight, Code2 } from 'lucide-react';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
-import { Project } from '@/src/domain/project/entity/project';
+import { DashboardProjectSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 import { StatusBadge } from '@/src/presentation/components/shared/StatusBadge';
 import { formatDate } from '@/src/core/utils/date';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 interface RecentProjectsCardProps {
-  db: MockApiDatabase;
-  activeProjects: Project[];
+  projects: DashboardProjectSummary[];
   onNavigateViewAll: () => void;
   onNavigateProject: (projectId: string) => void;
 }
 
 export const RecentProjectsCard: React.FC<RecentProjectsCardProps> = ({
-  db,
-  activeProjects,
+  projects,
   onNavigateViewAll,
   onNavigateProject,
 }) => {
@@ -37,15 +34,7 @@ export const RecentProjectsCard: React.FC<RecentProjectsCardProps> = ({
       </div>
 
       <div className="space-y-3">
-        {activeProjects.slice(0, 5).map((project) => {
-          const apiCount = db.apiCollections.filter(
-            (a) => a.projectId === project.id && !a.deletedAt
-          ).length;
-          const envCount = db.environments.filter(
-            (e) => e.projectId === project.id && !e.deletedAt
-          ).length;
-
-          return (
+        {projects.map((project) => (
             <div
               key={project.id}
               onClick={() => onNavigateProject(project.id)}
@@ -67,13 +56,12 @@ export const RecentProjectsCard: React.FC<RecentProjectsCardProps> = ({
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[11px] font-mono text-slate-500">
-                  {apiCount} APIs • {envCount} Envs
+                  {project.apiCount} APIs • {project.environmentCount} Envs
                 </span>
                 <StatusBadge status={project.status} />
               </div>
             </div>
-          );
-        })}
+        ))}
       </div>
     </div>
   );
