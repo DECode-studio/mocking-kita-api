@@ -1,8 +1,8 @@
 import prisma from '@/src/core/db/prisma-client';
 import { generateId } from '@/src/core/utils/uuid';
-import { cookies } from 'next/headers';
 import { UserSession } from '@/src/domain/auth/entity/user_session';
 import { sendGoogleSpaceNotification } from '@/src/core/notification/google_space_notifier';
+import { getServerSession } from '@/src/core/server/auth/session';
 
 export type ChangeLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
 export type ChangeLogEntityType =
@@ -29,10 +29,7 @@ export interface ChangeLogInput {
 
 export async function getCurrentSession(): Promise<UserSession | null> {
   try {
-    const cookieStore = await cookies();
-    const rawSession = cookieStore.get('mock-api-studio-auth')?.value;
-    if (!rawSession) return null;
-    return JSON.parse(rawSession) as UserSession;
+    return await getServerSession();
   } catch {
     return null;
   }
