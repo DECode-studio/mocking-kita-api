@@ -1,8 +1,7 @@
 import DashboardView from '@/src/presentation/views/dashboard/DashboardView';
-import { createDatabaseSnapshotUseCase } from '@/src/di/usecase_provider';
+import { getDashboardSummaryRemote } from '@/src/data/dashboard/api/dashboard_api_client';
 
 export default async function DashboardPage() {
-  const databaseSnapshotUseCase = createDatabaseSnapshotUseCase();
-  const initialDb = await databaseSnapshotUseCase.getDatabase();
-  return <DashboardView initialDb={initialDb} />;
+  const initialSummary = await getDashboardSummaryRemote();
+  return <DashboardView initialSummary={initialSummary} />;
 }
