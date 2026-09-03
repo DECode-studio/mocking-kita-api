@@ -1,53 +1,26 @@
-import prisma from '@/src/core/db/prisma-client';
 import { Account } from '@/src/domain/account/entity/account';
 import { AccountRepository } from '@/src/domain/account/repository/account_repository';
-
-function toAccountDomain(acc: {
-  id: string;
-  username: string;
-  role: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-}): Account {
-  return {
-    id: acc.id,
-    username: acc.username,
-    role: acc.role as any,
-    name: acc.name,
-    createdAt: acc.createdAt.toISOString(),
-    updatedAt: acc.updatedAt.toISOString(),
-  };
-}
+import { apiRequest } from '@/src/core/http-client/api-client';
 
 export class AccountRepositoryImpl implements AccountRepository {
   async getAll(): Promise<Account[]> {
-    const rows = await prisma.account.findMany({
-      orderBy: { username: 'asc' },
-    });
-    return rows.map(toAccountDomain);
+    const response = await apiRequest<{ success: boolean; accounts: Account[]; error?: string }>('/api/admin/accounts');
+    if (!response.success) throw new Error(response.error || 'Failed to fetch accounts');
+    return response.accounts;
   }
 
   async getById(id: string): Promise<Account | null> {
-    const row = await prisma.account.findUnique({
-      where: { id },
-    });
-    return row ? toAccountDomain(row) : null;
+    const accounts = await this.getAll();
+    return accounts.find((account) => account.id === id) || null;
   }
 
   async getByUsername(username: string): Promise<Account | null> {
-    const row = await prisma.account.findUnique({
-      where: { username: username.toLowerCase() },
-    });
-    return row ? toAccountDomain(row) : null;
+    const accounts = await this.getAll();
+    return accounts.find((account) => account.username === username.toLowerCase()) || null;
   }
 
-  async getPasswordHash(id: string): Promise<string | null> {
-    const row = await prisma.account.findUnique({
-      where: { id },
-      select: { password: true },
-    });
-    return row?.password || null;
+  async getPasswordHash(_id: string): Promise<string | null> {
+    throw new Error('getPasswordHash is server-only');
   }
 
   async create(params: {
@@ -57,17 +30,17 @@ export class AccountRepositoryImpl implements AccountRepository {
     name: string;
     role: string;
   }): Promise<Account> {
-    const row = await prisma.account.create({
-      data: {
-        id: params.id,
-        username: params.username.toLowerCase(),
+    const response = await apiRequest<{ success: boolean; account: Account; error?: string }>('/api/admin/accounts', {
+      method: 'POST',
+      body: {
+        username: params.username,
         password: params.passwordHash,
-        role: params.role,
         name: params.name,
+        role: params.role,
       },
     });
-
-    return toAccountDomain(row);
+    if (!response.success) throw new Error(response.error || 'Failed to create account');
+    return response.account;
   }
 
   async update(
@@ -79,23 +52,26 @@ export class AccountRepositoryImpl implements AccountRepository {
       role?: string;
     }
   ): Promise<Account> {
-    const updated = await prisma.account.update({
-      where: { id },
-      data: {
-        ...(params.username !== undefined && { username: params.username.toLowerCase() }),
-        ...(params.passwordHash !== undefined && { password: params.passwordHash }),
-        ...(params.name !== undefined && { name: params.name }),
-        ...(params.role !== undefined && { role: params.role }),
+    const response = await apiRequest<{ success: boolean; account: Account; error?: string }>('/api/admin/accounts', {
+      method: 'PUT',
+      body: {
+        id,
+        username: params.username,
+        password: params.passwordHash,
+        name: params.name,
+        role: params.role,
       },
     });
-
-    return toAccountDomain(updated);
+    if (!response.success) throw new Error(response.error || 'Failed to update account');
+    return response.account;
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.account.delete({
-      where: { id },
+    const response = await apiRequest<{ success: boolean; error?: string }>('/api/admin/accounts', {
+      method: 'DELETE',
+      body: { id },
     });
+    if (!response.success) throw new Error(response.error || 'Failed to delete account');
   }
 }
 

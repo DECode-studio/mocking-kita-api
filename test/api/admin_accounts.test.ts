@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET, POST, PUT, DELETE } from '@/src/app/api/admin/accounts/route';
 import { cookies } from 'next/headers';
-import { accountRepository } from '@/src/data/account/repository/account_repository_impl';
+import { accountRepository } from '@/src/modules/account/account.repository';
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }));
 
-vi.mock('@/src/data/account/repository/account_repository_impl', () => ({
+vi.mock('@/src/modules/account/account.repository', () => ({
   accountRepository: {
     getAll: vi.fn(),
     getByUsername: vi.fn(),
@@ -20,8 +20,22 @@ vi.mock('@/src/data/account/repository/account_repository_impl', () => ({
 
 describe('/api/admin/accounts route', () => {
   let mockCookieStore: any;
-  const adminSession = { username: 'admin', role: 'ADMIN' };
-  const userSession = { username: 'user1', role: 'USER' };
+  const adminSession = {
+    username: 'admin',
+    name: 'Admin',
+    role: 'ADMIN',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
+  const userSession = {
+    username: 'user1',
+    name: 'User',
+    role: 'USER',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
 
   beforeEach(() => {
     vi.restoreAllMocks();

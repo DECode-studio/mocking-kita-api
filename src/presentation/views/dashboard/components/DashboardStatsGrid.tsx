@@ -2,22 +2,16 @@
 
 import React from 'react';
 import { FolderGit2, Globe, Layers, FileCode } from 'lucide-react';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
-import { Project } from '@/src/domain/project/entity/project';
-import { ApiCollection } from '@/src/domain/api/entity/api_collection';
+import { DashboardSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 interface DashboardStatsGridProps {
-  db: MockApiDatabase;
-  activeProjects: Project[];
-  activeApis: ApiCollection[];
+  summary: DashboardSummary;
   totalApisCount: number;
 }
 
 export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
-  db,
-  activeProjects,
-  activeApis,
+  summary,
   totalApisCount,
 }) => {
   return (
@@ -34,10 +28,10 @@ export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
         </div>
         <div>
           <span className="font-display text-3xl font-bold text-slate-900 dark:text-slate-100">
-            {db.projects.filter((p) => !p.deletedAt).length}
+            {summary.projectCount}
           </span>
           <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-            {activeProjects.length} {DASHBOARD_TEXT.STATS_ACTIVE}
+            {summary.activeProjectCount} {DASHBOARD_TEXT.STATS_ACTIVE}
           </span>
         </div>
       </div>
@@ -54,7 +48,7 @@ export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
         </div>
         <div>
           <span className="font-display text-3xl font-bold text-slate-900 dark:text-slate-100">
-            {db.environments.filter((e) => !e.deletedAt).length}
+            {summary.environmentCount}
           </span>
           <span className="ml-2 text-xs text-slate-500 font-medium font-mono">{DASHBOARD_TEXT.STATS_CONFIGURED}</span>
         </div>
@@ -75,7 +69,7 @@ export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
             {totalApisCount}
           </span>
           <span className="ml-2 text-xs text-amber-600 dark:text-amber-400 font-semibold font-mono">
-            {activeApis.length} {DASHBOARD_TEXT.STATS_ACTIVE}
+            {summary.activeEndpointCount} {DASHBOARD_TEXT.STATS_ACTIVE}
           </span>
         </div>
       </div>
@@ -92,10 +86,10 @@ export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
         </div>
         <div>
           <span className="font-display text-3xl font-bold text-slate-900 dark:text-slate-100">
-            {db.requestScenarios.filter((r) => !r.deletedAt).length}
+            {summary.requestScenarioCount}
           </span>
           <span className="ml-2 text-xs text-fuchsia-500 font-semibold font-mono">
-            {db.responseScenarios.filter((r) => !r.deletedAt).length} {DASHBOARD_TEXT.STATS_RESPS}
+            {summary.responseScenarioCount} {DASHBOARD_TEXT.STATS_RESPS}
           </span>
         </div>
       </div>

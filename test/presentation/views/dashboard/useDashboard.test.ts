@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDashboard } from '@/src/presentation/views/dashboard/hook/useDashboard';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
+import { DashboardSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -11,71 +11,37 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('useDashboard', () => {
-  const sampleDb: MockApiDatabase = {
-    version: '1.0.0',
-    projects: [
-      { id: 'p1', name: 'P1', status: true, createdAt: '', updatedAt: '' },
-      { id: 'p2', name: 'P2', status: false, createdAt: '', updatedAt: '' },
-      { id: 'p3', name: 'P3', status: true, deletedAt: '2026-01-01', createdAt: '', updatedAt: '' },
+  const sampleSummary: DashboardSummary = {
+    projectCount: 2,
+    activeProjectCount: 1,
+    environmentCount: 0,
+    endpointCount: 2,
+    activeEndpointCount: 2,
+    requestScenarioCount: 1,
+    responseScenarioCount: 1,
+    methodCounts: { GET: 1, POST: 1 },
+    recentProjects: [
+      { id: 'p1', name: 'P1', status: true, createdAt: '', apiCount: 2, environmentCount: 0 },
     ],
-    environments: [],
-    collections: [],
-    apiCollections: [
-      { id: 'a1', projectId: 'p1', name: 'A1', path: '/a1', methodRequest: 'GET', status: true, createdAt: '', updatedAt: '' },
-      { id: 'a2', projectId: 'p1', name: 'A2', path: '/a2', methodRequest: 'POST', status: true, createdAt: '', updatedAt: '' },
-      { id: 'a3', projectId: 'p1', name: 'A3', path: '/a3', methodRequest: 'GET', status: true, deletedAt: '2026-01-01', createdAt: '', updatedAt: '' },
-    ],
-    apiEnvironments: [],
-    requestScenarios: [
-      {
-        id: 'r1',
-        apiId: 'a1',
-        name: 'R1',
-        matchType: 'EXACT',
-        priority: 1,
-        headers: {},
-        queryParams: {},
-        pathParams: {},
-        body: {},
-        bodyType: 'JSON',
-        status: true,
-        createdAt: '',
-        updatedAt: '',
-      },
-    ],
-    responseScenarios: [
-      {
-        id: 'res1',
-        requestScenarioId: 'r1',
-        name: 'Res1',
-        statusCode: 200,
-        headers: {},
-        body: {},
-        responseType: 'JSON',
-        delayMs: 0,
-        weight: 1,
-        priority: 1,
-        status: true,
-        createdAt: '',
-        updatedAt: '',
-      },
+    configuredEndpoints: [
+      { id: 'a1', projectId: 'p1', name: 'A1', path: '/a1', methodRequest: 'GET', status: true, requestScenarioCount: 1 },
+      { id: 'a2', projectId: 'p1', name: 'A2', path: '/a2', methodRequest: 'POST', status: true, requestScenarioCount: 0 },
     ],
   };
 
   it('should compute active counts and method counts correctly', () => {
-    const { result } = renderHook(() => useDashboard(sampleDb));
+    const { result } = renderHook(() => useDashboard(sampleSummary));
 
-    expect(result.current.activeProjects).toHaveLength(1);
-    expect(result.current.activeApis).toHaveLength(2);
-    expect(result.current.activeReqs).toHaveLength(1);
-    expect(result.current.activeResps).toHaveLength(1);
-
-    expect(result.current.totalApisCount).toBe(2);
+    expect(result.current.summary.activeProjectCount).toBe(1);
+    expect(result.current.summary.activeEndpointCount).toBe(2);
+    expect(result.current.summary.requestScenarioCount).toBe(1);
+    expect(result.current.summary.responseScenarioCount).toBe(1);
+    expect(result.current.totalApisCount).toBe(sampleSummary.endpointCount);
     expect(result.current.methodCounts).toEqual({ GET: 1, POST: 1 });
   });
 
   it('should handle goToProjects navigation', () => {
-    const { result } = renderHook(() => useDashboard(sampleDb));
+    const { result } = renderHook(() => useDashboard(sampleSummary));
 
     act(() => {
       result.current.goToProjects();
@@ -85,7 +51,7 @@ describe('useDashboard', () => {
   });
 
   it('should handle openImportExport dialog', () => {
-    const { result } = renderHook(() => useDashboard(sampleDb));
+    const { result } = renderHook(() => useDashboard(sampleSummary));
 
     act(() => {
       result.current.openImportExport();

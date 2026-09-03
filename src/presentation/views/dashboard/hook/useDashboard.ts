@@ -1,53 +1,37 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
+import { DashboardSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 import { ROUTES } from '@/src/core/constants/routes';
 
-const emptyDb: MockApiDatabase = {
-  version: '1.0.0',
-  projects: [],
-  environments: [],
-  collections: [],
-  apiCollections: [],
-  apiEnvironments: [],
-  requestScenarios: [],
-  responseScenarios: [],
+const emptySummary: DashboardSummary = {
+  projectCount: 0,
+  activeProjectCount: 0,
+  environmentCount: 0,
+  endpointCount: 0,
+  activeEndpointCount: 0,
+  requestScenarioCount: 0,
+  responseScenarioCount: 0,
+  methodCounts: {},
+  recentProjects: [],
+  configuredEndpoints: [],
 };
 
 export function useDashboard(
-  initialDb: MockApiDatabase = emptyDb
+  initialSummary: DashboardSummary = emptySummary
 ) {
-  const [db, setDb] = useState<MockApiDatabase>(initialDb);
+  const [summary] = useState<DashboardSummary>(initialSummary);
   const { setImportModalOpen } = useUIStore();
   const router = useRouter();
-
-  const activeProjects = db.projects.filter((p) => !p.deletedAt && p.status);
-  const activeApis = db.apiCollections.filter((a) => !a.deletedAt && a.status);
-  const activeReqs = db.requestScenarios.filter((r) => !r.deletedAt && r.status);
-  const activeResps = db.responseScenarios.filter((res) => !res.deletedAt && res.status);
-
-  const methodCounts: Record<string, number> = {};
-  db.apiCollections.forEach((a) => {
-    if (!a.deletedAt) {
-      methodCounts[a.methodRequest] = (methodCounts[a.methodRequest] || 0) + 1;
-    }
-  });
-
-  const totalApisCount = db.apiCollections.filter((a) => !a.deletedAt).length;
 
   const goToProjects = () => router.push(ROUTES.PROJECTS);
   const openImportExport = () => setImportModalOpen(true);
 
   return {
-    db,
+    summary,
     router,
-    activeProjects,
-    activeApis,
-    activeReqs,
-    activeResps,
-    methodCounts,
-    totalApisCount,
+    methodCounts: summary.methodCounts,
+    totalApisCount: summary.endpointCount,
     goToProjects,
     openImportExport,
   };

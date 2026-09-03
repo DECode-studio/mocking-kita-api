@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET, POST, DELETE } from '@/src/app/api/auth/route';
 import { cookies } from 'next/headers';
-import { accountRepository } from '@/src/data/account/repository/account_repository_impl';
+import { accountRepository } from '@/src/modules/account';
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }));
 
-vi.mock('@/src/data/account/repository/account_repository_impl', () => ({
+vi.mock('@/src/modules/account', () => ({
   accountRepository: {
     getByUsername: vi.fn(),
     create: vi.fn(),
@@ -35,7 +35,14 @@ describe('/api/auth route', () => {
   });
 
   it('GET should return current session from cookie', async () => {
-    const sessionData = { username: 'admin', role: 'ADMIN' };
+    const sessionData = {
+      username: 'admin',
+      name: 'Admin',
+      role: 'ADMIN',
+      token: 'test-token',
+      rememberMe: false,
+      loginAt: '2026-09-03T00:00:00.000Z',
+    };
     mockCookieStore.get.mockReturnValue({ value: JSON.stringify(sessionData) });
 
     const res = await GET();

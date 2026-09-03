@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useDashboard } from './hook/useDashboard';
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
+import { DashboardSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 import { ROUTES } from '@/src/core/constants/routes';
 import { DASHBOARD_SEMANTIC_ID } from './constant';
 import {
@@ -13,16 +13,14 @@ import {
   ConfiguredEndpointsCard,
 } from './components';
 
-export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initialDb }) => {
+export const DashboardView: React.FC<{ initialSummary?: DashboardSummary }> = ({ initialSummary }) => {
   const {
-    db,
+    summary,
     router,
-    activeProjects,
-    activeApis,
     methodCounts,
     totalApisCount,
     openImportExport,
-  } = useDashboard(initialDb);
+  } = useDashboard(initialSummary);
 
   return (
     <div id={DASHBOARD_SEMANTIC_ID.CONTAINER} className="space-y-8">
@@ -34,9 +32,7 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
 
       {/* Statistic Cards Grid */}
       <DashboardStatsGrid
-        db={db}
-        activeProjects={activeProjects}
-        activeApis={activeApis}
+        summary={summary}
         totalApisCount={totalApisCount}
       />
 
@@ -49,15 +45,13 @@ export const DashboardView: React.FC<{ initialDb?: MockApiDatabase }> = ({ initi
       {/* Main Grid: Recent Projects & Configured Endpoints */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <RecentProjectsCard
-          db={db}
-          activeProjects={activeProjects}
+          projects={summary.recentProjects}
           onNavigateViewAll={() => router.push(ROUTES.PROJECTS)}
           onNavigateProject={(projectId) => router.push(ROUTES.PROJECT_DETAIL(projectId))}
         />
 
         <ConfiguredEndpointsCard
-          db={db}
-          activeApis={activeApis}
+          endpoints={summary.configuredEndpoints}
           onNavigateApiDetail={(projectId, apiId) =>
             router.push(ROUTES.API_DETAIL(projectId, apiId))
           }

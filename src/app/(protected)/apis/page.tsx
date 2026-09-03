@@ -1,8 +1,7 @@
 import ApiCollectionsView from '@/src/presentation/views/api-collections/ApiCollectionsView';
-import { createDatabaseSnapshotUseCase } from '@/src/di/usecase_provider';
+import { listApis } from '@/src/data/api/api/api_collection_api_client';
 
 export default async function ApiCollectionsPage() {
-  const databaseSnapshotUseCase = createDatabaseSnapshotUseCase();
-  const initialDb = await databaseSnapshotUseCase.getDatabase();
-  return <ApiCollectionsView initialApis={initialDb.apiCollections} />;
+  const initialApis = await listApis();
+  return <ApiCollectionsView initialApis={initialApis} />;
 }

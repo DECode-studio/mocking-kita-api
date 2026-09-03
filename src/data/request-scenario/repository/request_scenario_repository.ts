@@ -1,27 +1,25 @@
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { RequestScenarioRepository } from '@/src/domain/request-scenario/repository/request_scenario_repository';
-import { callDatabase } from '@/src/core/http-client/database-proxy-client';
+import { createRequestScenarioRemote, getRequestScenario, listRequestScenariosByApi, softDeleteRequestScenarioRemote, updateRequestScenarioRemote } from '../api/request_scenario_api_client';
 
 export class RequestScenarioRemoteRepository implements RequestScenarioRepository {
   async getByApiId(apiId: string): Promise<RequestScenario[]> {
-    const database = await callDatabase<{ requestScenarios: RequestScenario[] }>('getDatabase');
-    return database.requestScenarios.filter((requestScenario) => requestScenario.apiId === apiId);
+    return listRequestScenariosByApi(apiId);
   }
 
   async getById(id: string): Promise<RequestScenario | null> {
-    const database = await callDatabase<{ requestScenarios: RequestScenario[] }>('getDatabase');
-    return database.requestScenarios.find((requestScenario) => requestScenario.id === id) || null;
+    return getRequestScenario(id);
   }
 
   async create(input: Omit<RequestScenario, 'id' | 'createdAt' | 'updatedAt'>): Promise<RequestScenario> {
-    return callDatabase<RequestScenario>('createReqScenario', input);
+    return createRequestScenarioRemote(input);
   }
 
   async update(id: string, input: Partial<RequestScenario>): Promise<RequestScenario> {
-    return callDatabase<RequestScenario>('updateReqScenario', { id, input });
+    return updateRequestScenarioRemote(id, input);
   }
 
   async softDelete(id: string): Promise<void> {
-    await callDatabase<void>('softDeleteReqScenario', { id });
+    await softDeleteRequestScenarioRemote(id);
   }
 }

@@ -1,94 +1,26 @@
-import prisma from '@/src/core/db/prisma-client';
 import { Environment } from '@/src/domain/environment/entity/environment';
-
-function toEnvironmentDomain(env: {
-  id: string;
-  projectId: string;
-  name: string;
-  environmentType: string;
-  publicBaseUrl: string | null;
-  originBaseUrl: string | null;
-  status: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}): Environment {
-  return {
-    id: env.id,
-    projectId: env.projectId,
-    name: env.name,
-    environmentType: env.environmentType as any,
-    publicBaseUrl: env.publicBaseUrl ?? undefined,
-    originBaseUrl: env.originBaseUrl ?? undefined,
-    status: env.status,
-    createdAt: env.createdAt.toISOString(),
-    updatedAt: env.updatedAt.toISOString(),
-    deletedAt: env.deletedAt ? env.deletedAt.toISOString() : null,
-  };
-}
+import { createEnvironmentRemote, getEnvironment, listEnvironmentsByProject, softDeleteEnvironmentRemote, updateEnvironmentRemote } from '../api/environment_api_client';
 
 export async function getEnvironmentsByProjectId(projectId: string): Promise<Environment[]> {
-  const rows = await prisma.environment.findMany({
-    where: { projectId },
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-  });
-  return rows.map(toEnvironmentDomain);
+  return listEnvironmentsByProject(projectId);
 }
 
 export async function getEnvironmentById(id: string): Promise<Environment | null> {
-  const row = await prisma.environment.findUnique({
-    where: { id },
-  });
-  return row ? toEnvironmentDomain(row) : null;
+  return getEnvironment(id);
 }
 
-export async function createEnvironment(
-  input: Omit<Environment, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
-): Promise<Environment> {
-  const row = await prisma.environment.create({
-    data: {
-      id: input.id,
-      projectId: input.projectId,
-      name: input.name,
-      environmentType: input.environmentType,
-      publicBaseUrl: input.publicBaseUrl ?? null,
-      originBaseUrl: input.originBaseUrl ?? null,
-      status: input.status,
-      createdAt: new Date(input.createdAt),
-      updatedAt: new Date(input.updatedAt),
-      deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
-    },
-  });
-  return toEnvironmentDomain(row);
+export async function createEnvironment(input: Omit<Environment, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }): Promise<Environment> {
+  return createEnvironmentRemote(input);
 }
 
 export async function updateEnvironment(id: string, input: Partial<Environment>): Promise<Environment> {
-  const current = await getEnvironmentById(id);
-  if (!current) throw new Error(`Environment ${id} not found`);
-
-  const updatedRow = await prisma.environment.update({
-    where: { id },
-    data: {
-      ...(input.projectId !== undefined && { projectId: input.projectId }),
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.environmentType !== undefined && { environmentType: input.environmentType }),
-      ...(input.publicBaseUrl !== undefined && { publicBaseUrl: input.publicBaseUrl ?? null }),
-      ...(input.originBaseUrl !== undefined && { originBaseUrl: input.originBaseUrl ?? null }),
-      ...(input.status !== undefined && { status: input.status }),
-      ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
-      ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
-      ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
-    },
-  });
-  return toEnvironmentDomain(updatedRow);
+  return updateEnvironmentRemote(id, input);
 }
 
 export async function softDeleteEnvironment(id: string): Promise<void> {
-  await updateEnvironment(id, { deletedAt: new Date().toISOString(), status: false });
+  await softDeleteEnvironmentRemote(id);
 }
 
-export async function removeEnvironmentsByProjectId(projectId: string): Promise<void> {
-  await prisma.environment.deleteMany({
-    where: { projectId },
-  });
+export async function removeEnvironmentsByProjectId(_projectId: string): Promise<void> {
+  throw new Error('removeEnvironmentsByProjectId is server-only');
 }

@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     pool: 'threads',
+    exclude: ['**/node_modules/**', '**/.next/**', '**/dist/**', '**/build/**'],
   },
   resolve: {
     alias: {

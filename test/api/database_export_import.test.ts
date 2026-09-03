@@ -3,6 +3,11 @@ import { GET as EXPORT_GET } from '@/src/app/api/database/export/route';
 import { POST as IMPORT_POST } from '@/src/app/api/database/import/route';
 import { readDatabase, importDatabaseData } from '@/src/core/db/database_storage_helper';
 import { generateDatabaseSqlDump, importDatabaseSql } from '@/src/core/db/sql_database_storage_helper';
+import { cookies } from 'next/headers';
+
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(),
+}));
 
 vi.mock('@/src/core/db/database_storage_helper', () => ({
   readDatabase: vi.fn(),
@@ -20,8 +25,20 @@ vi.mock('@/src/core/db/change_log_helper', () => ({
 }));
 
 describe('/api/database/export & /api/database/import routes', () => {
+  const adminSession = {
+    username: 'admin',
+    name: 'Admin',
+    role: 'ADMIN',
+    token: 'test-token',
+    rememberMe: false,
+    loginAt: '2026-09-03T00:00:00.000Z',
+  };
+
   beforeEach(() => {
     vi.restoreAllMocks();
+    (cookies as any).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: JSON.stringify(adminSession) }),
+    });
   });
 
   it('EXPORT_GET should return SQL dump by default', async () => {
