@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 
 interface UseResponseScenarioModalProps {
@@ -41,6 +41,7 @@ export function useResponseScenarioModal({
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const isUploadingRef = useRef(false);
 
   useEffect(() => {
     if (editingRespScenario) {
@@ -73,6 +74,9 @@ export function useResponseScenarioModal({
   }, [editingRespScenario, isOpen]);
 
   const handleFileUpload = async (file: File) => {
+    if (isUploadingRef.current) return;
+
+    isUploadingRef.current = true;
     setIsUploading(true);
     try {
       const data = await onUploadFile(file);
@@ -81,12 +85,14 @@ export function useResponseScenarioModal({
     } catch (err: any) {
       alert(err.message || 'Upload failed');
     } finally {
+      isUploadingRef.current = false;
       setIsUploading(false);
     }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    if (isUploadingRef.current) return;
     setDragOver(true);
   };
 
@@ -96,6 +102,7 @@ export function useResponseScenarioModal({
 
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
+    if (isUploadingRef.current) return;
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {

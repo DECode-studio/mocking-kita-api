@@ -64,6 +64,40 @@ describe('useResponseScenarioModal', () => {
     expect(result.current.fileName).toBeNull();
   });
 
+  it('should ignore duplicate uploads while one is already in progress', async () => {
+    const onSubmit = vi.fn();
+    let resolveUpload: (value: { filePath: string; fileName: string }) => void = () => undefined;
+    const onUploadFile = vi.fn(
+      () =>
+        new Promise<{ filePath: string; fileName: string }>((resolve) => {
+          resolveUpload = resolve;
+        })
+    );
+
+    const { result } = renderHook(() =>
+      useResponseScenarioModal({ isOpen: true, editingRespScenario: null, onSubmit, onUploadFile })
+    );
+
+    const firstFile = new File(['img'], 'a.png', { type: 'image/png' });
+    const secondFile = new File(['img'], 'b.png', { type: 'image/png' });
+
+    let firstUpload: Promise<void> = Promise.resolve();
+    await act(async () => {
+      firstUpload = result.current.handleFileUpload(firstFile);
+      await result.current.handleFileUpload(secondFile);
+    });
+
+    expect(onUploadFile).toHaveBeenCalledTimes(1);
+    expect(onUploadFile).toHaveBeenCalledWith(firstFile);
+
+    await act(async () => {
+      resolveUpload({ filePath: '/uploads/a.png', fileName: 'a.png' });
+      await firstUpload;
+    });
+
+    expect(result.current.fileName).toBe('a.png');
+  });
+
   it('should handle drag and drop events', async () => {
     const onSubmit = vi.fn();
     const onUploadFile = vi.fn().mockResolvedValue({ filePath: '/uploads/b.png', fileName: 'b.png' });

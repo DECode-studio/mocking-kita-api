@@ -69,7 +69,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
   });
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !isUploading && onOpenChange(open)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50" />
         <Dialog.Content
@@ -85,6 +85,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
             <button
               type="button"
               onClick={() => onOpenChange(false)}
+              disabled={isUploading}
               className="text-slate-400 hover:text-slate-600 cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -284,6 +285,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                       </p>
                       <input
                         type="file"
+                        disabled={isUploading}
                         className="hidden"
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
@@ -340,14 +342,15 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="px-3.5 py-1.5 font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-md cursor-pointer"
+                disabled={isUploading}
+                className="px-3.5 py-1.5 font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {API_DETAIL_TEXT.BTN_CANCEL}
               </button>
               <button
                 id={API_DETAIL_SEMANTIC_ID.RESP_FORM_BTN_SUBMIT}
                 type="submit"
-                disabled={responseType === 'FILE' && !filePath && !isUploading}
+                disabled={isUploading || (responseType === 'FILE' && !filePath)}
                 className="px-4 py-1.5 font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {editingRespScenario ? API_DETAIL_TEXT.BTN_SAVE : API_DETAIL_TEXT.BTN_CREATE}
