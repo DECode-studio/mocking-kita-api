@@ -5,7 +5,7 @@ import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { useAuthStore } from '@/src/presentation/stores/authStore';
 import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
-import { canResetDatabase } from '@/src/core/constants/roles';
+import { canResetDatabase, canBackupRestoreDatabase } from '@/src/core/constants/roles';
 import { DatabaseResetUseCase } from '@/src/domain/database/usecase/database_reset_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
 import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
@@ -44,6 +44,8 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
   const [isImporting, setIsImporting] = useState(false);
 
   const canResetDb = canResetDatabase(session?.role);
+  const canBackupRestoreDb = canBackupRestoreDatabase(session?.role);
+
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -144,6 +146,15 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
   };
 
   const handleDownloadBackup = async (format: 'sql' | 'json' = 'sql') => {
+    if (!canBackupRestoreDb) {
+      addToast({
+        type: 'error',
+        title: 'Permission Denied',
+        description: 'Only Admin and Manager roles are allowed to backup the database.',
+      });
+      return;
+    }
+
     setIsDownloading(true);
     setDownloadFormat(format);
     await pageLoading.run(
@@ -198,6 +209,14 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
 
   const handleApplyImport = async () => {
     if (!selectedFile) return;
+    if (!canBackupRestoreDb) {
+      addToast({
+        type: 'error',
+        title: 'Permission Denied',
+        description: 'Only Admin and Manager roles are allowed to restore the database.',
+      });
+      return;
+    }
 
     setIsImporting(true);
     await pageLoading.run(
@@ -299,6 +318,7 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
     isResetting,
     handleReset,
     canResetDb,
+    canBackupRestoreDb,
     // Download Backup
     isDownloading,
     downloadFormat,

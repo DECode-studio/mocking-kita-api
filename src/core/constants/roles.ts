@@ -41,3 +41,8 @@ export function hasAdminAuthority(role?: string | null): boolean {
 export function canResetDatabase(role?: string | null): boolean {
   return hasAdminAuthority(role);
 }
+
+export function canBackupRestoreDatabase(role?: string | null): boolean {
+  return hasAdminAuthority(role);
+}
+

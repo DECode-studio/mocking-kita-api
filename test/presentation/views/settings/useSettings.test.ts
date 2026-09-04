@@ -122,4 +122,27 @@ describe('useSettings', () => {
     expect(mockDbResetUseCase.resetDatabase).not.toHaveBeenCalled();
     expect(useUIStore.getState().toasts[0].title).toBe('Permission Denied');
   });
+
+  it('should deny backup download and import when user role is not Manager or Admin', async () => {
+    useAuthStore.setState({ session: { username: 'dev', role: 'Backend Developer' } as any, isAuthenticated: true });
+
+    const { result } = renderHook(() => useSettings(mockDbResetUseCase));
+
+    expect(result.current.canBackupRestoreDb).toBe(false);
+
+    await act(async () => {
+      await result.current.handleDownloadBackup('sql');
+    });
+
+    expect(useUIStore.getState().toasts[0].title).toBe('Permission Denied');
+  });
+
+  it('should allow backup restore and reset for Manager role', async () => {
+    useAuthStore.setState({ session: { username: 'mgr', role: 'Manager' } as any, isAuthenticated: true });
+
+    const { result } = renderHook(() => useSettings(mockDbResetUseCase));
+
+    expect(result.current.canBackupRestoreDb).toBe(true);
+    expect(result.current.canResetDb).toBe(true);
+  });
 });

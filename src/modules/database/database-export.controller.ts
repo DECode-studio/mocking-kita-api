@@ -1,9 +1,16 @@
 import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { generateDatabaseSqlDump } from '@/src/core/db/sql_database_storage_helper';
+import { requireAdminSession } from '@/src/core/server/auth/session';
+import { jsonFail } from '@/src/core/server/http/responses';
 
 export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
+  const adminSession = await requireAdminSession();
+  if (!adminSession) {
+    return jsonFail('Forbidden', 403, 'FORBIDDEN');
+  }
+
   const { searchParams } = new URL(request.url);
   const format = searchParams.get('format') || 'sql';
 

@@ -2,11 +2,14 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { useAuthStore } from '@/src/presentation/stores/authStore';
 import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
+import { canBackupRestoreDatabase } from '@/src/core/constants/roles';
 import { getErrorMessage } from '@/src/core/utils/error';
 
 export function useImportExportDialog() {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
+  const { session } = useAuthStore();
   const pageLoading = usePageLoadingOverlay();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -15,7 +18,18 @@ export function useImportExportDialog() {
   const [fileName, setFileName] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const canBackupRestoreDb = canBackupRestoreDatabase(session?.role);
+
   const handleExport = async () => {
+    if (!canBackupRestoreDb) {
+      addToast({
+        type: 'error',
+        title: 'Permission Denied',
+        description: 'Only Admin and Manager roles are allowed to export the database.',
+      });
+      return;
+    }
+
     setIsProcessing(true);
     await pageLoading.run(
       {
@@ -71,6 +85,14 @@ export function useImportExportDialog() {
 
   const handleApplyImport = async () => {
     if (!selectedFile) return;
+    if (!canBackupRestoreDb) {
+      addToast({
+        type: 'error',
+        title: 'Permission Denied',
+        description: 'Only Admin and Manager roles are allowed to import database backups.',
+      });
+      return;
+    }
 
     setIsProcessing(true);
     await pageLoading.run(
@@ -127,6 +149,7 @@ export function useImportExportDialog() {
     fileError,
     fileName,
     isProcessing,
+    canBackupRestoreDb,
     handleExport,
     handleFileChange,
     handleApplyImport,

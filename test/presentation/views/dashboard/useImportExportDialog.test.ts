@@ -3,10 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useImportExportDialog } from '@/src/presentation/views/dashboard/hook/useImportExportDialog';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { useAuthStore } from '@/src/presentation/stores/authStore';
 
 describe('useImportExportDialog', () => {
   beforeEach(() => {
     useUIStore.setState({ isImportModalOpen: false, toasts: [] });
+    useAuthStore.setState({ session: { username: 'admin', role: 'ADMIN' } as any, isAuthenticated: true });
     vi.restoreAllMocks();
   });
 
@@ -94,5 +96,19 @@ describe('useImportExportDialog', () => {
     });
 
     expect(useUIStore.getState().toasts[0].title).toBe('Import Error');
+  });
+
+  it('should deny export and import for non-manager and non-admin roles', async () => {
+    useAuthStore.setState({ session: { username: 'qa', role: 'Quality Assurance' } as any, isAuthenticated: true });
+
+    const { result } = renderHook(() => useImportExportDialog());
+
+    expect(result.current.canBackupRestoreDb).toBe(false);
+
+    await act(async () => {
+      await result.current.handleExport();
+    });
+
+    expect(useUIStore.getState().toasts[0].title).toBe('Permission Denied');
   });
 });

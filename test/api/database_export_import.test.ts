@@ -52,6 +52,16 @@ describe('/api/database/export & /api/database/import routes', () => {
     expect(text).toBe('CREATE TABLE test;');
   });
 
+  it('EXPORT_GET should return 403 Forbidden when non-admin or no session', async () => {
+    (cookies as any).mockResolvedValue({
+      get: vi.fn().mockReturnValue(undefined),
+    });
+
+    const req = new Request('http://localhost/api/database/export');
+    const res = await EXPORT_GET(req);
+    expect(res.status).toBe(403);
+  });
+
   it('EXPORT_GET should return JSON format when requested', async () => {
     const mockDb = { version: '1.0.0', projects: [] };
     (readDatabase as any).mockResolvedValue(mockDb);

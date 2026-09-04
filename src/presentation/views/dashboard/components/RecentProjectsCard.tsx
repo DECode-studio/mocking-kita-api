@@ -56,7 +56,7 @@ export const RecentProjectsCard: React.FC<RecentProjectsCardProps> = ({
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[11px] font-mono text-slate-500">
-                  {project.apiCount} APIs • {project.environmentCount} Envs
+                  {project.apiCount} APIs
                 </span>
                 <StatusBadge status={project.status} />
               </div>

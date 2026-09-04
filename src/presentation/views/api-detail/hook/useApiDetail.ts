@@ -7,7 +7,6 @@ import { usePageLoadingOverlay } from '@/src/presentation/components/shared/Page
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { ApiDetailSnapshot, ApiDetailUseCase } from '@/src/domain/api/usecase/api_detail_usecase';
-import { useEnvironmentOverrideActions } from './useEnvironmentOverrideActions';
 import { useRequestScenarioActions } from './useRequestScenarioActions';
 import { useResponseScenarioActions } from './useResponseScenarioActions';
 
@@ -181,18 +180,6 @@ export function useApiDetail(
     updateResponseScenario,
   });
 
-  const {
-    environmentRows,
-    handleToggleEnabled,
-    handleUpdatePathOverride,
-  } = useEnvironmentOverrideActions({
-    apiId: apiId || '',
-    apiPath: api?.path || '',
-    projectEnvs,
-    apiEnvironments: detail.apiEnvironments,
-    upsertApiEnvironment,
-  });
-
   const toggleRequestScenarioStatus = async (id: string) => {
     const scenario = reqScenarios.find((item) => item.id === id);
     await pageLoading.run(
@@ -340,9 +327,6 @@ export function useApiDetail(
     handleSaveReqScenario,
     handleSaveRespScenario,
     handleCopyResolvedUrl,
-    environmentRows,
-    handleToggleEnabled,
-    handleUpdatePathOverride,
     createRequestScenario,
     updateRequestScenario,
     toggleApiCollectionStatus,

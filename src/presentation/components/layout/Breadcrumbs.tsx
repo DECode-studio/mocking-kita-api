@@ -24,9 +24,7 @@ export const Breadcrumbs: React.FC = () => {
       const projectId = pathSegments[1];
       breadcrumbItems.push({ label: 'Project Detail', href: ROUTES.PROJECT_DETAIL(projectId) });
 
-      if (pathSegments[2] === 'environments') {
-        breadcrumbItems.push({ label: 'Environments', href: ROUTES.PROJECT_ENVIRONMENTS(projectId) });
-      } else if (pathSegments[2] === 'apis') {
+      if (pathSegments[2] === 'apis') {
         breadcrumbItems.push({ label: 'APIs', href: ROUTES.PROJECT_APIS(projectId) });
 
         if (pathSegments[3]) {

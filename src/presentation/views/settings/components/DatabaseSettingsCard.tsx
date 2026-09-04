@@ -12,6 +12,7 @@ interface DatabaseSettingsCardProps {
   onResetConfirmClick: () => void;
   isResetting?: boolean;
   canResetDb?: boolean;
+  canBackupRestoreDb?: boolean;
   onImportExportClick?: () => void;
 }
 
@@ -23,6 +24,7 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
   onResetConfirmClick,
   isResetting = false,
   canResetDb = false,
+  canBackupRestoreDb = false,
 }) => {
   return (
     <div
@@ -81,6 +83,13 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
           </p>
         </div>
 
+        {!canBackupRestoreDb && (
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>{SETTINGS_TEXT.RESTRICTED_BACKUP_RESTORE_DESC}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {/* Download Backup Card */}
           <div className="p-4 bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 rounded-xl flex flex-col justify-between space-y-4 hover:border-indigo-200 dark:hover:border-indigo-900/60 transition-colors">
@@ -103,8 +112,8 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
                 id={SETTINGS_SEMANTIC_ID.DOWNLOAD_BACKUP_BTN}
                 type="button"
                 onClick={() => onDownloadBackupClick('sql')}
-                disabled={isDownloading}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] disabled:bg-indigo-400 dark:disabled:bg-indigo-950 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all cursor-pointer"
+                disabled={!canBackupRestoreDb || isDownloading}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] disabled:bg-indigo-400 dark:disabled:bg-indigo-950 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 {isDownloading && downloadFormat === 'sql' ? (
                   <>
@@ -122,7 +131,7 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
               <button
                 type="button"
                 onClick={() => onDownloadBackupClick('json')}
-                disabled={isDownloading}
+                disabled={!canBackupRestoreDb || isDownloading}
                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all cursor-pointer"
                 title="Download JSON Snapshot backup"
               >
@@ -156,7 +165,8 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
                 id={SETTINGS_SEMANTIC_ID.IMPORT_BACKUP_BTN}
                 type="button"
                 onClick={onImportBackupClick}
-                className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800/80 rounded-xl shadow-xs transition-all cursor-pointer active:scale-[0.99]"
+                disabled={!canBackupRestoreDb}
+                className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/40 border border-purple-200 dark:border-purple-800/80 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all cursor-pointer active:scale-[0.99]"
               >
                 <Upload className="w-3.5 h-3.5" />
                 <span>{SETTINGS_TEXT.IMPORT_BACKUP_BTN}</span>

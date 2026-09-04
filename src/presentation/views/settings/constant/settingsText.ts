@@ -12,6 +12,8 @@ export const SETTINGS_TEXT = {
   DATABASE_STATUS_ACTIVE: 'Connected & Ready',
   DATABASE_BACKUP_SECTION: 'Backup & Restore Database',
   DATABASE_BACKUP_SECTION_DESC: 'Export native PostgreSQL SQL dumps or JSON snapshots of your mock configurations, or restore from backup files.',
+  RESTRICTED_BACKUP_RESTORE_DESC: 'Backup & restore operations are restricted to Manager & Administrator roles.',
+
   DOWNLOAD_BACKUP_TITLE: 'Download Database Backup',
   DOWNLOAD_BACKUP_DESC: 'Export and download native PostgreSQL SQL dump (.sql) or portable JSON (.json) containing all projects, endpoints, and scenarios.',
   DOWNLOAD_BACKUP_SQL_BTN: 'Download SQL (.sql)',
