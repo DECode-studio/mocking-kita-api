@@ -55,18 +55,7 @@ export async function handleProjectDatabaseAction(body: DatabaseActionBody, cont
     }
     case 'restore': {
       const { id } = IdPayloadSchema.parse(body.payload);
-      const before = await getProjectById(id);
       await restoreProject(id);
-      const after = await getProjectById(id);
-      await logChange({
-        action: 'RESTORE',
-        entityType: 'project',
-        entityId: id,
-        projectId: id,
-        beforeState: before,
-        afterState: after,
-        description: `Restored project '${before?.name || id}'`,
-      });
       return context.respondVoid();
     }
     case 'hardDelete': {
