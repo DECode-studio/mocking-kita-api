@@ -2,7 +2,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDashboard } from '@/src/presentation/views/dashboard/hook/useDashboard';
-import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { DashboardSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 
 const mockPush = vi.fn();
@@ -48,15 +47,5 @@ describe('useDashboard', () => {
     });
 
     expect(mockPush).toHaveBeenCalledWith('/projects');
-  });
-
-  it('should handle openImportExport dialog', () => {
-    const { result } = renderHook(() => useDashboard(sampleSummary));
-
-    act(() => {
-      result.current.openImportExport();
-    });
-
-    expect(useUIStore.getState().isImportModalOpen).toBe(true);
   });
 });

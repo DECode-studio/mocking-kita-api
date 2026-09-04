@@ -53,7 +53,7 @@ describe('OpenAPI Export & Import API routes', () => {
 
   it('EXPORT_GET should return OpenAPI JSON spec Attachment', async () => {
     const mockSpec = { openapi: '3.0.0', info: { title: 'Test' } };
-    (exportProjectOpenApi as any).mockReturnValue(mockSpec);
+    (exportProjectOpenApi as any).mockResolvedValue(mockSpec);
 
     const req = new Request('http://localhost/api/projects/p1/export-openapi');
     const params = Promise.resolve({ id: 'p1' });
