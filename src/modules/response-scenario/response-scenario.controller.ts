@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { fail, ok, okNoContent } from '@/src/core/utils/api-response';
 import { jsonUnknownError } from '@/src/core/server/http/responses';
 import { generateId } from '@/src/core/utils/uuid';
+import { logChange } from '@/src/core/db/change_log_helper';
+import { getApiById } from '@/src/modules/api';
+import { getRequestScenarioById } from '@/src/modules/request-scenario';
 import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
 import { createResponseScenario, getResponseScenarioById, getResponseScenariosByRequestScenarioId, softDeleteResponseScenario, updateResponseScenario } from './response-scenario.repository';
 
@@ -30,7 +33,18 @@ export async function POST(request: Request) {
   try {
     const input = ObjectSchema.parse(await request.json());
     const now = new Date().toISOString();
-    const scenario = await createResponseScenario({ ...input, id: generateId(), createdAt: now, updatedAt: now } as never);
+    const id = generateId();
+    const scenario = await createResponseScenario({ ...input, id, createdAt: now, updatedAt: now } as never);
+    const requestScenario = await getRequestScenarioById(scenario.requestScenarioId);
+    const api = requestScenario ? await getApiById(requestScenario.apiId) : null;
+    await logChange({
+      action: 'CREATE',
+      entityType: 'response_scenario',
+      entityId: id,
+      projectId: api?.projectId,
+      afterState: scenario,
+      description: `Created response scenario '${scenario.name}' (HTTP ${scenario.statusCode})`,
+    });
     clearInternalProxyCache();
     return ok(scenario);
   } catch (error) {
@@ -43,7 +57,19 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   try {
     const input = ObjectSchema.parse(await request.json());
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getResponseScenarioById(id);
     const scenario = await updateResponseScenario(id, input);
+    const requestScenario = await getRequestScenarioById(scenario.requestScenarioId);
+    const api = requestScenario ? await getApiById(requestScenario.apiId) : null;
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'response_scenario',
+      entityId: id,
+      projectId: api?.projectId,
+      beforeState: before,
+      afterState: scenario,
+      description: `Updated response scenario '${scenario.name}' (HTTP ${scenario.statusCode})`,
+    });
     clearInternalProxyCache();
     return ok(scenario);
   } catch (error) {
@@ -55,7 +81,20 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getResponseScenarioById(id);
     await softDeleteResponseScenario(id);
+    const after = await getResponseScenarioById(id);
+    const requestScenario = before ? await getRequestScenarioById(before.requestScenarioId) : null;
+    const api = requestScenario ? await getApiById(requestScenario.apiId) : null;
+    await logChange({
+      action: 'DELETE',
+      entityType: 'response_scenario',
+      entityId: id,
+      projectId: api?.projectId,
+      beforeState: before,
+      afterState: after,
+      description: `Soft-deleted response scenario '${before?.name || id}'`,
+    });
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {

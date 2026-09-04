@@ -1,4 +1,4 @@
-import { createApi, getApiById, softDeleteApi, updateApi, upsertApiEnvironment } from '@/src/modules/api';
+import { createApi, getApiById, getApiEnvironment, softDeleteApi, updateApi, upsertApiEnvironment } from '@/src/modules/api';
 import { createRequestScenario, getRequestScenarioById, softDeleteRequestScenario, updateRequestScenario } from '@/src/modules/request-scenario';
 import { createResponseScenario, getResponseScenarioById, softDeleteResponseScenario, updateResponseScenario } from '@/src/modules/response-scenario';
 import { generateId } from '@/src/core/utils/uuid';
@@ -54,7 +54,23 @@ export async function handleApiDatabaseAction(body: DatabaseActionBody, context:
       return context.respondVoid();
     }
     case 'upsertApiEnv':
-      return context.respond(await upsertApiEnvironment(body.payload as never));
+      {
+        const input = ObjectPayloadSchema.parse(body.payload);
+        const before = await getApiEnvironment(input.apiId as string, input.environmentId as string);
+        const result = await upsertApiEnvironment(input as never);
+        const api = await getApiById(result.apiId);
+        await logChange({
+          action: before ? 'UPDATE' : 'CREATE',
+          entityType: 'api',
+          entityId: result.apiId,
+          projectId: api?.projectId,
+          beforeState: before,
+          afterState: result,
+          metadata: { apiEnvironment: true, environmentId: result.environmentId },
+          description: `${before ? 'Updated' : 'Created'} API environment override for '${api?.name || result.apiId}'`,
+        });
+        return context.respond(result);
+      }
     default:
       return null;
   }

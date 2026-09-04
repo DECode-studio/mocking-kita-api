@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { fail, ok, okNoContent } from '@/src/core/utils/api-response';
 import { jsonUnknownError } from '@/src/core/server/http/responses';
 import { generateId } from '@/src/core/utils/uuid';
+import { logChange } from '@/src/core/db/change_log_helper';
 import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
 import { createProject, getAllProjects, getProjectById, hardDeleteProject, restoreProject, softDeleteProject, updateProject } from './project.repository';
 
@@ -27,7 +28,16 @@ export async function POST(request: Request) {
   try {
     const input = ObjectSchema.parse(await request.json());
     const now = new Date().toISOString();
-    const project = await createProject({ ...input, id: generateId(), createdAt: now, updatedAt: now } as never);
+    const id = generateId();
+    const project = await createProject({ ...input, id, createdAt: now, updatedAt: now } as never);
+    await logChange({
+      action: 'CREATE',
+      entityType: 'project',
+      entityId: id,
+      projectId: id,
+      afterState: project,
+      description: `Created project '${project.name}'`,
+    });
     clearInternalProxyCache();
     return ok(project);
   } catch (error) {
@@ -41,7 +51,18 @@ export async function POST(request: Request) {
 export async function PUT(request: Request, context: RouteContext) {
   try {
     const input = ObjectSchema.parse(await request.json());
-    const project = await updateProject(await getId(context), input);
+    const id = await getId(context);
+    const before = await getProjectById(id);
+    const project = await updateProject(id, input);
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'project',
+      entityId: id,
+      projectId: id,
+      beforeState: before,
+      afterState: project,
+      description: `Updated project '${project.name}'`,
+    });
     clearInternalProxyCache();
     return ok(project);
   } catch (error) {
@@ -54,7 +75,19 @@ export async function PUT(request: Request, context: RouteContext) {
 
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
-    await softDeleteProject(await getId(context));
+    const id = await getId(context);
+    const before = await getProjectById(id);
+    await softDeleteProject(id);
+    const after = await getProjectById(id);
+    await logChange({
+      action: 'DELETE',
+      entityType: 'project',
+      entityId: id,
+      projectId: id,
+      beforeState: before,
+      afterState: after,
+      description: `Soft-deleted project '${before?.name || id}'`,
+    });
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {
@@ -64,7 +97,8 @@ export async function DELETE(_request: Request, context: RouteContext) {
 
 export async function restoreProjectRoute(_request: Request, context: RouteContext) {
   try {
-    await restoreProject(await getId(context));
+    const id = await getId(context);
+    await restoreProject(id);
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {
@@ -74,7 +108,19 @@ export async function restoreProjectRoute(_request: Request, context: RouteConte
 
 export async function hardDeleteProjectRoute(_request: Request, context: RouteContext) {
   try {
-    await hardDeleteProject(await getId(context));
+    const id = await getId(context);
+    const before = await getProjectById(id);
+    await hardDeleteProject(id);
+    await logChange({
+      action: 'DELETE',
+      entityType: 'project',
+      entityId: id,
+      projectId: id,
+      beforeState: before,
+      afterState: null,
+      metadata: { hardDelete: true },
+      description: `Permanently deleted project '${before?.name || id}'`,
+    });
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {

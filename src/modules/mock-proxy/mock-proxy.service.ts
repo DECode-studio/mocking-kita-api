@@ -8,6 +8,7 @@ import { ApiEnvironment } from '@/src/domain/api/entity/api_environment';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
 import { MatchType, RequestBodyType } from '@/src/core/utils/types';
+import { getUploadDirectory } from '@/src/modules/upload/upload.paths';
 import { getProxyConfigCache, responseCache, setProxyConfigCache, throttleStates } from './mock-proxy.cache';
 
 const INTERNAL_ROUTE_PREFIXES = [
@@ -60,7 +61,6 @@ const THROTTLE_WINDOW_MS = 10_000;
 const THROTTLE_REFILL_PER_MS = THROTTLE_CAPACITY / THROTTLE_WINDOW_MS;
 const MAX_REGEX_PATTERN_LENGTH = 500;
 const MAX_DELAY_MS = 30_000;
-const UPLOADS_DIR = path.resolve(process.cwd(), '.data/uploads');
 const BLOCKED_RESPONSE_HEADERS = new Set([
   'connection',
   'content-length',
@@ -519,18 +519,22 @@ function sanitizeHeaderFileName(fileName: string): string {
 }
 
 function resolveSafeUploadPath(filePath: string): string | null {
-  if (!filePath || path.isAbsolute(filePath) || filePath.includes('\0')) {
+  if (!filePath || filePath.includes('\0')) {
     return null;
   }
 
   const resolvedPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), filePath);
-  const relativeToUploads = path.relative(UPLOADS_DIR, resolvedPath);
+  const relativeToUploads = path.relative(getUploadDirectory(), resolvedPath);
   if (relativeToUploads.startsWith('..') || path.isAbsolute(relativeToUploads)) {
     return null;
   }
 
   return resolvedPath;
 }
+
+export const __mockProxyTestUtils = {
+  resolveSafeUploadPath,
+};
 
 
 function matchHeaders(expectedHeaders: unknown, actualHeaders: Record<string, string>): boolean {

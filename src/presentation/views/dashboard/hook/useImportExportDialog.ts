@@ -2,36 +2,50 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
 import { getErrorMessage } from '@/src/core/utils/error';
 
 export function useImportExportDialog() {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
+  const pageLoading = usePageLoadingOverlay();
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importMode, setImportMode] = useState<'replace' | 'merge'>('merge');
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleExport = async () => {
-    try {
-      const link = document.createElement('a');
-      link.href = '/api/database/export';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    setIsProcessing(true);
+    await pageLoading.run(
+      {
+        title: 'Mengunduh backup JSON',
+        description: 'Konfigurasi mock API sedang disiapkan sebagai file cadangan.',
+      },
+      async () => {
+        try {
+          const link = document.createElement('a');
+          link.href = '/api/database/export';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
 
-      addToast({
-        type: 'success',
-        title: 'Database Exported',
-        description: 'Mock API configuration exported successfully as JSON file.',
-      });
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Export Failed',
-        description: getErrorMessage(error, 'Could not export database'),
-      });
-    }
+          addToast({
+            type: 'success',
+            title: 'Database Exported',
+            description: 'Mock API configuration exported successfully as JSON file.',
+          });
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Export Failed',
+            description: getErrorMessage(error, 'Could not export database'),
+          });
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    );
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -58,37 +72,50 @@ export function useImportExportDialog() {
   const handleApplyImport = async () => {
     if (!selectedFile) return;
 
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('mode', importMode);
+    setIsProcessing(true);
+    await pageLoading.run(
+      {
+        title: importMode === 'replace' ? 'Mengganti konfigurasi dari JSON' : 'Menggabungkan konfigurasi dari JSON',
+        description: importMode === 'replace'
+          ? 'Data lama akan diganti dengan isi file JSON yang dipilih.'
+          : 'Data dari file JSON sedang ditambahkan ke konfigurasi yang ada.',
+      },
+      async () => {
+        try {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          formData.append('mode', importMode);
 
-      const response = await fetch('/api/database/import', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
+          const response = await fetch('/api/database/import', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
 
-      const data = (await response.json()) as { success: boolean; error?: string };
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to import database');
+          const data = (await response.json()) as { success: boolean; error?: string };
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Failed to import database');
+          }
+
+          addToast({
+            type: 'success',
+            title: 'Import Successful',
+            description: `Successfully ${importMode === 'replace' ? 'replaced' : 'merged'} database configurations.`,
+          });
+          setSelectedFile(null);
+          setFileName('');
+          setImportModalOpen(false);
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Import Error',
+            description: getErrorMessage(error, 'Failed to import JSON configuration.'),
+          });
+        } finally {
+          setIsProcessing(false);
+        }
       }
-
-      addToast({
-        type: 'success',
-        title: 'Import Successful',
-        description: `Successfully ${importMode === 'replace' ? 'replaced' : 'merged'} database configurations.`,
-      });
-      setSelectedFile(null);
-      setFileName('');
-      setImportModalOpen(false);
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Import Error',
-        description: getErrorMessage(error, 'Failed to import JSON configuration.'),
-      });
-    }
+    );
   };
 
   return {
@@ -99,6 +126,7 @@ export function useImportExportDialog() {
     setImportMode,
     fileError,
     fileName,
+    isProcessing,
     handleExport,
     handleFileChange,
     handleApplyImport,

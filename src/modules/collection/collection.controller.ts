@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { fail, ok, okNoContent } from '@/src/core/utils/api-response';
 import { jsonUnknownError } from '@/src/core/server/http/responses';
 import { generateId } from '@/src/core/utils/uuid';
+import { logChange } from '@/src/core/db/change_log_helper';
 import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
 import { createCollection, getCollectionById, getCollectionsByProjectId, softDeleteCollection, updateCollection } from './collection.repository';
 
@@ -31,7 +32,16 @@ export async function POST(request: Request) {
   try {
     const input = ObjectSchema.parse(await request.json());
     const now = new Date().toISOString();
-    const collection = await createCollection({ ...input, id: generateId(), createdAt: now, updatedAt: now } as never);
+    const id = generateId();
+    const collection = await createCollection({ ...input, id, createdAt: now, updatedAt: now } as never);
+    await logChange({
+      action: 'CREATE',
+      entityType: 'collection',
+      entityId: id,
+      projectId: collection.projectId,
+      afterState: collection,
+      description: `Created collection '${collection.name}'`,
+    });
     clearInternalProxyCache();
     return ok(collection);
   } catch (error) {
@@ -44,7 +54,17 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   try {
     const input = ObjectSchema.parse(await request.json());
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getCollectionById(id);
     const collection = await updateCollection(id, input);
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'collection',
+      entityId: id,
+      projectId: collection.projectId,
+      beforeState: before,
+      afterState: collection,
+      description: `Updated collection '${collection.name}'`,
+    });
     clearInternalProxyCache();
     return ok(collection);
   } catch (error) {
@@ -56,7 +76,18 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getCollectionById(id);
     await softDeleteCollection(id);
+    const after = await getCollectionById(id);
+    await logChange({
+      action: 'DELETE',
+      entityType: 'collection',
+      entityId: id,
+      projectId: before?.projectId,
+      beforeState: before,
+      afterState: after,
+      description: `Soft-deleted collection '${before?.name || id}'`,
+    });
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {

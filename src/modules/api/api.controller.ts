@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { fail, ok, okNoContent } from '@/src/core/utils/api-response';
 import { jsonUnknownError } from '@/src/core/server/http/responses';
 import { generateId } from '@/src/core/utils/uuid';
+import { logChange } from '@/src/core/db/change_log_helper';
 import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
 import { createApi, getAllApis, getApiById, getApiEnvironment, getApiEnvironmentsByApiId, getApisByProjectId, softDeleteApi, updateApi, upsertApiEnvironment } from './index';
 
@@ -35,7 +36,16 @@ export async function POST(request: Request) {
   try {
     const input = ObjectSchema.parse(await request.json());
     const now = new Date().toISOString();
-    const api = await createApi({ ...input, id: generateId(), createdAt: now, updatedAt: now } as never);
+    const id = generateId();
+    const api = await createApi({ ...input, id, createdAt: now, updatedAt: now } as never);
+    await logChange({
+      action: 'CREATE',
+      entityType: 'api',
+      entityId: id,
+      projectId: api.projectId,
+      afterState: api,
+      description: `Created API '${api.name}' (${api.methodRequest} ${api.path})`,
+    });
     clearInternalProxyCache();
     return ok(api);
   } catch (error) {
@@ -48,7 +58,17 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   try {
     const input = ObjectSchema.parse(await request.json());
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getApiById(id);
     const api = await updateApi(id, input);
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'api',
+      entityId: id,
+      projectId: api.projectId,
+      beforeState: before,
+      afterState: api,
+      description: `Updated API '${api.name}' (${api.methodRequest} ${api.path})`,
+    });
     clearInternalProxyCache();
     return ok(api);
   } catch (error) {
@@ -60,7 +80,18 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getApiById(id);
     await softDeleteApi(id);
+    const after = await getApiById(id);
+    await logChange({
+      action: 'DELETE',
+      entityType: 'api',
+      entityId: id,
+      projectId: before?.projectId,
+      beforeState: before,
+      afterState: after,
+      description: `Soft-deleted API '${before?.name || id}'`,
+    });
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {
@@ -89,7 +120,19 @@ export async function getApiEnvironmentRoute(_request: Request, context: { param
 export async function upsertApiEnvironmentRoute(request: Request) {
   try {
     const input = ObjectSchema.parse(await request.json());
+    const before = await getApiEnvironment(input.apiId as string, input.environmentId as string);
     const apiEnvironment = await upsertApiEnvironment(input as never);
+    const api = await getApiById(apiEnvironment.apiId);
+    await logChange({
+      action: before ? 'UPDATE' : 'CREATE',
+      entityType: 'api',
+      entityId: apiEnvironment.apiId,
+      projectId: api?.projectId,
+      beforeState: before,
+      afterState: apiEnvironment,
+      metadata: { apiEnvironment: true, environmentId: apiEnvironment.environmentId },
+      description: `${before ? 'Updated' : 'Created'} API environment override for '${api?.name || apiEnvironment.apiId}'`,
+    });
     clearInternalProxyCache();
     return ok(apiEnvironment);
   } catch (error) {

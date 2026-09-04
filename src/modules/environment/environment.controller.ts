@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { fail, ok, okNoContent } from '@/src/core/utils/api-response';
 import { jsonUnknownError } from '@/src/core/server/http/responses';
 import { generateId } from '@/src/core/utils/uuid';
+import { logChange } from '@/src/core/db/change_log_helper';
 import { clearInternalProxyCache } from '@/src/modules/mock-proxy/mock-proxy.cache';
 import { createEnvironment, getAllEnvironments, getEnvironmentById, getEnvironmentsByProjectId, softDeleteEnvironment, updateEnvironment } from './environment.repository';
 
@@ -31,7 +32,16 @@ export async function POST(request: Request) {
   try {
     const input = ObjectSchema.parse(await request.json());
     const now = new Date().toISOString();
-    const environment = await createEnvironment({ ...input, id: generateId(), createdAt: now, updatedAt: now } as never);
+    const id = generateId();
+    const environment = await createEnvironment({ ...input, id, createdAt: now, updatedAt: now } as never);
+    await logChange({
+      action: 'CREATE',
+      entityType: 'environment',
+      entityId: id,
+      projectId: environment.projectId,
+      afterState: environment,
+      description: `Created environment '${environment.name}'`,
+    });
     clearInternalProxyCache();
     return ok(environment);
   } catch (error) {
@@ -44,7 +54,17 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   try {
     const input = ObjectSchema.parse(await request.json());
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getEnvironmentById(id);
     const environment = await updateEnvironment(id, input);
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'environment',
+      entityId: id,
+      projectId: environment.projectId,
+      beforeState: before,
+      afterState: environment,
+      description: `Updated environment '${environment.name}'`,
+    });
     clearInternalProxyCache();
     return ok(environment);
   } catch (error) {
@@ -56,7 +76,18 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const { id } = IdParamsSchema.parse(await context.params);
+    const before = await getEnvironmentById(id);
     await softDeleteEnvironment(id);
+    const after = await getEnvironmentById(id);
+    await logChange({
+      action: 'DELETE',
+      entityType: 'environment',
+      entityId: id,
+      projectId: before?.projectId,
+      beforeState: before,
+      afterState: after,
+      description: `Soft-deleted environment '${before?.name || id}'`,
+    });
     clearInternalProxyCache();
     return okNoContent();
   } catch (error) {

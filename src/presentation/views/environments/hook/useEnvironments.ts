@@ -5,9 +5,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
 import { Environment } from '@/src/domain/environment/entity/environment';
 import { Project } from '@/src/domain/project/entity/project';
 import { EnvironmentUseCase } from '@/src/domain/environment/usecase/environment_usecase';
+import { getErrorMessage } from '@/src/core/utils/error';
 
 const environmentSchema = z.object({
   name: z.string().min(2, 'Environment name is required'),
@@ -26,6 +28,7 @@ export function useEnvironments(
   initialProject: Project | null = null
 ) {
   const { addToast } = useUIStore();
+  const pageLoading = usePageLoadingOverlay();
 
   const [environments, setEnvironments] = useState<Environment[]>(initialEnvironments);
   const [project, setProject] = useState<Project | null>(initialProject);
@@ -83,8 +86,19 @@ export function useEnvironments(
   };
 
   const toggleEnvironmentStatus = async (id: string) => {
-    await environmentUseCase.toggleStatus(id);
-    await reloadEnvironments();
+    const environment = environments.find((item) => item.id === id);
+    await pageLoading.run(
+      {
+        title: `${environment?.status ? 'Menonaktifkan' : 'Mengaktifkan'} environment${environment ? ` "${environment.name}"` : ''}`,
+        description: environment?.status
+          ? 'URL environment ini sementara tidak akan digunakan.'
+          : 'URL environment ini akan tersedia kembali untuk endpoint.',
+      },
+      async () => {
+        await environmentUseCase.toggleStatus(id);
+        await reloadEnvironments();
+      }
+    );
   };
 
   const onSubmitForm = async (data: EnvironmentFormValues) => {
@@ -100,32 +114,42 @@ export function useEnvironments(
       return;
     }
 
-    try {
-      if (editingEnv) {
-        await environmentUseCase.update(editingEnv.id, {
-          name: data.name,
-          environmentType: data.environmentType,
-          publicBaseUrl: data.publicBaseUrl,
-          originBaseUrl: data.originBaseUrl || undefined,
-          status: data.status,
-        });
-        addToast({ type: 'success', title: 'Environment Updated', description: `Updated ${data.name}` });
-      } else {
-        await environmentUseCase.create({
-          projectId: activeProjectId,
-          name: data.name,
-          environmentType: data.environmentType,
-          publicBaseUrl: data.publicBaseUrl,
-          originBaseUrl: data.originBaseUrl || undefined,
-          status: data.status,
-        });
-        addToast({ type: 'success', title: 'Environment Added', description: `Added ${data.name}` });
+    await pageLoading.run(
+      {
+        title: editingEnv ? `Menyimpan environment "${data.name}"` : `Membuat environment "${data.name}"`,
+        description: editingEnv
+          ? 'Nama, tipe, URL publik, dan URL origin sedang diperbarui.'
+          : 'Environment baru sedang ditambahkan ke project ini.',
+      },
+      async () => {
+        try {
+          if (editingEnv) {
+            await environmentUseCase.update(editingEnv.id, {
+              name: data.name,
+              environmentType: data.environmentType,
+              publicBaseUrl: data.publicBaseUrl,
+              originBaseUrl: data.originBaseUrl || undefined,
+              status: data.status,
+            });
+            addToast({ type: 'success', title: 'Environment Updated', description: `Updated ${data.name}` });
+          } else {
+            await environmentUseCase.create({
+              projectId: activeProjectId,
+              name: data.name,
+              environmentType: data.environmentType,
+              publicBaseUrl: data.publicBaseUrl,
+              originBaseUrl: data.originBaseUrl || undefined,
+              status: data.status,
+            });
+            addToast({ type: 'success', title: 'Environment Added', description: `Added ${data.name}` });
+          }
+          await reloadEnvironments();
+          setIsFormOpen(false);
+        } catch (err: any) {
+          addToast({ type: 'error', title: 'Error', description: err?.message || 'Failed to save environment' });
+        }
       }
-      await reloadEnvironments();
-      setIsFormOpen(false);
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Error', description: err?.message || 'Failed to save environment' });
-    }
+    );
   };
 
   const handleCopyUrl = (url: string, fieldId: string) => {
@@ -137,10 +161,24 @@ export function useEnvironments(
 
   const handleDelete = async () => {
     if (!deletingEnvId) return;
-    await environmentUseCase.softDelete(deletingEnvId);
-    await reloadEnvironments();
-    addToast({ type: 'success', title: 'Environment Deleted', description: 'Environment removed.' });
-    setDeletingEnvId(null);
+    const environment = environments.find((item) => item.id === deletingEnvId);
+    await pageLoading.run(
+      {
+        title: `Menghapus environment${environment ? ` "${environment.name}"` : ''}`,
+        description: 'Konfigurasi URL environment sedang dihapus dari project.',
+      },
+      async () => {
+        try {
+          await environmentUseCase.softDelete(deletingEnvId);
+          await reloadEnvironments();
+          addToast({ type: 'success', title: 'Environment Deleted', description: 'Environment removed.' });
+        } catch (error: unknown) {
+          addToast({ type: 'error', title: 'Delete Failed', description: getErrorMessage(error) });
+        } finally {
+          setDeletingEnvId(null);
+        }
+      }
+    );
   };
 
   return {

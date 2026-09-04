@@ -14,13 +14,14 @@ export const ImportExportDialog: React.FC = () => {
     setImportMode,
     fileError,
     fileName,
+    isProcessing,
     handleExport,
     handleFileChange,
     handleApplyImport,
   } = useImportExportDialog();
 
   return (
-    <Dialog.Root open={isImportModalOpen} onOpenChange={setImportModalOpen}>
+    <Dialog.Root open={isImportModalOpen} onOpenChange={(open) => !isProcessing && setImportModalOpen(open)}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 animate-in fade-in duration-200" />
         <Dialog.Content id={DASHBOARD_SEMANTIC_ID.IMPORT_EXPORT_DIALOG} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl z-50 space-y-5 focus:outline-none animate-in zoom-in-95 duration-200">
@@ -33,6 +34,7 @@ export const ImportExportDialog: React.FC = () => {
             </div>
             <button
               onClick={() => setImportModalOpen(false)}
+              disabled={isProcessing}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg"
             >
               <X className="w-4 h-4" />
@@ -51,6 +53,7 @@ export const ImportExportDialog: React.FC = () => {
                 id={DASHBOARD_SEMANTIC_ID.EXPORT_BTN}
                 type="button"
                 onClick={handleExport}
+                disabled={isProcessing}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-xs transition-colors shrink-0"
               >
                 <Download className="w-3.5 h-3.5" />
@@ -70,7 +73,7 @@ export const ImportExportDialog: React.FC = () => {
                 {fileName ? fileName : DASHBOARD_TEXT.IMPORT_DROP_LABEL}
               </span>
               <span className="text-[11px] text-slate-400 mt-0.5">{DASHBOARD_TEXT.IMPORT_SUPPORTS_LABEL}</span>
-              <input id={DASHBOARD_SEMANTIC_ID.IMPORT_FILE_INPUT} type="file" accept=".json" onChange={handleFileChange} className="hidden" />
+              <input id={DASHBOARD_SEMANTIC_ID.IMPORT_FILE_INPUT} type="file" accept=".json" onChange={handleFileChange} disabled={isProcessing} className="hidden" />
             </label>
 
             {fileError && (
@@ -88,6 +91,7 @@ export const ImportExportDialog: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setImportMode('merge')}
+                  disabled={isProcessing}
                   className={`p-2 rounded-lg border text-left text-xs transition-colors ${
                     importMode === 'merge'
                       ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
@@ -100,6 +104,7 @@ export const ImportExportDialog: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setImportMode('replace')}
+                  disabled={isProcessing}
                   className={`p-2 rounded-lg border text-left text-xs transition-colors ${
                     importMode === 'replace'
                       ? 'border-indigo-600 bg-indigo-100/50 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 font-semibold'
@@ -116,7 +121,7 @@ export const ImportExportDialog: React.FC = () => {
               id={DASHBOARD_SEMANTIC_ID.APPLY_IMPORT_BTN}
               type="button"
               onClick={handleApplyImport}
-              disabled={!fileName || !!fileError}
+              disabled={isProcessing || !fileName || !!fileError}
               className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed rounded-md transition-colors"
             >
               {DASHBOARD_TEXT.APPLY_IMPORT_BTN}

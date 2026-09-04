@@ -16,6 +16,8 @@ export interface NotificationPayload {
 
 const ICONS = {
   PROJECT: 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png',
+  COLLECTION: 'https://cdn-icons-png.flaticon.com/512/3767/3767084.png',
+  ENVIRONMENT: 'https://cdn-icons-png.flaticon.com/512/5968/5968705.png',
   API: 'https://cdn-icons-png.flaticon.com/512/1006/1006771.png',
   REQUEST_SCENARIO: 'https://cdn-icons-png.flaticon.com/512/2164/2164832.png',
   RESPONSE_JSON: 'https://cdn-icons-png.flaticon.com/512/136/136525.png',
@@ -43,8 +45,7 @@ function isImageResponse(state: any): boolean {
 
 /**
  * Sends a pure Card v2 notification (without chat balloon container) to Google Space webhook when target operations occur:
- * - CRUD on Project, Api, Request Scenario, Response Scenario
- * - Import OpenAPI / Swagger JSON
+ * - Create, update, and delete on Project, Collection, Environment, Api, Request Scenario, Response Scenario
  */
 export async function sendGoogleSpaceNotification(payload: NotificationPayload): Promise<void> {
   const webhookUrl = ENV.GOOGLE_SPACE_WEBHOOK_URL;
@@ -55,43 +56,31 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   const { action, entityType, projectId, userId, operator, description, beforeState, afterState, metadata } = payload;
 
   // Filter triggers:
-  // 1. Every CRUD on Project, Api, Response (response_scenario), Request (request_scenario)
-  // 2. OpenAPI / Swagger JSON import
-  const targetEntities = ['project', 'api', 'request_scenario', 'response_scenario'];
-  const isTargetEntity = targetEntities.includes(entityType);
-  const isOpenApiImport =
-    action === 'IMPORT' &&
-    (metadata?.openApiImport ||
-      description?.toLowerCase().includes('openapi') ||
-      description?.toLowerCase().includes('swagger'));
+  // Only data create, edit, and delete operations should broadcast.
+  if (!['CREATE', 'UPDATE', 'DELETE'].includes(action)) {
+    return;
+  }
 
-  if (!isTargetEntity && !isOpenApiImport) {
+  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario'];
+  const isTargetEntity = targetEntities.includes(entityType);
+
+  if (!isTargetEntity) {
     return;
   }
 
   // Determine Action Emoji, Title and Accent Color
   let actionTitle = action as string;
 
-  if (isOpenApiImport) {
-    actionTitle = 'IMPORT OPENAPI';
-  } else {
-    switch (action) {
-      case 'CREATE':
-        actionTitle = 'CREATE';
-        break;
-      case 'UPDATE':
-        actionTitle = 'UPDATE';
-        break;
-      case 'DELETE':
-        actionTitle = 'DELETE';
-        break;
-      case 'RESTORE':
-        actionTitle = 'RESTORE';
-        break;
-      case 'IMPORT':
-        actionTitle = 'IMPORT';
-        break;
-    }
+  switch (action) {
+    case 'CREATE':
+      actionTitle = 'CREATE';
+      break;
+    case 'UPDATE':
+      actionTitle = 'UPDATE';
+      break;
+    case 'DELETE':
+      actionTitle = 'DELETE';
+      break;
   }
 
   // Extract Entity Target Name / Info
@@ -111,38 +100,41 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   let entityLabel = entityType as string;
   let cardHeaderImageUrl = ICONS.PROJECT;
 
-  if (isOpenApiImport) {
-    cardHeaderImageUrl = ICONS.OPENAPI_IMPORT;
-    entityLabel = 'OpenAPI';
-  } else {
-    switch (entityType) {
-      case 'project':
-        entityLabel = 'Project';
-        cardHeaderImageUrl = ICONS.PROJECT;
-        break;
-      case 'api':
-        entityLabel = 'API';
-        cardHeaderImageUrl = ICONS.API;
-        break;
-      case 'request_scenario':
-        entityLabel = 'Request Scenario';
-        cardHeaderImageUrl = ICONS.REQUEST_SCENARIO;
-        break;
-      case 'response_scenario': {
-        const isFile = state.responseType === 'FILE';
-        const isImage = isImageResponse(state);
-        if (isImage) {
-          entityLabel = 'Response (Image)';
-          cardHeaderImageUrl = ICONS.RESPONSE_IMAGE;
-        } else if (isFile) {
-          entityLabel = 'Response (File)';
-          cardHeaderImageUrl = ICONS.RESPONSE_FILE;
-        } else {
-          entityLabel = 'Response Scenario';
-          cardHeaderImageUrl = ICONS.RESPONSE_JSON;
-        }
-        break;
+  switch (entityType) {
+    case 'project':
+      entityLabel = 'Project';
+      cardHeaderImageUrl = ICONS.PROJECT;
+      break;
+    case 'collection':
+      entityLabel = 'Collection';
+      cardHeaderImageUrl = ICONS.COLLECTION;
+      break;
+    case 'environment':
+      entityLabel = 'Environment';
+      cardHeaderImageUrl = ICONS.ENVIRONMENT;
+      break;
+    case 'api':
+      entityLabel = 'API';
+      cardHeaderImageUrl = ICONS.API;
+      break;
+    case 'request_scenario':
+      entityLabel = 'Request Scenario';
+      cardHeaderImageUrl = ICONS.REQUEST_SCENARIO;
+      break;
+    case 'response_scenario': {
+      const isFile = state.responseType === 'FILE';
+      const isImage = isImageResponse(state);
+      if (isImage) {
+        entityLabel = 'Response (Image)';
+        cardHeaderImageUrl = ICONS.RESPONSE_IMAGE;
+      } else if (isFile) {
+        entityLabel = 'Response (File)';
+        cardHeaderImageUrl = ICONS.RESPONSE_FILE;
+      } else {
+        entityLabel = 'Response Scenario';
+        cardHeaderImageUrl = ICONS.RESPONSE_JSON;
       }
+      break;
     }
   }
 
