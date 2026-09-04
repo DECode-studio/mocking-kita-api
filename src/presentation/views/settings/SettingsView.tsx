@@ -24,6 +24,7 @@ export const SettingsView: React.FC = () => {
     isResetting,
     handleReset,
     canResetDb,
+    canBackupRestoreDb,
     // Download Backup
     isDownloading,
     downloadFormat,
@@ -69,6 +70,7 @@ export const SettingsView: React.FC = () => {
         onResetConfirmClick={() => setIsResetConfirmOpen(true)}
         isResetting={isResetting}
         canResetDb={canResetDb}
+        canBackupRestoreDb={canBackupRestoreDb}
       />
 
       {/* Onboarding Tour Settings Card */}
