@@ -1,16 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleInternalApiRequest, clearInternalProxyCache, proxyConfigCache, responseCache } from '@/src/modules/mock-proxy';
+import { __mockProxyTestUtils } from '@/src/modules/mock-proxy/mock-proxy.service';
 import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { NextRequest } from 'next/server';
+import path from 'node:path';
 
 vi.mock('@/src/core/db/database_storage_helper', () => ({
   readDatabase: vi.fn(),
 }));
 
 describe('internal-proxy and cache', () => {
+  const originalUploadPath = process.env.UPLOAD_PATH;
+
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
+    process.env.UPLOAD_PATH = originalUploadPath;
     clearInternalProxyCache();
   });
 
@@ -189,6 +194,22 @@ describe('internal-proxy and cache', () => {
     expect(res.headers.get('set-cookie')).toBeNull();
     expect(res.headers.get('content-length')).toBeNull();
     expect(res.headers.get('x-safe')).toBe('ok');
+  });
+
+  it('resolveSafeUploadPath should allow absolute paths inside configured upload directory', () => {
+    const absoluteUploadDir = path.resolve(process.cwd(), '.data/uploads');
+    process.env.UPLOAD_PATH = absoluteUploadDir;
+
+    expect(__mockProxyTestUtils.resolveSafeUploadPath(path.join(absoluteUploadDir, 'sample.pdf'))).toBe(
+      path.join(absoluteUploadDir, 'sample.pdf')
+    );
+  });
+
+  it('resolveSafeUploadPath should reject absolute paths outside configured upload directory', () => {
+    const absoluteUploadDir = path.resolve(process.cwd(), '.data/uploads');
+    process.env.UPLOAD_PATH = absoluteUploadDir;
+
+    expect(__mockProxyTestUtils.resolveSafeUploadPath(path.resolve(process.cwd(), '.env'))).toBeNull();
   });
 
   it('handleInternalApiRequest should reuse proxy config cache across non-cacheable requests', async () => {

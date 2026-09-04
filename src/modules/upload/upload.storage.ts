@@ -1,6 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { ENV } from '@/src/core/constants/env';
+import { getStoredUploadPath, getUploadDirectory } from './upload.paths';
 
 export type StoredUpload = {
   filePath: string;
@@ -8,11 +8,10 @@ export type StoredUpload = {
 };
 
 export async function storeUploadFile(storedFileName: string, buffer: Buffer): Promise<StoredUpload> {
-  const uploadPath = ENV.UPLOAD_PATH;
-  const uploadsDir = path.resolve(/*turbopackIgnore: true*/ process.cwd(), uploadPath);
+  const uploadsDir = getUploadDirectory();
   await fs.promises.mkdir(uploadsDir, { recursive: true });
 
-  const relativeFilePath = `${uploadPath}/${storedFileName}`;
+  const relativeFilePath = getStoredUploadPath(storedFileName);
   const absoluteFilePath = path.resolve(/*turbopackIgnore: true*/ uploadsDir, storedFileName);
 
   await fs.promises.writeFile(absoluteFilePath, buffer, { flag: 'wx' });
