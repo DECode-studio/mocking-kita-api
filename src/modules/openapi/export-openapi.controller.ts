@@ -14,7 +14,7 @@ export async function GET(
     }
 
     const projectId = parsedParams.data.id;
-    const openApiSpec = exportProjectOpenApi(projectId);
+    const openApiSpec = await exportProjectOpenApi(projectId);
 
     return new NextResponse(JSON.stringify(openApiSpec, null, 2), {
       status: 200,
