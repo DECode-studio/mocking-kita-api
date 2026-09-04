@@ -1,4 +1,5 @@
 import { readDatabase } from '@/src/core/db/database_storage_helper';
+import { getDatabaseSummary, logChange } from '@/src/core/db/change_log_helper';
 import { generateDatabaseSqlDump } from '@/src/core/db/sql_database_storage_helper';
 import { requireAdminSession } from '@/src/core/server/auth/session';
 import { jsonFail } from '@/src/core/server/http/responses';
@@ -25,6 +26,17 @@ export async function GET(request: Request) {
   if (format === 'json') {
     const database = await readDatabase();
     const body = JSON.stringify(database, null, 2);
+    const summary = await getDatabaseSummary();
+    await logChange({
+      action: 'EXPORT',
+      entityType: 'database',
+      beforeState: summary,
+      metadata: {
+        format: 'json',
+        fileName: `mock-api-studio-backup-${timestamp}.json`,
+      },
+      description: 'Exported database JSON backup',
+    });
     return new Response(body, {
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
@@ -36,6 +48,17 @@ export async function GET(request: Request) {
 
   // Default: SQL format (.sql)
   const sqlBody = await generateDatabaseSqlDump('upsert');
+  const summary = await getDatabaseSummary();
+  await logChange({
+    action: 'EXPORT',
+    entityType: 'database',
+    beforeState: summary,
+    metadata: {
+      format: 'sql',
+      fileName: `mock-api-studio-backup-${timestamp}.sql`,
+    },
+    description: 'Exported database SQL backup',
+  });
   return new Response(sqlBody, {
     headers: {
       'Content-Type': 'application/sql; charset=utf-8',
@@ -44,4 +67,3 @@ export async function GET(request: Request) {
     },
   });
 }
-
