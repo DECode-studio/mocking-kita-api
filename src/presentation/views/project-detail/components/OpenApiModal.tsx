@@ -2,7 +2,7 @@
 
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Download, Upload, X, FileJson, AlertCircle, CheckCircle2, LoaderCircle } from 'lucide-react';
+import { Download, Upload, X, FileJson, AlertCircle, CheckCircle2 } from 'lucide-react';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
 import { useOpenApi } from '../hook/useOpenApi';
 import { PROJECT_DETAIL_TEXT } from '../constant';
@@ -47,19 +47,6 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 animate-in fade-in duration-200" />
         <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl space-y-4 overflow-hidden">
-          {loading && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white/85 dark:bg-slate-950/85 backdrop-blur-sm text-center px-8">
-              <LoaderCircle className="w-8 h-8 animate-spin text-indigo-600 dark:text-indigo-400" />
-              <div className="space-y-1">
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {activeTab === 'import' ? PROJECT_DETAIL_TEXT.OPENAPI_LOADING_IMPORT_TITLE : PROJECT_DETAIL_TEXT.OPENAPI_LOADING_EXPORT_TITLE}
-                </div>
-                <div className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  {activeTab === 'import' ? PROJECT_DETAIL_TEXT.OPENAPI_LOADING_IMPORT_DESC : PROJECT_DETAIL_TEXT.OPENAPI_LOADING_EXPORT_DESC}
-                </div>
-              </div>
-            </div>
-          )}
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <FileJson className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />

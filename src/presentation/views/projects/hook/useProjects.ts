@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
 import { Project } from '@/src/domain/project/entity/project';
 import { ProjectUseCase } from '@/src/domain/project/usecase/project_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
@@ -21,9 +22,11 @@ type ProjectFormValues = z.infer<typeof projectSchema>;
 export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Project[] = []) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const { addToast } = useUIStore();
+  const pageLoading = usePageLoadingOverlay();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const shouldOpenAddDialog = searchParams.get('new') === 'true';
 
   const reloadProjects = async () => {
     try {
@@ -52,12 +55,12 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
   });
 
   useEffect(() => {
-    if (searchParams.get('new') === 'true') {
+    if (shouldOpenAddDialog) {
       openAddDialog();
       router.replace(pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, router, searchParams]);
+  }, [pathname, shouldOpenAddDialog]);
 
   const openAddDialog = () => {
     setEditingProject(null);
@@ -72,76 +75,139 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
   };
 
   const onSubmitForm = async (data: ProjectFormValues) => {
-    try {
-      if (editingProject) {
-        await projectUseCase.update(editingProject.id, {
-          name: data.name,
-          description: data.description,
-          status: data.status,
-        });
-        addToast({ type: 'success', title: 'Project Updated', description: `Updated project "${data.name}"` });
-      } else {
-        const created = await projectUseCase.create({
-          name: data.name,
-          description: data.description,
-          status: data.status,
-        });
-        addToast({ type: 'success', title: 'Project Created', description: `Created new project "${created.name}"` });
+    await pageLoading.run(
+      {
+        title: editingProject ? `Menyimpan perubahan "${data.name}"` : `Membuat project "${data.name}"`,
+        description: editingProject
+          ? 'Nama, deskripsi, dan status project sedang diperbarui.'
+          : 'Project baru sedang dibuat dan akan muncul di daftar project.',
+      },
+      async () => {
+        try {
+          if (editingProject) {
+            await projectUseCase.update(editingProject.id, {
+              name: data.name,
+              description: data.description,
+              status: data.status,
+            });
+            addToast({ type: 'success', title: 'Project Updated', description: `Updated project "${data.name}"` });
+          } else {
+            const created = await projectUseCase.create({
+              name: data.name,
+              description: data.description,
+              status: data.status,
+            });
+            addToast({ type: 'success', title: 'Project Created', description: `Created new project "${created.name}"` });
+          }
+          await reloadProjects();
+          setIsFormOpen(false);
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Operation Failed',
+            description: getErrorMessage(error, 'Failed to save project'),
+          });
+        }
       }
-      await reloadProjects();
-      setIsFormOpen(false);
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Operation Failed',
-        description: getErrorMessage(error, 'Failed to save project'),
-      });
-    }
+    );
   };
 
   const handleDuplicate = async (p: Project) => {
-    try {
-      const dup = await projectUseCase.duplicate(p.id);
-      if (!dup) return;
-      await reloadProjects();
-      addToast({ type: 'success', title: 'Project Duplicated', description: `Created copy "${dup.name}"` });
-    } catch (error: unknown) {
-      addToast({ type: 'error', title: 'Duplicate Failed', description: getErrorMessage(error) });
-    }
+    await pageLoading.run(
+      {
+        title: `Menyalin project "${p.name}"`,
+        description: 'Salinan project beserta konfigurasinya sedang dibuat.',
+      },
+      async () => {
+        try {
+          const dup = await projectUseCase.duplicate(p.id);
+          if (!dup) return;
+          await reloadProjects();
+          addToast({ type: 'success', title: 'Project Duplicated', description: `Created copy "${dup.name}"` });
+        } catch (error: unknown) {
+          addToast({ type: 'error', title: 'Duplicate Failed', description: getErrorMessage(error) });
+        }
+      }
+    );
   };
 
   const handleSoftDelete = async (id: string) => {
-    await projectUseCase.softDelete(id);
-    await reloadProjects();
-    addToast({ type: 'info', title: 'Project Moved to Trash', description: 'Project has been soft deleted.' });
+    const targetProject = projects.find((project) => project.id === id);
+    await pageLoading.run(
+      {
+        title: `Memindahkan${targetProject ? ` "${targetProject.name}"` : ' project'} ke trash`,
+        description: 'Project masih bisa dipulihkan dari filter Deleted.',
+      },
+      async () => {
+        try {
+          await projectUseCase.softDelete(id);
+          await reloadProjects();
+          addToast({ type: 'info', title: 'Project Moved to Trash', description: 'Project has been soft deleted.' });
+        } catch (error: unknown) {
+          addToast({ type: 'error', title: 'Delete Failed', description: getErrorMessage(error) });
+        }
+      }
+    );
   };
 
   const handleRestore = async (id: string) => {
-    await projectUseCase.restore(id);
-    await reloadProjects();
-    addToast({ type: 'success', title: 'Project Restored', description: 'Project restored successfully.' });
+    const targetProject = projects.find((project) => project.id === id);
+    await pageLoading.run(
+      {
+        title: `Memulihkan${targetProject ? ` "${targetProject.name}"` : ' project'}`,
+        description: 'Project sedang dikembalikan agar bisa digunakan lagi.',
+      },
+      async () => {
+        try {
+          await projectUseCase.restore(id);
+          await reloadProjects();
+          addToast({ type: 'success', title: 'Project Restored', description: 'Project restored successfully.' });
+        } catch (error: unknown) {
+          addToast({ type: 'error', title: 'Restore Failed', description: getErrorMessage(error) });
+        }
+      }
+    );
   };
 
   const handleConfirmHardDelete = async () => {
     if (!deletingProject) return;
-    try {
-      await projectUseCase.hardDelete(deletingProject.id);
-      await reloadProjects();
-      addToast({ type: 'success', title: 'Project Permanently Deleted', description: 'Project and all endpoints removed.' });
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Delete Failed',
-        description: getErrorMessage(error, 'Failed to permanently delete project'),
-      });
-    } finally {
-      setDeletingProject(null);
-    }
+    await pageLoading.run(
+      {
+        title: `Menghapus permanen "${deletingProject.name}"`,
+        description: 'Project dan endpoint di dalamnya akan dihapus permanen.',
+      },
+      async () => {
+        try {
+          await projectUseCase.hardDelete(deletingProject.id);
+          await reloadProjects();
+          addToast({ type: 'success', title: 'Project Permanently Deleted', description: 'Project and all endpoints removed.' });
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Delete Failed',
+            description: getErrorMessage(error, 'Failed to permanently delete project'),
+          });
+        } finally {
+          setDeletingProject(null);
+        }
+      }
+    );
   };
 
   const toggleProjectStatus = async (id: string) => {
-    await projectUseCase.toggleStatus(id);
-    await reloadProjects();
+    const targetProject = projects.find((project) => project.id === id);
+    await pageLoading.run(
+      {
+        title: `${targetProject?.status ? 'Menonaktifkan' : 'Mengaktifkan'} project${targetProject ? ` "${targetProject.name}"` : ''}`,
+        description: targetProject?.status
+          ? 'Project tidak akan aktif sampai diaktifkan kembali.'
+          : 'Project akan aktif dan bisa dipakai kembali.',
+      },
+      async () => {
+        await projectUseCase.toggleStatus(id);
+        await reloadProjects();
+      }
+    );
   };
 
   const filteredProjects = projects

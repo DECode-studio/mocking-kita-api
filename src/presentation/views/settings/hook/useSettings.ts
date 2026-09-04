@@ -4,6 +4,7 @@ import { useState, type ChangeEvent } from 'react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { useAuthStore } from '@/src/presentation/stores/authStore';
+import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
 import { canResetDatabase } from '@/src/core/constants/roles';
 import { DatabaseResetUseCase } from '@/src/domain/database/usecase/database_reset_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
@@ -22,6 +23,7 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
   const { theme, setTheme } = useThemeStore();
   const { setImportModalOpen, addToast } = useUIStore();
   const { session } = useAuthStore();
+  const pageLoading = usePageLoadingOverlay();
 
   // Reset state
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -144,89 +146,107 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
   const handleDownloadBackup = async (format: 'sql' | 'json' = 'sql') => {
     setIsDownloading(true);
     setDownloadFormat(format);
-    try {
-      const response = await fetch(`/api/database/export?format=${format}`);
-      if (!response.ok) {
-        throw new Error(`Failed to export database (${response.status}: ${response.statusText})`);
-      }
+    await pageLoading.run(
+      {
+        title: `Mengunduh backup ${format.toUpperCase()}`,
+        description: 'Data project, endpoint, environment, dan skenario sedang disiapkan.',
+      },
+      async () => {
+        try {
+          const response = await fetch(`/api/database/export?format=${format}`);
+          if (!response.ok) {
+            throw new Error(`Failed to export database (${response.status}: ${response.statusText})`);
+          }
 
-      const blob = await response.blob();
-      const disposition = response.headers.get('Content-Disposition');
-      let downloadName = `mock-api-studio-backup-${new Date().toISOString().slice(0, 10)}.${format}`;
+          const blob = await response.blob();
+          const disposition = response.headers.get('Content-Disposition');
+          let downloadName = `mock-api-studio-backup-${new Date().toISOString().slice(0, 10)}.${format}`;
 
-      if (disposition && disposition.includes('filename=')) {
-        const match = disposition.match(/filename="?([^"]+)"?/);
-        if (match && match[1]) {
-          downloadName = match[1];
+          if (disposition && disposition.includes('filename=')) {
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            if (match && match[1]) {
+              downloadName = match[1];
+            }
+          }
+
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = downloadName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          addToast({
+            type: 'success',
+            title: 'Database Backup Downloaded',
+            description: `Exported ${format.toUpperCase()} backup file saved as ${downloadName}.`,
+          });
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Download Backup Failed',
+            description: getErrorMessage(error, 'Could not export database.'),
+          });
+        } finally {
+          setIsDownloading(false);
         }
       }
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = downloadName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-
-      addToast({
-        type: 'success',
-        title: 'Database Backup Downloaded',
-        description: `Exported ${format.toUpperCase()} backup file saved as ${downloadName}.`,
-      });
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Download Backup Failed',
-        description: getErrorMessage(error, 'Could not export database.'),
-      });
-    } finally {
-      setIsDownloading(false);
-    }
+    );
   };
 
   const handleApplyImport = async () => {
     if (!selectedFile) return;
 
     setIsImporting(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('mode', importMode);
+    await pageLoading.run(
+      {
+        title: importMode === 'replace' ? 'Mengganti data dari backup' : 'Menggabungkan data dari backup',
+        description: importMode === 'replace'
+          ? 'Data lama akan diganti dengan isi file backup yang dipilih.'
+          : 'Isi backup sedang ditambahkan tanpa menghapus data yang ada.',
+      },
+      async () => {
+        try {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          formData.append('mode', importMode);
 
-      const response = await fetch('/api/database/import', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
+          const response = await fetch('/api/database/import', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+          });
 
-      const data = (await response.json()) as {
-        success: boolean;
-        data?: { message?: string; statementsExecuted?: number; chunksExecuted?: number };
-        error?: string;
-      };
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to import database');
+          const data = (await response.json()) as {
+            success: boolean;
+            data?: { message?: string; statementsExecuted?: number; chunksExecuted?: number };
+            error?: string;
+          };
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Failed to import database');
+          }
+
+          addToast({
+            type: 'success',
+            title: 'Database Import Successful',
+            description: data.data?.message || `Successfully restored mock database configurations from ${selectedFile.name}.`,
+          });
+
+          handleClearFile();
+          setIsImportModalOpen(false);
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Import Database Failed',
+            description: getErrorMessage(error, 'Failed to import backup configuration.'),
+          });
+        } finally {
+          setIsImporting(false);
+        }
       }
-
-      addToast({
-        type: 'success',
-        title: 'Database Import Successful',
-        description: data.data?.message || `Successfully restored mock database configurations from ${selectedFile.name}.`,
-      });
-
-      handleClearFile();
-      setIsImportModalOpen(false);
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Import Database Failed',
-        description: getErrorMessage(error, 'Failed to import backup configuration.'),
-      });
-    } finally {
-      setIsImporting(false);
-    }
+    );
   };
 
   const handleReset = async () => {
@@ -241,23 +261,31 @@ export function useSettings(databaseResetUseCase: DatabaseResetUseCase) {
     }
 
     setIsResetting(true);
-    try {
-      await databaseResetUseCase.resetDatabase();
-      addToast({
-        type: 'warning',
-        title: 'Database Wiped',
-        description: 'Permanently wiped all database records. Database is now completely empty.',
-      });
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Database Wipe Failed',
-        description: getErrorMessage(error, 'Failed to wipe database.'),
-      });
-    } finally {
-      setIsResetting(false);
-      setIsResetConfirmOpen(false);
-    }
+    await pageLoading.run(
+      {
+        title: 'Mengosongkan database',
+        description: 'Semua project, endpoint, environment, dan skenario sedang dihapus permanen.',
+      },
+      async () => {
+        try {
+          await databaseResetUseCase.resetDatabase();
+          addToast({
+            type: 'warning',
+            title: 'Database Wiped',
+            description: 'Permanently wiped all database records. Database is now completely empty.',
+          });
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Database Wipe Failed',
+            description: getErrorMessage(error, 'Failed to wipe database.'),
+          });
+        } finally {
+          setIsResetting(false);
+          setIsResetConfirmOpen(false);
+        }
+      }
+    );
   };
 
   return {

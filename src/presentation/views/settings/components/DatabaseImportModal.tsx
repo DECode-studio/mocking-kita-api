@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   AlertCircle,
   X,
-  Loader2,
+  LoaderCircle,
   Database,
   Layers,
   Sparkles,
@@ -85,30 +85,6 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
           id={SETTINGS_SEMANTIC_ID.IMPORT_BACKUP_MODAL}
           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 space-y-5 focus:outline-none animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto overflow-hidden"
         >
-          {/* Full Loading Overlay */}
-          {isImporting && (
-            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3.5 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm text-center px-8 animate-in fade-in duration-200">
-              <Loader2 className="w-10 h-10 animate-spin text-indigo-600 dark:text-indigo-400" />
-              <div className="space-y-1 max-w-sm">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {importFileFormat === 'sql' ? SETTINGS_TEXT.IMPORT_SQL_LOADING_TITLE : SETTINGS_TEXT.IMPORT_LOADING_TITLE}
-                </h4>
-                <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  {importFileFormat === 'sql' ? SETTINGS_TEXT.IMPORT_SQL_LOADING_DESC : SETTINGS_TEXT.IMPORT_LOADING_DESC}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-400 text-[11px] font-medium">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-                <span>
-                  {importFileFormat === 'sql' ? SETTINGS_TEXT.IMPORT_SQL_LOADING_BADGE : SETTINGS_TEXT.IMPORT_LOADING_BADGE}
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Modal Header */}
           <div className="flex items-start justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
@@ -326,7 +302,7 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
             >
               {isImporting ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
                   {SETTINGS_TEXT.IMPORTING_BTN}
                 </>
               ) : (

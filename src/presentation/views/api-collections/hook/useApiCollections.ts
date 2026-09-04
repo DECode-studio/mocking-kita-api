@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUIStore } from '@/src/presentation/stores/uiStore';
+import { usePageLoadingOverlay } from '@/src/presentation/components/shared/PageLoadingOverlay';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiUseCase } from '@/src/domain/api/usecase/api_usecase';
 import { Collection } from '@/src/domain/collection/entity/collection';
@@ -33,6 +34,7 @@ export function useApiCollections(
   initialCollections: Collection[] = []
 ) {
   const { addToast } = useUIStore();
+  const pageLoading = usePageLoadingOverlay();
   const router = useRouter();
 
   const activeProjectId = embeddedProjectId;
@@ -121,8 +123,19 @@ export function useApiCollections(
   }, [initialCollections]);
 
   const toggleApiCollectionStatus = async (id: string) => {
-    await apiUseCase.toggleStatus(id);
-    await reloadApis();
+    const targetApi = apis.find((api) => api.id === id);
+    await pageLoading.run(
+      {
+        title: `${targetApi?.status ? 'Menonaktifkan' : 'Mengaktifkan'} endpoint${targetApi ? ` ${targetApi.methodRequest} ${targetApi.path}` : ''}`,
+        description: targetApi?.status
+          ? 'Endpoint mock ini sementara tidak akan merespons request.'
+          : 'Endpoint mock ini akan kembali tersedia untuk request.',
+      },
+      async () => {
+        await apiUseCase.toggleStatus(id);
+        await reloadApis();
+      }
+    );
   };
 
   const onSubmitForm = async (data: ApiFormValues) => {
@@ -141,57 +154,89 @@ export function useApiCollections(
       return;
     }
 
-    try {
-      if (editingApi) {
-        await apiUseCase.update(editingApi.id, {
-          name: data.name,
-          description: data.description,
-          path: data.path,
-          methodRequest: data.methodRequest,
-          status: data.status,
-          collectionId: data.collectionId || null,
-        });
-        addToast({ type: 'success', title: 'API Updated', description: `Updated ${data.methodRequest} ${data.path}` });
-      } else {
-        await apiUseCase.create({
-          projectId: activeProjectId,
-          name: data.name,
-          description: data.description,
-          path: data.path,
-          methodRequest: data.methodRequest,
-          status: data.status,
-          collectionId: data.collectionId || null,
-        });
-        addToast({ type: 'success', title: 'API Endpoint Added', description: `Created ${data.methodRequest} ${data.path}` });
+    await pageLoading.run(
+      {
+        title: editingApi ? `Menyimpan endpoint ${data.methodRequest} ${data.path}` : `Membuat endpoint ${data.methodRequest} ${data.path}`,
+        description: editingApi
+          ? 'Perubahan nama, path, method, folder, dan status endpoint sedang disimpan.'
+          : 'Endpoint mock baru sedang ditambahkan ke project ini.',
+      },
+      async () => {
+        try {
+          if (editingApi) {
+            await apiUseCase.update(editingApi.id, {
+              name: data.name,
+              description: data.description,
+              path: data.path,
+              methodRequest: data.methodRequest,
+              status: data.status,
+              collectionId: data.collectionId || null,
+            });
+            addToast({ type: 'success', title: 'API Updated', description: `Updated ${data.methodRequest} ${data.path}` });
+          } else {
+            await apiUseCase.create({
+              projectId: activeProjectId,
+              name: data.name,
+              description: data.description,
+              path: data.path,
+              methodRequest: data.methodRequest,
+              status: data.status,
+              collectionId: data.collectionId || null,
+            });
+            addToast({ type: 'success', title: 'API Endpoint Added', description: `Created ${data.methodRequest} ${data.path}` });
+          }
+          await reloadApis();
+          setIsFormOpen(false);
+        } catch (error: unknown) {
+          addToast({
+            type: 'error',
+            title: 'Error',
+            description: getErrorMessage(error, 'Failed to save API'),
+          });
+        }
       }
-      await reloadApis();
-      setIsFormOpen(false);
-    } catch (error: unknown) {
-      addToast({
-        type: 'error',
-        title: 'Error',
-        description: getErrorMessage(error, 'Failed to save API'),
-      });
-    }
+    );
   };
 
   const handleDuplicate = async (api: ApiCollection) => {
-    try {
-      const dup = await apiUseCase.duplicate(api.id);
-      if (!dup) return;
-      await reloadApis();
-      addToast({ type: 'success', title: 'API Duplicated', description: `Created copy "${dup.name}"` });
-    } catch (error: unknown) {
-      addToast({ type: 'error', title: 'Duplicate Error', description: getErrorMessage(error) });
-    }
+    await pageLoading.run(
+      {
+        title: `Menyalin endpoint ${api.methodRequest} ${api.path}`,
+        description: 'Salinan endpoint dan konfigurasi mock sedang dibuat.',
+      },
+      async () => {
+        try {
+          const dup = await apiUseCase.duplicate(api.id);
+          if (!dup) return;
+          await reloadApis();
+          addToast({ type: 'success', title: 'API Duplicated', description: `Created copy "${dup.name}"` });
+        } catch (error: unknown) {
+          addToast({ type: 'error', title: 'Duplicate Error', description: getErrorMessage(error) });
+        }
+      }
+    );
   };
 
   const handleDelete = async () => {
     if (!deletingApiId) return;
-    await apiUseCase.softDelete(deletingApiId);
-    await reloadApis();
-    addToast({ type: 'success', title: 'API Endpoint Deleted', description: 'Removed API collection.' });
-    setDeletingApiId(null);
+    const targetApi = apis.find((api) => api.id === deletingApiId);
+    await pageLoading.run(
+      {
+        title: `Menghapus endpoint${targetApi ? ` ${targetApi.methodRequest} ${targetApi.path}` : ''}`,
+        description: 'Endpoint mock ini sedang dihapus dari daftar project.',
+      },
+      async () => {
+        try {
+          await apiUseCase.softDelete(deletingApiId);
+          await reloadApis();
+          addToast({ type: 'success', title: 'API Endpoint Deleted', description: 'Removed API collection.' });
+        } catch (error: unknown) {
+          addToast({ type: 'error', title: 'Delete Failed', description: getErrorMessage(error) });
+        } finally {
+          setDeletingApiId(null);
+        }
+      }
+    );
   };
 
   // Collection CRUD Handlers
@@ -216,40 +261,60 @@ export function useApiCollections(
       return;
     }
 
-    try {
-      if (editingCollection) {
-        await collectionUseCase.update(editingCollection.id, {
-          name: collectionName,
-          description: collectionDesc,
-        });
-        addToast({ type: 'success', title: 'Folder Updated', description: `Folder "${collectionName}" updated` });
-      } else {
-        await collectionUseCase.create({
-          projectId: activeProjectId,
-          name: collectionName,
-          description: collectionDesc,
-          status: true,
-        });
-        addToast({ type: 'success', title: 'Folder Created', description: `Folder "${collectionName}" created` });
+    await pageLoading.run(
+      {
+        title: editingCollection ? `Menyimpan folder "${collectionName}"` : `Membuat folder "${collectionName}"`,
+        description: editingCollection
+          ? 'Nama dan deskripsi folder sedang diperbarui.'
+          : 'Folder baru sedang dibuat untuk mengelompokkan endpoint.',
+      },
+      async () => {
+        try {
+          if (editingCollection) {
+            await collectionUseCase.update(editingCollection.id, {
+              name: collectionName,
+              description: collectionDesc,
+            });
+            addToast({ type: 'success', title: 'Folder Updated', description: `Folder "${collectionName}" updated` });
+          } else {
+            await collectionUseCase.create({
+              projectId: activeProjectId,
+              name: collectionName,
+              description: collectionDesc,
+              status: true,
+            });
+            addToast({ type: 'success', title: 'Folder Created', description: `Folder "${collectionName}" created` });
+          }
+          await reloadCollections();
+          setIsCollectionFormOpen(false);
+        } catch (error) {
+          addToast({ type: 'error', title: 'Error', description: getErrorMessage(error, 'Failed to save Folder') });
+        }
       }
-      await reloadCollections();
-      setIsCollectionFormOpen(false);
-    } catch (error) {
-      addToast({ type: 'error', title: 'Error', description: getErrorMessage(error, 'Failed to save Folder') });
-    }
+    );
   };
 
   const handleDeleteCollection = async () => {
     if (!deletingCollectionId) return;
-    try {
-      await collectionUseCase.softDelete(deletingCollectionId);
-      await reloadCollections();
-      await reloadApis();
-      addToast({ type: 'success', title: 'Folder Deleted', description: 'Folder has been removed.' });
-      setDeletingCollectionId(null);
-    } catch (error) {
-      addToast({ type: 'error', title: 'Error', description: getErrorMessage(error) });
-    }
+    const targetCollection = collections.find((collection) => collection.id === deletingCollectionId);
+    await pageLoading.run(
+      {
+        title: `Menghapus folder${targetCollection ? ` "${targetCollection.name}"` : ''}`,
+        description: 'Endpoint di dalam folder tidak ikut dihapus dan akan menjadi ungrouped.',
+      },
+      async () => {
+        try {
+          await collectionUseCase.softDelete(deletingCollectionId);
+          await reloadCollections();
+          await reloadApis();
+          addToast({ type: 'success', title: 'Folder Deleted', description: 'Folder has been removed.' });
+        } catch (error) {
+          addToast({ type: 'error', title: 'Error', description: getErrorMessage(error) });
+        } finally {
+          setDeletingCollectionId(null);
+        }
+      }
+    );
   };
 
   const filteredApis = apis.filter((api) => {
