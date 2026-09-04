@@ -19,7 +19,6 @@ export const DashboardView: React.FC<{ initialSummary?: DashboardSummary }> = ({
     router,
     methodCounts,
     totalApisCount,
-    openImportExport,
   } = useDashboard(initialSummary);
 
   return (
@@ -27,7 +26,6 @@ export const DashboardView: React.FC<{ initialSummary?: DashboardSummary }> = ({
       {/* Hero Section */}
       <DashboardHero
         onCreateProject={() => router.push('/projects?new=true')}
-        onImportExport={openImportExport}
       />
 
       {/* Statistic Cards Grid */}

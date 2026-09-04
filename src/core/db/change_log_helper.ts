@@ -4,7 +4,7 @@ import { UserSession } from '@/src/domain/auth/entity/user_session';
 import { sendGoogleSpaceNotification } from '@/src/core/notification/google_space_notifier';
 import { getServerSession } from '@/src/core/server/auth/session';
 
-export type ChangeLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
+export type ChangeLogAction = 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'EXPORT' | 'RESET';
 export type ChangeLogEntityType =
   | 'project'
   | 'collection'
@@ -83,6 +83,9 @@ export async function logChange(input: ChangeLogInput) {
         break;
       case 'IMPORT':
         description = `Imported ${input.entityType}`;
+        break;
+      case 'EXPORT':
+        description = `Exported ${input.entityType}`;
         break;
       case 'RESET':
         description = `Reset ${input.entityType}`;

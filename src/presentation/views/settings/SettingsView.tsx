@@ -48,7 +48,7 @@ export const SettingsView: React.FC = () => {
   } = useSettings(databaseResetUseCase);
 
   return (
-    <div id={SETTINGS_SEMANTIC_ID.CONTAINER} className="space-y-8 w-full max-w-5xl mx-auto pb-10">
+    <div id={SETTINGS_SEMANTIC_ID.CONTAINER} className="w-full space-y-8 pb-10">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           {SETTINGS_TEXT.TITLE}

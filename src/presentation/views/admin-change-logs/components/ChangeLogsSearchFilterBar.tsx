@@ -57,6 +57,7 @@ export const ChangeLogsSearchFilterBar: React.FC<ChangeLogsSearchFilterBarProps>
           <option value="DELETE">DELETE</option>
           <option value="RESTORE">RESTORE</option>
           <option value="IMPORT">IMPORT</option>
+          <option value="EXPORT">EXPORT</option>
           <option value="RESET">RESET</option>
         </select>
       </div>

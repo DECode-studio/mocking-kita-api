@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUIStore } from '@/src/presentation/stores/uiStore';
 import { DashboardSummary } from '@/src/domain/dashboard/entity/dashboard_summary';
 import { ROUTES } from '@/src/core/constants/routes';
 
@@ -21,11 +20,9 @@ export function useDashboard(
   initialSummary: DashboardSummary = emptySummary
 ) {
   const [summary] = useState<DashboardSummary>(initialSummary);
-  const { setImportModalOpen } = useUIStore();
   const router = useRouter();
 
   const goToProjects = () => router.push(ROUTES.PROJECTS);
-  const openImportExport = () => setImportModalOpen(true);
 
   return {
     summary,
@@ -33,6 +30,5 @@ export function useDashboard(
     methodCounts: summary.methodCounts,
     totalApisCount: summary.endpointCount,
     goToProjects,
-    openImportExport,
   };
 }

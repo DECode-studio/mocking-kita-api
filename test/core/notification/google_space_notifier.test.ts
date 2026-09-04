@@ -35,4 +35,19 @@ describe('Google Space notifier', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+
+  it.each(['IMPORT', 'EXPORT', 'RESET'] as const)('dispatches database %s notifications', async (action) => {
+    await sendGoogleSpaceNotification({
+      action,
+      entityType: 'database',
+      operator: 'system',
+      metadata: { format: action === 'EXPORT' ? 'json' : 'sql', fileName: 'backup.sql' },
+      description: `${action} database backup`,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://chat.googleapis.test/webhook',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });

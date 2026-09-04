@@ -3,6 +3,7 @@ import { GET as EXPORT_GET } from '@/src/app/api/database/export/route';
 import { POST as IMPORT_POST } from '@/src/app/api/database/import/route';
 import { readDatabase, importDatabaseData } from '@/src/core/db/database_storage_helper';
 import { generateDatabaseSqlDump, importDatabaseSql } from '@/src/core/db/sql_database_storage_helper';
+import { logChange } from '@/src/core/db/change_log_helper';
 import { cookies } from 'next/headers';
 
 vi.mock('next/headers', () => ({
@@ -50,6 +51,13 @@ describe('/api/database/export & /api/database/import routes', () => {
     expect(res.headers.get('content-type')).toContain('application/sql');
     const text = await res.text();
     expect(text).toBe('CREATE TABLE test;');
+    expect(logChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'EXPORT',
+        entityType: 'database',
+        metadata: expect.objectContaining({ format: 'sql' }),
+      })
+    );
   });
 
   it('EXPORT_GET should return 403 Forbidden when non-admin or no session', async () => {
@@ -72,6 +80,13 @@ describe('/api/database/export & /api/database/import routes', () => {
     expect(res.headers.get('content-type')).toContain('application/json');
     const json = await res.json();
     expect(json).toEqual(mockDb);
+    expect(logChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'EXPORT',
+        entityType: 'database',
+        metadata: expect.objectContaining({ format: 'json' }),
+      })
+    );
   });
 
   it('IMPORT_POST should return 400 when file is missing in formData', async () => {
@@ -105,6 +120,13 @@ describe('/api/database/export & /api/database/import routes', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(importDatabaseSql).toHaveBeenCalledWith('CREATE TABLE t;', 'merge');
+    expect(logChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'IMPORT',
+        entityType: 'database',
+        metadata: expect.objectContaining({ format: 'sql', mode: 'merge' }),
+      })
+    );
   });
 
   it('IMPORT_POST with valid .json file should invoke importDatabaseData', async () => {
@@ -137,5 +159,12 @@ describe('/api/database/export & /api/database/import routes', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(importDatabaseData).toHaveBeenCalledWith(expect.anything(), 'replace');
+    expect(logChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'IMPORT',
+        entityType: 'database',
+        metadata: expect.objectContaining({ format: 'json', mode: 'replace' }),
+      })
+    );
   });
 });
