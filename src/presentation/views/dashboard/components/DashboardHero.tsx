@@ -1,17 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Plus, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
 interface DashboardHeroProps {
   onCreateProject: () => void;
-  onImportExport: () => void;
 }
 
 export const DashboardHero: React.FC<DashboardHeroProps> = ({
   onCreateProject,
-  onImportExport,
 }) => {
   return (
     <div id={DASHBOARD_SEMANTIC_ID.HERO} className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-6 sm:p-10 text-white shadow-2xl">
@@ -41,14 +39,6 @@ export const DashboardHero: React.FC<DashboardHeroProps> = ({
           >
             <Plus className="w-4 h-4" />
             {DASHBOARD_TEXT.CREATE_PROJECT_BTN}
-          </button>
-          <button
-            type="button"
-            onClick={onImportExport}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-xl transition-colors"
-          >
-            <Upload className="w-4 h-4 text-purple-400" />
-            {DASHBOARD_TEXT.IMPORT_EXPORT_BTN}
           </button>
         </div>
       </div>
