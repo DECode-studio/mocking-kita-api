@@ -1,6 +1,6 @@
 export interface ChangeLog {
   id: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'EXPORT' | 'RESET';
   entity_type: 'project' | 'collection' | 'api' | 'request_scenario' | 'response_scenario' | 'database' | 'environment';
   entity_id: string | null;
   project_id: string | null;
