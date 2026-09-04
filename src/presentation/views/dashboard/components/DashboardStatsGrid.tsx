@@ -15,7 +15,7 @@ export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
   totalApisCount,
 }) => {
   return (
-    <div id={DASHBOARD_SEMANTIC_ID.STATS_GRID} className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div id={DASHBOARD_SEMANTIC_ID.STATS_GRID} className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4">
       {/* Projects Card */}
       <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3">
         <div className="flex items-center justify-between">
@@ -33,24 +33,6 @@ export const DashboardStatsGrid: React.FC<DashboardStatsGridProps> = ({
           <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
             {summary.activeProjectCount} {DASHBOARD_TEXT.STATS_ACTIVE}
           </span>
-        </div>
-      </div>
-
-      {/* Environments Card */}
-      <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest font-mono">
-            {DASHBOARD_TEXT.STATS_ENVIRONMENTS}
-          </span>
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-            <Globe className="w-4 h-4" />
-          </div>
-        </div>
-        <div>
-          <span className="font-display text-3xl font-bold text-slate-900 dark:text-slate-100">
-            {summary.environmentCount}
-          </span>
-          <span className="ml-2 text-xs text-slate-500 font-medium font-mono">{DASHBOARD_TEXT.STATS_CONFIGURED}</span>
         </div>
       </div>
 

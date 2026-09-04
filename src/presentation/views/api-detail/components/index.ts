@@ -4,7 +4,6 @@ export * from './ApiDetailHeader';
 export * from './RequestScenarioSidebar';
 export * from './RequestScenarioDetailPanel';
 export * from './ResponseScenarioListSection';
-export * from './EnvironmentOverrideTabContent';
 export * from './EndpointOverviewTabContent';
 export * from './RequestScenarioModal';
 export * from './ResponseScenarioModal';

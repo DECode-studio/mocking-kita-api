@@ -15,7 +15,6 @@ import {
   RequestScenarioSidebar,
   RequestScenarioDetailPanel,
   ResponseScenarioListSection,
-  EnvironmentOverrideTabContent,
   EndpointOverviewTabContent,
   RequestScenarioModal,
   ResponseScenarioModal,
@@ -32,13 +31,9 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
     projectId,
     project,
     api,
-    projectEnvs,
     reqScenarios,
     respScenarios,
     activeReqScenario,
-    environmentRows,
-    handleToggleEnabled,
-    handleUpdatePathOverride,
     activeMainTab,
     setActiveMainTab,
     scenarioSearch,
@@ -56,10 +51,8 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
     setDeletingReqId,
     deletingRespId,
     setDeletingRespId,
-    copiedUrl,
     handleSaveReqScenario,
     handleSaveRespScenario,
-    handleCopyResolvedUrl,
     updateRequestScenario,
     updateResponseScenario,
     router,
@@ -123,17 +116,6 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
             }`}
           >
             {API_DETAIL_TEXT.TAB_SCENARIOS} ({reqScenarios.length})
-          </Tabs.Trigger>
-
-          <Tabs.Trigger
-            value="environments"
-            className={`pb-2.5 text-xs font-semibold transition-colors ${
-              activeMainTab === 'environments'
-                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            {API_DETAIL_TEXT.TAB_ENVIRONMENTS} ({projectEnvs.length})
           </Tabs.Trigger>
 
           <Tabs.Trigger
@@ -206,20 +188,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
           </div>
         </Tabs.Content>
 
-        {/* --- TAB 2: ENVIRONMENTS & OVERRIDES --- */}
-        <Tabs.Content value="environments" className="focus:outline-none">
-          <EnvironmentOverrideTabContent
-            apiPath={api.path}
-            projectEnvs={projectEnvs}
-            environmentRows={environmentRows}
-            copiedUrl={copiedUrl}
-            onToggleEnabled={handleToggleEnabled}
-            onUpdatePathOverride={handleUpdatePathOverride}
-            onCopyResolvedUrl={handleCopyResolvedUrl}
-          />
-        </Tabs.Content>
-
-        {/* --- TAB 3: OVERVIEW --- */}
+        {/* --- TAB 2: OVERVIEW --- */}
         <Tabs.Content value="overview" className="focus:outline-none">
           <EndpointOverviewTabContent api={api} project={project} />
         </Tabs.Content>

@@ -3,13 +3,11 @@
 import React from 'react';
 import * as Tabs from '@radix-ui/react-tabs';
 import { ArrowLeft } from 'lucide-react';
-import { EnvironmentsView } from '../environments/EnvironmentsView';
 import { ApiCollectionsView } from '../api-collections/ApiCollectionsView';
 import { formatDate } from '../../../core/utils/date';
 import {  createProjectUseCase  } from '@/src/di/usecase_provider';
 import { useProjectDetail } from './hook/useProjectDetail';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
-import { Environment } from '@/src/domain/environment/entity/environment';
 import { Project } from '@/src/domain/project/entity/project';
 import { PROJECT_DETAIL_TEXT, PROJECT_DETAIL_SEMANTIC_ID } from './constant';
 import {
@@ -23,14 +21,12 @@ import { Collection } from '@/src/domain/collection/entity/collection';
 interface ProjectDetailViewProps {
   initialProject?: Project | null;
   initialApis?: ApiCollection[];
-  initialEnvironments?: Environment[];
   initialCollections?: Collection[];
 }
 
 export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   initialProject = null,
   initialApis = [],
-  initialEnvironments = [],
   initialCollections = [],
 }) => {
   const [isOpenApiOpen, setIsOpenApiOpen] = React.useState(false);
@@ -109,17 +105,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           </Tabs.Trigger>
 
           <Tabs.Trigger
-            value="environments"
-            className={`pb-2.5 text-xs font-semibold transition-colors relative ${
-              activeTab === 'environments'
-                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            {PROJECT_DETAIL_TEXT.TAB_ENVIRONMENTS}
-          </Tabs.Trigger>
-
-          <Tabs.Trigger
             value="overview"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'overview'
@@ -133,10 +118,6 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
         <Tabs.Content value="apis">
           <ApiCollectionsView embeddedProjectId={project.id} initialApis={initialApis} initialCollections={initialCollections} />
-        </Tabs.Content>
-
-        <Tabs.Content value="environments">
-          <EnvironmentsView embeddedProjectId={project.id} initialEnvironments={initialEnvironments} initialProject={project} />
         </Tabs.Content>
 
         <Tabs.Content value="overview">

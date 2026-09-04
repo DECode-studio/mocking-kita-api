@@ -1,10 +1,10 @@
 export const PROJECTS_TEXT = {
   TITLE: 'Projects Workspace',
-  SUBTITLE: 'Organize mock API definitions, environments, and response scenarios by project',
+  SUBTITLE: 'Organize mock API definitions and response scenarios by project',
   ADD_PROJECT_BTN: 'Add Project',
   SEARCH_PLACEHOLDER: 'Search projects...',
   EMPTY_TITLE: 'No projects found',
-  EMPTY_DESC: 'Create your first mock project to start adding environments and API definitions.',
+  EMPTY_DESC: 'Create your first mock project to start adding API definitions.',
   EMPTY_SEARCH_DESC: 'No projects matching',
   CREATE_PROJECT_BTN: 'Create Project',
   ACTION_OPEN_DETAIL: 'Open Detail',
@@ -29,7 +29,7 @@ export const PROJECTS_TEXT = {
   BTN_SAVE: 'Save Changes',
   DELETE_DIALOG_TITLE: 'Permanently Delete Project?',
   DELETE_DIALOG_DESC_PREFIX: 'Are you sure you want to permanently delete',
-  DELETE_DIALOG_DESC_SUFFIX: '? All associated environments, API definitions, and scenarios will be removed permanently.',
+  DELETE_DIALOG_DESC_SUFFIX: '? All associated API definitions and scenarios will be removed permanently.',
   DELETE_DIALOG_CONFIRM: 'Permanently Delete',
   STATUS_ALL: 'All Status',
   STATUS_ACTIVE: 'Active',
@@ -38,5 +38,4 @@ export const PROJECTS_TEXT = {
   VIEW_GRID: 'Grid View',
   VIEW_TABLE: 'Table View',
   ENDPOINTS_COUNT_SUFFIX: 'Endpoints',
-  ENVIRONMENTS_COUNT_SUFFIX: 'Environments',
 } as const;
