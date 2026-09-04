@@ -2,7 +2,7 @@ import prisma from '@/src/core/db/prisma-client';
 import { ENV } from '@/src/core/constants/env';
 
 export interface NotificationPayload {
-  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'RESET';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'EXPORT' | 'RESET';
   entityType: 'project' | 'collection' | 'api' | 'request_scenario' | 'response_scenario' | 'database' | 'environment';
   entityId?: string | null;
   projectId?: string | null;
@@ -24,6 +24,7 @@ const ICONS = {
   RESPONSE_FILE: 'https://cdn-icons-png.flaticon.com/512/2965/2965335.png',
   RESPONSE_IMAGE: 'https://cdn-icons-png.flaticon.com/512/3342/3342137.png',
   OPENAPI_IMPORT: 'https://cdn-icons-png.flaticon.com/512/875/875615.png',
+  DATABASE: 'https://cdn-icons-png.flaticon.com/512/4248/4248443.png',
 };
 
 function isImageResponse(state: any): boolean {
@@ -56,12 +57,12 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   const { action, entityType, projectId, userId, operator, description, beforeState, afterState, metadata } = payload;
 
   // Filter triggers:
-  // Only data create, edit, and delete operations should broadcast.
-  if (!['CREATE', 'UPDATE', 'DELETE'].includes(action)) {
+  // Data mutations and database maintenance operations should broadcast.
+  if (!['CREATE', 'UPDATE', 'DELETE', 'IMPORT', 'EXPORT', 'RESET'].includes(action)) {
     return;
   }
 
-  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario'];
+  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario', 'database'];
   const isTargetEntity = targetEntities.includes(entityType);
 
   if (!isTargetEntity) {
@@ -80,6 +81,15 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
       break;
     case 'DELETE':
       actionTitle = 'DELETE';
+      break;
+    case 'IMPORT':
+      actionTitle = 'IMPORT';
+      break;
+    case 'EXPORT':
+      actionTitle = 'EXPORT';
+      break;
+    case 'RESET':
+      actionTitle = 'RESET';
       break;
   }
 
@@ -136,6 +146,11 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
       }
       break;
     }
+    case 'database':
+      entityLabel = 'Database';
+      cardHeaderImageUrl = ICONS.DATABASE;
+      targetInfo = targetInfo || metadata?.fileName || metadata?.format || 'Database';
+      break;
   }
 
   // Resolve Project Name if available
