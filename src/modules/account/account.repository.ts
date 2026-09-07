@@ -39,6 +39,7 @@ export class AccountRepositoryImpl implements AccountRepository {
     passwordHash: string;
     name: string;
     role: string;
+    googleId?: string | null;
   }): Promise<Account> {
     const row = await prisma.account.create({
       data: {
@@ -47,6 +48,7 @@ export class AccountRepositoryImpl implements AccountRepository {
         password: params.passwordHash,
         role: params.role,
         name: params.name,
+        googleId: params.googleId ?? null,
       },
     });
 
@@ -60,6 +62,7 @@ export class AccountRepositoryImpl implements AccountRepository {
       passwordHash?: string;
       name?: string;
       role?: string;
+      googleId?: string | null;
     }
   ): Promise<Account> {
     const updated = await prisma.account.update({
@@ -69,6 +72,7 @@ export class AccountRepositoryImpl implements AccountRepository {
         ...(params.passwordHash !== undefined && { password: params.passwordHash }),
         ...(params.name !== undefined && { name: params.name }),
         ...(params.role !== undefined && { role: params.role }),
+        ...(params.googleId !== undefined && { googleId: params.googleId }),
       },
     });
 

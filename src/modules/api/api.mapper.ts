@@ -1,5 +1,6 @@
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiEnvironment } from '@/src/domain/api/entity/api_environment';
+import { toAccountDomain } from '@/src/modules/account/account.mapper';
 
 export function toApiDomain(api: {
   id: string;
@@ -9,11 +10,23 @@ export function toApiDomain(api: {
   description: string | null;
   path: string;
   methodRequest: string;
+  pics?: any[];
   status: boolean;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
 }): ApiCollection {
+  const pics = (api.pics || [])
+    .map((item) => {
+      const rawAcc = item.account || item;
+      return rawAcc?.id ? toAccountDomain(rawAcc) : null;
+    })
+    .filter(Boolean) as any[];
+
+  const picIds = (api.pics || [])
+    .map((item) => item.accountId || item.account?.id || item.id)
+    .filter(Boolean);
+
   return {
     id: api.id,
     projectId: api.projectId,
@@ -22,6 +35,8 @@ export function toApiDomain(api: {
     description: api.description ?? undefined,
     path: api.path,
     methodRequest: api.methodRequest as any,
+    picIds,
+    pics,
     status: api.status,
     createdAt: api.createdAt.toISOString(),
     updatedAt: api.updatedAt.toISOString(),

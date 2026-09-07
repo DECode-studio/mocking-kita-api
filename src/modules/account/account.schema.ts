@@ -5,6 +5,7 @@ export const AccountCreateSchema = z.object({
   password: z.string().max(512).optional(),
   name: z.string().trim().min(1).max(120),
   role: z.string().trim().min(1).max(120),
+  googleId: z.string().trim().nullable().optional(),
 });
 
 export const AccountUpdateSchema = z.object({
@@ -13,8 +14,10 @@ export const AccountUpdateSchema = z.object({
   password: z.string().max(512).optional(),
   name: z.string().trim().min(1).max(120).optional(),
   role: z.string().trim().min(1).max(120).optional(),
+  googleId: z.string().trim().nullable().optional(),
 });
 
 export const AccountDeleteSchema = z.object({
   id: z.string().trim().min(1),
 });
+
