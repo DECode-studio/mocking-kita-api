@@ -42,6 +42,11 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
             <span className="px-2 py-0.5 text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 rounded-md">
               {account.role}
             </span>
+            {account.googleId && (
+              <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-md flex items-center gap-1">
+                <span>Google ID: {account.googleId}</span>
+              </span>
+            )}
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-sans">
               {ADMIN_ACCOUNTS_TEXT.JOINED_PREFIX} {new Date(account.createdAt).toLocaleDateString()}
             </span>

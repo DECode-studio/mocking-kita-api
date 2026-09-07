@@ -11,14 +11,19 @@ import { ROUTES } from '@/src/core/constants/routes';
 import { OnboardingTour } from './OnboardingTour';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { session, isAuthenticated, logout } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace(ROUTES.SIGN_IN);
+    } else if (session && !session.googleId && session.username.includes('@')) {
+      // Force logout if user account has no linked Google ID
+      logout().then(() => {
+        router.replace(ROUTES.SIGN_IN);
+      });
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, session, router, logout]);
 
   if (!isAuthenticated) {
     return (
