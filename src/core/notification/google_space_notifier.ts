@@ -54,7 +54,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     return;
   }
 
-  const { action, entityType, projectId, userId, operator, description, beforeState, afterState, metadata } = payload;
+  const { action, entityType, entityId, projectId, userId, operator, description, beforeState, afterState, metadata } = payload;
 
   // Filter triggers:
   // Data mutations and database maintenance operations should broadcast.
@@ -208,6 +208,128 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     userName = operator || 'System';
   }
 
+  // Resolve PIC(s) for Project and API
+  interface PicUser {
+    id: string;
+    name: string;
+    username: string;
+    googleId?: string | null;
+    source: 'Project' | 'API';
+  }
+
+  const picMap = new Map<string, PicUser>();
+
+  const resolvePicFromAccount = async (picIdOrAcc: string | any, source: 'Project' | 'API') => {
+    if (!picIdOrAcc) return;
+    if (Array.isArray(picIdOrAcc)) {
+      for (const item of picIdOrAcc) {
+        await resolvePicFromAccount(item, source);
+      }
+      return;
+    }
+    if (typeof picIdOrAcc === 'object' && (picIdOrAcc.id || picIdOrAcc.account)) {
+      const acc = picIdOrAcc.account || picIdOrAcc;
+      if (acc && acc.id) {
+        picMap.set(acc.id, {
+          id: acc.id,
+          name: acc.name || acc.username,
+          username: acc.username,
+          googleId: acc.googleId || null,
+          source,
+        });
+      }
+      return;
+    }
+    if (typeof picIdOrAcc === 'string') {
+      try {
+        const acc = await prisma.account.findUnique({
+          where: { id: picIdOrAcc },
+          select: { id: true, name: true, username: true, googleId: true },
+        });
+        if (acc) {
+          picMap.set(acc.id, {
+            id: acc.id,
+            name: acc.name,
+            username: acc.username,
+            googleId: acc.googleId,
+            source,
+          });
+        }
+      } catch {
+        // Ignore DB query errors for PIC
+      }
+    }
+  };
+
+  // 1. If entity is Project
+  if (entityType === 'project') {
+    const picTargets = state.pics || state.picIds || (beforeState && (beforeState.pics || beforeState.picIds));
+    if (picTargets && (Array.isArray(picTargets) ? picTargets.length > 0 : true)) {
+      await resolvePicFromAccount(picTargets, 'Project');
+    } else if (entityId || resolvedProjectId) {
+      try {
+        const proj = await prisma.project.findUnique({
+          where: { id: (entityId || resolvedProjectId)! },
+          select: { pics: { select: { account: { select: { id: true, name: true, username: true, googleId: true } } } } },
+        });
+        if (proj?.pics) {
+          await resolvePicFromAccount(proj.pics, 'Project');
+        }
+      } catch {
+        // Ignore DB query errors for project pic
+      }
+    }
+  }
+
+  // 2. If entity is API (or scenario belonging to an API)
+  if (entityType === 'api' || entityType === 'request_scenario' || entityType === 'response_scenario') {
+    // Check API PIC
+    const apiPicTargets = state.pics || state.picIds || (beforeState && (beforeState.pics || beforeState.picIds));
+    if (apiPicTargets && (Array.isArray(apiPicTargets) ? apiPicTargets.length > 0 : true)) {
+      await resolvePicFromAccount(apiPicTargets, 'API');
+    } else if (entityType === 'api' && entityId) {
+      try {
+        const apiData = await prisma.api.findUnique({
+          where: { id: entityId },
+          select: { pics: { select: { account: { select: { id: true, name: true, username: true, googleId: true } } } } },
+        });
+        if (apiData?.pics) {
+          await resolvePicFromAccount(apiData.pics, 'API');
+        }
+      } catch {
+        // Ignore DB query errors for api pic
+      }
+    }
+
+    // Check Project PIC
+    if (resolvedProjectId) {
+      try {
+        const proj = await prisma.project.findUnique({
+          where: { id: resolvedProjectId },
+          select: { pics: { select: { account: { select: { id: true, name: true, username: true, googleId: true } } } } },
+        });
+        if (proj?.pics) {
+          await resolvePicFromAccount(proj.pics, 'Project');
+        }
+      } catch {
+        // Ignore DB query errors for project pic
+      }
+    }
+  }
+
+  const pics = Array.from(picMap.values());
+  const googleMentions: string[] = [];
+  const picDisplayTexts: string[] = [];
+
+  for (const pic of pics) {
+    if (pic.googleId) {
+      googleMentions.push(`<users/${pic.googleId}>`);
+      picDisplayTexts.push(`${pic.name} (<users/${pic.googleId}>) [${pic.source}]`);
+    } else {
+      picDisplayTexts.push(`${pic.name} (@${pic.username}) [${pic.source}]`);
+    }
+  }
+
   const timestamp = new Date().toLocaleString('id-ID', {
     timeZone: 'Asia/Jakarta',
     year: 'numeric',
@@ -222,7 +344,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   const cardHeaderTitle = `[${actionTitle}] ${entityLabel}: "${targetInfo || projectName || 'Untitled'}"`;
   const cardHeaderSubtitle = `Executed by ${userName}${userHandle ? ` (@${userHandle})` : ''}`;
 
-  // Build Card v2 Payload for Google Space UI (Pure Card Layout, no chat balloon)
+  // Build Card v2 Payload for Google Space UI (Pure Card Layout)
   const cardWidgets: any[] = [
     {
       decoratedText: {
@@ -263,6 +385,16 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
         topLabel: 'PROJECT',
         text: `<b>${projectName}</b>`,
         startIcon: { knownIcon: 'DESCRIPTION' },
+      },
+    });
+  }
+
+  if (pics.length > 0) {
+    cardWidgets.push({
+      decoratedText: {
+        topLabel: 'PIC (PERSON IN CHARGE)',
+        text: picDisplayTexts.join(', '),
+        startIcon: { knownIcon: 'MEMBERSHIP' },
       },
     });
   }
@@ -313,15 +445,21 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   ];
 
   try {
-    // Sending ONLY cardsV2 (without top-level text) renders as pure Card without chat balloon container
+    const requestBody: Record<string, any> = {
+      cardsV2: cardsV2,
+    };
+
+    // If there are Google user mentions, include top-level text to trigger active notification ping
+    if (googleMentions.length > 0) {
+      requestBody.text = `${googleMentions.join(' ')} - [${actionTitle}] ${entityLabel}: "${targetInfo || projectName || 'Untitled'}"`;
+    }
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=UTF-8',
       },
-      body: JSON.stringify({
-        cardsV2: cardsV2,
-      }),
+      body: JSON.stringify(requestBody),
       signal: AbortSignal.timeout(5000), // 5-second timeout
     });
 
