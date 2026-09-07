@@ -11,9 +11,12 @@ import { Project } from '@/src/domain/project/entity/project';
 import { ProjectUseCase } from '@/src/domain/project/usecase/project_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
 
+import { Account } from '@/src/domain/account/entity/account';
+
 const projectSchema = z.object({
   name: z.string().min(3, 'Project name must be at least 3 characters'),
   description: z.string().optional(),
+  picIds: z.array(z.string()).optional(),
   status: z.boolean(),
 });
 
@@ -21,6 +24,7 @@ type ProjectFormValues = z.infer<typeof projectSchema>;
 
 export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Project[] = []) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const { addToast } = useUIStore();
   const pageLoading = usePageLoadingOverlay();
   const router = useRouter();
@@ -37,6 +41,24 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
     }
   };
 
+  const loadAccounts = async () => {
+    try {
+      const res = await fetch('/api/accounts');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.accounts) {
+          setAccounts(data.accounts);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
   const [sortBy, setSortBy] = useState<'name' | 'date'>('date');
@@ -50,6 +72,7 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
     defaultValues: {
       name: '',
       description: '',
+      picIds: [],
       status: true,
     },
   });
@@ -64,13 +87,14 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
 
   const openAddDialog = () => {
     setEditingProject(null);
-    form.reset({ name: '', description: '', status: true });
+    form.reset({ name: '', description: '', picIds: [], status: true });
     setIsFormOpen(true);
   };
 
   const openEditDialog = (p: Project) => {
     setEditingProject(p);
-    form.reset({ name: p.name, description: p.description || '', status: p.status });
+    const picIds = p.picIds || (p.pics ? p.pics.map((x) => x.id) : []);
+    form.reset({ name: p.name, description: p.description || '', picIds, status: p.status });
     setIsFormOpen(true);
   };
 
@@ -88,6 +112,7 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
             await projectUseCase.update(editingProject.id, {
               name: data.name,
               description: data.description,
+              picIds: data.picIds || [],
               status: data.status,
             });
             addToast({ type: 'success', title: 'Project Updated', description: `Updated project "${data.name}"` });
@@ -95,6 +120,7 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
             const created = await projectUseCase.create({
               name: data.name,
               description: data.description,
+              picIds: data.picIds || [],
               status: data.status,
             });
             addToast({ type: 'success', title: 'Project Created', description: `Created new project "${created.name}"` });
@@ -253,5 +279,6 @@ export function useProjects(projectUseCase: ProjectUseCase, initialProjects: Pro
     handleConfirmHardDelete,
     filteredProjects,
     toggleProjectStatus,
+    accounts,
   };
 }

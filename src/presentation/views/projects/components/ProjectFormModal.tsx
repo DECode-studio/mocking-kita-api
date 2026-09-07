@@ -5,11 +5,14 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { Project } from '@/src/domain/project/entity/project';
+import { Account } from '@/src/domain/account/entity/account';
 import { PROJECTS_TEXT, PROJECTS_SEMANTIC_ID } from '../constant';
+import { PicSelectField } from '@/src/presentation/components/shared/PicSelectField';
 
 interface ProjectFormValues {
   name: string;
   description?: string;
+  picIds?: string[];
   status: boolean;
 }
 
@@ -19,6 +22,7 @@ interface ProjectFormModalProps {
   editingProject: Project | null;
   form: UseFormReturn<ProjectFormValues>;
   onSubmit: (data: ProjectFormValues) => void;
+  accounts?: Account[];
 }
 
 export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
@@ -27,12 +31,17 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   editingProject,
   form,
   onSubmit,
+  accounts = [],
 }) => {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = form;
+
+  const selectedPicIds = watch('picIds') || [];
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
@@ -66,6 +75,15 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               />
               {errors.name && <p className="text-[11px] text-rose-500 mt-1">{errors.name.message}</p>}
             </div>
+
+            <PicSelectField
+              selectedPicIds={selectedPicIds}
+              onChange={(ids) => setValue('picIds', ids, { shouldValidate: true, shouldDirty: true })}
+              accounts={accounts}
+              label="Person In Charge (PIC)"
+              placeholder="Pilih PIC project..."
+              badgeTheme="purple"
+            />
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
