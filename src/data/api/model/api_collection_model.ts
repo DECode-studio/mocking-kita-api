@@ -9,6 +9,9 @@ export type ApiRow = {
   description: string | null;
   path: string | null;
   method_request: string | null;
+  pic_ids?: string[];
+  pic_id?: string | null;
+  pics?: any[];
   status: number | null;
   created_at: string | null;
   updated_at: string | null;
@@ -24,6 +27,8 @@ export function apiFromRow(row: ApiRow): ApiCollection {
     description: row.description ?? undefined,
     path: row.path ?? '',
     methodRequest: (row.method_request as ApiCollection['methodRequest']) || 'GET',
+    picIds: row.pic_ids || (row.pic_id ? [row.pic_id] : []),
+    pics: row.pics || [],
     status: toBoolean(row.status),
     createdAt: row.created_at ?? new Date().toISOString(),
     updatedAt: row.updated_at ?? new Date().toISOString(),

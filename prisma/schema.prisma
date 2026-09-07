@@ -17,6 +17,7 @@ model Project {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
+  pics         ProjectPic[]
   environments Environment[]
   collections  Collection[]
   apis         Api[]
@@ -73,11 +74,38 @@ model Api {
 
   project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   collection       Collection?       @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  pics             ApiPic[]
   apiEnvironments  ApiEnvironment[]
   requestScenarios RequestScenario[]
 
   @@unique([projectId, path, methodRequest], name: "tblApi_index_0")
   @@map("tblApi")
+}
+
+model ProjectPic {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  accountId String   @map("account_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, accountId])
+  @@map("tblProjectPic")
+}
+
+model ApiPic {
+  id        String   @id @default(uuid())
+  apiId     String   @map("api_id")
+  accountId String   @map("account_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  api     Api     @relation(fields: [apiId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([apiId, accountId])
+  @@map("tblApiPic")
 }
 
 model ApiEnvironment {
@@ -149,10 +177,13 @@ model Account {
   password  String
   role      String
   name      String
+  googleId  String?  @unique @map("google_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  changeLogs ChangeLog[]
+  changeLogs  ChangeLog[]
+  projectPics ProjectPic[]
+  apiPics     ApiPic[]
 
   @@map("tblAccount")
 }

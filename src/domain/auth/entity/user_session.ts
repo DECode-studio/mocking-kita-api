@@ -3,7 +3,9 @@ export interface UserSession {
   name: string;
   avatarUrl?: string;
   role: string;
+  googleId?: string | null;
   token: string;
   rememberMe: boolean;
   loginAt: string;
 }
+
