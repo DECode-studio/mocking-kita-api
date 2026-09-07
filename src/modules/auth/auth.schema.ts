@@ -11,6 +11,7 @@ export const AuthLoginSchema = z.object({
     .object({
       name: z.string().trim().min(1, 'Display Name is required').max(120),
       role: z.string().trim().min(1, 'Role is required').max(120),
+      googleId: z.string().trim().nullable().optional(),
     })
     .optional(),
 });

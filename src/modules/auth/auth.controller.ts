@@ -40,6 +40,34 @@ function beautifyEmailName(email: string): string {
 
 export async function GET() {
   const session = await getServerSession();
+  if (!session) {
+    return NextResponse.json({ session: null });
+  }
+
+  // Verify that database account has a valid googleId
+  try {
+    const account = await accountRepository.getByUsername(session.username);
+    if (account) {
+      if (!account.googleId) {
+        // Missing googleId -> force logout
+        await clearServerSession();
+        return NextResponse.json({
+          session: null,
+          error: 'Account must have a linked Google Workspace ID. Please sign in with Google.',
+          code: 'GOOGLE_ID_REQUIRED',
+        });
+      }
+
+      // Keep session googleId in sync
+      if (session.googleId !== account.googleId) {
+        session.googleId = account.googleId;
+        await setServerSession(session);
+      }
+    }
+  } catch {
+    // If DB check fails, proceed with current session
+  }
+
   return NextResponse.json({ session });
 }
 
@@ -114,6 +142,7 @@ export async function POST(request: Request) {
           passwordHash,
           name: name.trim(),
           role: role.trim(),
+          googleId: registerExtra.googleId ? registerExtra.googleId.trim() : null,
         });
       }
 
@@ -121,6 +150,7 @@ export async function POST(request: Request) {
         username: account.username,
         name: account.name,
         role: account.role,
+        googleId: account.googleId || null,
         token: `mock-jwt-token-${Date.now()}`,
         rememberMe,
         loginAt: new Date().toISOString(),
@@ -163,6 +193,7 @@ export async function POST(request: Request) {
               username: account.username,
               name: account.name,
               role: account.role,
+              googleId: account.googleId || null,
               token: `mock-jwt-token-${Date.now()}`,
               rememberMe,
               loginAt: new Date().toISOString(),

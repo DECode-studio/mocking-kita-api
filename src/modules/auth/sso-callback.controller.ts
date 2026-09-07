@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
   let email = '';
   let name = '';
+  let googleId = '';
 
   const redirectUri = getRedirectUri(request);
 
@@ -61,6 +62,7 @@ export async function GET(request: Request) {
 
       email = profileData.email?.toLowerCase();
       name = profileData.name || email.split('@')[0];
+      googleId = profileData.id || profileData.sub || '';
     } catch (err) {
       logServerError('SSO authentication callback failed', err);
       return new Response('SSO Authentication error', { status: 500 });
@@ -98,6 +100,7 @@ export async function GET(request: Request) {
       html = html
         .replaceAll('{{email}}', email)
         .replaceAll('{{name}}', name)
+        .replaceAll('{{googleId}}', googleId)
         .replaceAll('{{rolesOptions}}', rolesOptions);
 
       return new Response(html, {
@@ -105,10 +108,16 @@ export async function GET(request: Request) {
       });
     }
 
+    // If account exists and googleId is present, auto-link/sync googleId if needed
+    if (googleId && account.googleId !== googleId) {
+      account = await accountRepository.update(account.id, { googleId });
+    }
+
     const session = {
       username: account.username,
       name: account.name,
       role: account.role,
+      googleId: account.googleId || null,
       token: `mock-jwt-token-${Date.now()}`,
       rememberMe: false,
       loginAt: new Date().toISOString(),
