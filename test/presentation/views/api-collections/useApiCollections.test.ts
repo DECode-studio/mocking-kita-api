@@ -129,6 +129,7 @@ describe('useApiCollections', () => {
       description: undefined,
       path: '/api/products',
       methodRequest: 'GET',
+      picIds: [],
       status: true,
       collectionId: null,
     });

@@ -83,6 +83,7 @@ describe('useProjects', () => {
     expect(mockProjectUseCase.create).toHaveBeenCalledWith({
       name: 'Gamma Project',
       description: 'New',
+      picIds: [],
       status: true,
     });
     expect(result.current.isFormOpen).toBe(false);
