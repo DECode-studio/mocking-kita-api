@@ -237,4 +237,65 @@ describe('internal-proxy and cache', () => {
     expect(second.status).toBe(200);
     expect(readDatabase).toHaveBeenCalledTimes(1);
   });
+
+  it('handleInternalApiRequest should return 404 if request does not match scenario headers or query params', async () => {
+    const mockDb = {
+      projects: [{ id: 'p1', status: true }],
+      environments: [{ id: 'env1', projectId: 'p1', status: true }],
+      apiCollections: [
+        { id: 'a1', projectId: 'p1', path: '/api/v1/data', methodRequest: 'GET', status: true },
+      ],
+      apiEnvironments: [],
+      requestScenarios: [
+        {
+          id: 'r1',
+          apiId: 'a1',
+          name: 'Authorized Scenario',
+          headers: { 'x-api-key': 'secret-123' },
+          queryParams: { role: 'admin' },
+          pathParams: {},
+          body: {},
+          bodyType: 'NONE',
+          matchType: 'EXACT',
+          priority: 10,
+          status: true,
+        },
+      ],
+      responseScenarios: [
+        {
+          id: 'res1',
+          requestScenarioId: 'r1',
+          name: '200 OK',
+          statusCode: 200,
+          headers: {},
+          body: { message: 'success' },
+          responseType: 'JSON',
+          delayMs: 0,
+          weight: 100,
+          priority: 10,
+          status: true,
+        },
+      ],
+    };
+
+    (readDatabase as any).mockResolvedValue(mockDb);
+
+    // Request without headers/query params -> Should NOT match and should return 404
+    const reqWithoutHeaderParam = new NextRequest('http://localhost/api/v1/data', { method: 'GET' });
+    const resWithout = await handleInternalApiRequest(reqWithoutHeaderParam);
+    expect(resWithout.status).toBe(404);
+    const errJson = await resWithout.json();
+    expect(errJson.error).toBe('No request scenario matched this request');
+
+    // Request with correct headers and query params -> Should match and return 200
+    const reqWithHeaderParam = new NextRequest('http://localhost/api/v1/data?role=admin', {
+      method: 'GET',
+      headers: { 'x-api-key': 'secret-123' },
+    });
+    const resWith = await handleInternalApiRequest(reqWithHeaderParam);
+    expect(resWith.status).toBe(200);
+    const successJson = await resWith.json();
+    expect(successJson).toEqual({ message: 'success' });
+  });
 });
+

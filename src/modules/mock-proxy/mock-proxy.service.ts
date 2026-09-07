@@ -567,7 +567,11 @@ function scoreScenarioMatch(
     bodyType: RequestBodyType;
   }
 ): ScenarioMatchResult | null {
-  if (scenario.bodyType && scenario.bodyType !== actual.bodyType) {
+  if (scenario.bodyType && scenario.bodyType !== 'NONE' && actual.bodyType === 'NONE' && !isEmptyValue(scenario.body)) {
+    return null;
+  }
+
+  if (scenario.bodyType && actual.bodyType !== 'NONE' && scenario.bodyType !== actual.bodyType) {
     const isExpectedForm = scenario.bodyType === 'FORM_DATA' || scenario.bodyType === 'URL_ENCODED';
     const isActualForm = actual.bodyType === 'FORM_DATA' || actual.bodyType === 'URL_ENCODED';
     if (!(isExpectedForm && isActualForm)) {
@@ -864,15 +868,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
     .filter((value): value is ScenarioMatchResult => value !== null)
     .sort((a, b) => b.score - a.score);
 
-  let matchedRequestScenario = requestScenarios[0]?.scenario || null;
-
-  if (!matchedRequestScenario) {
-    const allActiveScenarios = [...activeRequestScenarios].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
-
-    if (allActiveScenarios.length > 0) {
-      matchedRequestScenario = allActiveScenarios[0];
-    }
-  }
+  const matchedRequestScenario = requestScenarios[0]?.scenario || null;
 
   if (!matchedRequestScenario) {
     return NextResponse.json(
