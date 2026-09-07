@@ -71,6 +71,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
     openEditCollectionDialog,
     onSubmitCollectionForm,
     handleDeleteCollection,
+    accounts,
   } = useApiCollections(apiUseCase, collectionUseCase, embeddedProjectId, initialApis, initialCollections);
 
   const [collapsedCollections, setCollapsedCollections] = React.useState<Record<string, boolean>>({});
@@ -268,6 +269,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
         form={form}
         onSubmit={onSubmitForm}
         collections={collections}
+        accounts={accounts}
       />
 
       {/* Collection Form Modal */}

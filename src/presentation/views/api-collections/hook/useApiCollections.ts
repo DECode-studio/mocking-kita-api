@@ -13,6 +13,8 @@ import { Collection } from '@/src/domain/collection/entity/collection';
 import { CollectionUseCase } from '@/src/domain/collection/usecase/collection_usecase';
 import { getErrorMessage } from '@/src/core/utils/error';
 
+import { Account } from '@/src/domain/account/entity/account';
+
 const apiSchema = z.object({
   name: z.string().min(2, 'Endpoint name is required'),
   description: z.string().optional(),
@@ -20,6 +22,7 @@ const apiSchema = z.object({
     message: 'Path must start with a slash (e.g. /api/users)',
   }),
   methodRequest: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']),
+  picIds: z.array(z.string()).optional(),
   status: z.boolean(),
   collectionId: z.string().nullable().optional(),
 });
@@ -40,6 +43,7 @@ export function useApiCollections(
   const activeProjectId = embeddedProjectId;
   const [apis, setApis] = useState<ApiCollection[]>(initialApis);
   const [collections, setCollections] = useState<Collection[]>(initialCollections);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [search, setSearch] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
@@ -63,10 +67,29 @@ export function useApiCollections(
       description: '',
       path: '/api/',
       methodRequest: 'GET',
+      picIds: [],
       status: true,
       collectionId: null,
     },
   });
+
+  const loadAccounts = async () => {
+    try {
+      const res = await fetch('/api/accounts');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.accounts) {
+          setAccounts(data.accounts);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    loadAccounts();
+  }, []);
 
   const openAddDialog = () => {
     setEditingApi(null);
@@ -75,6 +98,7 @@ export function useApiCollections(
       description: '',
       path: '/api/',
       methodRequest: 'GET',
+      picIds: [],
       status: true,
       collectionId: null,
     });
@@ -83,11 +107,13 @@ export function useApiCollections(
 
   const openEditDialog = (api: ApiCollection) => {
     setEditingApi(api);
+    const picIds = api.picIds || (api.pics ? api.pics.map((x) => x.id) : []);
     form.reset({
       name: api.name,
       description: api.description || '',
       path: api.path,
       methodRequest: api.methodRequest,
+      picIds,
       status: api.status,
       collectionId: api.collectionId || null,
     });
@@ -169,6 +195,7 @@ export function useApiCollections(
               description: data.description,
               path: data.path,
               methodRequest: data.methodRequest,
+              picIds: data.picIds || [],
               status: data.status,
               collectionId: data.collectionId || null,
             });
@@ -180,6 +207,7 @@ export function useApiCollections(
               description: data.description,
               path: data.path,
               methodRequest: data.methodRequest,
+              picIds: data.picIds || [],
               status: data.status,
               collectionId: data.collectionId || null,
             });
@@ -370,5 +398,6 @@ export function useApiCollections(
     openEditCollectionDialog,
     onSubmitCollectionForm,
     handleDeleteCollection,
+    accounts,
   };
 }

@@ -40,6 +40,19 @@ export const ApiCollectionListItem: React.FC<ApiCollectionListItemProps> = ({
               {api.path}
             </span>
             <StatusBadge status={api.status} />
+            {api.pics && api.pics.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {api.pics.map((pic) => (
+                  <span
+                    key={pic.id}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-medium"
+                    title={`${pic.name} (@${pic.username})`}
+                  >
+                    PIC: {pic.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
             {api.name} {api.description ? `• ${api.description}` : ''}
