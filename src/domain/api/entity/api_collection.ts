@@ -1,4 +1,5 @@
 import { MethodRequest } from '@/src/core/utils/types';
+import { Account } from '@/src/domain/account/entity/account';
 
 export interface ApiCollection {
   id: string;
@@ -7,9 +8,12 @@ export interface ApiCollection {
   description?: string;
   path: string;
   methodRequest: MethodRequest;
+  picIds?: string[];
+  pics?: Account[];
   status: boolean;
   collectionId?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
 }
+

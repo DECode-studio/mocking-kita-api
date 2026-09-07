@@ -65,6 +65,7 @@
       const name = document.getElementById('name-input').value.trim();
       const role = document.getElementById('role-select').value;
       const email = "{{email}}";
+      const googleId = "{{googleId}}";
 
       try {
         const res = await fetch('/api/auth', {
@@ -74,7 +75,7 @@
             username: email,
             password: '',
             rememberMe: false,
-            registerExtra: { name, role }
+            registerExtra: { name, role, googleId: googleId || undefined }
           })
         });
 

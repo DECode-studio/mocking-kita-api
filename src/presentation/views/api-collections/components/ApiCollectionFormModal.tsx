@@ -6,7 +6,9 @@ import { X } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { Collection } from '@/src/domain/collection/entity/collection';
+import { Account } from '@/src/domain/account/entity/account';
 import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from '../constant';
+import { PicSelectField } from '@/src/presentation/components/shared/PicSelectField';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ApiCollectionFormModalProps {
@@ -16,6 +18,7 @@ interface ApiCollectionFormModalProps {
   form: UseFormReturn<any>;
   onSubmit: (data: any) => void;
   collections: Collection[];
+  accounts?: Account[];
 }
 
 export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
@@ -25,12 +28,17 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
   form,
   onSubmit,
   collections,
+  accounts = [],
 }) => {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = form;
+
+  const selectedPicIds = watch('picIds') || [];
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
@@ -81,6 +89,15 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
                 ))}
               </select>
             </div>
+
+            <PicSelectField
+              selectedPicIds={selectedPicIds}
+              onChange={(ids) => setValue('picIds', ids, { shouldValidate: true, shouldDirty: true })}
+              accounts={accounts}
+              label="Person In Charge (PIC) - Optional"
+              placeholder="Pilih PIC endpoint..."
+              badgeTheme="indigo"
+            />
 
             <div className="grid grid-cols-3 gap-2">
               <div>

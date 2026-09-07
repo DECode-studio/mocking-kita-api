@@ -3,6 +3,8 @@ export interface Account {
   username: string;
   name: string;
   role: string;
+  googleId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
+

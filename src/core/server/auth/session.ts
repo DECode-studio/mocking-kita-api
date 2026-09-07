@@ -26,6 +26,7 @@ export function parseServerSession(raw: string | undefined): UserSession | null 
       name: value.name,
       avatarUrl: typeof value.avatarUrl === 'string' ? value.avatarUrl : undefined,
       role: value.role,
+      googleId: typeof value.googleId === 'string' ? value.googleId : (value.googleId ?? null),
       token: typeof value.token === 'string' ? value.token : '',
       rememberMe: Boolean(value.rememberMe),
       loginAt: value.loginAt,

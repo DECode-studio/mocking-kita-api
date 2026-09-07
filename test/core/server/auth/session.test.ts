@@ -19,6 +19,7 @@ describe('parseServerSession', () => {
       name: 'Admin',
       avatarUrl: undefined,
       role: 'ADMIN',
+      googleId: null,
       token: 'token-1',
       rememberMe: true,
       loginAt: '2026-09-03T00:00:00.000Z',

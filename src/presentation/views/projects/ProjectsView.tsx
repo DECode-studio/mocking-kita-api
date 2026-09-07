@@ -44,6 +44,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
     handleConfirmHardDelete,
     filteredProjects,
     toggleProjectStatus,
+    accounts,
   } = useProjects(projectUseCase, initialProjects);
 
   return (
@@ -107,6 +108,7 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
         editingProject={editingProject}
         form={form}
         onSubmit={onSubmitForm}
+        accounts={accounts}
       />
 
       {/* Delete Confirmation */}

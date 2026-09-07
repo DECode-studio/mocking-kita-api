@@ -5,6 +5,7 @@ import { toApiDomain } from './api.mapper';
 export async function getApisByProjectId(projectId: string): Promise<ApiCollection[]> {
   const rows = await prisma.api.findMany({
     where: { projectId },
+    include: { pics: { include: { account: true } } },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
   return rows.map(toApiDomain);
@@ -12,6 +13,7 @@ export async function getApisByProjectId(projectId: string): Promise<ApiCollecti
 
 export async function getAllApis(): Promise<ApiCollection[]> {
   const rows = await prisma.api.findMany({
+    include: { pics: { include: { account: true } } },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
   });
   return rows.map(toApiDomain);
@@ -20,6 +22,7 @@ export async function getAllApis(): Promise<ApiCollection[]> {
 export async function getApiById(id: string): Promise<ApiCollection | null> {
   const row = await prisma.api.findUnique({
     where: { id },
+    include: { pics: { include: { account: true } } },
   });
   return row ? toApiDomain(row) : null;
 }
@@ -27,6 +30,7 @@ export async function getApiById(id: string): Promise<ApiCollection | null> {
 export async function createApi(
   input: Omit<ApiCollection, 'id' | 'createdAt' | 'updatedAt'> & { id: string; createdAt: string; updatedAt: string }
 ): Promise<ApiCollection> {
+  const picIds = (input.picIds || []).filter(Boolean);
   const row = await prisma.api.create({
     data: {
       id: input.id,
@@ -40,7 +44,13 @@ export async function createApi(
       createdAt: new Date(input.createdAt),
       updatedAt: new Date(input.updatedAt),
       deletedAt: input.deletedAt ? new Date(input.deletedAt) : null,
+      ...(picIds.length > 0 && {
+        pics: {
+          create: picIds.map((accountId) => ({ accountId })),
+        },
+      }),
     },
+    include: { pics: { include: { account: true } } },
   });
   return toApiDomain(row);
 }
@@ -48,6 +58,16 @@ export async function createApi(
 export async function updateApi(id: string, input: Partial<ApiCollection>): Promise<ApiCollection> {
   const current = await getApiById(id);
   if (!current) throw new Error(`API Collection ${id} not found`);
+
+  if (input.picIds !== undefined) {
+    await prisma.apiPic.deleteMany({ where: { apiId: id } });
+    const picIds = (input.picIds || []).filter(Boolean);
+    if (picIds.length > 0) {
+      await prisma.apiPic.createMany({
+        data: picIds.map((accountId) => ({ apiId: id, accountId })),
+      });
+    }
+  }
 
   const updatedRow = await prisma.api.update({
     where: { id },
@@ -63,6 +83,7 @@ export async function updateApi(id: string, input: Partial<ApiCollection>): Prom
       ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),
       ...(input.deletedAt !== undefined && { deletedAt: input.deletedAt ? new Date(input.deletedAt) : null }),
     },
+    include: { pics: { include: { account: true } } },
   });
   return toApiDomain(updatedRow);
 }

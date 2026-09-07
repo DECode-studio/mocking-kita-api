@@ -39,6 +39,7 @@ describe('/api/auth route', () => {
       username: 'admin',
       name: 'Admin',
       role: 'ADMIN',
+      googleId: null,
       token: 'test-token',
       rememberMe: false,
       loginAt: '2026-09-03T00:00:00.000Z',
@@ -121,6 +122,60 @@ describe('/api/auth route', () => {
     expect(json.error).toContain('Only whitelisted email domains are allowed');
   });
 
+  it('GET should force logout and return null session if DB account has no googleId', async () => {
+    const sessionData = {
+      username: 'user@example.com',
+      name: 'User',
+      role: 'DEVELOPER',
+      token: 'test-token',
+      rememberMe: false,
+      loginAt: '2026-09-03T00:00:00.000Z',
+    };
+    mockCookieStore.get.mockReturnValue({ value: JSON.stringify(sessionData) });
+    (accountRepository.getByUsername as any).mockResolvedValue({
+      id: 'user-1',
+      username: 'user@example.com',
+      googleId: null, // Missing googleId
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json.session).toBeNull();
+    expect(json.code).toBe('GOOGLE_ID_REQUIRED');
+    expect(mockCookieStore.set).toHaveBeenCalledWith(
+      'mock-api-studio-auth',
+      '',
+      expect.objectContaining({ maxAge: 0 })
+    );
+  });
+
+  it('GET should return session if DB account has googleId', async () => {
+    const sessionData = {
+      username: 'user@example.com',
+      name: 'User',
+      role: 'DEVELOPER',
+      googleId: '1092837465',
+      token: 'test-token',
+      rememberMe: false,
+      loginAt: '2026-09-03T00:00:00.000Z',
+    };
+    mockCookieStore.get.mockReturnValue({ value: JSON.stringify(sessionData) });
+    (accountRepository.getByUsername as any).mockResolvedValue({
+      id: 'user-1',
+      username: 'user@example.com',
+      googleId: '1092837465',
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json.session).toEqual(expect.objectContaining({
+      username: 'user@example.com',
+      googleId: '1092837465',
+    }));
+  });
+
   it('DELETE should clear auth cookie and return success', async () => {
     const res = await DELETE();
     const json = await res.json();
@@ -134,3 +189,4 @@ describe('/api/auth route', () => {
     );
   });
 });
+

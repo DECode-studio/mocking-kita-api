@@ -134,8 +134,21 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
         </p>
       </div>
 
-      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-mono text-slate-500">
-        <span className="text-[10px]">{formatDate(project.createdAt)}</span>
+      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-mono text-slate-500 gap-2">
+        <span className="text-[10px] shrink-0">{formatDate(project.createdAt)}</span>
+        {project.pics && project.pics.length > 0 && (
+          <div className="flex flex-wrap gap-1 justify-end max-w-[70%]">
+            {project.pics.map((pic) => (
+              <span
+                key={pic.id}
+                className="text-[10px] px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-sans font-medium truncate max-w-25"
+                title={`${pic.name} (@${pic.username})`}
+              >
+                {pic.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
