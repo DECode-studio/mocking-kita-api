@@ -1,7 +1,7 @@
 {
   "name": "mock-api-studio",
   "private": true,
-  "version": "4.3.0",
+  "version": "4.3.1",
   "type": "module",
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:reset": "prisma migrate reset"
   },
   "dependencies": {
