@@ -86,4 +86,48 @@ describe('param-matcher', () => {
       expect(evaluateParamOperator('empty_array', undefined, 'not_an_array')).toBe(false);
     });
   });
+
+  describe('matchesParamsMap with ALL and ANY strategies', () => {
+    const expected = {
+      role: { $operator: 'regex_i', $value: '^admin' },
+      deletedAt: { $operator: 'null' },
+      tags: { $operator: 'empty_array' },
+    };
+
+    it('matches ALL strategy when all match', () => {
+      const actual = {
+        role: 'ADMINISTRATOR',
+        deletedAt: null,
+        tags: [],
+      };
+      expect(matchesParamsMap(expected, actual, 'ALL')).toBe(true);
+    });
+
+    it('fails ALL strategy when one fails', () => {
+      const actual = {
+        role: 'ADMINISTRATOR',
+        deletedAt: '2026-01-01',
+        tags: [],
+      };
+      expect(matchesParamsMap(expected, actual, 'ALL')).toBe(false);
+    });
+
+    it('matches ANY strategy when at least one matches', () => {
+      const actual = {
+        role: 'GUEST',
+        deletedAt: '2026-01-01',
+        tags: [], // matches empty_array
+      };
+      expect(matchesParamsMap(expected, actual, 'ANY')).toBe(true);
+    });
+
+    it('fails ANY strategy when none match', () => {
+      const actual = {
+        role: 'GUEST',
+        deletedAt: '2026-01-01',
+        tags: ['tag1'],
+      };
+      expect(matchesParamsMap(expected, actual, 'ANY')).toBe(false);
+    });
+  });
 });
