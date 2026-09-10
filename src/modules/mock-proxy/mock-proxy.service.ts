@@ -7,7 +7,17 @@ import { ApiCollection } from '@/src/domain/api/entity/api_collection';
 import { ApiEnvironment } from '@/src/domain/api/entity/api_environment';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
-import { MatchType, RequestBodyType } from '@/src/core/utils/types';
+import { MatchStrategy, MatchType, RequestBodyType } from '@/src/core/utils/types';
+import {
+  evaluateBodyPathRules,
+  evaluateDeepMatch,
+  extractParamRule,
+  isParamRule,
+  isToleratedHeader,
+  matchesHeadersMap,
+  matchesParamsMap,
+  matchesStructure,
+} from '@/src/core/utils/param-matcher';
 import { getUploadDirectory } from '@/src/modules/upload/upload.paths';
 import { getProxyConfigCache, responseCache, setProxyConfigCache, throttleStates } from './mock-proxy.cache';
 
@@ -262,7 +272,13 @@ function isEmptyValue(value: unknown): boolean {
 
 function countSpecifiedFields(value: unknown): number {
   if (isEmptyValue(value)) return 0;
-  if (Array.isArray(value)) return value.length;
+  if (isParamRule(value)) {
+    const rule = extractParamRule(value);
+    return rule.enabled === false ? 0 : 1;
+  }
+  if (Array.isArray(value)) {
+    return value.reduce<number>((sum, item) => sum + countSpecifiedFields(item), 0);
+  }
   if (typeof value !== 'object') return 1;
   const objectValue = value as Record<string, unknown>;
   const nestedCount = Object.values(objectValue).reduce<number>((sum, item) => sum + countSpecifiedFields(item), 0);
@@ -280,36 +296,16 @@ function isBinaryFilePlaceholder(value: unknown): boolean {
   return false;
 }
 
-function matchesExact(expected: unknown, actual: unknown, looseScalars = false): boolean {
+function matchesExact(expected: unknown, actual: unknown, looseScalars = false, matchStrategy: MatchStrategy = 'ALL'): boolean {
   if (isEmptyValue(expected)) return true;
   if (isBinaryFilePlaceholder(expected)) return actual != null && !isEmptyValue(actual);
-  if (Array.isArray(expected) || (expected && typeof expected === 'object')) {
-    if (looseScalars) {
-      return matchesPartial(expected, actual, true);
-    }
-    return deepEqual(expected, actual);
-  }
-  return String(actual ?? '') === String(expected ?? '');
+  return evaluateDeepMatch(expected, actual, looseScalars, matchStrategy);
 }
 
-function matchesPartial(expected: unknown, actual: unknown, looseScalars = false): boolean {
+function matchesPartial(expected: unknown, actual: unknown, looseScalars = false, matchStrategy: MatchStrategy = 'ALL'): boolean {
   if (isEmptyValue(expected)) return true;
   if (isBinaryFilePlaceholder(expected)) return actual != null && !isEmptyValue(actual);
-
-  if (Array.isArray(expected)) {
-    if (!Array.isArray(actual)) return false;
-    if (expected.length !== actual.length) return false;
-    return expected.every((expectedItem, index) => matchesPartial(expectedItem, actual[index], looseScalars));
-  }
-
-  if (expected && typeof expected === 'object') {
-    if (!actual || typeof actual !== 'object') return false;
-    return objectEntries(expected).every(([key, expectedValue]) =>
-      matchesPartial(expectedValue, (actual as Record<string, unknown>)[key], looseScalars)
-    );
-  }
-
-  return String(actual ?? '') === String(expected ?? '');
+  return evaluateDeepMatch(expected, actual, looseScalars, matchStrategy);
 }
 
 function matchesRegex(expected: unknown, actual: unknown, looseScalars = false): boolean {
@@ -404,17 +400,23 @@ function matchesJsonSchema(schema: unknown, actual: unknown): boolean {
   return true;
 }
 
-function matchesValue(expected: unknown, actual: unknown, matchType: MatchType, looseScalars = false): boolean {
+function matchesValue(
+  expected: unknown,
+  actual: unknown,
+  matchType: MatchType,
+  looseScalars = false,
+  matchStrategy: MatchStrategy = 'ALL'
+): boolean {
   switch (matchType) {
     case 'PARTIAL':
-      return matchesPartial(expected, actual, looseScalars);
+      return matchesPartial(expected, actual, looseScalars, matchStrategy);
     case 'REGEX':
       return matchesRegex(expected, actual, looseScalars);
     case 'JSON_SCHEMA':
       return matchesJsonSchema(expected, actual);
     case 'EXACT':
     default:
-      return matchesExact(expected, actual, looseScalars);
+      return matchesExact(expected, actual, looseScalars, matchStrategy);
   }
 }
 
@@ -537,24 +539,12 @@ export const __mockProxyTestUtils = {
 };
 
 
-function matchHeaders(expectedHeaders: unknown, actualHeaders: Record<string, string>): boolean {
-  if (isEmptyValue(expectedHeaders)) return true;
-  if (!expectedHeaders || typeof expectedHeaders !== 'object') return true;
-
-  const normalizedExpected: Record<string, string> = {};
-  for (const [key, value] of Object.entries(expectedHeaders as Record<string, unknown>)) {
-    if (!isEmptyValue(value)) {
-      normalizedExpected[key.toLowerCase()] = toHeaderValue(value);
-    }
-  }
-
-  if (Object.keys(normalizedExpected).length === 0) return true;
-
-  return Object.entries(normalizedExpected).every(([key, expectedVal]) => {
-    const actualVal = actualHeaders[key];
-    if (actualVal === undefined) return false;
-    return matchesValue(expectedVal, actualVal, 'EXACT', true) || matchesValue(expectedVal, actualVal, 'PARTIAL', true);
-  });
+function matchHeaders(expectedHeaders: unknown, actualHeaders: Record<string, string>, matchStrategy: MatchStrategy = 'ALL'): boolean {
+  return matchesHeadersMap(
+    expectedHeaders as Record<string, unknown> | null | undefined,
+    actualHeaders,
+    matchStrategy
+  );
 }
 
 function scoreScenarioMatch(
@@ -579,16 +569,30 @@ function scoreScenarioMatch(
     }
   }
 
-  const headerMatch = matchHeaders(scenario.headers, actual.headers);
-  const queryMatch = matchesValue(scenario.queryParams, actual.queryParams, scenario.matchType, true);
-  const pathMatch = matchesValue(scenario.pathParams, actual.pathParams, scenario.matchType, true);
+  const strategy = scenario.matchStrategy || 'ALL';
+  const headerMatch = matchHeaders(scenario.headers, actual.headers, strategy);
+  const queryMatch = matchesParamsMap(scenario.queryParams as Record<string, unknown>, actual.queryParams, strategy, true, false);
+  const pathMatch = matchesParamsMap(scenario.pathParams as Record<string, unknown>, actual.pathParams, strategy, true, false);
   
   const isFormOrUrlEncoded = scenario.bodyType === 'FORM_DATA' || scenario.bodyType === 'URL_ENCODED';
-  const bodyMatch = matchesValue(scenario.body, actual.body, scenario.matchType, isFormOrUrlEncoded);
+  const activeBodyRules = scenario.bodyRules?.filter((r) => r && r.enabled !== false && r.path && r.path.trim() !== '') || [];
+  const hasActiveBodyRules = activeBodyRules.length > 0;
 
+  let bodyMatch = true;
+  if (hasActiveBodyRules) {
+    const isStrictStructure = scenario.strictBodyStructure !== false;
+    if (isStrictStructure) {
+      bodyMatch = matchesStructure(scenario.body, actual.body);
+    } else {
+      bodyMatch = true;
+    }
+  } else {
+    bodyMatch = matchesValue(scenario.body, actual.body, scenario.matchType, isFormOrUrlEncoded, strategy);
+  }
 
+  const bodyRulesMatch = evaluateBodyPathRules(scenario.bodyRules, actual.body, strategy, true);
 
-  if (!headerMatch || !queryMatch || !pathMatch || !bodyMatch) {
+  if (!headerMatch || !queryMatch || !pathMatch || !bodyMatch || !bodyRulesMatch) {
     return null;
   }
 
@@ -597,10 +601,12 @@ function scoreScenarioMatch(
     countSpecifiedFields(scenario.headers) +
     countSpecifiedFields(scenario.queryParams) +
     countSpecifiedFields(scenario.pathParams) +
-    countSpecifiedFields(scenario.body);
+    countSpecifiedFields(scenario.body) +
+    (scenario.bodyRules?.filter((r) => r.enabled !== false).length ?? 0);
 
   return { scenario, score };
 }
+
 
 function chooseWeightedResponse(responses: ResponseScenario[]): ResponseScenario | null {
   if (!responses.length) return null;
@@ -678,12 +684,26 @@ function isThrottled(request: Request, pathname: string): { throttled: boolean; 
   return { throttled: false };
 }
 
-function makeCacheKey(method: string, pathname: string, queryParams: Record<string, string>, body: unknown): string {
+function makeCacheKey(
+  method: string,
+  pathname: string,
+  queryParams: Record<string, string>,
+  body: unknown,
+  headers: Record<string, string>
+): string {
+  const strictHeaders: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers)) {
+    const lower = k.toLowerCase();
+    if (!isToleratedHeader(lower)) {
+      strictHeaders[lower] = v;
+    }
+  }
   return JSON.stringify({
     method: method.toUpperCase(),
     pathname,
     queryParams,
     body,
+    headers: strictHeaders,
   });
 }
 
@@ -757,25 +777,25 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
   }
 
   const method = request.method.toUpperCase();
+  const headers = normalizeHeaders(request.headers);
   const body = await parseBodyContent(request.headers.get('content-type'), request);
   const queryParams = Object.fromEntries(url.searchParams.entries());
   const cacheKey =
-    method === 'GET' || method === 'HEAD' ? makeCacheKey(method, pathname, queryParams, body) : null;
+    method === 'GET' || method === 'HEAD' ? makeCacheKey(method, pathname, queryParams, body, headers) : null;
   const cached = cacheKey ? getCachedResponse(cacheKey) : null;
   if (cached) {
     if (method === 'HEAD') {
-      const headers = new Headers(cached.headers);
-      headers.set('x-cache', 'HIT');
+      const cachedHeaders = new Headers(cached.headers);
+      cachedHeaders.set('x-cache', 'HIT');
       return new NextResponse(null, {
         status: cached.status,
-        headers,
+        headers: cachedHeaders,
       });
     }
     return responseFromCache(cached);
   }
 
   const proxyConfig = await getProxyConfig();
-  const headers = normalizeHeaders(request.headers);
 
   let targetPathname = pathname;
   let targetProjectId: string | null = null;

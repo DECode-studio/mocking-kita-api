@@ -1,4 +1,4 @@
-import { MatchType, RequestBodyType } from '@/src/core/utils/types';
+import { BodyPathRule, MatchStrategy, MatchType, RequestBodyType } from '@/src/core/utils/types';
 
 export interface RequestScenario {
   id: string;
@@ -11,9 +11,14 @@ export interface RequestScenario {
   body: unknown;
   bodyType: RequestBodyType;
   matchType: MatchType;
+  matchStrategy?: MatchStrategy;
+  bodyRules?: BodyPathRule[];
+  strictBodyStructure?: boolean;
   priority: number;
   status: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
 }
+
+

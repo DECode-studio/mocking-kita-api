@@ -58,11 +58,57 @@ describe('useRequestScenarioModal', () => {
     expect(onSubmit).toHaveBeenCalledWith({
       name: 'My Scenario',
       priority: 10,
+      matchStrategy: 'ALL',
       queryParams: '{}',
       headers: '{}',
       body: '{}',
       bodyType: 'JSON',
+      bodyRules: [],
       status: true,
     });
+  });
+
+  it('should initialize and submit bodyRules', () => {
+    const onSubmit = vi.fn();
+    const scenario = {
+      id: 'req-2',
+      name: 'Scenario with Rules',
+      priority: 1,
+      queryParams: {},
+      headers: {},
+      body: {},
+      bodyType: 'JSON',
+      bodyRules: [{ path: 'user.id', operator: 'equal', value: '123', enabled: true }],
+      status: true,
+    } as any;
+
+    const { result } = renderHook(() =>
+      useRequestScenarioModal({ isOpen: true, editingReqScenario: scenario, onSubmit })
+    );
+
+    expect(result.current.bodyRules).toEqual([
+      { path: 'user.id', operator: 'equal', value: '123', enabled: true },
+    ]);
+
+    act(() => {
+      result.current.setBodyRules([
+        { path: 'user.id', operator: 'equal', value: '123', enabled: true },
+        { path: 'user.role', operator: 'equal', value: 'admin', enabled: true },
+      ]);
+    });
+
+    const preventDefault = vi.fn();
+    act(() => {
+      result.current.handleSubmit({ preventDefault } as any);
+    });
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bodyRules: [
+          { path: 'user.id', operator: 'equal', value: '123', enabled: true },
+          { path: 'user.role', operator: 'equal', value: 'admin', enabled: true },
+        ],
+      })
+    );
   });
 });

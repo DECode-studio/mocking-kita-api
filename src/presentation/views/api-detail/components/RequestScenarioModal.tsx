@@ -8,6 +8,7 @@ import { RequestBodyType } from '@/src/core/utils/types';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 import { useRequestScenarioModal } from '../hook/useRequestScenarioModal';
 import { KeyValueOrJsonEditor } from './KeyValueOrJsonEditor';
+import { BodyPathRulesEditor } from './BodyPathRulesEditor';
 
 interface RequestScenarioModalProps {
   isOpen: boolean;
@@ -16,10 +17,12 @@ interface RequestScenarioModalProps {
   onSubmit: (data: {
     name: string;
     priority: number;
+    matchStrategy: any;
     queryParams: string;
     headers: string;
     body: string;
     bodyType: RequestBodyType;
+    bodyRules: any[];
     status: boolean;
   }) => void;
 }
@@ -35,6 +38,8 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
     setName,
     priority,
     setPriority,
+    matchStrategy,
+    setMatchStrategy,
     queryParams,
     setQueryParams,
     headers,
@@ -43,6 +48,8 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
     setBody,
     bodyType,
     setBodyType,
+    bodyRules,
+    setBodyRules,
     status,
     setStatus,
     handleSubmit,
@@ -51,6 +58,7 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
     editingReqScenario,
     onSubmit,
   });
+
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
@@ -107,6 +115,21 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
               </div>
             </div>
 
+            <div>
+              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Match Strategy (Rule Combination)
+              </label>
+              <select
+                id={`${API_DETAIL_SEMANTIC_ID.REQ_MODAL}-match-strategy`}
+                value={matchStrategy}
+                onChange={(e) => setMatchStrategy(e.target.value as any)}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                <option value="ALL">Match ALL Parameters (AND - Semua parameter harus cocok)</option>
+                <option value="ANY">Match ANY Parameter (OR - Salah satu parameter cocok)</option>
+              </select>
+            </div>
+
             <div id={API_DETAIL_SEMANTIC_ID.REQ_FORM_QUERY_PARAMS}>
               <KeyValueOrJsonEditor
                 label="Query Params Matching"
@@ -116,6 +139,7 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
                 idPrefix={API_DETAIL_SEMANTIC_ID.REQ_FORM_QUERY_PARAMS}
               />
             </div>
+
 
             <div id={API_DETAIL_SEMANTIC_ID.REQ_FORM_HEADERS}>
               <KeyValueOrJsonEditor
@@ -145,22 +169,31 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
             </div>
 
             {bodyType !== 'NONE' && (
-              <div id={API_DETAIL_SEMANTIC_ID.REQ_FORM_BODY}>
-                <KeyValueOrJsonEditor
-                  label={
-                    bodyType === 'JSON'
-                      ? 'Body Payload Matching (JSON)'
-                      : bodyType === 'FORM_DATA'
-                      ? 'Body Fields & Files Matching (JSON Object)'
-                      : 'Body Fields Matching (JSON Object)'
-                  }
-                  value={body}
-                  onChange={setBody}
-                  supportFiles={bodyType === 'FORM_DATA'}
-                  placeholderValue="Value"
-                  idPrefix={API_DETAIL_SEMANTIC_ID.REQ_FORM_BODY}
+              <>
+                <div id={API_DETAIL_SEMANTIC_ID.REQ_FORM_BODY}>
+                  <KeyValueOrJsonEditor
+                    label={
+                      bodyType === 'JSON'
+                        ? 'Body Payload Matching (JSON)'
+                        : bodyType === 'FORM_DATA'
+                        ? 'Body Fields & Files Matching (JSON Object)'
+                        : 'Body Fields Matching (JSON Object)'
+                    }
+                    value={body}
+                    onChange={setBody}
+                    supportFiles={bodyType === 'FORM_DATA'}
+                    placeholderValue="Value"
+                    idPrefix={API_DETAIL_SEMANTIC_ID.REQ_FORM_BODY}
+                  />
+                </div>
+
+                <BodyPathRulesEditor
+                  rules={bodyRules}
+                  onChange={setBodyRules}
+                  bodyContent={body}
+                  idPrefix="req-modal-body-rules"
                 />
-              </div>
+              </>
             )}
 
             <div className="flex items-center justify-between pt-2">

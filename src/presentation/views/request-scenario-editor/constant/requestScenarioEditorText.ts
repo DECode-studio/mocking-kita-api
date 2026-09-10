@@ -1,0 +1,35 @@
+export const REQUEST_SCENARIO_EDITOR_TEXT = {
+  TITLE_CREATE: 'Create Request Scenario',
+  TITLE_EDIT_PREFIX: 'Edit Scenario:',
+  SUBTITLE: 'Konfigurasi aturan pencocokan parameter, header, dan body payload untuk endpoint mock API.',
+  BTN_SAVE_CHANGES: 'Save Changes',
+  BTN_CREATE_SCENARIO: 'Create Scenario',
+  BTN_CANCEL: 'Cancel',
+  LABEL_NAME: 'Scenario Name',
+  PLACEHOLDER_NAME: 'e.g. Success 200 with Active Status',
+  LABEL_PRIORITY: 'Priority',
+  LABEL_STATUS: 'Active Scenario',
+  LABEL_MATCH_STRATEGY: 'Match Strategy (Rule Combination)',
+  STRATEGY_ALL: 'Match ALL Parameters (AND - Semua parameter harus cocok)',
+  STRATEGY_ANY: 'Match ANY Parameter (OR - Salah satu parameter cocok)',
+  QUERY_PARAMS_TITLE: 'Query Parameters Matching',
+  HEADERS_TITLE: 'Headers Matching',
+  BODY_TITLE: 'Request Body Matching',
+  BODY_TYPE_LABEL: 'Body Type:',
+  BODY_NONE_NOTICE: 'Skenario ini tidak mengevaluasi request body (Body Type: None).',
+};
+
+export const REQUEST_SCENARIO_EDITOR_SEMANTIC_ID = {
+  FORM: 'req-scenario-editor-form',
+  INPUT_NAME: 'req-scenario-name',
+  INPUT_PRIORITY: 'req-scenario-priority',
+  SELECT_STRATEGY: 'req-scenario-match-strategy',
+  SELECT_BODY_TYPE: 'req-scenario-body-type',
+  QUERY_EDITOR: 'req-editor-query',
+  HEADERS_EDITOR: 'req-editor-headers',
+  BODY_EDITOR: 'req-editor-body',
+  BODY_RULES_EDITOR: 'req-editor-body-rules',
+  BTN_CANCEL: 'req-scenario-btn-cancel',
+  BTN_SUBMIT: 'req-scenario-btn-submit',
+};
+

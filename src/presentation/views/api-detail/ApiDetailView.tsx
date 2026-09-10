@@ -16,7 +16,6 @@ import {
   RequestScenarioDetailPanel,
   ResponseScenarioListSection,
   EndpointOverviewTabContent,
-  RequestScenarioModal,
   ResponseScenarioModal,
 } from './components';
 
@@ -142,8 +141,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
               onSearchChange={setScenarioSearch}
               onSelectScenario={setSelectedReqScenarioId}
               onAddClick={() => {
-                setEditingReqScenario(null);
-                setIsReqModalOpen(true);
+                router.push(`/projects/${projectId}/apis/${api.id}/request-scenarios/create`);
               }}
               onToggleStatus={toggleRequestScenarioStatus}
             />
@@ -160,12 +158,11 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
                 <RequestScenarioDetailPanel
                   scenario={activeReqScenario}
                   onEdit={() => {
-                    setEditingReqScenario(activeReqScenario);
-                    setIsReqModalOpen(true);
+                    router.push(`/projects/${projectId}/apis/${api.id}/request-scenarios/${activeReqScenario.id}/edit`);
                   }}
                   onDuplicate={() => duplicateRequestScenario(activeReqScenario.id)}
                   onDeleteRequest={() => setDeletingReqId(activeReqScenario.id)}
-                  onUpdateScenario={updateRequestScenario}
+                  onUpdateScenario={(updated) => updateRequestScenario(updated.id, updated)}
                 >
                   <ResponseScenarioListSection
                     respScenarios={respScenarios}
@@ -193,14 +190,6 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
           <EndpointOverviewTabContent api={api} project={project} />
         </Tabs.Content>
       </Tabs.Root>
-
-      {/* Request Scenario Dialog */}
-      <RequestScenarioModal
-        isOpen={isReqModalOpen}
-        onOpenChange={setIsReqModalOpen}
-        editingReqScenario={editingReqScenario}
-        onSubmit={handleSaveReqScenario}
-      />
 
       {/* Response Scenario Dialog */}
       <ResponseScenarioModal

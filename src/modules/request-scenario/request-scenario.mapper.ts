@@ -1,4 +1,5 @@
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
+import { MatchStrategy } from '@/src/core/utils/types';
 
 export function toRequestScenarioDomain(r: {
   id: string;
@@ -11,6 +12,9 @@ export function toRequestScenarioDomain(r: {
   body: any;
   bodyType: string;
   matchType: string;
+  matchStrategy?: string | null;
+  bodyRules?: any;
+  strictBodyStructure?: boolean;
   priority: number;
   status: boolean;
   createdAt: Date;
@@ -28,6 +32,9 @@ export function toRequestScenarioDomain(r: {
     body: r.body ?? {},
     bodyType: r.bodyType as any,
     matchType: r.matchType as any,
+    matchStrategy: (r.matchStrategy as MatchStrategy) || 'ALL',
+    bodyRules: r.bodyRules ?? undefined,
+    strictBodyStructure: r.strictBodyStructure !== undefined ? r.strictBodyStructure : true,
     priority: r.priority,
     status: r.status,
     createdAt: r.createdAt.toISOString(),
@@ -35,3 +42,5 @@ export function toRequestScenarioDomain(r: {
     deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
   };
 }
+
+
