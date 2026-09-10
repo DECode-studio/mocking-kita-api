@@ -130,4 +130,153 @@ describe('param-matcher', () => {
       expect(matchesParamsMap(expected, actual, 'ANY')).toBe(false);
     });
   });
+
+  describe('evaluateDeepMatch with the user complex nested payload', () => {
+    const scenarioExpectedBody = {
+      '1_level': {
+        status_aktif: { value: true, enabled: true, operator: 'equal' },
+        jumlah_karyawan: 150,
+      },
+      '2_level': {
+        divisi_teknologi: {
+          ruangan: 'Lantai 4',
+          kepala_divisi: 'Budi Santoso',
+        },
+      },
+      '3_level': {
+        infrastruktur: {
+          server_utama: {
+            lokasi: 'Data Center Jakarta',
+            kapasitas_gb: 1024,
+          },
+        },
+      },
+      perusahaan: 'Tech Innovation Asia',
+      array_in_json: ['JavaScript', 'Python', 'Go', 'SQL'],
+      json_in_array: [
+        {
+          status: 'In Progress',
+          id_proyek: 'P-01',
+          nama_proyek: 'Pengembangan Mobile App',
+        },
+        {
+          status: 'Completed',
+          id_proyek: 'P-02',
+          nama_proyek: 'Migrasi Cloud',
+        },
+      ],
+    };
+
+    const actualIncomingBody = {
+      perusahaan: 'Tech Innovation Asia',
+      '1_level': {
+        status_aktif: {
+          value: true,
+          enabled: true,
+          operator: 'equal',
+        },
+        jumlah_karyawan: 150,
+      },
+      '2_level': {
+        divisi_teknologi: {
+          kepala_divisi: 'Budi Santoso',
+          ruangan: 'Lantai 4',
+        },
+      },
+      '3_level': {
+        infrastruktur: {
+          server_utama: {
+            lokasi: 'Data Center Jakarta',
+            kapasitas_gb: 1024,
+          },
+        },
+      },
+      array_in_json: ['JavaScript', 'Python', 'Go', 'SQL'],
+      json_in_array: [
+        {
+          id_proyek: 'P-01',
+          nama_proyek: 'Pengembangan Mobile App',
+          status: 'In Progress',
+        },
+        {
+          id_proyek: 'P-02',
+          nama_proyek: 'Migrasi Cloud',
+          status: 'Completed',
+        },
+      ],
+    };
+
+    it('matches user complex request body correctly when expected contains raw object with operator/value/enabled properties', () => {
+      expect(evaluateDeepMatch(scenarioExpectedBody, actualIncomingBody, true)).toBe(true);
+    });
+
+    it('matches boolean value when rule is explicitly defined with $operator', () => {
+      const scenarioWithRule = {
+        '1_level': {
+          status_aktif: { $operator: 'equal', $value: true, $enabled: true },
+        },
+      };
+      const actualWithBoolean = {
+        '1_level': {
+          status_aktif: true,
+        },
+      };
+      expect(evaluateDeepMatch(scenarioWithRule, actualWithBoolean, true)).toBe(true);
+    });
+
+    it('fails when deep nested property mismatches', () => {
+      const mismatchedBody = {
+        ...actualIncomingBody,
+        '3_level': {
+          infrastruktur: {
+            server_utama: {
+              lokasi: 'Data Center Singapore',
+              kapasitas_gb: 1024,
+            },
+          },
+        },
+      };
+      expect(evaluateDeepMatch(scenarioExpectedBody, mismatchedBody, true)).toBe(false);
+    });
+
+    it('skips disabled rules at nested levels', () => {
+      const withDisabled = {
+        ...scenarioExpectedBody,
+        '3_level': {
+          infrastruktur: {
+            server_utama: {
+              lokasi: { $operator: 'equal', $value: 'Data Center Tokyo', $enabled: false },
+              kapasitas_gb: 1024,
+            },
+          },
+        },
+      };
+
+      expect(evaluateDeepMatch(withDisabled, actualIncomingBody, true)).toBe(true);
+    });
+  });
+
+  describe('updateDeepPath', () => {
+    it('updates a nested property immutably', () => {
+      const original = {
+        '2_level': {
+          divisi_teknologi: {
+            kepala_divisi: { $operator: 'equal', $value: 'Budi', $enabled: true },
+          },
+        },
+      };
+
+      const updated = updateDeepPath(
+        original,
+        ['2_level', 'divisi_teknologi', 'kepala_divisi'],
+        (current) => {
+          const rule = extractParamRule(current);
+          return { $operator: rule.operator, $value: rule.value, $enabled: false };
+        }
+      ) as typeof original;
+
+      expect(updated['2_level'].divisi_teknologi.kepala_divisi.$enabled).toBe(false);
+      expect(original['2_level'].divisi_teknologi.kepala_divisi.$enabled).toBe(true);
+    });
+  });
 });
