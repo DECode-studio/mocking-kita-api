@@ -19,9 +19,39 @@ export type MatchType =
   | 'REGEX'
   | 'JSON_SCHEMA';
 
+export type ParamMatchOperator =
+  | 'equal'
+  | 'regex'
+  | 'regex_i'
+  | 'null'
+  | 'empty_array';
+
+export type MatchStrategy = 'ALL' | 'ANY';
+
+export type ParamRule = {
+  operator: ParamMatchOperator;
+  value?: unknown;
+  enabled?: boolean;
+};
+
+export type BodyPathRule = {
+  id?: string;
+  path: string;
+  operator: ParamMatchOperator;
+  value?: unknown;
+  enabled: boolean;
+};
+
+export type PathSuggestion = {
+  path: string;
+  sampleValue?: unknown;
+};
+
 export type RequestBodyType =
   | 'JSON'
   | 'FORM_DATA'
   | 'URL_ENCODED'
   | 'NONE';
+
+
 
