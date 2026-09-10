@@ -133,13 +133,16 @@ model RequestScenario {
   queryParams Json?     @map("query_params")
   pathParams  Json?     @map("path_params")
   body        Json?
-  bodyType    String    @default("JSON") @map("body_type")
-  matchType   String    @default("EXACT") @map("match_type")
-  priority    Int       @default(0)
-  status      Boolean   @default(true)
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  bodyType      String    @default("JSON") @map("body_type")
+  matchType     String    @default("EXACT") @map("match_type")
+  matchStrategy String    @default("ALL") @map("match_strategy")
+  bodyRules           Json?     @map("body_rules")
+  strictBodyStructure Boolean   @default(true) @map("strict_body_structure")
+  priority            Int       @default(0)
+  status        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
   api               Api                @relation(fields: [apiId], references: [id], onDelete: Cascade)
   responseScenarios ResponseScenario[]
