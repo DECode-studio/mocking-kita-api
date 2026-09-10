@@ -506,4 +506,95 @@ describe('param-matcher', () => {
       expect(matchesHeadersMap(expected, actual)).toBe(false);
     });
   });
+
+  describe('matchesStructure', () => {
+    const templateBody = {
+      '1_level': {
+        status_aktif: {
+          value: true,
+          enabled: true,
+          operator: 'equal',
+        },
+        jumlah_karyawan: 150,
+      },
+      '2_level': {
+        divisi_teknologi: {
+          ruangan: 'Lantai 4',
+          kepala_divisi: 'Budi Santoso',
+        },
+      },
+      perusahaan: 'Tech Innovation Asia',
+      array_in_json: ['JavaScript', 'Python', 'Go', 'SQL'],
+      json_in_array: [
+        {
+          id_proyek: 'P-01',
+          nama_proyek: 'Pengembangan Mobile App',
+          status: 'In Progress',
+        },
+      ],
+    };
+
+    it('returns true when actual body has the exact same structure even if values differ', () => {
+      const incomingWithDifferentValues = {
+        '1_level': {
+          status_aktif: {
+            value: false, // Changed from true to false
+            enabled: true,
+            operator: 'equal',
+          },
+          jumlah_karyawan: 999, // Changed from 150
+        },
+        '2_level': {
+          divisi_teknologi: {
+            ruangan: 'Lantai 10', // Changed
+            kepala_divisi: 'Siti Aminah', // Changed
+          },
+        },
+        perusahaan: 'Another Company',
+        array_in_json: ['Ruby', 'PHP'],
+        json_in_array: [
+          {
+            id_proyek: 'P-99',
+            nama_proyek: 'New Project',
+            status: 'Pending',
+          },
+        ],
+      };
+
+      expect(matchesStructure(templateBody, incomingWithDifferentValues)).toBe(true);
+    });
+
+    it('returns false when required structure key is missing', () => {
+      const missingKey = {
+        '1_level': {
+          jumlah_karyawan: 150,
+          // missing status_aktif
+        },
+        '2_level': {
+          divisi_teknologi: {
+            ruangan: 'Lantai 4',
+            kepala_divisi: 'Budi Santoso',
+          },
+        },
+        perusahaan: 'Tech Innovation Asia',
+      };
+
+      expect(matchesStructure(templateBody, missingKey)).toBe(false);
+    });
+
+    it('returns false when type structure differs (e.g. expected object but received primitive or array)', () => {
+      const wrongType = {
+        ...templateBody,
+        '2_level': 'not-an-object',
+      };
+
+      expect(matchesStructure(templateBody, wrongType)).toBe(false);
+    });
+
+    it('returns true when template is empty or null', () => {
+      expect(matchesStructure({}, { any: 'thing' })).toBe(true);
+      expect(matchesStructure(null, { any: 'thing' })).toBe(true);
+    });
+  });
 });
+
