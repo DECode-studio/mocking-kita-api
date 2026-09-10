@@ -427,4 +427,83 @@ describe('param-matcher', () => {
       expect(evaluateBodyPathRules([{ path: 'x', operator: 'equal', value: 'y', enabled: false }], incomingBody)).toBe(true);
     });
   });
+
+  describe('isToleratedHeader', () => {
+    it('tolerates standard transport and browser headers', () => {
+      expect(isToleratedHeader('Host')).toBe(true);
+      expect(isToleratedHeader('user-agent')).toBe(true);
+      expect(isToleratedHeader('ACCEPT')).toBe(true);
+      expect(isToleratedHeader('connection')).toBe(true);
+      expect(isToleratedHeader('sec-ch-ua')).toBe(true);
+      expect(isToleratedHeader('sec-fetch-mode')).toBe(true);
+      expect(isToleratedHeader('x-forwarded-for')).toBe(true);
+      expect(isToleratedHeader('postman-token')).toBe(true);
+      expect(isToleratedHeader('cf-ray')).toBe(true);
+    });
+
+    it('does not tolerate custom/business/auth headers', () => {
+      expect(isToleratedHeader('Authorization')).toBe(false);
+      expect(isToleratedHeader('token')).toBe(false);
+      expect(isToleratedHeader('x-api-key')).toBe(false);
+      expect(isToleratedHeader('x-custom-header')).toBe(false);
+    });
+  });
+
+  describe('matchesHeadersMap', () => {
+    it('matches when expected is empty and only tolerated headers are present', () => {
+      const actual = {
+        host: 'localhost:3000',
+        'user-agent': 'Mozilla/5.0',
+        accept: '*/*',
+        connection: 'keep-alive',
+      };
+      expect(matchesHeadersMap({}, actual)).toBe(true);
+      expect(matchesHeadersMap(null, actual)).toBe(true);
+    });
+
+    it('fails when expected is empty but unexpected strict header like Authorization is sent', () => {
+      const actual = {
+        host: 'localhost:3000',
+        'user-agent': 'PostmanRuntime/7.43.0',
+        authorization: 'xx2',
+      };
+      expect(matchesHeadersMap({}, actual)).toBe(false);
+      expect(matchesHeadersMap(null, actual)).toBe(false);
+    });
+
+    it('matches when expected header matches actual non-tolerated header', () => {
+      const expected = {
+        authorization: 'Bearer token-123',
+      };
+      const actual = {
+        host: 'localhost:3000',
+        'user-agent': 'PostmanRuntime/7.43.0',
+        authorization: 'Bearer token-123',
+      };
+      expect(matchesHeadersMap(expected, actual)).toBe(true);
+    });
+
+    it('fails when expected header value does not match actual header', () => {
+      const expected = {
+        authorization: 'Bearer token-123',
+      };
+      const actual = {
+        host: 'localhost:3000',
+        authorization: 'Bearer wrong-token',
+      };
+      expect(matchesHeadersMap(expected, actual)).toBe(false);
+    });
+
+    it('fails when request contains extra undeclared custom header in addition to valid auth', () => {
+      const expected = {
+        authorization: 'Bearer token-123',
+      };
+      const actual = {
+        host: 'localhost:3000',
+        authorization: 'Bearer token-123',
+        'x-extra-custom': 'surprise',
+      };
+      expect(matchesHeadersMap(expected, actual)).toBe(false);
+    });
+  });
 });
