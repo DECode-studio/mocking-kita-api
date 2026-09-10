@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { formatJsonString } from '@/src/core/utils/json';
+import { ParamMatchOperator } from '@/src/core/utils/types';
+import { extractParamRule, isParamRule } from '@/src/core/utils/param-matcher';
 
 export type KeyValueRow = {
   key: string;
   value: string;
   isFile: boolean;
+  operator: ParamMatchOperator;
+  enabled: boolean;
 };
 
 export function useKeyValueOrJsonEditor(
@@ -24,18 +28,52 @@ export function useKeyValueOrJsonEditor(
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
         const parsedRows = Object.entries(obj).map(([k, v]) => {
           if (supportFiles && v && typeof v === 'object' && 'filename' in v) {
-            return { key: k, value: String((v as any).filename || ''), isFile: true };
+            return {
+              key: k,
+              value: String((v as any).filename || ''),
+              isFile: true,
+              operator: 'equal' as ParamMatchOperator,
+              enabled: true,
+            };
           }
           if (supportFiles && typeof v === 'string' && (v === '(binary_file_data)' || v.startsWith('(binary_file'))) {
-            return { key: k, value: v, isFile: true };
+            return {
+              key: k,
+              value: v,
+              isFile: true,
+              operator: 'equal' as ParamMatchOperator,
+              enabled: true,
+            };
           }
-          return { key: k, value: typeof v === 'object' ? JSON.stringify(v) : String(v), isFile: false };
+          if (isParamRule(v)) {
+            const rule = extractParamRule(v);
+            const valStr =
+              rule.value !== undefined
+                ? typeof rule.value === 'object'
+                  ? JSON.stringify(rule.value)
+                  : String(rule.value)
+                : '';
+            return {
+              key: k,
+              value: valStr,
+              isFile: false,
+              operator: rule.operator,
+              enabled: rule.enabled !== false,
+            };
+          }
+          return {
+            key: k,
+            value: typeof v === 'object' ? JSON.stringify(v) : String(v),
+            isFile: false,
+            operator: 'equal' as ParamMatchOperator,
+            enabled: true,
+          };
         });
-        setRows(parsedRows.length > 0 ? parsedRows : [{ key: '', value: '', isFile: false }]);
+        setRows(parsedRows.length > 0 ? parsedRows : [{ key: '', value: '', isFile: false, operator: 'equal', enabled: true }]);
         return;
       }
     } catch {}
-    setRows([{ key: '', value: '', isFile: false }]);
+    setRows([{ key: '', value: '', isFile: false, operator: 'equal', enabled: true }]);
   };
 
   // Convert current rows to JSON string
@@ -47,27 +85,40 @@ export function useKeyValueOrJsonEditor(
         obj[row.key] = { filename: row.value };
       } else {
         const trimmedVal = row.value.trim();
+        let parsedVal: any = row.value;
+
         if (trimmedVal === 'true') {
-          obj[row.key] = true;
+          parsedVal = true;
         } else if (trimmedVal === 'false') {
-          obj[row.key] = false;
+          parsedVal = false;
         } else if (trimmedVal !== '' && !isNaN(Number(trimmedVal))) {
-          obj[row.key] = Number(trimmedVal);
+          parsedVal = Number(trimmedVal);
         } else {
           try {
             if ((trimmedVal.startsWith('{') && trimmedVal.endsWith('}')) || (trimmedVal.startsWith('[') && trimmedVal.endsWith(']'))) {
-              obj[row.key] = JSON.parse(trimmedVal);
+              parsedVal = JSON.parse(trimmedVal);
             } else {
-              obj[row.key] = row.value;
+              parsedVal = row.value;
             }
           } catch {
-            obj[row.key] = row.value;
+            parsedVal = row.value;
           }
+        }
+
+        if (row.operator !== 'equal' || row.enabled === false) {
+          obj[row.key] = {
+            $operator: row.operator,
+            $value: row.operator === 'null' || row.operator === 'empty_array' ? undefined : parsedVal,
+            $enabled: row.enabled,
+          };
+        } else {
+          obj[row.key] = parsedVal;
         }
       }
     }
     return JSON.stringify(obj, null, 2);
   };
+
 
   // Synchronize rows when value changes from outside (e.g. on modal open)
   useEffect(() => {
@@ -91,14 +142,14 @@ export function useKeyValueOrJsonEditor(
   };
 
   const addRow = () => {
-    const updatedRows = [...rows, { key: '', value: '', isFile: false }];
+    const updatedRows = [...rows, { key: '', value: '', isFile: false, operator: 'equal' as ParamMatchOperator, enabled: true }];
     setRows(updatedRows);
   };
 
   const deleteRow = (index: number) => {
     let updatedRows = rows.filter((_, i) => i !== index);
     if (updatedRows.length === 0) {
-      updatedRows = [{ key: '', value: '', isFile: false }];
+      updatedRows = [{ key: '', value: '', isFile: false, operator: 'equal' as ParamMatchOperator, enabled: true }];
     }
     setRows(updatedRows);
     onChange(rowsToJson(updatedRows));

@@ -1,7 +1,7 @@
 'use client';
 
 import { Dispatch, SetStateAction } from 'react';
-import { MatchType, RequestBodyType } from '@/src/core/utils/types';
+import { BodyPathRule, MatchStrategy, MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
 import { getErrorMessage } from '@/src/core/utils/error';
 
@@ -16,10 +16,12 @@ type CreateRequestScenarioInput = Omit<RequestScenario, 'id' | 'createdAt' | 'up
 type RequestScenarioFormValues = {
   name: string;
   priority: number;
+  matchStrategy?: MatchStrategy;
   queryParams: string;
   headers: string;
   body: string;
   bodyType: RequestBodyType;
+  bodyRules?: BodyPathRule[];
   status: boolean;
 };
 
@@ -84,8 +86,10 @@ export function useRequestScenarioActions({
     const name = values.name.trim();
     const priority = Number(values.priority) || 100;
     const status = !!values.status;
+    const matchStrategy: MatchStrategy = values.matchStrategy || 'ALL';
     const queryParams = parseJsonObject(values.queryParams, {});
     const headers = parseJsonObject(values.headers, {});
+    const bodyRules = (values.bodyRules || []).filter((r) => r && r.path && r.path.trim().length > 0);
     const bodyValue = (() => {
       const trimmed = values.body.trim();
       if (!trimmed) return {};
@@ -104,11 +108,13 @@ export function useRequestScenarioActions({
         }
         return (
           scenario.matchType === matchType &&
+          (scenario.matchStrategy || 'ALL') === matchStrategy &&
           scenario.bodyType === values.bodyType &&
           deepEqual(headers, scenario.headers) &&
           deepEqual(queryParams, scenario.queryParams) &&
           deepEqual(scenario.pathParams || {}, {}) &&
-          deepEqual(bodyValue, scenario.body)
+          deepEqual(bodyValue, scenario.body) &&
+          deepEqual(bodyRules, scenario.bodyRules || [])
         );
       });
 
@@ -128,6 +134,7 @@ export function useRequestScenarioActions({
           name,
           description: '',
           matchType,
+          matchStrategy,
           priority,
           status,
           headers,
@@ -135,6 +142,7 @@ export function useRequestScenarioActions({
           pathParams: {},
           body: bodyValue,
           bodyType: values.bodyType,
+          bodyRules,
         });
         addToast({ type: 'success', title: 'Scenario Updated', description: `Updated ${name}` });
       } else {
@@ -143,6 +151,7 @@ export function useRequestScenarioActions({
           name,
           description: '',
           matchType,
+          matchStrategy,
           priority,
           status,
           headers,
@@ -150,6 +159,7 @@ export function useRequestScenarioActions({
           pathParams: {},
           body: bodyValue,
           bodyType: values.bodyType,
+          bodyRules,
         });
         setSelectedReqScenarioId(created.id);
         addToast({ type: 'success', title: 'Scenario Created', description: `Created ${name}` });

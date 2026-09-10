@@ -5,6 +5,7 @@ import * as Switch from '@radix-ui/react-switch';
 import { cn } from '../../../core/utils/cn';
 
 interface StatusSwitchProps {
+  id?: string;
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
@@ -14,6 +15,7 @@ interface StatusSwitchProps {
 }
 
 export const StatusSwitch: React.FC<StatusSwitchProps> = ({
+  id,
   checked,
   onCheckedChange,
   disabled = false,
@@ -28,6 +30,7 @@ export const StatusSwitch: React.FC<StatusSwitchProps> = ({
   return (
     <div className={cn('inline-flex items-center gap-2', className)}>
       <Switch.Root
+        id={id}
         checked={checked}
         onCheckedChange={onCheckedChange}
         disabled={disabled}

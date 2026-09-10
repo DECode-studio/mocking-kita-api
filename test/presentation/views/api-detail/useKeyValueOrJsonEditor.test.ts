@@ -11,7 +11,7 @@ describe('useKeyValueOrJsonEditor', () => {
 
     expect(result.current.mode).toBe('key-value');
     expect(result.current.rows).toHaveLength(3);
-    expect(result.current.rows[0]).toEqual({ key: 'page', value: '1', isFile: false });
+    expect(result.current.rows[0]).toEqual({ key: 'page', value: '1', isFile: false, operator: 'equal', enabled: true });
   });
 
   it('should support file properties when supportFiles is true', () => {
@@ -19,7 +19,7 @@ describe('useKeyValueOrJsonEditor', () => {
     const initialJson = JSON.stringify({ attachment: { filename: 'report.pdf' } });
     const { result } = renderHook(() => useKeyValueOrJsonEditor(initialJson, onChange, true));
 
-    expect(result.current.rows[0]).toEqual({ key: 'attachment', value: 'report.pdf', isFile: true });
+    expect(result.current.rows[0]).toEqual({ key: 'attachment', value: 'report.pdf', isFile: true, operator: 'equal', enabled: true });
   });
 
   it('should add, update, and delete rows', () => {
