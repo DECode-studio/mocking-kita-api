@@ -279,4 +279,152 @@ describe('param-matcher', () => {
       expect(original['2_level'].divisi_teknologi.kepala_divisi.$enabled).toBe(true);
     });
   });
+
+  describe('extractAllJsonPaths', () => {
+    const userPayload = {
+      debitur: [
+        {
+          birth_date: '2003-10-21',
+          id_number: '3603110302740006',
+          legal_name: 'HARWADLI MANDEA',
+          surgate_mother_name: 'YASLA SARATU',
+          type: 'KTP',
+        },
+      ],
+      lob: 1,
+      transaction_id: 'KPM-TST-66772340038',
+    };
+
+    it('extracts all dot-notation paths from JSON object', () => {
+      const suggestions = extractAllJsonPaths(userPayload);
+      const paths = suggestions.map((s) => s.path);
+
+      expect(paths).toContain('debitur');
+      expect(paths).toContain('debitur.0');
+      expect(paths).toContain('debitur.0.birth_date');
+      expect(paths).toContain('debitur.0.id_number');
+      expect(paths).toContain('debitur.0.legal_name');
+      expect(paths).toContain('debitur.0.surgate_mother_name');
+      expect(paths).toContain('debitur.0.type');
+      expect(paths).toContain('lob');
+      expect(paths).toContain('transaction_id');
+
+      const idNumberSuggestion = suggestions.find((s) => s.path === 'debitur.0.id_number');
+      expect(idNumberSuggestion?.sampleValue).toBe('3603110302740006');
+    });
+
+    it('extracts paths from JSON string input', () => {
+      const suggestions = extractAllJsonPaths(JSON.stringify(userPayload));
+      expect(suggestions.some((s) => s.path === 'debitur.0.id_number')).toBe(true);
+    });
+
+    it('returns empty array for invalid JSON or primitives', () => {
+      expect(extractAllJsonPaths('{invalid json')).toEqual([]);
+      expect(extractAllJsonPaths(null)).toEqual([]);
+      expect(extractAllJsonPaths('hello')).toEqual([]);
+      expect(extractAllJsonPaths(123)).toEqual([]);
+    });
+  });
+
+  describe('getValueByPath', () => {
+    const data = {
+      debitur: [
+        {
+          id_number: '3603110302740006',
+          legal_name: 'HARWADLI MANDEA',
+        },
+      ],
+      nested: {
+        a: {
+          b: 42,
+        },
+      },
+    };
+
+    it('resolves dot notation for arrays and nested objects', () => {
+      expect(getValueByPath(data, 'debitur.0.id_number')).toBe('3603110302740006');
+      expect(getValueByPath(data, 'nested.a.b')).toBe(42);
+    });
+
+    it('resolves bracket notation for arrays', () => {
+      expect(getValueByPath(data, 'debitur[0].id_number')).toBe('3603110302740006');
+      expect(getValueByPath(data, 'debitur[0].legal_name')).toBe('HARWADLI MANDEA');
+    });
+
+    it('returns undefined for non-existent paths', () => {
+      expect(getValueByPath(data, 'debitur.1.id_number')).toBeUndefined();
+      expect(getValueByPath(data, 'non.existent.path')).toBeUndefined();
+      expect(getValueByPath(null, 'foo.bar')).toBeUndefined();
+    });
+  });
+
+  describe('evaluateBodyPathRules', () => {
+    const incomingBody = {
+      debitur: [
+        {
+          birth_date: '2003-10-21',
+          id_number: '3603110302740006',
+          legal_name: 'HARWADLI MANDEA',
+          surgate_mother_name: 'YASLA SARATU',
+          type: 'KTP',
+        },
+      ],
+      lob: 1,
+      transaction_id: 'KPM-TST-66772340038',
+      tags: [],
+      notes: null,
+    };
+
+    it('matches when equal rule on dot path is satisfied', () => {
+      const rules = [
+        { path: 'debitur.0.id_number', operator: 'equal' as const, value: '3603110302740006', enabled: true },
+      ];
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ALL')).toBe(true);
+    });
+
+    it('fails when equal rule on dot path is not satisfied', () => {
+      const rules = [
+        { path: 'debitur.0.id_number', operator: 'equal' as const, value: '9999999999999999', enabled: true },
+      ];
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ALL')).toBe(false);
+    });
+
+    it('supports regex and regex_i on paths', () => {
+      const rules = [
+        { path: 'transaction_id', operator: 'regex' as const, value: '^KPM-TST-\\d+$', enabled: true },
+        { path: 'debitur.0.legal_name', operator: 'regex_i' as const, value: '^harwadli', enabled: true },
+      ];
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ALL')).toBe(true);
+    });
+
+    it('supports empty_array and null operators on paths', () => {
+      const rules = [
+        { path: 'tags', operator: 'empty_array' as const, enabled: true },
+        { path: 'notes', operator: 'null' as const, enabled: true },
+      ];
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ALL')).toBe(true);
+    });
+
+    it('ignores disabled rules', () => {
+      const rules = [
+        { path: 'debitur.0.id_number', operator: 'equal' as const, value: '3603110302740006', enabled: true },
+        { path: 'debitur.0.type', operator: 'equal' as const, value: 'SIM', enabled: false }, // Disabled, shouldn't fail ALL
+      ];
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ALL')).toBe(true);
+    });
+
+    it('respects ANY match strategy', () => {
+      const rules = [
+        { path: 'debitur.0.id_number', operator: 'equal' as const, value: 'WRONG_ID', enabled: true },
+        { path: 'transaction_id', operator: 'equal' as const, value: 'KPM-TST-66772340038', enabled: true },
+      ];
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ANY')).toBe(true);
+      expect(evaluateBodyPathRules(rules, incomingBody, 'ALL')).toBe(false);
+    });
+
+    it('returns true when rules array is empty or all disabled', () => {
+      expect(evaluateBodyPathRules([], incomingBody)).toBe(true);
+      expect(evaluateBodyPathRules([{ path: 'x', operator: 'equal', value: 'y', enabled: false }], incomingBody)).toBe(true);
+    });
+  });
 });
