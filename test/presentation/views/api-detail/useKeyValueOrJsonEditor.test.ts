@@ -4,14 +4,21 @@ import { renderHook, act } from '@testing-library/react';
 import { useKeyValueOrJsonEditor } from '@/src/presentation/views/api-detail/hook/useKeyValueOrJsonEditor';
 
 describe('useKeyValueOrJsonEditor', () => {
-  it('should sync JSON string to key-value rows', () => {
+  it('should parse JSON string to deep object tree', () => {
     const onChange = vi.fn();
-    const initialJson = JSON.stringify({ page: 1, active: true, name: 'Studio' });
+    const initialJson = JSON.stringify({
+      page: 1,
+      active: true,
+      user: { name: 'Studio', roles: ['admin', 'viewer'] },
+    });
     const { result } = renderHook(() => useKeyValueOrJsonEditor(initialJson, onChange));
 
     expect(result.current.mode).toBe('key-value');
-    expect(result.current.rows).toHaveLength(3);
-    expect(result.current.rows[0]).toEqual({ key: 'page', value: '1', isFile: false, operator: 'equal', enabled: true });
+    expect(result.current.parsedData).toEqual({
+      page: 1,
+      active: true,
+      user: { name: 'Studio', roles: ['admin', 'viewer'] },
+    });
   });
 
   it('should support file properties when supportFiles is true', () => {
@@ -19,29 +26,44 @@ describe('useKeyValueOrJsonEditor', () => {
     const initialJson = JSON.stringify({ attachment: { filename: 'report.pdf' } });
     const { result } = renderHook(() => useKeyValueOrJsonEditor(initialJson, onChange, true));
 
-    expect(result.current.rows[0]).toEqual({ key: 'attachment', value: 'report.pdf', isFile: true, operator: 'equal', enabled: true });
+    expect(result.current.parsedData).toEqual({
+      attachment: { filename: 'report.pdf' },
+    });
   });
 
-  it('should add, update, and delete rows', () => {
+  it('should add child, update leaf, rename key, and delete path at deep levels', () => {
     const onChange = vi.fn();
     const { result } = renderHook(() => useKeyValueOrJsonEditor('{}', onChange));
 
+    // Add field at root
     act(() => {
-      result.current.addRow();
+      result.current.addChild([], 'field');
     });
-    expect(result.current.rows).toHaveLength(2);
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"field_1": ""'));
 
+    // Rename key
     act(() => {
-      result.current.updateRow(0, { key: 'count', value: '10' });
+      result.current.renameKey([], 'field_1', 'count');
     });
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"count": ""'));
 
+    // Update leaf
+    act(() => {
+      result.current.updateLeaf(['count'], { value: 10, operator: 'equal' });
+    });
     expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"count": 10'));
 
+    // Add nested object
     act(() => {
-      result.current.deleteRow(1);
+      result.current.addChild([], 'object');
     });
+    expect(onChange).toHaveBeenLastCalledWith(expect.stringContaining('"field_1": {}'));
 
-    expect(result.current.rows).toHaveLength(1);
+    // Delete path
+    act(() => {
+      result.current.deletePath(['field_1']);
+    });
+    expect(onChange).toHaveBeenLastCalledWith(JSON.stringify({ count: 10 }, null, 2));
   });
 
   it('should beautify json string', () => {
@@ -55,3 +77,4 @@ describe('useKeyValueOrJsonEditor', () => {
     expect(onChange).toHaveBeenCalledWith(JSON.stringify({ a: 1 }, null, 2));
   });
 });
+

@@ -21,7 +21,10 @@ export function isParamRule(val: unknown): val is ParamRule {
 export function extractParamRule(raw: unknown): ParamRule {
   if (isParamRule(raw)) {
     const obj = raw as Record<string, unknown>;
-    const op = (obj.$operator || obj.operator) as ParamMatchOperator;
+    let op = (obj.$operator || obj.operator) as ParamMatchOperator;
+    if ((op as string) === 'regex_i') {
+      op = 'regex';
+    }
     const value = '$value' in obj ? obj.$value : obj.value;
     const enabled =
       obj.$enabled !== undefined
@@ -105,14 +108,13 @@ export function evaluateParamOperator(
     }
 
     case 'regex':
-    case 'regex_i': {
+    case 'regex_i' as any: {
       const pattern = String(expectedValue ?? '');
       if (!pattern || pattern.length > MAX_REGEX_PATTERN_LENGTH || hasHighRiskRegexPattern(pattern)) {
         return false;
       }
       try {
-        const flags = operator === 'regex_i' ? 'i' : undefined;
-        const reg = new RegExp(pattern, flags);
+        const reg = new RegExp(pattern, 'i');
         const target =
           actualValue == null
             ? ''

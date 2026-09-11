@@ -1,17 +1,159 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatJsonString } from '@/src/core/utils/json';
 import { ParamMatchOperator } from '@/src/core/utils/types';
 import { extractParamRule, isParamRule } from '@/src/core/utils/param-matcher';
 
-export type KeyValueRow = {
-  key: string;
-  value: string;
-  isFile: boolean;
-  operator: ParamMatchOperator;
-  enabled: boolean;
+export type LeafRuleUpdate = {
+  key?: string;
+  operator?: ParamMatchOperator;
+  value?: unknown;
+  enabled?: boolean;
+  isFile?: boolean;
 };
+
+function parseJsonSafe(val: string): unknown {
+  const trimmed = val.trim();
+  if (!trimmed) return {};
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return {};
+  }
+}
+
+export function parsePrimitiveValue(val: string): unknown {
+  const trimmed = val.trim();
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  if (trimmed !== '' && !isNaN(Number(trimmed)) && !trimmed.startsWith('0x')) {
+    return Number(trimmed);
+  }
+  return val;
+}
+
+function setDeepPath(root: unknown, path: (string | number)[], value: unknown): unknown {
+  if (path.length === 0) return value;
+  const [head, ...tail] = path;
+  if (typeof head === 'number' || (Array.isArray(root) && !isNaN(Number(head)))) {
+    const idx = Number(head);
+    const arr = Array.isArray(root) ? [...root] : [];
+    arr[idx] = setDeepPath(arr[idx], tail, value);
+    return arr;
+  }
+  const key = String(head);
+  const obj =
+    root && typeof root === 'object' && !Array.isArray(root)
+      ? { ...(root as Record<string, unknown>) }
+      : {};
+  obj[key] = setDeepPath(obj[key], tail, value);
+  return obj;
+}
+
+function removeDeepPath(root: unknown, path: (string | number)[]): unknown {
+  if (path.length === 0) return {};
+  if (path.length === 1) {
+    const [head] = path;
+    if (Array.isArray(root) && typeof head === 'number') {
+      const arr = [...root];
+      arr.splice(head, 1);
+      return arr;
+    }
+    if (root && typeof root === 'object' && !Array.isArray(root)) {
+      const obj = { ...(root as Record<string, unknown>) };
+      delete obj[String(head)];
+      return obj;
+    }
+    return root;
+  }
+  const [head, ...tail] = path;
+  if (Array.isArray(root) && typeof head === 'number') {
+    const arr = [...root];
+    arr[head] = removeDeepPath(arr[head], tail);
+    return arr;
+  }
+  if (root && typeof root === 'object' && !Array.isArray(root)) {
+    const obj = { ...(root as Record<string, unknown>) };
+    const key = String(head);
+    obj[key] = removeDeepPath(obj[key], tail);
+    return obj;
+  }
+  return root;
+}
+
+function renameDeepKey(
+  root: unknown,
+  parentPath: (string | number)[],
+  oldKey: string,
+  newKey: string
+): unknown {
+  if (oldKey === newKey) return root;
+  if (parentPath.length === 0) {
+    if (root && typeof root === 'object' && !Array.isArray(root)) {
+      const entries = Object.entries(root as Record<string, unknown>);
+      const newObj: Record<string, unknown> = {};
+      for (const [k, v] of entries) {
+        if (k === oldKey) {
+          newObj[newKey] = v;
+        } else {
+          newObj[k] = v;
+        }
+      }
+      return newObj;
+    }
+    return root;
+  }
+  const [head, ...tail] = parentPath;
+  if (Array.isArray(root) && typeof head === 'number') {
+    const arr = [...root];
+    arr[head] = renameDeepKey(arr[head], tail, oldKey, newKey);
+    return arr;
+  }
+  if (root && typeof root === 'object' && !Array.isArray(root)) {
+    const obj = { ...(root as Record<string, unknown>) };
+    const key = String(head);
+    obj[key] = renameDeepKey(obj[key], tail, oldKey, newKey);
+    return obj;
+  }
+  return root;
+}
+
+function addDeepChild(
+  root: unknown,
+  parentPath: (string | number)[],
+  childType: 'field' | 'object' | 'array'
+): unknown {
+  const initialVal = childType === 'object' ? {} : childType === 'array' ? [] : '';
+  if (parentPath.length === 0) {
+    if (Array.isArray(root)) {
+      return [...root, initialVal];
+    }
+    const obj =
+      root && typeof root === 'object' && !Array.isArray(root)
+        ? { ...(root as Record<string, unknown>) }
+        : {};
+    let idx = 1;
+    while (`field_${idx}` in obj) {
+      idx++;
+    }
+    obj[`field_${idx}`] = initialVal;
+    return obj;
+  }
+  const [head, ...tail] = parentPath;
+  if (Array.isArray(root) && typeof head === 'number') {
+    const arr = [...root];
+    arr[head] = addDeepChild(arr[head], tail, childType);
+    return arr;
+  }
+  if (root && typeof root === 'object' && !Array.isArray(root)) {
+    const obj = { ...(root as Record<string, unknown>) };
+    const key = String(head);
+    obj[key] = addDeepChild(obj[key], tail, childType);
+    return obj;
+  }
+  return root;
+}
 
 export function useKeyValueOrJsonEditor(
   value: string,
@@ -19,140 +161,85 @@ export function useKeyValueOrJsonEditor(
   supportFiles = false
 ) {
   const [mode, setMode] = useState<'raw' | 'key-value'>('key-value');
-  const [rows, setRows] = useState<KeyValueRow[]>([]);
+  const [parsedData, setParsedData] = useState<unknown>(() => parseJsonSafe(value));
 
-  // Helper to convert JSON string to rows
-  const syncJsonToRows = (jsonStr: string) => {
-    try {
-      const obj = JSON.parse(jsonStr);
-      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-        const parsedRows = Object.entries(obj).map(([k, v]) => {
-          if (supportFiles && v && typeof v === 'object' && 'filename' in v) {
-            return {
-              key: k,
-              value: String((v as any).filename || ''),
-              isFile: true,
-              operator: 'equal' as ParamMatchOperator,
-              enabled: true,
-            };
-          }
-          if (supportFiles && typeof v === 'string' && (v === '(binary_file_data)' || v.startsWith('(binary_file'))) {
-            return {
-              key: k,
-              value: v,
-              isFile: true,
-              operator: 'equal' as ParamMatchOperator,
-              enabled: true,
-            };
-          }
-          if (isParamRule(v)) {
-            const rule = extractParamRule(v);
-            const valStr =
-              rule.value !== undefined
-                ? typeof rule.value === 'object'
-                  ? JSON.stringify(rule.value)
-                  : String(rule.value)
-                : '';
-            return {
-              key: k,
-              value: valStr,
-              isFile: false,
-              operator: rule.operator,
-              enabled: rule.enabled !== false,
-            };
-          }
-          return {
-            key: k,
-            value: typeof v === 'object' ? JSON.stringify(v) : String(v),
-            isFile: false,
-            operator: 'equal' as ParamMatchOperator,
-            enabled: true,
-          };
-        });
-        setRows(parsedRows.length > 0 ? parsedRows : [{ key: '', value: '', isFile: false, operator: 'equal', enabled: true }]);
-        return;
-      }
-    } catch {}
-    setRows([{ key: '', value: '', isFile: false, operator: 'equal', enabled: true }]);
-  };
-
-  // Convert current rows to JSON string
-  const rowsToJson = (targetRows: KeyValueRow[]): string => {
-    const obj: Record<string, any> = {};
-    for (const row of targetRows) {
-      if (!row.key.trim()) continue;
-      if (supportFiles && row.isFile) {
-        obj[row.key] = { filename: row.value };
-      } else {
-        const trimmedVal = row.value.trim();
-        let parsedVal: any = row.value;
-
-        if (trimmedVal === 'true') {
-          parsedVal = true;
-        } else if (trimmedVal === 'false') {
-          parsedVal = false;
-        } else if (trimmedVal !== '' && !isNaN(Number(trimmedVal))) {
-          parsedVal = Number(trimmedVal);
-        } else {
-          try {
-            if ((trimmedVal.startsWith('{') && trimmedVal.endsWith('}')) || (trimmedVal.startsWith('[') && trimmedVal.endsWith(']'))) {
-              parsedVal = JSON.parse(trimmedVal);
-            } else {
-              parsedVal = row.value;
-            }
-          } catch {
-            parsedVal = row.value;
-          }
-        }
-
-        if (row.operator !== 'equal' || row.enabled === false) {
-          obj[row.key] = {
-            $operator: row.operator,
-            $value: row.operator === 'null' || row.operator === 'empty_array' ? undefined : parsedVal,
-            $enabled: row.enabled,
-          };
-        } else {
-          obj[row.key] = parsedVal;
-        }
-      }
-    }
-    return JSON.stringify(obj, null, 2);
-  };
-
-
-  // Synchronize rows when value changes from outside (e.g. on modal open)
+  // Sync incoming value to parsedData
   useEffect(() => {
-    if (mode === 'key-value') {
-      syncJsonToRows(value);
-    }
-  }, [value, mode]);
+    setParsedData(parseJsonSafe(value));
+  }, [value]);
+
+  const commitData = useCallback(
+    (nextData: unknown) => {
+      setParsedData(nextData);
+      onChange(JSON.stringify(nextData, null, 2));
+    },
+    [onChange]
+  );
 
   const handleModeChange = (newMode: 'raw' | 'key-value') => {
     if (newMode === 'key-value') {
-      syncJsonToRows(value);
+      setParsedData(parseJsonSafe(value));
     }
     setMode(newMode);
   };
 
-  const updateRow = (index: number, updatedFields: Partial<KeyValueRow>) => {
-    const updatedRows = [...rows];
-    updatedRows[index] = { ...updatedRows[index], ...updatedFields };
-    setRows(updatedRows);
-    onChange(rowsToJson(updatedRows));
-  };
-
-  const addRow = () => {
-    const updatedRows = [...rows, { key: '', value: '', isFile: false, operator: 'equal' as ParamMatchOperator, enabled: true }];
-    setRows(updatedRows);
-  };
-
-  const deleteRow = (index: number) => {
-    let updatedRows = rows.filter((_, i) => i !== index);
-    if (updatedRows.length === 0) {
-      updatedRows = [{ key: '', value: '', isFile: false, operator: 'equal' as ParamMatchOperator, enabled: true }];
+  const updateLeaf = (path: (string | number)[], update: LeafRuleUpdate) => {
+    let currentVal: unknown;
+    let curr: any = parsedData;
+    for (const seg of path) {
+      if (curr == null) break;
+      curr = curr[seg];
     }
-    setRows(updatedRows);
-    onChange(rowsToJson(updatedRows));
+    currentVal = curr;
+
+    let op: ParamMatchOperator = 'equal';
+    let val: unknown = currentVal;
+    let enabled = true;
+    let isFile = false;
+
+    if (supportFiles && currentVal && typeof currentVal === 'object' && 'filename' in currentVal) {
+      isFile = true;
+      val = (currentVal as any).filename;
+    } else if (isParamRule(currentVal)) {
+      const rule = extractParamRule(currentVal);
+      op = rule.operator;
+      val = rule.value;
+      enabled = rule.enabled !== false;
+    }
+
+    if (update.operator !== undefined) op = update.operator;
+    if (update.value !== undefined) val = update.value;
+    if (update.enabled !== undefined) enabled = update.enabled;
+    if (update.isFile !== undefined) isFile = update.isFile;
+
+    let finalVal: unknown = val;
+    if (supportFiles && isFile) {
+      finalVal = { filename: val };
+    } else if (op !== 'equal' || !enabled) {
+      finalVal = {
+        $operator: op,
+        $value: op === 'null' || op === 'empty_array' ? undefined : val,
+        $enabled: enabled,
+      };
+    }
+
+    const nextData = setDeepPath(parsedData, path, finalVal);
+    commitData(nextData);
+  };
+
+  const renameKey = (parentPath: (string | number)[], oldKey: string, newKey: string) => {
+    const nextData = renameDeepKey(parsedData, parentPath, oldKey, newKey);
+    commitData(nextData);
+  };
+
+  const deletePath = (path: (string | number)[]) => {
+    const nextData = removeDeepPath(parsedData, path);
+    commitData(nextData);
+  };
+
+  const addChild = (parentPath: (string | number)[], childType: 'field' | 'object' | 'array') => {
+    const nextData = addDeepChild(parsedData, parentPath, childType);
+    commitData(nextData);
   };
 
   const handleBeautify = () => {
@@ -161,11 +248,13 @@ export function useKeyValueOrJsonEditor(
 
   return {
     mode,
-    rows,
+    parsedData,
     handleModeChange,
-    updateRow,
-    addRow,
-    deleteRow,
+    updateLeaf,
+    renameKey,
+    deletePath,
+    addChild,
     handleBeautify,
   };
 }
+
