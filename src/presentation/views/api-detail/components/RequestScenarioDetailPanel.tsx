@@ -34,7 +34,17 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
   ) => {
     if (!onUpdateScenario) return;
 
-    const targetObj = scenario[field];
+    let targetObj = scenario[field];
+    if (typeof targetObj === 'string') {
+      try {
+        targetObj = JSON.parse(targetObj);
+      } catch {
+        targetObj = {};
+      }
+    } else if (!targetObj || typeof targetObj !== 'object') {
+      targetObj = {};
+    }
+
     const updatedObj = updateDeepPath(targetObj, path, (currentVal) => {
       const rule = extractParamRule(currentVal);
       const nextEnabled = !currentEnabled;
@@ -77,16 +87,19 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
 
   const parsedBody = React.useMemo(() => {
     if (typeof scenario.body === 'string') {
+      const trimmed = scenario.body.trim();
+      if (!trimmed) return {};
       try {
-        return JSON.parse(scenario.body);
+        return JSON.parse(trimmed);
       } catch {
         return scenario.body;
       }
     }
-    return scenario.body || {};
+    return scenario.body ?? {};
   }, [scenario.body]);
 
   const strategy = scenario.matchStrategy || 'ALL';
+  const bodyType = scenario.bodyType || 'JSON';
   const bodyRules = scenario.bodyRules || [];
 
   return (
@@ -171,21 +184,49 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
         </div>
 
         <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 font-mono">
-            {API_DETAIL_TEXT.DETAIL_BODY_MATCHING}
-          </h4>
-          <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200 max-h-72 overflow-y-auto">
-            <DeepJsonTreeViewer
-              data={parsedBody}
-              onTogglePath={(path, currentEnabled) =>
-                handleTogglePath('body', path, currentEnabled)
-              }
-              readOnly={!onUpdateScenario}
-            />
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
+              {bodyType === 'JSON'
+                ? 'Full Body Payload Matching'
+                : bodyType === 'FORM_DATA'
+                ? 'Body Fields & Files Matching'
+                : bodyType === 'URL_ENCODED'
+                ? 'URL Encoded Fields Matching'
+                : API_DETAIL_TEXT.DETAIL_BODY_MATCHING}
+            </h4>
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider border ${
+                bodyType === 'JSON'
+                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20'
+                  : bodyType === 'FORM_DATA'
+                  ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
+                  : bodyType === 'URL_ENCODED'
+                  ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'
+                  : 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20'
+              }`}
+            >
+              {bodyType}
+            </span>
           </div>
+
+          {bodyType === 'NONE' ? (
+            <div className="py-4 text-center text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
+              Skenario ini tidak mengevaluasi request body (Body Type: None).
+            </div>
+          ) : (
+            <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200 max-h-72 overflow-y-auto">
+              <DeepJsonTreeViewer
+                data={parsedBody}
+                onTogglePath={(path, currentEnabled) =>
+                  handleTogglePath('body', path, currentEnabled)
+                }
+                readOnly={!onUpdateScenario}
+              />
+            </div>
+          )}
         </div>
 
-        {bodyRules.length > 0 && (
+        {bodyType !== 'NONE' && bodyRules.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
