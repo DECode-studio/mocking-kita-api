@@ -22,7 +22,6 @@ export type MatchType =
 export type ParamMatchOperator =
   | 'equal'
   | 'regex'
-  | 'regex_i'
   | 'null'
   | 'empty_array';
 

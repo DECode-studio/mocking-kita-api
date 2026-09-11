@@ -105,7 +105,7 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
                 </div>
 
                 {/* Path input with auto-complete from body */}
-                <div className="w-2/5 min-w-[130px]">
+                <div className="w-2/5 min-w-32.5">
                   <PathAutocompleteInput
                     id={`${idPrefix}-row-${index}-path`}
                     value={rule.path}
@@ -119,14 +119,13 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
                 {/* Operator selector */}
                 <select
                   id={`${idPrefix}-row-${index}-operator`}
-                  value={rule.operator}
+                  value={rule.operator === ('regex_i' as any) ? 'regex' : rule.operator}
                   disabled={!rule.enabled}
                   onChange={(e) => updateRule(index, { operator: e.target.value as ParamMatchOperator })}
                   className="px-1.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md text-[11px] font-mono font-medium text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer shrink-0"
                 >
                   <option value="equal">= equal</option>
                   <option value="regex">.* regex</option>
-                  <option value="regex_i">.* regex_i</option>
                   <option value="null">∅ null</option>
                   <option value="empty_array">[] empty_array</option>
                 </select>

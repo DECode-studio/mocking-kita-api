@@ -331,7 +331,7 @@ function matchesRegex(expected: unknown, actual: unknown, looseScalars = false):
       return false;
     }
     const target = looseScalars && actual != null ? String(actual) : String(actual ?? '');
-    return new RegExp(pattern).test(target);
+    return new RegExp(pattern, 'i').test(target);
   } catch {
     return false;
   }
