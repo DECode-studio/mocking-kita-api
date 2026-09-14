@@ -1,3 +1,3 @@
 export const runtime = 'nodejs';
 
-export { POST } from '@/src/modules/collection/collection.controller';
+export { POST } from '@/src/server/collection/collection.controller';

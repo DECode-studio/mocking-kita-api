@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
-import { accountRepository } from '@/src/modules/account';
-import { getServerSession } from '@/src/core/server/auth/session';
+import { accountRepository } from '@/src/server/account';
+import { getServerSession, requireAdminSession } from '@/src/core/server/auth/session';
 import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
 
 export async function GET() {
   const session = await getServerSession();
   if (!session) {
     return jsonFail('Unauthorized', 401, 'UNAUTHORIZED');
+  }
+
+  const adminSession = await requireAdminSession();
+  if (!adminSession) {
+    return jsonFail('Forbidden: Access denied to accounts list', 403, 'FORBIDDEN');
   }
 
   try {

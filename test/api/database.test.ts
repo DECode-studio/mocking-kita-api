@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET, POST } from '@/src/app/api/database/route';
 import { importDatabaseData, readDatabase, wipeAllDatabaseData } from '@/src/core/db/database_storage_helper';
-import { createProject, getAllProjects, getProjectById, updateProject } from '@/src/modules/project';
-import { createApi, getApiById } from '@/src/modules/api';
+import { createProject, getAllProjects, getProjectById, updateProject } from '@/src/server/project';
+import { createApi, getApiById } from '@/src/server/api';
 import { cookies } from 'next/headers';
-import { getDashboardSummary } from '@/src/modules/database/database-dashboard-summary.service';
+import { getDashboardSummary } from '@/src/server/database/database-dashboard-summary.service';
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),
@@ -18,7 +18,7 @@ vi.mock('@/src/core/db/database_storage_helper', () => ({
   seedDatabase: vi.fn(),
 }));
 
-vi.mock('@/src/modules/project', () => ({
+vi.mock('@/src/server/project', () => ({
   getAllProjects: vi.fn(),
   createProject: vi.fn(),
   updateProject: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock('@/src/modules/project', () => ({
   getProjectById: vi.fn(),
 }));
 
-vi.mock('@/src/modules/environment', () => ({
+vi.mock('@/src/server/environment', () => ({
   getAllEnvironments: vi.fn(),
   createEnvironment: vi.fn(),
   updateEnvironment: vi.fn(),
@@ -36,7 +36,7 @@ vi.mock('@/src/modules/environment', () => ({
   getEnvironmentById: vi.fn(),
 }));
 
-vi.mock('@/src/modules/api', () => ({
+vi.mock('@/src/server/api', () => ({
   getAllApis: vi.fn(),
   createApi: vi.fn(),
   updateApi: vi.fn(),
@@ -45,21 +45,21 @@ vi.mock('@/src/modules/api', () => ({
   upsertApiEnvironment: vi.fn(),
 }));
 
-vi.mock('@/src/modules/collection', () => ({
+vi.mock('@/src/server/collection', () => ({
   createCollection: vi.fn(),
   updateCollection: vi.fn(),
   softDeleteCollection: vi.fn(),
   getCollectionById: vi.fn(),
 }));
 
-vi.mock('@/src/modules/request-scenario', () => ({
+vi.mock('@/src/server/request-scenario', () => ({
   createRequestScenario: vi.fn(),
   updateRequestScenario: vi.fn(),
   softDeleteRequestScenario: vi.fn(),
   getRequestScenarioById: vi.fn(),
 }));
 
-vi.mock('@/src/modules/response-scenario', () => ({
+vi.mock('@/src/server/response-scenario', () => ({
   createResponseScenario: vi.fn(),
   updateResponseScenario: vi.fn(),
   softDeleteResponseScenario: vi.fn(),
@@ -71,11 +71,11 @@ vi.mock('@/src/core/db/change_log_helper', () => ({
   getDatabaseSummary: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('@/src/modules/mock-proxy', () => ({
+vi.mock('@/src/server/mock-proxy', () => ({
   clearInternalProxyCache: vi.fn(),
 }));
 
-vi.mock('@/src/modules/database/database-dashboard-summary.service', () => ({
+vi.mock('@/src/server/database/database-dashboard-summary.service', () => ({
   getDashboardSummary: vi.fn(),
 }));
 

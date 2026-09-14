@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { UserSession } from '@/src/domain/auth/entity/user_session';
+import { UserSession } from '@/src/client/domain/auth/entity/user_session';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { ENV } from '@/src/core/constants/env';
 

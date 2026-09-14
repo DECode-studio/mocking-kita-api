@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET } from '@/src/app/api/faq/route';
-import { getFaqs } from '@/src/modules/faq/faq.service';
+import { getFaqs } from '@/src/server/faq/faq.service';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/src/modules/faq/faq.service', () => ({
+vi.mock('@/src/server/faq/faq.service', () => ({
   getFaqs: vi.fn(),
 }));
 

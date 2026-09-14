@@ -3,9 +3,9 @@
 Dokumen ini mendefinisikan target tree proyek **Mock API Studio** setelah flow FE dan BE dipisahkan.
 
 Prinsip:
-- `src/presentation`, `src/domain`, `src/data`, dan `src/di` adalah flow FE/client application.
+- `src/client/presentation`, `src/client/domain`, `src/client/data`, dan `src/core/di` adalah flow FE/client application.
 - `src/app/api` adalah HTTP adapter.
-- `src/modules` adalah flow BE/module application.
+- `src/server` adalah flow BE/module application.
 - `src/core` berisi helper lintas runtime, dipisahkan menjadi shared/client/server saat migrasi.
 
 ---
@@ -270,7 +270,7 @@ mock-api-studio/
         data_source/
         repository/
 
-    modules/
+    server/
       auth/
         index.ts
         auth.controller.ts
@@ -481,7 +481,7 @@ mock-api-studio/
       openapi/
 
     di/
-      usecase_provider.ts
+      container.ts (getService)
 
   prisma/
     schema.prisma

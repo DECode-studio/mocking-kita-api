@@ -10,6 +10,6 @@ export const ROUTES = {
   CHANGE_LOGS: '/change-logs',
   PROJECT_DETAIL: (projectId: string) => `/projects/${projectId}`,
   PROJECT_ENVIRONMENTS: (projectId: string) => `/projects/${projectId}/environments`,
-  PROJECT_APIS: (projectId: string) => `/projects/${projectId}/apis`,
+  PROJECT_APIS: (projectId: string) => `/projects/${projectId}`,
   API_DETAIL: (projectId: string, apiId: string) => `/projects/${projectId}/apis/${apiId}`,
 } as const;

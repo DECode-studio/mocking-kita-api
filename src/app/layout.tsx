@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" className={isDark ? 'dark' : undefined} suppressHydrationWarning>
-      <body className="antialiased">
+      <body className="antialiased bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen">
         <Providers>{children}</Providers>
       </body>
     </html>

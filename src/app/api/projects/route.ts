@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { GET as listProjects, POST as createProject } from '@/src/modules/project/project.controller';
+import { GET as listProjects, POST as createProject } from '@/src/server/project/project.controller';
 
 export const runtime = 'nodejs';
 

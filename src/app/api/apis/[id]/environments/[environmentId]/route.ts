@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getApiEnvironmentRoute } from '@/src/modules/api/api.controller';
+import { getApiEnvironmentRoute } from '@/src/server/api/api.controller';
 
 export const runtime = 'nodejs';
 
