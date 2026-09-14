@@ -33,4 +33,7 @@ export const DASHBOARD_TEXT = {
   IMPORT_MODE_REPLACE: 'Replace All',
   IMPORT_MODE_REPLACE_DESC: 'Wipes all current data first',
   APPLY_IMPORT_BTN: 'Apply Import',
+  SHOWING_COUNT: (current: number, total: number) => `Showing ${current} of ${total}`,
+  RULES_COUNT_SUFFIX: (count: number) => `${count} rules`,
 } as const;
+
