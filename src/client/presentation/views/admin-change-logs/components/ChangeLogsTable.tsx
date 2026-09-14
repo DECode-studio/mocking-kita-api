@@ -37,7 +37,7 @@ export const ChangeLogsTable: React.FC<ChangeLogsTableProps> = ({
         <div className="flex flex-col items-center justify-center py-20 space-y-4">
           <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
           <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Loading Change Logs...
+            {CHANGE_LOGS_ADMIN_TEXT.LOADING_LOGS}
           </span>
         </div>
       ) : error ? (
@@ -46,7 +46,7 @@ export const ChangeLogsTable: React.FC<ChangeLogsTableProps> = ({
             <X className="w-6 h-6" />
           </span>
           <h3 className="font-semibold text-slate-950 dark:text-white text-sm">
-            Gagal memuat log riwayat
+            {CHANGE_LOGS_ADMIN_TEXT.ERROR_LOADING_TITLE}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">{error}</p>
         </div>

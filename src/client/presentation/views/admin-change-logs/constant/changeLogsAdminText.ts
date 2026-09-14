@@ -26,4 +26,8 @@ export const CHANGE_LOGS_ADMIN_TEXT = {
   LABEL_AFTER_STATE: 'After State',
   LABEL_METADATA: 'Metadata',
   CLOSE_BTN: 'Close',
+  LOADING_LOGS: 'Loading Change Logs...',
+  ERROR_LOADING_TITLE: 'Gagal memuat log riwayat',
+  ERROR_LOAD_LOGS: 'Failed to load change logs',
 } as const;
+

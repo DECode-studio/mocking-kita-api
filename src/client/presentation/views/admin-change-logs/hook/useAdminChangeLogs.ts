@@ -7,6 +7,7 @@ import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 import { useState, useEffect, useMemo } from 'react';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { ChangeLog } from '@/src/client/domain/change-log/entity/change_log';
+import { CHANGE_LOGS_ADMIN_TEXT } from '../constant';
 
 export type ChangeLogEntry = ChangeLog;
 
@@ -73,7 +74,7 @@ export function useAdminChangeLogs() {
       setChangeLogs(res.changeLogs);
       setTotalCount(res.totalCount);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load change logs');
+      setError(err?.message || CHANGE_LOGS_ADMIN_TEXT.ERROR_LOAD_LOGS);
     } finally {
       setLoading(false);
     }
