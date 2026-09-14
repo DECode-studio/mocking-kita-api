@@ -1,7 +1,8 @@
-import ApiCollectionsView from '@/src/presentation/views/api-collections/ApiCollectionsView';
-import { listApis } from '@/src/data/api/api/api_collection_api_client';
+import ApiCollectionsView from '@/src/client/presentation/views/api-collections/ApiCollectionsView';
+import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 
 export default async function ApiCollectionsPage() {
-  const initialApis = await listApis();
+  const apiUseCase = getService(CLIENT_DI_TOKENS.apiUseCase);
+  const initialApis = await apiUseCase.getAllApis();
   return <ApiCollectionsView initialApis={initialApis} />;
 }

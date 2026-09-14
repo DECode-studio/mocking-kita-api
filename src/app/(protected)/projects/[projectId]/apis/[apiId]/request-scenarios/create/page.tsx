@@ -1,5 +1,5 @@
-import RequestScenarioEditorView from '@/src/presentation/views/request-scenario-editor/RequestScenarioEditorView';
-import { createApiDetailUseCase } from '@/src/di/usecase_provider';
+import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
+import RequestScenarioEditorView from '@/src/client/presentation/views/request-scenario-editor/RequestScenarioEditorView';
 
 interface CreateRequestScenarioPageProps {
   params: Promise<{ projectId: string; apiId: string }>;
@@ -7,7 +7,7 @@ interface CreateRequestScenarioPageProps {
 
 export default async function CreateRequestScenarioPage({ params }: CreateRequestScenarioPageProps) {
   const { projectId, apiId } = await params;
-  const apiDetailUseCase = createApiDetailUseCase();
+  const apiDetailUseCase = getService(CLIENT_DI_TOKENS.apiDetailUseCase);
   const initialDetail = await apiDetailUseCase.load(projectId, apiId);
 
   return (
