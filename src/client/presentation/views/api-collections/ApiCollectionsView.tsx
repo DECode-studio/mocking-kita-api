@@ -100,8 +100,8 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
           title={API_COLLECTIONS_TEXT.NO_ENDPOINTS}
           description={
             search
-              ? `No API endpoint definitions matching "${search}"`
-              : 'Add an API Collection endpoint or create a Folder to organize your project endpoints.'
+              ? API_COLLECTIONS_TEXT.NO_MATCHING_ENDPOINTS(search)
+              : API_COLLECTIONS_TEXT.NO_ENDPOINTS_DESC
           }
           actionLabel={API_COLLECTIONS_TEXT.ADD_COLLECTION_BTN}
           onAction={openAddDialog}
@@ -156,7 +156,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
                         openEditCollectionDialog(col);
                       }}
                       className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                      title="Edit Folder"
+                      title={API_COLLECTIONS_TEXT.TITLE_EDIT_FOLDER}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
@@ -167,7 +167,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
                         setDeletingCollectionId(col.id);
                       }}
                       className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded transition-colors"
-                      title="Delete Folder"
+                      title={API_COLLECTIONS_TEXT.TITLE_DELETE_FOLDER}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -178,7 +178,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
                   <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800/60 rounded-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
                     {apisForCol.length === 0 ? (
                       <div className="py-6 text-center text-xs text-slate-400 italic">
-                        Empty Folder. Edit an endpoint to add it here.
+                        {API_COLLECTIONS_TEXT.EMPTY_FOLDER_NOTICE}
                       </div>
                     ) : (
                       apisForCol.map((api) => (
@@ -204,7 +204,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
             <div className="space-y-2">
               {collections.length > 0 && (
                 <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider pl-1">
-                  Ungrouped Endpoints
+                  {API_COLLECTIONS_TEXT.UNGROUPED_ENDPOINTS}
                 </h4>
               )}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
@@ -230,7 +230,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
             <EmptyState
               icon={Layers}
               title={API_COLLECTIONS_TEXT.NO_ENDPOINTS}
-              description={`No API endpoint definitions matching "${search}"`}
+              description={API_COLLECTIONS_TEXT.NO_MATCHING_ENDPOINTS(search)}
               actionLabel={API_COLLECTIONS_TEXT.ADD_COLLECTION_BTN}
               onAction={openAddDialog}
             />
@@ -277,9 +277,9 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
         isOpen={!!deletingCollectionId}
         onClose={() => setDeletingCollectionId(null)}
         onConfirm={handleDeleteCollection}
-        title="Delete Folder"
-        description="Are you sure you want to delete this folder? The APIs inside will not be deleted, but will become ungrouped."
-        confirmLabel="Delete Folder"
+        title={API_COLLECTIONS_TEXT.DELETE_FOLDER_DIALOG_TITLE}
+        description={API_COLLECTIONS_TEXT.DELETE_FOLDER_DIALOG_DESC}
+        confirmLabel={API_COLLECTIONS_TEXT.DELETE_FOLDER_DIALOG_TITLE}
         variant="danger"
       />
     </div>

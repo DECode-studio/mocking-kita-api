@@ -76,13 +76,13 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Folder / Collection (Optional)
+                {API_COLLECTIONS_TEXT.LABEL_FOLDER_COLLECTION_OPTIONAL}
               </label>
               <select
                 {...register('collectionId')}
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               >
-                <option value="">No Collection (Ungrouped)</option>
+                <option value="">{API_COLLECTIONS_TEXT.NO_COLLECTION_UNGROUPED}</option>
                 {collections.map((col) => (
                   <option key={col.id} value={col.id}>
                     {col.name}
@@ -95,8 +95,8 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
               selectedPicIds={selectedPicIds}
               onChange={(ids) => setValue('picIds', ids, { shouldValidate: true, shouldDirty: true })}
               accounts={accounts}
-              label="Person In Charge (PIC) - Optional"
-              placeholder="Pilih PIC endpoint..."
+              label={API_COLLECTIONS_TEXT.LABEL_PIC_OPTIONAL}
+              placeholder={API_COLLECTIONS_TEXT.PLACEHOLDER_PIC_SELECT}
               badgeTheme="indigo"
             />
 

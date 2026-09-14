@@ -35,4 +35,17 @@ export const API_COLLECTIONS_TEXT = {
   ENDPOINTS_COUNT_SUFFIX: 'endpoints',
   DEFAULT_COLLECTION_TAG: 'Default Collection',
   CREATE_FOLDER_BTN: 'Create Folder',
+  NO_MATCHING_ENDPOINTS: (search: string) => `No API endpoint definitions matching "${search}"`,
+  NO_ENDPOINTS_DESC: 'Add an API Collection endpoint or create a Folder to organize your project endpoints.',
+  TITLE_EDIT_FOLDER: 'Edit Folder',
+  TITLE_DELETE_FOLDER: 'Delete Folder',
+  EMPTY_FOLDER_NOTICE: 'Empty Folder. Edit an endpoint to add it here.',
+  UNGROUPED_ENDPOINTS: 'Ungrouped Endpoints',
+  DELETE_FOLDER_DIALOG_TITLE: 'Delete Folder',
+  DELETE_FOLDER_DIALOG_DESC: 'Are you sure you want to delete this folder? The APIs inside will not be deleted, but will become ungrouped.',
+  LABEL_FOLDER_COLLECTION_OPTIONAL: 'Folder / Collection (Optional)',
+  NO_COLLECTION_UNGROUPED: 'No Collection (Ungrouped)',
+  LABEL_PIC_OPTIONAL: 'Person In Charge (PIC) - Optional',
+  PLACEHOLDER_PIC_SELECT: 'Pilih PIC endpoint...',
 } as const;
+
