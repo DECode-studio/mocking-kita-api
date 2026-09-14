@@ -17,5 +17,8 @@ export const REQUEST_SCENARIO_EDITOR_TEXT = {
   BODY_TITLE: 'Request Body Matching',
   BODY_TYPE_LABEL: 'Body Type:',
   BODY_NONE_NOTICE: 'Skenario ini tidak mengevaluasi request body (Body Type: None).',
-};
+  LOADING_SCENARIO_DETAILS: 'Loading scenario details...',
+  DEFAULT_SCENARIO_NAME: 'Request Scenario',
+} as const;
+
 
