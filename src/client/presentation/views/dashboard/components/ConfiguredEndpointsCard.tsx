@@ -23,7 +23,7 @@ export const ConfiguredEndpointsCard: React.FC<ConfiguredEndpointsCardProps> = (
           {DASHBOARD_TEXT.CONFIGURED_ENDPOINTS_TITLE}
         </h3>
         <span className="text-xs font-mono text-slate-500">
-          Showing {endpoints.length} of {endpoints.length}
+          {DASHBOARD_TEXT.SHOWING_COUNT(endpoints.length, endpoints.length)}
         </span>
       </div>
 
@@ -48,7 +48,7 @@ export const ConfiguredEndpointsCard: React.FC<ConfiguredEndpointsCardProps> = (
 
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[10px] font-mono text-slate-500 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {api.requestScenarioCount} rules
+                  {DASHBOARD_TEXT.RULES_COUNT_SUFFIX(api.requestScenarioCount)}
                 </span>
                 <StatusBadge status={api.status} />
               </div>

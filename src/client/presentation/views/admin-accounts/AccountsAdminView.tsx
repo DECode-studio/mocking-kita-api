@@ -63,7 +63,7 @@ export const AccountsAdminView: React.FC = () => {
             id={ADMIN_ACCOUNTS_SEMANTIC_ID.REFRESH_BTN}
             onClick={refresh}
             className="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-slate-200 dark:border-slate-800"
-            title="Refresh List"
+            title={ADMIN_ACCOUNTS_TEXT.TITLE_REFRESH_LIST}
           >
             <RefreshCw className={`w-4 h-4 ${loading && 'animate-spin'}`} />
           </button>
@@ -125,7 +125,7 @@ export const AccountsAdminView: React.FC = () => {
           </div>
           <h3 className="font-semibold text-slate-950 dark:text-white text-sm">{ADMIN_ACCOUNTS_TEXT.NO_RESULTS_TITLE}</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1">
-            No accounts match "{searchQuery}" {roleFilter !== 'All' ? `with role ${roleFilter}` : ''}.
+            {ADMIN_ACCOUNTS_TEXT.NO_ACCOUNTS_MATCH(searchQuery, roleFilter)}
           </p>
           <button
             onClick={() => {
@@ -179,8 +179,8 @@ export const AccountsAdminView: React.FC = () => {
         onConfirm={handleDeleteConfirm}
         title={ADMIN_ACCOUNTS_TEXT.DELETE_CONFIRM_TITLE}
         description={`Are you sure you want to delete account for ${accountToDelete?.name || ''} (@${accountToDelete?.username || ''})? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        confirmLabel={ADMIN_ACCOUNTS_TEXT.DELETE_CONFIRM_BTN}
+        cancelLabel={ADMIN_ACCOUNTS_TEXT.CANCEL}
         variant="danger"
       />
     </div>

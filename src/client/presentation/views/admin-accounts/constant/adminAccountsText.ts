@@ -35,5 +35,22 @@ export const ADMIN_ACCOUNTS_TEXT = {
   JOINED_PREFIX: 'Joined',
   REQUIRED_FIELDS_ERROR: 'Please fill out all required fields',
   OPERATION_FAILED_ERROR: 'Operation failed',
+  TITLE_REFRESH_LIST: 'Refresh List',
+  TITLE_EDIT_USER: 'Edit User',
+  TITLE_DELETE_USER: 'Delete User',
+  DELETE_CONFIRM_BTN: 'Delete',
+  NO_ACCOUNTS_MATCH: (query: string, roleFilter: string) =>
+    `No accounts match "${query}" ${roleFilter !== 'All' ? `with role ${roleFilter}` : ''}.`,
+  OVERLAY_CREATE_TITLE: (name: string) => `Membuat akun "${name}"`,
+  OVERLAY_CREATE_DESC: 'Akun baru sedang dibuat dan akan muncul di daftar admin.',
+  ERROR_CREATE_ACCOUNT: 'Failed to create account',
+  OVERLAY_UPDATE_TITLE: (name: string) => `Menyimpan akun "${name}"`,
+  OVERLAY_UPDATE_DESC: 'Nama, role, atau password akun sedang diperbarui.',
+  ERROR_UPDATE_ACCOUNT: 'Failed to update account',
+  OVERLAY_DELETE_TITLE: (name?: string) => `Menghapus akun${name ? ` "${name}"` : ''}`,
+  OVERLAY_DELETE_DESC: 'Akun sedang dihapus dan tidak akan bisa digunakan untuk masuk.',
+  ERROR_DELETE_ACCOUNT: 'Failed to delete account',
+  ERROR_LOAD_ACCOUNTS: 'Failed to load accounts',
 } as const;
+
 

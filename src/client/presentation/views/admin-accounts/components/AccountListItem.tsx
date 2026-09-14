@@ -60,7 +60,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
           id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_EDIT_BTN}
           onClick={() => onEdit(account)}
           className="p-2 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors cursor-pointer"
-          title="Edit User"
+          title={ADMIN_ACCOUNTS_TEXT.TITLE_EDIT_USER}
         >
           <Edit2 className="w-3.5 h-3.5" />
         </button>
@@ -69,7 +69,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
           onClick={() => onDelete(account)}
           disabled={isSystemAdmin}
           className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-          title="Delete User"
+          title={ADMIN_ACCOUNTS_TEXT.TITLE_DELETE_USER}
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

@@ -46,7 +46,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
       <div className="space-y-3">
         {respScenarios.length === 0 ? (
           <p className="text-xs text-slate-400 italic py-4 text-center">
-            No response scenarios configured. Add a response payload (e.g. 200 OK, 400 Bad Request, 500 Error).
+            {API_DETAIL_TEXT.NO_RESPONSE_SCENARIOS}
           </p>
         ) : (
           respScenarios.map((resp) => (
@@ -81,7 +81,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     type="button"
                     onClick={() => onEdit(resp)}
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    title="Edit Response"
+                    title={API_DETAIL_TEXT.ACTION_EDIT_RESPONSE}
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
@@ -89,7 +89,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     type="button"
                     onClick={() => onDuplicate(resp.id)}
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    title="Duplicate Response"
+                    title={API_DETAIL_TEXT.ACTION_DUPLICATE_RESPONSE}
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
@@ -97,7 +97,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     type="button"
                     onClick={() => onDeleteRequest(resp.id)}
                     className="p-1 text-rose-500 hover:text-rose-700"
-                    title="Delete Response"
+                    title={API_DETAIL_TEXT.ACTION_DELETE_RESPONSE}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

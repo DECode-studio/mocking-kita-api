@@ -118,7 +118,7 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
               }`}
             >
               <Layers className="w-3 h-3" />
-              {strategy === 'ANY' ? 'Match ANY (OR)' : 'Match ALL (AND)'}
+              {strategy === 'ANY' ? API_DETAIL_TEXT.STRATEGY_MATCH_ANY : API_DETAIL_TEXT.STRATEGY_MATCH_ALL}
             </span>
           </div>
           <p className="text-xs text-slate-500 font-mono">
@@ -132,13 +132,13 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
             onClick={onEdit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
           >
-            <Edit2 className="w-3.5 h-3.5" /> Edit Rule
+            <Edit2 className="w-3.5 h-3.5" /> {API_DETAIL_TEXT.ACTION_EDIT_RULE}
           </button>
           <button
             type="button"
             onClick={onDuplicate}
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg cursor-pointer"
-            title="Duplicate Rule"
+            title={API_DETAIL_TEXT.ACTION_DUPLICATE_RULE}
           >
             <Copy className="w-4 h-4" />
           </button>
@@ -146,7 +146,7 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
             type="button"
             onClick={onDeleteRequest}
             className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg cursor-pointer"
-            title="Delete Rule"
+            title={API_DETAIL_TEXT.ACTION_DELETE_RULE}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -188,11 +188,11 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
               {bodyType === 'JSON'
-                ? 'Full Body Payload Matching'
+                ? API_DETAIL_TEXT.MATCHING_FULL_BODY
                 : bodyType === 'FORM_DATA'
-                ? 'Body Fields & Files Matching'
+                ? API_DETAIL_TEXT.MATCHING_FORM_DATA
                 : bodyType === 'URL_ENCODED'
-                ? 'URL Encoded Fields Matching'
+                ? API_DETAIL_TEXT.MATCHING_URL_ENCODED
                 : API_DETAIL_TEXT.DETAIL_BODY_MATCHING}
             </h4>
             <span
@@ -212,7 +212,7 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
 
           {bodyType === 'NONE' ? (
             <div className="py-4 text-center text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-dashed border-slate-200 dark:border-slate-800">
-              Skenario ini tidak mengevaluasi request body (Body Type: None).
+              {API_DETAIL_TEXT.BODY_NONE_NOTICE}
             </div>
           ) : (
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200 max-h-72 overflow-y-auto">
@@ -231,11 +231,11 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
           <div>
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 font-mono">
-                Body Path Rules ({bodyRules.length})
+                {API_DETAIL_TEXT.BODY_PATH_RULES_COUNT(bodyRules.length)}
               </h4>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-mono text-slate-500">
-                  Strict Structure:
+                  {API_DETAIL_TEXT.STRICT_STRUCTURE_LABEL}
                 </span>
                 <span
                   className={`px-1.5 py-0.2 rounded border text-[10px] font-mono uppercase font-bold tracking-wider ${

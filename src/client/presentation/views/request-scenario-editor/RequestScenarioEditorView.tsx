@@ -69,13 +69,13 @@ export const RequestScenarioEditorView: React.FC<RequestScenarioEditorViewProps>
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-        <p className="text-xs text-slate-500 font-medium">Loading scenario details...</p>
+        <p className="text-xs text-slate-500 font-medium">{REQUEST_SCENARIO_EDITOR_TEXT.LOADING_SCENARIO_DETAILS}</p>
       </div>
     );
   }
 
   const pageTitle = isEditMode
-    ? `${REQUEST_SCENARIO_EDITOR_TEXT.TITLE_EDIT_PREFIX} ${targetScenario?.name || name || 'Request Scenario'}`
+    ? `${REQUEST_SCENARIO_EDITOR_TEXT.TITLE_EDIT_PREFIX} ${targetScenario?.name || name || REQUEST_SCENARIO_EDITOR_TEXT.DEFAULT_SCENARIO_NAME}`
     : REQUEST_SCENARIO_EDITOR_TEXT.TITLE_CREATE;
 
   return (

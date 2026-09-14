@@ -22,7 +22,7 @@ export const EndpointOverviewTabContent: React.FC<EndpointOverviewTabContentProp
     <div id={API_DETAIL_SEMANTIC_ID.OVERVIEW_TAB_CONTENT} className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-6 max-w-3xl">
       <div className="space-y-1">
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{API_DETAIL_TEXT.TAB_OVERVIEW}</h3>
-        <p className="text-xs text-slate-500">System attributes and configuration parameters for this API endpoint.</p>
+        <p className="text-xs text-slate-500">{API_DETAIL_TEXT.OVERVIEW_TAB_DESC}</p>
       </div>
 
       <div className="space-y-3 text-xs font-mono">
@@ -43,7 +43,7 @@ export const EndpointOverviewTabContent: React.FC<EndpointOverviewTabContentProp
           <span className="text-indigo-600 dark:text-indigo-400 font-bold">{api.path}</span>
         </div>
         <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
-          <span className="text-slate-400 font-sans">Status</span>
+          <span className="text-slate-400 font-sans">{API_DETAIL_TEXT.OVERVIEW_STATUS}</span>
           <StatusBadge status={api.status} />
         </div>
         <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800">
