@@ -46,7 +46,7 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
       setAccounts(data);
       setSsoDomains(domains);
     } catch (err: any) {
-      setError(err?.message || 'Failed to load accounts');
+      setError(err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_LOAD_ACCOUNTS);
     } finally {
       setLoading(false);
     }
@@ -94,8 +94,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
   const createAccount = async (data: { username: string; password?: string; name: string; role: string }) => {
     return pageLoading.run(
       {
-        title: `Membuat akun "${data.name}"`,
-        description: 'Akun baru sedang dibuat dan akan muncul di daftar admin.',
+        title: ADMIN_ACCOUNTS_TEXT.OVERLAY_CREATE_TITLE(data.name),
+        description: ADMIN_ACCOUNTS_TEXT.OVERLAY_CREATE_DESC,
       },
       async () => {
         try {
@@ -103,7 +103,7 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
           setAccounts((prev) => [...prev, account]);
           return { success: true };
         } catch (err: any) {
-          return { success: false, error: err?.message || 'Failed to create account' };
+          return { success: false, error: err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_CREATE_ACCOUNT };
         }
       }
     );
@@ -113,8 +113,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
     const account = accounts.find((item) => item.id === id);
     return pageLoading.run(
       {
-        title: `Menyimpan akun "${data.name || account?.name || 'ini'}"`,
-        description: 'Nama, role, atau password akun sedang diperbarui.',
+        title: ADMIN_ACCOUNTS_TEXT.OVERLAY_UPDATE_TITLE(data.name || account?.name || 'ini'),
+        description: ADMIN_ACCOUNTS_TEXT.OVERLAY_UPDATE_DESC,
       },
       async () => {
         try {
@@ -122,7 +122,7 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
           setAccounts((prev) => prev.map((acc) => (acc.id === id ? updated : acc)));
           return { success: true };
         } catch (err: any) {
-          return { success: false, error: err?.message || 'Failed to update account' };
+          return { success: false, error: err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_UPDATE_ACCOUNT };
         }
       }
     );
@@ -132,8 +132,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
     const account = accounts.find((item) => item.id === id);
     return pageLoading.run(
       {
-        title: `Menghapus akun${account ? ` "${account.name}"` : ''}`,
-        description: 'Akun sedang dihapus dan tidak akan bisa digunakan untuk masuk.',
+        title: ADMIN_ACCOUNTS_TEXT.OVERLAY_DELETE_TITLE(account?.name),
+        description: ADMIN_ACCOUNTS_TEXT.OVERLAY_DELETE_DESC,
       },
       async () => {
         try {
@@ -141,7 +141,7 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
           setAccounts((prev) => prev.filter((acc) => acc.id !== id));
           return { success: true };
         } catch (err: any) {
-          return { success: false, error: err?.message || 'Failed to delete account' };
+          return { success: false, error: err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_DELETE_ACCOUNT };
         }
       }
     );
