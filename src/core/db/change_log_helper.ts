@@ -1,6 +1,6 @@
 import prisma from '@/src/core/db/prisma-client';
 import { generateId } from '@/src/core/utils/uuid';
-import { UserSession } from '@/src/domain/auth/entity/user_session';
+import { UserSession } from '@/src/client/domain/auth/entity/user_session';
 import { sendGoogleSpaceNotification } from '@/src/core/notification/google_space_notifier';
 import { getServerSession } from '@/src/core/server/auth/session';
 

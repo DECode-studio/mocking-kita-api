@@ -5,4 +5,4 @@ export {
   responseCache,
   setProxyConfigCache,
   throttleStates,
-} from '@/src/modules/mock-proxy';
+} from '@/src/server/mock-proxy';

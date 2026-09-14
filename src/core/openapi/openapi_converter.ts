@@ -1,8 +1,8 @@
-import { Project } from '@/src/domain/project/entity/project';
-import { Collection } from '@/src/domain/collection/entity/collection';
-import { ApiCollection } from '@/src/domain/api/entity/api_collection';
-import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
-import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
+import { Project } from '@/src/client/domain/project/entity/project';
+import { Collection } from '@/src/client/domain/collection/entity/collection';
+import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
+import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
+import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { MethodRequest, MatchType, RequestBodyType } from '@/src/core/utils/types';
 import { generateId } from '@/src/core/utils/uuid';
 

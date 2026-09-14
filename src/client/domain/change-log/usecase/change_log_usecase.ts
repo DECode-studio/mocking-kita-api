@@ -1,0 +1,12 @@
+import { ChangeLog } from '../entity/change_log';
+
+export interface ChangeLogUseCase {
+  getChangeLogs(params: {
+    search?: string;
+    action?: string;
+    projectId?: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ changeLogs: ChangeLog[]; totalCount: number }>;
+}
+

@@ -1,10 +1,10 @@
 import prisma from '@/src/core/db/prisma-client';
-import { getProjectById } from '@/src/modules/project';
-import { getCollectionsByProjectId } from '@/src/modules/collection';
-import { getApisByProjectId } from '@/src/modules/api';
+import { getProjectById } from '@/src/server/project';
+import { getCollectionsByProjectId } from '@/src/server/collection';
+import { getApisByProjectId } from '@/src/server/api';
 import { exportProjectToOpenApiSpec, parseOpenApiSpecToProjectData, OpenApiSpec } from '@/src/core/openapi/openapi_converter';
-import { RequestScenario } from '@/src/domain/request-scenario/entity/request_scenario';
-import { ResponseScenario } from '@/src/domain/response-scenario/entity/response_scenario';
+import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
+import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { Prisma } from '@prisma/client';
 
 /**

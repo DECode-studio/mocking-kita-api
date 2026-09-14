@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleInternalApiRequest, clearInternalProxyCache, proxyConfigCache, responseCache } from '@/src/modules/mock-proxy';
-import { __mockProxyTestUtils } from '@/src/modules/mock-proxy/mock-proxy.service';
+import { handleInternalApiRequest, clearInternalProxyCache, proxyConfigCache, responseCache } from '@/src/server/mock-proxy';
+import { __mockProxyTestUtils } from '@/src/server/mock-proxy/mock-proxy.service';
 import { readDatabase } from '@/src/core/db/database_storage_helper';
 import { NextRequest } from 'next/server';
 import path from 'node:path';

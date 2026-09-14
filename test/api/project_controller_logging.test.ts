@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { POST } from '@/src/modules/project/project.controller';
-import { createProject } from '@/src/modules/project/project.repository';
+import { POST } from '@/src/server/project/project.controller';
+import { createProject } from '@/src/server/project/project.repository';
 import { logChange } from '@/src/core/db/change_log_helper';
 
-vi.mock('@/src/modules/project/project.repository', () => ({
+vi.mock('@/src/server/project/project.repository', () => ({
   createProject: vi.fn(),
   getAllProjects: vi.fn(),
   getProjectById: vi.fn(),
@@ -17,7 +17,7 @@ vi.mock('@/src/core/db/change_log_helper', () => ({
   logChange: vi.fn(),
 }));
 
-vi.mock('@/src/modules/mock-proxy/mock-proxy.cache', () => ({
+vi.mock('@/src/server/mock-proxy/mock-proxy.cache', () => ({
   clearInternalProxyCache: vi.fn(),
 }));
 

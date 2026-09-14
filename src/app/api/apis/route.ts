@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { GET as listApis, POST as createApi } from '@/src/modules/api/api.controller';
+import { GET as listApis, POST as createApi } from '@/src/server/api/api.controller';
 
 export const runtime = 'nodejs';
 

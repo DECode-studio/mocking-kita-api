@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { GET as listEnvironments, POST as createEnvironment } from '@/src/modules/environment/environment.controller';
+import { GET as listEnvironments, POST as createEnvironment } from '@/src/server/environment/environment.controller';
 
 export const runtime = 'nodejs';
 

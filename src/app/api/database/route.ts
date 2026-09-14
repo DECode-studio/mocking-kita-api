@@ -1,3 +1,3 @@
 export const runtime = 'nodejs';
 
-export { GET, POST } from '@/src/modules/database';
+export { GET, POST } from '@/src/server/database';

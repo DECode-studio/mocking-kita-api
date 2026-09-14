@@ -1,3 +1,3 @@
 export const runtime = 'nodejs';
 
-export { listRequestScenariosByApiRoute as GET } from '@/src/modules/request-scenario/request-scenario.controller';
+export { listRequestScenariosByApiRoute as GET } from '@/src/server/request-scenario/request-scenario.controller';

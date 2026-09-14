@@ -1,4 +1,4 @@
-import { MockApiDatabase } from '@/src/domain/database/entity/mock_api_database';
+import { MockApiDatabase } from '@/src/client/domain/database/entity/mock_api_database';
 
 export const INITIAL_SEED_DATA: MockApiDatabase = {
   version: '1.0.0',

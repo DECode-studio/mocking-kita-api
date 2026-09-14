@@ -1,1 +1,1 @@
-export { handleInternalApiRequest } from '@/src/modules/mock-proxy';
+export { handleInternalApiRequest } from '@/src/server/mock-proxy';

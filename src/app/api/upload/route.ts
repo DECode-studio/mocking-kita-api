@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { handleUploadRequest } from '@/src/modules/upload';
+import { handleUploadRequest } from '@/src/server/upload';
 
 export const runtime = 'nodejs';
 

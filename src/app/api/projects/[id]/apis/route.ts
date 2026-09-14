@@ -1,3 +1,3 @@
 export const runtime = 'nodejs';
 
-export { listApisByProjectRoute as GET } from '@/src/modules/api/api.controller';
+export { listApisByProjectRoute as GET } from '@/src/server/api/api.controller';

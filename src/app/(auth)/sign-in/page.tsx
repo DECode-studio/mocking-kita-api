@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import SignInView from '@/src/presentation/views/sign-in/SignInView';
+import SignInView from '@/src/client/presentation/views/sign-in/SignInView';
 import { ROUTES } from '@/src/core/constants/routes';
 
 export default async function SignInPage() {

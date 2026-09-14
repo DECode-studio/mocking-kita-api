@@ -1,3 +1,3 @@
 export const runtime = 'nodejs';
 
-export { POST } from '@/src/modules/response-scenario/response-scenario.controller';
+export { POST } from '@/src/server/response-scenario/response-scenario.controller';
