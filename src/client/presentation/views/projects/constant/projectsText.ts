@@ -38,4 +38,8 @@ export const PROJECTS_TEXT = {
   VIEW_GRID: 'Grid View',
   VIEW_TABLE: 'Table View',
   ENDPOINTS_COUNT_SUFFIX: 'Endpoints',
+  NO_DESCRIPTION: 'No description provided.',
+  LABEL_PIC_PROJECT: 'Person In Charge (PIC)',
+  PLACEHOLDER_PIC_PROJECT: 'Pilih PIC project...',
 } as const;
+

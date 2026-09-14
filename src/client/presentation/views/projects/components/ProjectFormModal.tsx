@@ -81,8 +81,8 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               selectedPicIds={selectedPicIds}
               onChange={(ids) => setValue('picIds', ids, { shouldValidate: true, shouldDirty: true })}
               accounts={accounts}
-              label="Person In Charge (PIC)"
-              placeholder="Pilih PIC project..."
+              label={PROJECTS_TEXT.LABEL_PIC_PROJECT}
+              placeholder={PROJECTS_TEXT.PLACEHOLDER_PIC_PROJECT}
               badgeTheme="purple"
             />
 

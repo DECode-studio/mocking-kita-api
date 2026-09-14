@@ -131,7 +131,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
         </div>
 
         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-8">
-          {project.description || 'No description provided.'}
+          {project.description || PROJECTS_TEXT.NO_DESCRIPTION}
         </p>
       </div>
 
