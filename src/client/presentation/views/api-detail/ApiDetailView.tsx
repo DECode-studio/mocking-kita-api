@@ -70,7 +70,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
           onClick={() => router.push(`/projects/${projectId}`)}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Project
+          <ArrowLeft className="w-3.5 h-3.5" /> {API_DETAIL_TEXT.BACK_TO_PROJECT_BTN}
         </button>
       </div>
     );
@@ -134,8 +134,8 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
               {!activeReqScenario ? (
                 <EmptyState
                   icon={FileCode}
-                  title="No scenario selected"
-                  description="Select or add a request scenario from the left panel to configure headers, parameters, matching rules, and mock responses."
+                  title={API_DETAIL_TEXT.NO_SCENARIO_SELECTED_TITLE}
+                  description={API_DETAIL_TEXT.NO_SCENARIO_SELECTED_DESC}
                 />
               ) : (
                 <RequestScenarioDetailPanel
