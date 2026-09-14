@@ -23,8 +23,8 @@ describe('useAdminChangeLogs', () => {
     };
 
     vi.spyOn(di, 'getService').mockImplementation((token: any) => {
-      if (token === ChangeLogUseCaseImpl) return mockChangeLogUseCase;
-      if (token === ProjectUseCaseImpl) return mockProjectUseCase;
+      if (token === di.CLIENT_DI_TOKENS.changeLogUseCase || token === ChangeLogUseCaseImpl) return mockChangeLogUseCase;
+      if (token === di.CLIENT_DI_TOKENS.projectUseCase || token === ProjectUseCaseImpl) return mockProjectUseCase;
       return mockChangeLogUseCase;
     });
   });
