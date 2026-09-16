@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     const { username, password, name, role } = parsed.data;
 
-    if (!username || !name || !role || (hasAdminAuthority(role) && !password)) {
+    if (!username || !name || !role) {
       return jsonFail('Missing required fields', 400, 'MISSING_REQUIRED_FIELDS');
     }
 
@@ -86,10 +86,10 @@ export async function POST(request: Request) {
       return jsonFail('Username or email already exists', 409, 'ACCOUNT_ALREADY_EXISTS');
     }
 
-    // Generate random secure password for non-admins since they log in via SSO
-    const finalPassword = !hasAdminAuthority(role) && !password 
-      ? randomBytes(32).toString('hex')
-      : (password || '');
+    // Save provided password or generate secure random password
+    const finalPassword = password && password.trim() !== ''
+      ? password.trim()
+      : randomBytes(32).toString('hex');
 
     const passwordHash = hashPassword(finalPassword);
     const id = generateId();
