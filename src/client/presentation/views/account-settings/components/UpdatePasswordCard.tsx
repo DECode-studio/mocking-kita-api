@@ -3,6 +3,7 @@ import { KeyRound, Save, Loader2 } from 'lucide-react';
 import { ACCOUNT_SETTINGS_TEXT, ACCOUNT_SETTINGS_SEMANTIC_ID } from '../constant';
 
 interface UpdatePasswordCardProps {
+  requiresCurrentPassword?: boolean;
   currentPasswordInput: string;
   onCurrentPasswordChange: (value: string) => void;
   newPasswordInput: string;
@@ -14,6 +15,7 @@ interface UpdatePasswordCardProps {
 }
 
 export const UpdatePasswordCard: React.FC<UpdatePasswordCardProps> = ({
+  requiresCurrentPassword = true,
   currentPasswordInput,
   onCurrentPasswordChange,
   newPasswordInput,
@@ -31,10 +33,12 @@ export const UpdatePasswordCard: React.FC<UpdatePasswordCardProps> = ({
       <div>
         <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
           <KeyRound className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          {ACCOUNT_SETTINGS_TEXT.UPDATE_PASSWORD_TITLE}
+          {requiresCurrentPassword ? ACCOUNT_SETTINGS_TEXT.UPDATE_PASSWORD_TITLE : 'Create Account Password'}
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {ACCOUNT_SETTINGS_TEXT.UPDATE_PASSWORD_SUBTITLE}
+          {requiresCurrentPassword
+            ? ACCOUNT_SETTINGS_TEXT.UPDATE_PASSWORD_SUBTITLE
+            : 'Set a password for your account to allow signing in using username and password.'}
         </p>
       </div>
 
@@ -43,23 +47,25 @@ export const UpdatePasswordCard: React.FC<UpdatePasswordCardProps> = ({
         onSubmit={onSubmit}
         className="space-y-4 w-full"
       >
-        {/* Current Password Input */}
-        <div>
-          <label
-            htmlFor={ACCOUNT_SETTINGS_SEMANTIC_ID.INPUT_CURRENT_PASSWORD}
-            className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
-          >
-            {ACCOUNT_SETTINGS_TEXT.CURRENT_PASSWORD_LABEL}
-          </label>
-          <input
-            id={ACCOUNT_SETTINGS_SEMANTIC_ID.INPUT_CURRENT_PASSWORD}
-            type="password"
-            value={currentPasswordInput}
-            onChange={(e) => onCurrentPasswordChange(e.target.value)}
-            placeholder={ACCOUNT_SETTINGS_TEXT.CURRENT_PASSWORD_PLACEHOLDER}
-            className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
-          />
-        </div>
+        {/* Current Password Input (Only required for non-SSO accounts) */}
+        {requiresCurrentPassword && (
+          <div>
+            <label
+              htmlFor={ACCOUNT_SETTINGS_SEMANTIC_ID.INPUT_CURRENT_PASSWORD}
+              className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1"
+            >
+              {ACCOUNT_SETTINGS_TEXT.CURRENT_PASSWORD_LABEL}
+            </label>
+            <input
+              id={ACCOUNT_SETTINGS_SEMANTIC_ID.INPUT_CURRENT_PASSWORD}
+              type="password"
+              value={currentPasswordInput}
+              onChange={(e) => onCurrentPasswordChange(e.target.value)}
+              placeholder={ACCOUNT_SETTINGS_TEXT.CURRENT_PASSWORD_PLACEHOLDER}
+              className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-mono"
+            />
+          </div>
+        )}
 
         {/* New Password Input */}
         <div>
