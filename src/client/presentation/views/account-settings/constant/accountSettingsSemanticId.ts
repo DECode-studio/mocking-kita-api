@@ -1,0 +1,15 @@
+export const ACCOUNT_SETTINGS_SEMANTIC_ID = {
+  CONTAINER: 'account-settings-container',
+  PROFILE_CARD: 'account-settings-profile-card',
+  UPDATE_NAME_CARD: 'account-settings-update-name-card',
+  UPDATE_NAME_FORM: 'account-settings-update-name-form',
+  INPUT_NAME: 'account-settings-input-name',
+  INPUT_USERNAME_DISABLED: 'account-settings-input-username-disabled',
+  BTN_SAVE_NAME: 'account-settings-btn-save-name',
+  UPDATE_PASSWORD_CARD: 'account-settings-update-password-card',
+  UPDATE_PASSWORD_FORM: 'account-settings-update-password-form',
+  INPUT_CURRENT_PASSWORD: 'account-settings-input-current-password',
+  INPUT_NEW_PASSWORD: 'account-settings-input-new-password',
+  INPUT_CONFIRM_PASSWORD: 'account-settings-input-confirm-password',
+  BTN_SAVE_PASSWORD: 'account-settings-btn-save-password',
+} as const;

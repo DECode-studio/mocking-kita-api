@@ -5,6 +5,7 @@ export const ROUTES = {
   ENVIRONMENTS: '/environments',
   APIS: '/apis',
   SETTINGS: '/settings',
+  ACCOUNT_SETTINGS: '/account-settings',
   FAQ: '/faq',
   ADMIN_ACCOUNTS: '/admin/accounts',
   CHANGE_LOGS: '/change-logs',

@@ -10,6 +10,7 @@ const UI_ROUTES = [
   '/apis',
   '/environments',
   '/settings',
+  '/account-settings',
   '/change-logs',
   '/faq',
   '/admin',
@@ -18,6 +19,8 @@ const UI_ROUTES = [
 
 const STUDIO_INTERNAL_API_PREFIXES = [
   '/api/auth',
+  '/api/account',
+  '/api/accounts',
   '/api/database',
   '/api/settings',
   '/api/admin',
