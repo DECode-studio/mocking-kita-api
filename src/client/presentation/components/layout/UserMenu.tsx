@@ -63,7 +63,7 @@ export const UserMenu: React.FC = () => {
           </div>
 
           <DropdownMenu.Item
-            onClick={() => router.push(ROUTES.SETTINGS)}
+            onClick={() => router.push(ROUTES.ACCOUNT_SETTINGS)}
             className="flex items-center gap-2 px-2.5 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer outline-none"
           >
             <Settings className="w-3.5 h-3.5 text-slate-400" />
