@@ -4,6 +4,7 @@ export interface Account {
   name: string;
   role: string;
   googleId?: string | null;
+  hasCustomPassword?: boolean;
   createdAt: string;
   updatedAt: string;
 }
