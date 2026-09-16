@@ -748,12 +748,63 @@ function headersToObject(headers: Headers): Record<string, string> {
   return output;
 }
 
+function getCorsHeaders(request?: Request): Record<string, string> {
+  const reqOrigin = request?.headers.get('origin')?.trim();
+  const requestedHeaders = request?.headers.get('access-control-request-headers');
+
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Origin': reqOrigin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD',
+    'Access-Control-Allow-Headers': requestedHeaders || '*',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  if (reqOrigin) {
+    headers['Access-Control-Allow-Credentials'] = 'true';
+  }
+
+  return headers;
+}
+
+function applyCorsHeaders(response: NextResponse, request?: Request): NextResponse {
+  const corsHeaders = getCorsHeaders(request);
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    if (!response.headers.has(key)) {
+      response.headers.set(key, value);
+    }
+  }
+  return response;
+}
+
 export async function handleInternalApiRequest(request: Request): Promise<NextResponse> {
+  try {
+    const response = await processInternalApiRequest(request);
+    return applyCorsHeaders(response, request);
+  } catch (error) {
+    const errResponse = NextResponse.json(
+      {
+        success: false,
+        error: 'Internal server error processing mock request',
+      },
+      { status: 500 }
+    );
+    return applyCorsHeaders(errResponse, request);
+  }
+}
+
+async function processInternalApiRequest(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
 
   if (isInternalRoute(pathname)) {
     return NextResponse.json({ error: 'Internal route is handled by a dedicated handler' }, { status: 404 });
+  }
+
+  const method = request.method.toUpperCase();
+
+  // Handle CORS preflight explicitly if method is OPTIONS and request has access-control-request-method header
+  if (method === 'OPTIONS' && request.headers.has('access-control-request-method')) {
+    return new NextResponse(null, { status: 204 });
   }
 
   const throttle = isThrottled(request, pathname);
@@ -763,7 +814,7 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
         success: false,
         error: 'Too many requests',
         path: pathname,
-        method: request.method.toUpperCase(),
+        method,
       },
       {
         status: 429,
@@ -776,7 +827,6 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
     );
   }
 
-  const method = request.method.toUpperCase();
   const headers = normalizeHeaders(request.headers);
   const body = await parseBodyContent(request.headers.get('content-type'), request);
   const queryParams = Object.fromEntries(url.searchParams.entries());
@@ -850,6 +900,9 @@ export async function handleInternalApiRequest(request: Request): Promise<NextRe
   });
 
   if (!matchedApi) {
+    if (method === 'OPTIONS') {
+      return new NextResponse(null, { status: 204 });
+    }
     return NextResponse.json(
       {
         success: false,
