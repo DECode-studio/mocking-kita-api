@@ -1,0 +1,614 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Mock API Studio - External Integration API Collection",
+    "description": "Koleksi OpenAPI 3.0 JSON resmi untuk pengujian di Postman / Insomnia / Swagger UI. Meliputi 8 Endpoint External Integration API.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1/external",
+      "description": "Local Development Server"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    },
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/signin": {
+      "post": {
+        "summary": "1. Sign-In / External Authentication",
+        "description": "Melakukan autentikasi email/username dan password untuk mendapatkan JWT Bearer Token.",
+        "operationId": "signInExternal",
+        "tags": ["1. Authentication"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignInRequest"
+              },
+              "example": {
+                "username": "admin",
+                "password": "mockapi2026admin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autentikasi berhasil, mengembalikan JWT Bearer Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Authentication successful",
+                  "data": {
+                    "tokenType": "Bearer",
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "expiresIn": 86400,
+                    "user": {
+                      "id": "acc-123",
+                      "username": "admin",
+                      "role": "ADMIN",
+                      "name": "System Administrator"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/apis/upsert": {
+      "put": {
+        "summary": "2. Upsert API by Endpoint",
+        "description": "Menambah atau memperbarui API berdasarkan kombinasi (projectId, path, methodRequest).",
+        "operationId": "upsertApiByEndpoint",
+        "tags": ["2. APIs"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertApiRequest"
+              },
+              "example": {
+                "projectId": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+                "name": "Get User Profile",
+                "description": "API untuk mengambil data profil user",
+                "path": "/v1/users/{id}",
+                "methodRequest": "GET",
+                "status": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "API berhasil diperbarui/dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/apis": {
+      "get": {
+        "summary": "3. Get List API",
+        "description": "Mengambil daftar API terdaftar dalam suatu project.",
+        "operationId": "getListApis",
+        "tags": ["2. APIs"],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": true,
+            "description": "ID Project target",
+            "schema": {
+              "type": "string"
+            },
+            "example": "a1b2c3d4-e5f6-7890-1234-56789abcdef0"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Filter kata kunci nama/path API",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar API berhasil didapatkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/request-scenarios/upsert": {
+      "put": {
+        "summary": "4. Upsert Request Scenario by ID",
+        "description": "Menambah atau memperbarui Request Scenario berdasarkan ID skenario.",
+        "operationId": "upsertRequestScenarioById",
+        "tags": ["3. Request Scenarios"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertRequestScenarioRequest"
+              },
+              "example": {
+                "id": "req-scenario-uuid-001",
+                "apiId": "c3d4e5f6-a7b8-9012-3456-789abcdef012",
+                "name": "Scenario - User Gold Tier",
+                "headers": {
+                  "X-Tier": "GOLD"
+                },
+                "queryParams": {
+                  "include": "loyalty"
+                },
+                "matchType": "EXACT",
+                "priority": 10,
+                "status": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request Scenario berhasil diperbarui/dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestScenarioResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/request-scenarios": {
+      "get": {
+        "summary": "5. Get List Request Scenario by Endpoint",
+        "description": "Mengambil daftar Request Scenario berdasarkan endpoint (projectId, path, methodRequest) atau apiId.",
+        "operationId": "getListRequestScenariosByEndpoint",
+        "tags": ["3. Request Scenarios"],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "methodRequest",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "apiId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar Request Scenario didapatkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestScenarioListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/response-scenarios/upsert": {
+      "put": {
+        "summary": "6. Upsert Response Scenario by ID",
+        "description": "Menambah atau memperbarui Response Scenario berdasarkan ID skenario respon.",
+        "operationId": "upsertResponseScenarioById",
+        "tags": ["4. Response Scenarios"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertResponseScenarioRequest"
+              },
+              "example": {
+                "id": "resp-scenario-uuid-001",
+                "requestScenarioId": "req-scenario-uuid-001",
+                "name": "Response 200 OK - User Gold Data",
+                "statusCode": 200,
+                "headers": {
+                  "Content-Type": "application/json"
+                },
+                "body": {
+                  "code": "SUCCESS",
+                  "data": {
+                    "id": "1001",
+                    "tier": "GOLD",
+                    "balance": 500000
+                  }
+                },
+                "responseType": "JSON",
+                "delayMs": 50,
+                "weight": 100,
+                "priority": 1,
+                "status": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response Scenario berhasil diperbarui/dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseScenarioResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/response-scenarios": {
+      "get": {
+        "summary": "7. Get List Response Scenario by Endpoint",
+        "description": "Mengambil daftar Response Scenario berdasarkan endpoint atau requestScenarioId.",
+        "operationId": "getListResponseScenariosByEndpoint",
+        "tags": ["4. Response Scenarios"],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "methodRequest",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "requestScenarioId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar Response Scenario didapatkan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseScenarioListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/openapi/upsert": {
+      "post": {
+        "summary": "8. Upsert Swagger / OpenAPI JSON Specification",
+        "description": "Meng-import / upsert massal spesifikasi OpenAPI JSON/YAML ke dalam Project.",
+        "operationId": "upsertOpenApiSpec",
+        "tags": ["5. OpenAPI Import"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertOpenApiRequest"
+              },
+              "example": {
+                "projectId": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+                "mode": "upsert",
+                "openApiJson": {
+                  "openapi": "3.0.0",
+                  "info": {
+                    "title": "Payment Service API",
+                    "version": "1.0.0"
+                  },
+                  "paths": {
+                    "/v1/payments/charge": {
+                      "post": {
+                        "summary": "Process Payment Charge",
+                        "responses": {
+                          "200": {
+                            "description": "Payment Successful"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Spesifikasi OpenAPI berhasil diimpor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenApiImportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Masukkan JWT Access Token dari endpoint /auth/signin"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "Atau sertakan API Key pada header x-api-key"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid Request Parameters",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Authentication Failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "SignInRequest": {
+        "type": "object",
+        "required": ["password"],
+        "properties": {
+          "email": { "type": "string", "example": "admin@example.com" },
+          "username": { "type": "string", "example": "admin" },
+          "password": { "type": "string", "example": "mockapi2026admin" }
+        }
+      },
+      "AuthTokenResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Authentication successful" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "tokenType": { "type": "string", "example": "Bearer" },
+              "accessToken": { "type": "string" },
+              "expiresIn": { "type": "integer", "example": 86400 }
+            }
+          }
+        }
+      },
+      "UpsertApiRequest": {
+        "type": "object",
+        "required": ["projectId", "path", "methodRequest", "name"],
+        "properties": {
+          "projectId": { "type": "string" },
+          "collectionId": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "path": { "type": "string" },
+          "methodRequest": { "type": "string", "enum": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"] },
+          "status": { "type": "boolean", "default": true }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "API upserted successfully" },
+          "action": { "type": "string", "enum": ["CREATED", "UPDATED"] },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "projectId": { "type": "string" },
+              "name": { "type": "string" },
+              "path": { "type": "string" },
+              "methodRequest": { "type": "string" }
+            }
+          }
+        }
+      },
+      "ApiListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ApiResponse" }
+          }
+        }
+      },
+      "UpsertRequestScenarioRequest": {
+        "type": "object",
+        "required": ["apiId", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "apiId": { "type": "string" },
+          "name": { "type": "string" },
+          "headers": { "type": "object" },
+          "queryParams": { "type": "object" },
+          "body": { "type": "object" },
+          "matchType": { "type": "string", "enum": ["EXACT", "REGEX", "CONTAINS"] },
+          "priority": { "type": "integer" }
+        }
+      },
+      "RequestScenarioResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "action": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      },
+      "RequestScenarioListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "UpsertResponseScenarioRequest": {
+        "type": "object",
+        "required": ["requestScenarioId", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "requestScenarioId": { "type": "string" },
+          "name": { "type": "string" },
+          "statusCode": { "type": "integer", "default": 200 },
+          "headers": { "type": "object" },
+          "body": { "type": "object" },
+          "responseType": { "type": "string", "default": "JSON" },
+          "delayMs": { "type": "integer", "default": 0 }
+        }
+      },
+      "ResponseScenarioResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "action": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      },
+      "ResponseScenarioListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": { "type": "array", "items": { "type": "object" } }
+        }
+      },
+      "UpsertOpenApiRequest": {
+        "type": "object",
+        "required": ["projectId", "openApiJson"],
+        "properties": {
+          "projectId": { "type": "string" },
+          "mode": { "type": "string", "enum": ["upsert", "merge", "replace"], "default": "upsert" },
+          "openApiJson": { "type": "object" }
+        }
+      },
+      "OpenApiImportResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
