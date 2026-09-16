@@ -15,6 +15,7 @@ interface AuthState {
   login: (username: string, pass: string, rememberMe?: boolean) => Promise<AuthLoginResponse>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  updateSession: (partial: Partial<UserSession>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -40,5 +41,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (!authUseCase) throw new Error('Auth store is not configured');
     const session = await authUseCase.getSession();
     set({ session, isAuthenticated: !!session });
+  },
+
+  updateSession: (partial: Partial<UserSession>) => {
+    set((state) => (state.session ? { session: { ...state.session, ...partial } } : {}));
   },
 }));
