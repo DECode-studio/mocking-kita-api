@@ -13,6 +13,9 @@ export async function GET() {
   try {
     const account = await accountRepository.getByUsername(session.username);
 
+    const isSsoUser = Boolean(account?.googleId || session.googleId);
+    const requiresCurrentPassword = isSsoUser ? Boolean(account?.hasCustomPassword) : true;
+
     if (account) {
       return NextResponse.json({
         success: true,
@@ -22,6 +25,8 @@ export async function GET() {
           name: account.name,
           role: account.role,
           googleId: account.googleId || null,
+          hasCustomPassword: Boolean(account.hasCustomPassword),
+          requiresCurrentPassword,
         },
       });
     }
@@ -35,6 +40,8 @@ export async function GET() {
         name: session.name,
         role: session.role,
         googleId: session.googleId || null,
+        hasCustomPassword: false,
+        requiresCurrentPassword,
       },
     });
   } catch (error) {
@@ -66,13 +73,19 @@ export async function PUT(request: Request) {
 
     // If updating password
     let newPasswordHash: string | undefined = undefined;
+    let markPasswordAsCustom = false;
+
     if (newPassword !== undefined && newPassword !== '') {
       const trimmedNewPass = String(newPassword).trim();
       if (trimmedNewPass.length < 6) {
         return jsonFail('New password must be at least 6 characters long', 400, 'PASSWORD_TOO_SHORT');
       }
 
-      if (account) {
+      const isSsoUser = Boolean(account?.googleId || session.googleId);
+      const requiresCurrentPassword = isSsoUser ? Boolean(account?.hasCustomPassword) : true;
+
+      // Only require and verify currentPassword if requiresCurrentPassword is true
+      if (requiresCurrentPassword && account) {
         const existingHash = await accountRepository.getPasswordHash(account.id);
         if (existingHash) {
           if (!currentPassword || typeof currentPassword !== 'string') {
@@ -85,13 +98,14 @@ export async function PUT(request: Request) {
       }
 
       newPasswordHash = hashPassword(trimmedNewPass);
+      markPasswordAsCustom = true;
     }
 
     // Perform database update if account exists in database
     if (account) {
       account = await accountRepository.update(account.id, {
         ...(name !== undefined && { name: updatedName }),
-        ...(newPasswordHash && { passwordHash: newPasswordHash }),
+        ...(newPasswordHash && { passwordHash: newPasswordHash, hasCustomPassword: true }),
       });
     }
 
@@ -102,6 +116,9 @@ export async function PUT(request: Request) {
     };
     await setServerSession(updatedSession);
 
+    const isSsoUser = Boolean(account?.googleId || session.googleId);
+    const requiresCurrentPassword = isSsoUser ? Boolean(account?.hasCustomPassword) : true;
+
     return NextResponse.json({
       success: true,
       message: 'Account profile updated successfully',
@@ -111,6 +128,8 @@ export async function PUT(request: Request) {
         name: updatedName,
         role: session.role,
         googleId: session.googleId || null,
+        hasCustomPassword: Boolean(account?.hasCustomPassword),
+        requiresCurrentPassword,
       },
       session: updatedSession,
     });
