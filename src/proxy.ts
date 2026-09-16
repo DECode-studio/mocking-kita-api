@@ -13,6 +13,7 @@ const UI_ROUTES = [
   '/change-logs',
   '/faq',
   '/admin',
+  '/external-api-docs',
 ];
 
 const STUDIO_INTERNAL_API_PREFIXES = [
@@ -24,6 +25,7 @@ const STUDIO_INTERNAL_API_PREFIXES = [
   '/api/projects',
   '/api/change-logs',
   '/api/faq',
+  '/api/v1/external',
 ];
 
 function getInternalStudioCorsHeaders(request: NextRequest): Record<string, string> {

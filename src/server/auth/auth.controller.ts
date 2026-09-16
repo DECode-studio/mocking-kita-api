@@ -113,7 +113,14 @@ export async function POST(request: Request) {
       // Check if account already exists
       let account = await accountRepository.getByUsername(cleanUsername);
 
-      if (!account) {
+      if (account) {
+        if (cleanPassword) {
+          const hash = await accountRepository.getPasswordHash(account.id);
+          if (hash && !verifyPassword(cleanPassword, hash)) {
+            return jsonFail('Invalid username or password', 401, 'INVALID_CREDENTIALS');
+          }
+        }
+      } else {
         if (!registerExtra) {
           // If no registration data is provided, return that registration is required
           return NextResponse.json({
@@ -182,11 +189,10 @@ export async function POST(request: Request) {
         rememberMe,
         loginAt: new Date().toISOString(),
       };
-    } else {
-      // Check database if there's any admin or manager accounts
+      // Check database accounts for matching username and password
       try {
         const account = await accountRepository.getByUsername(cleanUsername);
-        if (account && hasAdminAuthority(account.role)) {
+        if (account) {
           const hash = await accountRepository.getPasswordHash(account.id);
           if (hash && verifyPassword(cleanPassword, hash)) {
             session = {

@@ -11,3 +11,5 @@ coverage/
 .pnpm-store/
 tsconfig.tsbuildinfo
 pr-description.md
+
+.extra

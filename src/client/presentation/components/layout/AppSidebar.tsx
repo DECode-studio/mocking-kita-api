@@ -76,6 +76,12 @@ export const AppSidebar: React.FC = () => {
       isActive: pathname.startsWith(ROUTES.PROJECTS),
     },
     {
+      name: 'External APIs Docs',
+      href: ROUTES.EXTERNAL_API_DOCS,
+      icon: Code2,
+      isActive: pathname === ROUTES.EXTERNAL_API_DOCS,
+    },
+    {
       name: 'FAQ & Guide',
       href: ROUTES.FAQ,
       icon: HelpCircle,

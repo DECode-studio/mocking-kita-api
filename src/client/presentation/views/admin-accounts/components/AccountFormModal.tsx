@@ -151,29 +151,23 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
               />
             </div>
 
-            {/* Password (only for Admin authority roles) */}
-            {isAdmin ? (
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-                  {ADMIN_ACCOUNTS_TEXT.LABEL_PASSWORD} {editingAccount ? ADMIN_ACCOUNTS_TEXT.LABEL_OPTIONAL : ADMIN_ACCOUNTS_TEXT.LABEL_REQUIRED}
-                </label>
-                <div className="relative flex items-center">
-                  <Key className="absolute left-3 w-4 h-4 text-slate-400" />
-                  <input
-                    type="password"
-                    placeholder={editingAccount ? ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_EDIT : ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_NEW}
-                    required={!editingAccount}
-                    value={password}
-                    onChange={(e) => onPasswordChange(e.target.value)}
-                    className="w-full text-xs pl-10 pr-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
-                  />
-                </div>
+            {/* Password (Available for all account roles) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                {ADMIN_ACCOUNTS_TEXT.LABEL_PASSWORD} {editingAccount ? ADMIN_ACCOUNTS_TEXT.LABEL_OPTIONAL : ADMIN_ACCOUNTS_TEXT.LABEL_REQUIRED}
+              </label>
+              <div className="relative flex items-center">
+                <Key className="absolute left-3 w-4 h-4 text-slate-400" />
+                <input
+                  type="password"
+                  placeholder={editingAccount ? ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_EDIT : ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_NEW}
+                  required={!editingAccount}
+                  value={password}
+                  onChange={(e) => onPasswordChange(e.target.value)}
+                  className="w-full text-xs pl-10 pr-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                />
               </div>
-            ) : (
-              <div className="p-3.5 bg-indigo-50/40 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 rounded-xl text-[11px] leading-relaxed border border-indigo-100/50 dark:border-indigo-900/30">
-                {ADMIN_ACCOUNTS_TEXT.SSO_INFO_HINT}
-              </div>
-            )}
+            </div>
 
             {/* Role */}
             <div className="space-y-1.5">
