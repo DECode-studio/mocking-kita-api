@@ -40,6 +40,18 @@ export const Breadcrumbs: React.FC = () => {
     }
   } else if (pathSegments[0] === 'settings') {
     breadcrumbItems.push({ label: 'Settings', href: ROUTES.SETTINGS });
+  } else if (pathSegments[0] === 'account-settings') {
+    breadcrumbItems.push({ label: 'Account Settings', href: ROUTES.ACCOUNT_SETTINGS });
+  } else if (pathSegments[0] === 'admin') {
+    if (pathSegments[1] === 'accounts') {
+      breadcrumbItems.push({ label: 'Admin Accounts', href: ROUTES.ADMIN_ACCOUNTS });
+    }
+  } else if (pathSegments[0] === 'change-logs') {
+    breadcrumbItems.push({ label: 'Change Logs', href: ROUTES.CHANGE_LOGS });
+  } else if (pathSegments[0] === 'faq') {
+    breadcrumbItems.push({ label: 'FAQ', href: ROUTES.FAQ });
+  } else if (pathSegments[0] === 'external-api-docs') {
+    breadcrumbItems.push({ label: 'External API Docs', href: ROUTES.EXTERNAL_API_DOCS });
   }
 
   return (
