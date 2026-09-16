@@ -180,8 +180,9 @@ model Account {
   password  String
   role      String
   name      String
-  googleId  String?  @unique @map("google_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  googleId          String?  @unique @map("google_id")
+  hasCustomPassword Boolean  @default(false) @map("has_custom_password")
+  createdAt         DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   changeLogs  ChangeLog[]

@@ -62,6 +62,7 @@ export class AccountRepositoryImpl {
       name?: string;
       role?: string;
       googleId?: string | null;
+      hasCustomPassword?: boolean;
     }
   ): Promise<Account> {
     const updated = await prisma.account.update({
@@ -72,6 +73,7 @@ export class AccountRepositoryImpl {
         ...(params.name !== undefined && { name: params.name }),
         ...(params.role !== undefined && { role: params.role }),
         ...(params.googleId !== undefined && { googleId: params.googleId }),
+        ...(params.hasCustomPassword !== undefined && { hasCustomPassword: params.hasCustomPassword }),
       },
     });
 

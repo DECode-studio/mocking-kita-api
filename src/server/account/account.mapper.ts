@@ -6,6 +6,7 @@ export function toAccountDomain(acc: {
   role: string;
   name: string;
   googleId?: string | null;
+  hasCustomPassword?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }): Account {
@@ -15,6 +16,7 @@ export function toAccountDomain(acc: {
     role: acc.role as any,
     name: acc.name,
     googleId: acc.googleId || null,
+    hasCustomPassword: Boolean(acc.hasCustomPassword),
     createdAt: acc.createdAt.toISOString(),
     updatedAt: acc.updatedAt.toISOString(),
   };

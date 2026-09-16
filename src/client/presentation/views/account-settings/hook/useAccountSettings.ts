@@ -12,6 +12,7 @@ export interface UserAccountData {
   name: string;
   role: string;
   googleId: string | null;
+  requiresCurrentPassword?: boolean;
 }
 
 export function useAccountSettings() {
@@ -162,6 +163,16 @@ export function useAccountSettings() {
       if (!res.ok || !json.success) {
         throw new Error(json.error || 'Failed to change password');
       }
+
+      setAccountData((prev) =>
+        prev
+          ? {
+              ...prev,
+              hasCustomPassword: true,
+              requiresCurrentPassword: true,
+            }
+          : null
+      );
 
       setCurrentPassword('');
       setNewPassword('');

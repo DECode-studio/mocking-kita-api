@@ -55,6 +55,7 @@ export const AccountSettingsView: React.FC = () => {
 
       {/* Change Password Card */}
       <UpdatePasswordCard
+        requiresCurrentPassword={accountData?.requiresCurrentPassword}
         currentPasswordInput={currentPassword}
         onCurrentPasswordChange={setCurrentPassword}
         newPasswordInput={newPassword}
