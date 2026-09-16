@@ -853,6 +853,56 @@ describe('internal-proxy and cache', () => {
     const resWithAuth = await handleInternalApiRequest(reqWithAuth);
     expect(resWithAuth.status).toBe(404);
   });
+
+  it('handleInternalApiRequest should return open CORS headers for mock APIs regardless of APP_URL', async () => {
+    process.env.APP_URL = 'http://localhost:3000';
+
+    (readDatabase as any).mockResolvedValue({
+      projects: [{ id: 'p1', status: true }],
+      environments: [{ id: 'env1', projectId: 'p1', status: true }],
+      apiCollections: [
+        { id: 'a1', projectId: 'p1', path: '/cors-test', methodRequest: 'GET', status: true },
+      ],
+      apiEnvironments: [],
+      requestScenarios: [
+        { id: 'r1', apiId: 'a1', name: 'Req 1', headers: {}, queryParams: {}, pathParams: {}, body: {}, bodyType: 'NONE', matchType: 'EXACT', priority: 10, status: true },
+      ],
+      responseScenarios: [
+        { id: 'res1', requestScenarioId: 'r1', name: '200 OK', statusCode: 200, headers: {}, body: { ok: true }, responseType: 'JSON', delayMs: 0, weight: 100, priority: 10, status: true },
+      ],
+    });
+
+    // 1. Regular GET request with any external Origin header
+    const reqGet = new NextRequest('http://localhost/cors-test', {
+      headers: { origin: 'http://external-app.com:5173' },
+    });
+    const resGet = await handleInternalApiRequest(reqGet);
+    expect(resGet.status).toBe(200);
+    expect(resGet.headers.get('access-control-allow-origin')).toBe('http://external-app.com:5173');
+    expect(resGet.headers.get('access-control-allow-credentials')).toBe('true');
+    expect(resGet.headers.get('access-control-allow-methods')).toContain('GET');
+
+    // 2. OPTIONS preflight request from any origin
+    const reqPreflight = new NextRequest('http://localhost/cors-test', {
+      method: 'OPTIONS',
+      headers: {
+        origin: 'http://external-app.com:5173',
+        'access-control-request-method': 'POST',
+      },
+    });
+    const resPreflight = await handleInternalApiRequest(reqPreflight);
+    expect(resPreflight.status).toBe(204);
+    expect(resPreflight.headers.get('access-control-allow-origin')).toBe('http://external-app.com:5173');
+    expect(resPreflight.headers.get('access-control-allow-methods')).toBe('GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD');
+
+    // 3. 404 response should still attach open CORS headers
+    const reqNotFound = new NextRequest('http://localhost/non-existent', {
+      headers: { origin: 'http://external-app.com:5173' },
+    });
+    const resNotFound = await handleInternalApiRequest(reqNotFound);
+    expect(resNotFound.status).toBe(404);
+    expect(resNotFound.headers.get('access-control-allow-origin')).toBe('http://external-app.com:5173');
+  });
 });
 
 
