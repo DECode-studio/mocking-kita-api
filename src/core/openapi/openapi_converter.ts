@@ -1,9 +1,10 @@
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Collection } from '@/src/client/domain/collection/entity/collection';
+import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
-import { MethodRequest, MatchType, RequestBodyType } from '@/src/core/utils/types';
+import { MethodRequest, MatchType, RequestBodyType, EnvironmentType } from '@/src/core/utils/types';
 import { generateId } from '@/src/core/utils/uuid';
 
 export interface OpenApiParameter {
@@ -48,6 +49,7 @@ export interface OpenApiSpec {
 
 export interface ExtractedProjectData {
   collections: Array<Omit<Collection, 'createdAt' | 'updatedAt'> & { id?: string }>;
+  environments: Array<Omit<Environment, 'createdAt' | 'updatedAt'> & { id?: string }>;
   apis: Array<Omit<ApiCollection, 'createdAt' | 'updatedAt'> & { id?: string }>;
   requestScenarios: Array<Omit<RequestScenario, 'createdAt' | 'updatedAt'> & { id?: string }>;
   responseScenarios: Array<Omit<ResponseScenario, 'createdAt' | 'updatedAt'> & { id?: string }>;
@@ -415,9 +417,53 @@ export function parseOpenApiSpecToProjectData(
   });
 
   const collectionsToCreate: Array<Omit<Collection, 'createdAt' | 'updatedAt'> & { id: string }> = [];
+  const environmentsToCreate: Array<Omit<Environment, 'createdAt' | 'updatedAt'> & { id: string }> = [];
   const apisToCreate: Array<Omit<ApiCollection, 'createdAt' | 'updatedAt'> & { id: string }> = [];
   const requestScenariosToCreate: Array<Omit<RequestScenario, 'createdAt' | 'updatedAt'> & { id: string }> = [];
   const responseScenariosToCreate: Array<Omit<ResponseScenario, 'createdAt' | 'updatedAt'> & { id: string }> = [];
+
+  function inferEnvType(text: string): EnvironmentType {
+    const lower = text.toLowerCase();
+    if (lower.includes('local') || lower.includes('127.0.0.1') || lower.includes('localhost')) return 'LOCAL';
+    if (lower.includes('dev') || lower.includes('development')) return 'DEVELOPMENT';
+    if (lower.includes('test') || lower.includes('testing')) return 'TESTING';
+    if (lower.includes('stag') || lower.includes('staging')) return 'STAGING';
+    if (lower.includes('prod') || lower.includes('production')) return 'PRODUCTION';
+    return 'DEVELOPMENT';
+  }
+
+  // Parse OpenAPI servers / Swagger host -> Environments
+  if (Array.isArray(rawSpec.servers) && rawSpec.servers.length > 0) {
+    for (let i = 0; i < rawSpec.servers.length; i++) {
+      const serverObj = rawSpec.servers[i];
+      if (serverObj && typeof serverObj.url === 'string' && serverObj.url.trim()) {
+        const url = serverObj.url.trim();
+        const desc = serverObj.description ? String(serverObj.description).trim() : `Server ${i + 1}`;
+        const envType = inferEnvType(`${desc} ${url}`);
+        environmentsToCreate.push({
+          id: generateId(),
+          projectId,
+          name: desc || `${envType} Server`,
+          environmentType: envType,
+          baseUrl: url,
+          status: true,
+        });
+      }
+    }
+  } else if (rawSpec.host && typeof rawSpec.host === 'string' && rawSpec.host.trim()) {
+    const scheme = Array.isArray(rawSpec.schemes) && rawSpec.schemes.length > 0 ? rawSpec.schemes[0] : 'https';
+    const basePath = typeof rawSpec.basePath === 'string' ? rawSpec.basePath : '';
+    const fullUrl = `${scheme}://${rawSpec.host.trim()}${basePath}`;
+    const envType = inferEnvType(fullUrl);
+    environmentsToCreate.push({
+      id: generateId(),
+      projectId,
+      name: `${envType} Environment`,
+      environmentType: envType,
+      baseUrl: fullUrl,
+      status: true,
+    });
+  }
 
   // Parse OpenAPI tags -> collections
   if (Array.isArray(rawSpec.tags)) {
@@ -675,6 +721,7 @@ export function parseOpenApiSpecToProjectData(
 
   return {
     collections: collectionsToCreate,
+    environments: environmentsToCreate,
     apis: apisToCreate,
     requestScenarios: requestScenariosToCreate,
     responseScenarios: responseScenariosToCreate,

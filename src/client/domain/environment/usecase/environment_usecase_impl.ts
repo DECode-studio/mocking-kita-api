@@ -10,6 +10,20 @@ export class EnvironmentUseCaseImpl implements EnvironmentUseCase {
     private readonly projectRepository: ProjectRepository
   ) {}
 
+  async getAll(): Promise<Environment[]> {
+    const environments = await this.environmentRepository.getAll();
+    return environments.filter((env) => !env.deletedAt);
+  }
+
+  async getByProjectId(projectId: string): Promise<Environment[]> {
+    const environments = await this.environmentRepository.getByProjectId(projectId);
+    return environments.filter((env) => !env.deletedAt);
+  }
+
+  delete(id: string): Promise<void> {
+    return this.softDelete(id);
+  }
+
   async load(projectId: string): Promise<{ project: Project | null; environments: Environment[] }> {
     const [project, environments] = await Promise.all([
       this.projectRepository.getById(projectId),

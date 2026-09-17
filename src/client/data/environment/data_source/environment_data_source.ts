@@ -1,6 +1,7 @@
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 
 export interface EnvironmentRemoteDataSource {
+  getAll(): Promise<Environment[]>;
   getByProjectId(projectId: string): Promise<Environment[]>;
   getById(id: string): Promise<Environment | null>;
   create(input: Omit<Environment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Environment>;

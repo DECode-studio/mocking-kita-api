@@ -10,6 +10,7 @@ export type MethodRequest =
 export type EnvironmentType =
   | 'LOCAL'
   | 'DEVELOPMENT'
+  | 'TESTING'
   | 'STAGING'
   | 'PRODUCTION';
 

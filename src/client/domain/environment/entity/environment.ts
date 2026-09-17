@@ -5,8 +5,7 @@ export interface Environment {
   projectId: string;
   name: string;
   environmentType: EnvironmentType;
-  publicBaseUrl: string;
-  originBaseUrl?: string;
+  baseUrl: string;
   status: boolean;
   createdAt: string;
   updatedAt: string;

@@ -1,0 +1,16 @@
+export const ENVIRONMENTS_SEMANTIC_ID = {
+  PAGE_TITLE: 'environments-page-title',
+  CREATE_BTN: 'environments-create-btn',
+  SEARCH_INPUT: 'environments-search-input',
+  PROJECT_FILTER: 'environments-project-filter',
+  CARD: (id: string) => `environment-card-${id}`,
+  EDIT_BTN: (id: string) => `environment-edit-btn-${id}`,
+  DELETE_BTN: (id: string) => `environment-delete-btn-${id}`,
+  STATUS_SWITCH: (id: string) => `environment-status-switch-${id}`,
+  FORM_MODAL: 'environment-form-modal',
+  FORM_NAME_INPUT: 'environment-form-name-input',
+  FORM_PROJECT_SELECT: 'environment-form-project-select',
+  FORM_TYPE_SELECT: 'environment-form-type-select',
+  FORM_BASE_URL_INPUT: 'environment-form-base-url-input',
+  FORM_SUBMIT_BTN: 'environment-form-submit-btn',
+};
