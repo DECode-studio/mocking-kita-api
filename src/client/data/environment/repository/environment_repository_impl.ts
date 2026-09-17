@@ -6,6 +6,10 @@ import { EnvironmentRemoteDataSourceImpl } from '../data_source/environment_data
 export class EnvironmentRepositoryImpl implements EnvironmentRepository {
   constructor(private dataSource: EnvironmentRemoteDataSource = new EnvironmentRemoteDataSourceImpl()) {}
 
+  async getAll(): Promise<Environment[]> {
+    return this.dataSource.getAll();
+  }
+
   async getByProjectId(projectId: string): Promise<Environment[]> {
     return this.dataSource.getByProjectId(projectId);
   }

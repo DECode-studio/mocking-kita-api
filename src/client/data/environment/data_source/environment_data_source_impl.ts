@@ -4,6 +4,10 @@ import { RemoteEnvelope, unwrapRemoteData } from '@/src/client/data/common/remot
 import { EnvironmentRemoteDataSource } from './environment_data_source';
 
 export class EnvironmentRemoteDataSourceImpl implements EnvironmentRemoteDataSource {
+  async getAll(): Promise<Environment[]> {
+    return unwrapRemoteData(await apiRequest<RemoteEnvelope<Environment[]>>('/api/environments'));
+  }
+
   async getByProjectId(projectId: string): Promise<Environment[]> {
     return unwrapRemoteData(await apiRequest<RemoteEnvelope<Environment[]>>(`/api/projects/${encodeURIComponent(projectId)}/environments`));
   }
