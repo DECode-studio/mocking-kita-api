@@ -13,6 +13,7 @@ import {
   ProjectDetailHeader,
   ProjectMetadataCard,
   OpenApiModal,
+  ProjectEnvironmentsTab,
 } from './components';
 
 import { Collection } from '@/src/client/domain/collection/entity/collection';
@@ -104,6 +105,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            value="environments"
+            className={`pb-2.5 text-xs font-semibold transition-colors relative ${
+              activeTab === 'environments'
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Environments
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
             value="overview"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'overview'
@@ -117,6 +129,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
         <Tabs.Content value="apis">
           <ApiCollectionsView embeddedProjectId={project.id} initialApis={initialApis} initialCollections={initialCollections} />
+        </Tabs.Content>
+
+        <Tabs.Content value="environments">
+          <ProjectEnvironmentsTab projectId={project.id} />
         </Tabs.Content>
 
         <Tabs.Content value="overview">

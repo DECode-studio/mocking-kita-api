@@ -21,6 +21,7 @@ import {
   HelpCircle,
   Shield,
   History,
+  Server,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -74,6 +75,12 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.PROJECTS,
       icon: FolderGit2,
       isActive: pathname.startsWith(ROUTES.PROJECTS),
+    },
+    {
+      name: 'Environments',
+      href: ROUTES.ENVIRONMENTS,
+      icon: Server,
+      isActive: pathname === ROUTES.ENVIRONMENTS,
     },
     {
       name: 'External APIs Docs',
