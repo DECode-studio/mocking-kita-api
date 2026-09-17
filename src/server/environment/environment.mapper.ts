@@ -5,8 +5,7 @@ export function toEnvironmentDomain(env: {
   projectId: string;
   name: string;
   environmentType: string;
-  publicBaseUrl: string | null;
-  originBaseUrl: string | null;
+  baseUrl: string | null;
   status: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -17,8 +16,7 @@ export function toEnvironmentDomain(env: {
     projectId: env.projectId,
     name: env.name,
     environmentType: env.environmentType as any,
-    publicBaseUrl: env.publicBaseUrl ?? undefined,
-    originBaseUrl: env.originBaseUrl ?? undefined,
+    baseUrl: env.baseUrl ?? '',
     status: env.status,
     createdAt: env.createdAt.toISOString(),
     updatedAt: env.updatedAt.toISOString(),
