@@ -52,4 +52,27 @@ describe('parseOpenApiSpecToProjectData', () => {
       use_versioning: true,
     });
   });
+
+  it('should extract environments from OpenAPI servers and Swagger host', () => {
+    const specWithServers = {
+      openapi: '3.0.0',
+      info: { title: 'Test API', version: '1.0.0' },
+      servers: [
+        { url: 'https://dev-api.example.com/v1', description: 'Development Server' },
+        { url: 'https://api.example.com/v1', description: 'Production Server' },
+      ],
+      paths: {},
+    };
+
+    const result = parseOpenApiSpecToProjectData('test-project-id', specWithServers);
+
+    expect(result.environments).toHaveLength(2);
+    expect(result.environments[0].name).toBe('Development Server');
+    expect(result.environments[0].environmentType).toBe('DEVELOPMENT');
+    expect(result.environments[0].baseUrl).toBe('https://dev-api.example.com/v1');
+
+    expect(result.environments[1].name).toBe('Production Server');
+    expect(result.environments[1].environmentType).toBe('PRODUCTION');
+    expect(result.environments[1].baseUrl).toBe('https://api.example.com/v1');
+  });
 });
