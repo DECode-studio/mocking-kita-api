@@ -5,6 +5,7 @@ import { getApisByProjectId } from '@/src/server/api';
 import { exportProjectToOpenApiSpec, parseOpenApiSpecToProjectData, OpenApiSpec } from '@/src/core/openapi/openapi_converter';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
+import { generateId } from '@/src/core/utils/uuid';
 import { Prisma } from '@prisma/client';
 
 /**
@@ -112,6 +113,8 @@ async function updateInTransactionChunks<T>(
 type MergePlan = {
   colsToCreate: Array<Prisma.CollectionCreateManyInput>;
   colsToUpdate: Array<{ id: string; data: Prisma.CollectionUpdateInput }>;
+  envsToCreate: Array<Prisma.EnvironmentCreateManyInput>;
+  envsToUpdate: Array<{ id: string; data: Prisma.EnvironmentUncheckedUpdateInput }>;
   apisToCreate: Array<Prisma.ApiCreateManyInput>;
   apisToUpdate: Array<{ id: string; data: Prisma.ApiUncheckedUpdateInput }>;
   reqsToCreate: Array<Prisma.RequestScenarioCreateManyInput>;
@@ -126,6 +129,7 @@ function buildMergePlan(
   projectId: string,
   extracted: ReturnType<typeof parseOpenApiSpecToProjectData>,
   existingCols: Array<{ id: string; name: string; description: string | null; status: boolean }>,
+  existingEnvs: Array<{ id: string; name: string; environmentType: string; baseUrl: string | null; status: boolean }>,
   existingApis: Array<{ id: string; collectionId: string | null; methodRequest: string; path: string; name: string; description: string | null; status: boolean }>,
   existingReqScenarios: Array<{ id: string; apiId: string; name: string; description: string | null; headers: unknown; queryParams: unknown; pathParams: unknown; body: unknown; bodyType: string; matchType: string; priority: number; status: boolean }>,
   existingRespScenarios: Array<{ id: string; requestScenarioId: string; name: string; description: string | null; statusCode: number | null; headers: unknown; body: unknown; responseType: string; filePath: string | null; fileName: string | null; delayMs: number; weight: number; priority: number; status: boolean }>
@@ -159,6 +163,40 @@ function buildMergePlan(
         name: col.name,
         description: col.description ?? null,
         status: col.status ?? true,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  const envByNameMap = new Map<string, (typeof existingEnvs)[number]>();
+  existingEnvs.forEach((e) => envByNameMap.set(e.name.toLowerCase(), e));
+
+  const envsToCreate: Array<Prisma.EnvironmentCreateManyInput> = [];
+  const envsToUpdate: Array<{ id: string; data: Prisma.EnvironmentUncheckedUpdateInput }> = [];
+
+  for (const env of extracted.environments) {
+    const existing = envByNameMap.get(env.name.toLowerCase()) || existingEnvs.find((e) => e.baseUrl && e.baseUrl === env.baseUrl);
+    if (existing) {
+      envsToUpdate.push({
+        id: existing.id,
+        data: {
+          environmentType: (env.environmentType as any) ?? existing.environmentType,
+          baseUrl: env.baseUrl ?? existing.baseUrl,
+          status: env.status ?? true,
+          updatedAt: now,
+        },
+      });
+    } else {
+      const envId = env.id || generateId();
+      envByNameMap.set(env.name.toLowerCase(), { id: envId, name: env.name } as any);
+      envsToCreate.push({
+        id: envId,
+        projectId,
+        name: env.name,
+        environmentType: env.environmentType as any,
+        baseUrl: env.baseUrl ?? null,
+        status: env.status ?? true,
         createdAt: now,
         updatedAt: now,
       });
@@ -400,6 +438,8 @@ function buildMergePlan(
   return {
     colsToCreate,
     colsToUpdate,
+    envsToCreate,
+    envsToUpdate,
     apisToCreate,
     apisToUpdate,
     reqsToCreate,
@@ -486,6 +526,23 @@ export async function importProjectOpenApi(
       })
     );
 
+    if (extracted.environments.length > 0) {
+      await createManyInChunks(extracted.environments, (chunk) =>
+        prisma.environment.createMany({
+          data: chunk.map((env) => ({
+            id: env.id || generateId(),
+            projectId,
+            name: env.name,
+            environmentType: env.environmentType as any,
+            baseUrl: env.baseUrl ?? null,
+            status: env.status ?? true,
+            createdAt: now,
+            updatedAt: now,
+          })),
+        })
+      );
+    }
+
     await createManyInChunks(extracted.apis, (chunk) =>
       prisma.api.createMany({
         data: chunk.map((api) => ({
@@ -554,6 +611,11 @@ export async function importProjectOpenApi(
       select: { id: true, name: true, description: true, status: true },
     });
 
+    const existingEnvs = await prisma.environment.findMany({
+      where: { projectId, deletedAt: null },
+      select: { id: true, name: true, environmentType: true, baseUrl: true, status: true },
+    });
+
     const existingApis = await prisma.api.findMany({
       where: { projectId, deletedAt: null },
       select: { id: true, collectionId: true, methodRequest: true, path: true, name: true, description: true, status: true },
@@ -605,13 +667,21 @@ export async function importProjectOpenApi(
           })
         : [];
 
-    const plan = buildMergePlan(projectId, extracted, existingCols as any, existingApis as any, existingReqScenarios as any, existingRespScenarios as any);
+    const plan = buildMergePlan(projectId, extracted, existingCols as any, existingEnvs as any, existingApis as any, existingReqScenarios as any, existingRespScenarios as any);
     importedApiCount = plan.importedApiCount;
     updatedApiCount = plan.updatedApiCount;
 
     await createManyInChunks(plan.colsToCreate, (chunk) => prisma.collection.createMany({ data: chunk }));
     await updateInTransactionChunks(plan.colsToUpdate, (item) =>
       prisma.collection.update({
+        where: { id: item.id },
+        data: item.data,
+      })
+    );
+
+    await createManyInChunks(plan.envsToCreate, (chunk) => prisma.environment.createMany({ data: chunk }));
+    await updateInTransactionChunks(plan.envsToUpdate, (item) =>
+      prisma.environment.update({
         where: { id: item.id },
         data: item.data,
       })
