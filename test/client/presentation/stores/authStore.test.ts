@@ -7,7 +7,7 @@ describe('authStore', () => {
   let mockAuthUseCase: Partial<AuthUseCase>;
 
   beforeEach(() => {
-    useAuthStore.setState({ session: null, isAuthenticated: false });
+    useAuthStore.setState({ session: null, isAuthenticated: false, isInitialized: false });
     mockAuthUseCase = {
       login: vi.fn(),
       logout: vi.fn(),
@@ -29,6 +29,7 @@ describe('authStore', () => {
     expect(res.success).toBe(true);
     expect(useAuthStore.getState().session).toEqual(session);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(useAuthStore.getState().isInitialized).toBe(true);
   });
 
   it('should handle failed login', async () => {
@@ -41,13 +42,14 @@ describe('authStore', () => {
   });
 
   it('should handle logout', async () => {
-    useAuthStore.setState({ session: { username: 'admin' } as any, isAuthenticated: true });
+    useAuthStore.setState({ session: { username: 'admin' } as any, isAuthenticated: true, isInitialized: true });
     (mockAuthUseCase.logout as any).mockResolvedValue(undefined);
 
     await useAuthStore.getState().logout();
     expect(mockAuthUseCase.logout).toHaveBeenCalled();
     expect(useAuthStore.getState().session).toBeNull();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(useAuthStore.getState().isInitialized).toBe(true);
   });
 
   it('should handle checkAuth with active session', async () => {
@@ -57,6 +59,7 @@ describe('authStore', () => {
     await useAuthStore.getState().checkAuth();
     expect(useAuthStore.getState().session).toEqual(session);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    expect(useAuthStore.getState().isInitialized).toBe(true);
   });
 
   it('should handle checkAuth without session', async () => {
@@ -65,6 +68,7 @@ describe('authStore', () => {
     await useAuthStore.getState().checkAuth();
     expect(useAuthStore.getState().session).toBeNull();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(useAuthStore.getState().isInitialized).toBe(true);
   });
 
   it('should throw error when login/logout/checkAuth is called without configuration', async () => {

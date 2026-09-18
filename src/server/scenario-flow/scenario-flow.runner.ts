@@ -1,0 +1,719 @@
+import crypto from 'crypto';
+import { generateId } from '@/src/core/utils/uuid';
+import {
+  AssertionRule,
+  AssertionResult,
+  FlowRunOptions,
+  VariableExtractor,
+} from './scenario-flow.types';
+import {
+  getScenarioFlowById,
+  createExecutionRecord,
+  updateExecutionRecord,
+  createExecutionStepRecord,
+} from './scenario-flow.repository';
+import prisma from '@/src/core/db/prisma-client';
+
+/**
+ * Extract nested value by dot or bracket notation, e.g. "data.users[0].id"
+ */
+export function getNestedValue(obj: any, path: string): any {
+  if (obj === null || obj === undefined || !path) return undefined;
+  
+  // Normalise array bracket access: "items[0].id" -> "items.0.id"
+  const normalizedPath = path.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+  const parts = normalizedPath.split('.');
+  
+  let current = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    current = current[part];
+  }
+  return current;
+}
+
+/**
+ * Handle dynamic generator helpers like {{$uuid}}, {{$timestamp}}, {{$randomInt}}
+ */
+function resolveDynamicGenerator(token: string): any {
+  switch (token.toLowerCase()) {
+    case '$uuid':
+      return generateId();
+    case '$timestamp':
+      return Date.now().toString();
+    case '$isodate':
+      return new Date().toISOString();
+    case '$randomint':
+      return Math.floor(Math.random() * 1000000);
+    case '$randomemail':
+      return `test_${Math.floor(Math.random() * 10000)}@example.com`;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Interpolates string or objects with variable values
+ */
+export function interpolateVariables(template: any, variables: Record<string, any>): any {
+  if (typeof template === 'string') {
+    // Check if entire string is single variable substitution e.g. "{{count}}"
+    const exactMatch = template.match(/^\{\{\s*([a-zA-Z0-9_$.]+)\s*\}\}$/);
+    if (exactMatch) {
+      const varKey = exactMatch[1];
+      const dynamicVal = resolveDynamicGenerator(varKey);
+      if (dynamicVal !== null) return dynamicVal;
+      
+      const val = getNestedValue(variables, varKey);
+      return val !== undefined ? val : template;
+    }
+
+    // Replace all {{var}} inside string
+    return template.replace(/\{\{\s*([a-zA-Z0-9_$.]+)\s*\}\}/g, (_match, varKey) => {
+      const dynamicVal = resolveDynamicGenerator(varKey);
+      if (dynamicVal !== null) return String(dynamicVal);
+
+      const val = getNestedValue(variables, varKey);
+      return val !== undefined && val !== null ? String(val) : '';
+    });
+  }
+
+  if (Array.isArray(template)) {
+    return template.map((item) => interpolateVariables(item, variables));
+  }
+
+  if (template !== null && typeof template === 'object') {
+    const result: Record<string, any> = {};
+    for (const [key, value] of Object.entries(template)) {
+      result[key] = interpolateVariables(value, variables);
+    }
+    return result;
+  }
+
+  return template;
+}
+
+/**
+ * Standardizes and normalizes HTTP headers adhering to flutter-package-core / network standards:
+ * - Deduplicates keys case-insensitively (e.g. eliminates duplicate Content-Type vs content-type)
+ * - Automatically injects x-request-id (UUID v4) if not present (matches XRequestIdInterceptor)
+ * - Automatically injects x-device-id if device_code/deviceId is in variables (matches XDeviceIdInterceptor)
+ * - Automatically injects apikey if flow variables contain apikey/apigeeApiKey (matches AuthHeaderInterceptor)
+ * - Sets default Content-Type and Accept to application/json
+ */
+export function buildNormalizedHeaders(
+  scenarioHeaders: Record<string, string> | undefined | null,
+  overrideHeaders: Record<string, string> | undefined | null,
+  variables: Record<string, any>
+): Record<string, string> {
+  const normalized: Record<string, string> = {};
+
+  const setHeader = (headerKey: string, headerValue: any) => {
+    if (headerValue === undefined || headerValue === null || headerValue === '') return;
+    // Find existing key case-insensitively and remove so casing is unified
+    const lower = headerKey.toLowerCase();
+    for (const k of Object.keys(normalized)) {
+      if (k.toLowerCase() === lower) {
+        delete normalized[k];
+      }
+    }
+    normalized[headerKey] = String(headerValue);
+  };
+
+  // 1. Standard base headers (matches flutter-package-core Dio defaults)
+  setHeader('Content-Type', 'application/json');
+  setHeader('Accept', 'application/json');
+
+  // 2. Merge scenario headers
+  if (scenarioHeaders && typeof scenarioHeaders === 'object') {
+    for (const [k, v] of Object.entries(scenarioHeaders)) {
+      setHeader(k, v);
+    }
+  }
+
+  // 3. Merge override headers
+  if (overrideHeaders && typeof overrideHeaders === 'object') {
+    for (const [k, v] of Object.entries(overrideHeaders)) {
+      setHeader(k, v);
+    }
+  }
+
+  // 4. Interpolate variables in all values
+  const interpolated: Record<string, string> = {};
+  for (const [k, v] of Object.entries(normalized)) {
+    interpolated[k] = String(interpolateVariables(v, variables));
+  }
+
+  // 5. Standard flutter-package-core client headers injection:
+  // x-request-id (matches XRequestIdInterceptor)
+  const hasRequestId = Object.keys(interpolated).some((k) => k.toLowerCase() === 'x-request-id');
+  if (!hasRequestId) {
+    const reqId = variables['x-request-id'] || crypto.randomUUID();
+    interpolated['x-request-id'] = String(reqId);
+  }
+
+  // x-device-id (matches XDeviceIdInterceptor)
+  const hasDeviceId = Object.keys(interpolated).some((k) => k.toLowerCase() === 'x-device-id');
+  if (!hasDeviceId) {
+    const devId = variables['x-device-id'] || variables.device_code || variables.deviceCode;
+    if (devId) {
+      interpolated['x-device-id'] = String(devId);
+    }
+  }
+
+  // apikey (matches AuthHeaderInterceptor)
+  const hasApiKey = Object.keys(interpolated).some((k) => k.toLowerCase() === 'apikey');
+  if (!hasApiKey) {
+    const key = variables.apikey || variables.apigeeApiKey || variables.apiKey;
+    if (key) {
+      interpolated['apikey'] = String(key);
+    }
+  }
+
+  return interpolated;
+}
+
+/**
+ * Evaluates a single assertion rule against actual response
+ */
+export function evaluateAssertion(
+  rule: AssertionRule,
+  response: {
+    status: number;
+    headers: Record<string, string>;
+    body: any;
+    responseTimeMs: number;
+  }
+): AssertionResult {
+  let actual: any;
+  let passed = false;
+
+  switch (rule.type) {
+    case 'statusCode':
+      actual = response.status;
+      break;
+    case 'responseTime':
+      actual = response.responseTimeMs;
+      break;
+    case 'header':
+      if (rule.path) {
+        const headerKey = Object.keys(response.headers).find(
+          (k) => k.toLowerCase() === rule.path!.toLowerCase()
+        );
+        actual = headerKey ? response.headers[headerKey] : undefined;
+      }
+      break;
+    case 'bodyPath':
+      actual = rule.path ? getNestedValue(response.body, rule.path) : response.body;
+      break;
+    default:
+      actual = undefined;
+  }
+
+  const expected = rule.expected;
+
+  switch (rule.operator) {
+    case 'equals':
+      passed = actual == expected;
+      break;
+    case 'notEquals':
+      passed = actual != expected;
+      break;
+    case 'contains':
+      if (typeof actual === 'string' && typeof expected === 'string') {
+        passed = actual.includes(expected);
+      } else if (Array.isArray(actual)) {
+        passed = actual.includes(expected);
+      } else {
+        passed = false;
+      }
+      break;
+    case 'notContains':
+      if (typeof actual === 'string' && typeof expected === 'string') {
+        passed = !actual.includes(expected);
+      } else if (Array.isArray(actual)) {
+        passed = !actual.includes(expected);
+      } else {
+        passed = true;
+      }
+      break;
+    case 'exists':
+      passed = actual !== undefined && actual !== null;
+      break;
+    case 'notExists':
+      passed = actual === undefined || actual === null;
+      break;
+    case 'greaterThan':
+      passed = Number(actual) > Number(expected);
+      break;
+    case 'lessThan':
+      passed = Number(actual) < Number(expected);
+      break;
+    default:
+      passed = false;
+  }
+
+  return {
+    rule,
+    passed,
+    actual,
+    message: passed
+      ? `Assertion passed: ${rule.type} ${rule.operator} ${expected ?? ''}`
+      : `Assertion failed: expected ${rule.type} ${rule.operator} ${expected ?? ''}, but got ${JSON.stringify(actual)}`,
+  };
+}
+
+/**
+ * Extracts variables from response based on rules
+ */
+export function extractVariables(
+  extractors: VariableExtractor[] | undefined | null,
+  response: {
+    status: number;
+    headers: Record<string, string>;
+    body: any;
+  }
+): Record<string, any> {
+  const extracted: Record<string, any> = {};
+  if (!extractors || !Array.isArray(extractors)) return extracted;
+
+  for (const ext of extractors) {
+    let val: any;
+    if (ext.from === 'status') {
+      val = response.status;
+    } else if (ext.from === 'headers') {
+      const headerKey = Object.keys(response.headers).find(
+        (k) => k.toLowerCase() === ext.path.toLowerCase()
+      );
+      val = headerKey ? response.headers[headerKey] : undefined;
+    } else {
+      // Default to body
+      val = getNestedValue(response.body, ext.path);
+    }
+
+    if (val !== undefined) {
+      extracted[ext.variable] = val;
+    } else if (ext.defaultValue !== undefined) {
+      extracted[ext.variable] = ext.defaultValue;
+    }
+  }
+
+  return extracted;
+}
+
+/**
+ * Resolves the effective base URL for a step:
+ * - If step.targetEnvironmentType === 'LOCAL', overrides to local APP_URL.
+ * - Otherwise inherits targetEnvType from header:
+ *   1. Resolves via step.api.apiEnvironments (Option A)
+ *   2. Falls back to projectEnvironments
+ *   3. Falls back to variables.baseUrl
+ */
+export function resolveStepBaseUrl(
+  step: { targetEnvironmentType?: string | null; api?: any },
+  targetEnvType: string,
+  projectEnvironments: Array<{ environmentType: string; status?: boolean; baseUrl?: string }> = [],
+  currentVariables: Record<string, any> = {}
+): string {
+  const isStepLocal = (step as any).targetEnvironmentType === 'LOCAL';
+  const effectiveStepEnvType = isStepLocal ? 'LOCAL' : targetEnvType;
+
+  if (effectiveStepEnvType === 'LOCAL') {
+    const defaultPort = process.env.PORT || '3000';
+    return (process.env.APP_URL || `http://localhost:${defaultPort}`).replace(/\/+$/, '');
+  }
+
+  // Check explicit targetEnvironment if specified on step or step.api (e.g. "auth", "otp", "gateway")
+  const apiEnvs = (step.api as any)?.apiEnvironments || [];
+  const explicitTarget = String((step as any).targetEnvironment || (step.api as any)?.targetEnvironment || '').toLowerCase().trim();
+  if (explicitTarget) {
+    // 1. Check in apiEnvs
+    const matchedByTargetInApi = apiEnvs.find((ae: any) => {
+      const envName = (ae.environment?.name || '').toLowerCase();
+      const envSlug = envName.replace(/[^a-z0-9]+/g, '-');
+      return (
+        ae.enabled !== false &&
+        ae.environment?.environmentType === effectiveStepEnvType &&
+        ae.environment?.status !== false &&
+        (envSlug.includes(explicitTarget) || envName.includes(explicitTarget) || ae.environmentId === explicitTarget)
+      );
+    });
+    if (matchedByTargetInApi?.environment?.baseUrl) {
+      return matchedByTargetInApi.environment.baseUrl.replace(/\/+$/, '');
+    }
+
+    // 2. Check in projectEnvironments
+    const matchedByTargetInProj = projectEnvironments.find((e: any) => {
+      const envName = (e.name || '').toLowerCase();
+      const envSlug = envName.replace(/[^a-z0-9]+/g, '-');
+      return (
+        e.environmentType === effectiveStepEnvType &&
+        e.status !== false &&
+        (envSlug.includes(explicitTarget) || envName.includes(explicitTarget) || e.id === explicitTarget)
+      );
+    });
+    if (matchedByTargetInProj?.baseUrl) {
+      return matchedByTargetInProj.baseUrl.replace(/\/+$/, '');
+    }
+  }
+
+  // Option A: Check step.api.apiEnvironments
+  const matchedApiEnv = apiEnvs.find(
+    (ae: any) =>
+      ae.enabled !== false &&
+      ae.environment?.environmentType === effectiveStepEnvType &&
+      ae.environment?.status !== false
+  );
+
+  if (matchedApiEnv?.environment?.baseUrl) {
+    return matchedApiEnv.environment.baseUrl.replace(/\/+$/, '');
+  }
+
+  // Fallback: Check projectEnvironments matching effectiveStepEnvType
+  if (projectEnvironments.length > 0) {
+    const matchedProjectEnv = projectEnvironments.find(
+      (e) => e.environmentType === effectiveStepEnvType && e.status && e.baseUrl
+    );
+    if (matchedProjectEnv?.baseUrl) {
+      return matchedProjectEnv.baseUrl.replace(/\/+$/, '');
+    }
+  }
+
+  // Fallback: Check variables.baseUrl if present
+  if (currentVariables.baseUrl) {
+    return String(currentVariables.baseUrl).replace(/\/+$/, '');
+  }
+
+  return '';
+}
+
+/**
+ * Main Server-Side Scenario Flow Execution Engine
+ */
+export async function executeScenarioFlow(
+  flowId: string,
+  options: FlowRunOptions = {}
+) {
+  const flow = await getScenarioFlowById(flowId);
+  if (!flow) {
+    throw new Error(`Scenario flow with ID '${flowId}' not found.`);
+  }
+
+  // 1. Resolve Target Environment Stage
+  let targetEnvType = options.environmentType || null;
+  let recordedEnvId = options.environmentId || null;
+
+  if (options.environmentId && !targetEnvType) {
+    const env = await prisma.environment.findUnique({
+      where: { id: options.environmentId },
+    });
+    if (env) {
+      targetEnvType = env.environmentType;
+      recordedEnvId = env.id;
+    }
+  }
+
+  if (!targetEnvType && flow.defaultEnvironmentId) {
+    const defaultEnv = await prisma.environment.findUnique({
+      where: { id: flow.defaultEnvironmentId },
+    });
+    if (defaultEnv) {
+      targetEnvType = defaultEnv.environmentType;
+      if (!recordedEnvId) recordedEnvId = defaultEnv.id;
+    }
+  }
+
+  if (!targetEnvType) {
+    targetEnvType = 'DEVELOPMENT';
+  }
+
+  // Pre-load project environments for fallback matching
+  const projectEnvironments = flow.projectId
+    ? await prisma.environment.findMany({
+        where: { projectId: flow.projectId, deletedAt: null },
+      })
+    : [];
+
+  if (!recordedEnvId && projectEnvironments.length > 0) {
+    const matchedEnv = projectEnvironments.find(
+      (e) => e.environmentType === targetEnvType && e.status
+    );
+    if (matchedEnv) {
+      recordedEnvId = matchedEnv.id;
+    }
+  }
+
+  const enabledSteps = flow.steps.filter((s) => s.enabled);
+
+  // Initialize runtime variables
+  const initialFlowVars = (flow.variables as Record<string, any>) || {};
+  const currentVariables: Record<string, any> = {
+    ...initialFlowVars,
+    ...(options.initialVariables || {}),
+  };
+
+  // Create Execution Record in DB
+  const execution = await createExecutionRecord({
+    flowId: flow.id,
+    environmentId: recordedEnvId || null,
+    targetMode: options.targetMode || 'LIVE',
+    totalSteps: enabledSteps.length,
+    initialVariables: currentVariables,
+    executedBy: options.executedBy || 'User',
+  });
+
+  const stepExecutionResults: any[] = [];
+  let passedCount = 0;
+  let failedCount = 0;
+  let hasFailed = false;
+  let errorSummary: string | null = null;
+  const executionStartTime = Date.now();
+
+  for (let i = 0; i < enabledSteps.length; i++) {
+    const step = enabledSteps[i];
+
+    // If flow stopped due to previous failure
+    if (hasFailed && flow.stopOnFailure && !step.continueOnError) {
+      const skippedStepResult = await createExecutionStepRecord({
+        executionId: execution.id,
+        flowStepId: step.id,
+        stepOrder: step.stepOrder,
+        stepName: step.name,
+        method: step.methodOverride || step.api?.methodRequest || 'GET',
+        url: step.pathOverride || step.api?.path || '',
+        status: 'SKIPPED',
+        durationMs: 0,
+        errorMessage: 'Skipped due to failure in previous step.',
+      });
+      stepExecutionResults.push(skippedStepResult);
+      continue;
+    }
+
+    // Step delay if configured
+    if (step.delayMs && step.delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, step.delayMs));
+    }
+
+    // Resolve Method & Path
+    const rawMethod = (step.methodOverride || step.api?.methodRequest || 'GET').toUpperCase();
+    const rawPath = step.pathOverride || step.api?.path || '';
+
+    // Interpolate Path Params in rawPath e.g. /users/:id or /users/{id}
+    let interpolatedPath = rawPath;
+    const pathParamsObj = {
+      ...((step.requestScenario?.pathParams as Record<string, string>) || {}),
+      ...((step.pathParamsOverride as Record<string, string>) || {}),
+    };
+
+    // Replace :param and {param}
+    for (const [k, v] of Object.entries(pathParamsObj)) {
+      const resolvedVal = interpolateVariables(v, currentVariables);
+      interpolatedPath = interpolatedPath
+        .replace(new RegExp(`:${k}\\b`, 'g'), String(resolvedVal))
+        .replace(new RegExp(`\\{${k}\\}`, 'g'), String(resolvedVal));
+    }
+
+    // Interpolate any remaining {{variables}} directly in the URL path
+    interpolatedPath = interpolateVariables(interpolatedPath, currentVariables);
+
+    // Resolve Step Base URL (handles LOCAL override vs global targetEnvType)
+    const stepBaseUrl = resolveStepBaseUrl(step, targetEnvType, projectEnvironments, currentVariables);
+
+    // Build URL
+    let fullUrl = '';
+    if (interpolatedPath.startsWith('http://') || interpolatedPath.startsWith('https://')) {
+      fullUrl = interpolatedPath;
+    } else if (stepBaseUrl) {
+      fullUrl = `${stepBaseUrl}${interpolatedPath.startsWith('/') ? '' : '/'}${interpolatedPath}`;
+    } else {
+      fullUrl = interpolatedPath;
+    }
+
+    // Query Params
+    const queryParamsObj = {
+      ...((step.requestScenario?.queryParams as Record<string, string>) || {}),
+      ...((step.queryParamsOverride as Record<string, string>) || {}),
+    };
+    const interpolatedQuery = interpolateVariables(queryParamsObj, currentVariables);
+    const queryParts: string[] = [];
+    for (const [k, v] of Object.entries(interpolatedQuery)) {
+      if (v !== undefined && v !== null && v !== '') {
+        queryParts.push(`${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+      }
+    }
+    if (queryParts.length > 0) {
+      fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryParts.join('&');
+    }
+
+    // Headers: standardized & normalized conforming to flutter-package-core / network standards
+    const interpolatedHeaders = buildNormalizedHeaders(
+      step.requestScenario?.headers as Record<string, string>,
+      step.headersOverride as Record<string, string>,
+      currentVariables
+    );
+
+    // Body
+    let rawBody = step.bodyOverride !== undefined && step.bodyOverride !== null
+      ? step.bodyOverride
+      : step.requestScenario?.body;
+
+    let finalBody: any = undefined;
+    if (rawBody !== undefined && rawBody !== null && rawMethod !== 'GET' && rawMethod !== 'HEAD') {
+      finalBody = interpolateVariables(rawBody, currentVariables);
+    }
+
+    // Request snapshot
+    const requestSnapshot = {
+      method: rawMethod,
+      url: fullUrl,
+      headers: interpolatedHeaders,
+      body: finalBody,
+    };
+
+    const stepStartTime = Date.now();
+    let stepStatus: 'SUCCESS' | 'FAILED' = 'SUCCESS';
+    let stepError: string | null = null;
+    let responseSnapshot: any = null;
+    let assertionResults: AssertionResult[] = [];
+    let extractedVars: Record<string, any> = {};
+
+    try {
+      if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+        throw new Error(
+          `Cannot execute step "${step.name}": Base URL is empty for environment '${targetEnvType}' and step path '${rawPath}' is not an absolute URL.`
+        );
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+      const fetchOptions: RequestInit = {
+        method: rawMethod,
+        headers: interpolatedHeaders,
+        signal: controller.signal,
+      };
+
+      if (finalBody !== undefined) {
+        fetchOptions.body = typeof finalBody === 'object' ? JSON.stringify(finalBody) : String(finalBody);
+      }
+
+      const res = await fetch(fullUrl, fetchOptions);
+      clearTimeout(timeoutId);
+
+      const responseTimeMs = Date.now() - stepStartTime;
+      const respHeaders: Record<string, string> = {};
+      res.headers.forEach((value, key) => {
+        respHeaders[key] = value;
+      });
+
+      let parsedBody: any = null;
+      const responseText = await res.text();
+      try {
+        parsedBody = JSON.parse(responseText);
+      } catch {
+        parsedBody = responseText;
+      }
+
+      responseSnapshot = {
+        status: res.status,
+        statusText: res.statusText,
+        headers: respHeaders,
+        body: parsedBody,
+        responseTimeMs,
+      };
+
+      // Extract variables
+      extractedVars = extractVariables(step.extractors as unknown as VariableExtractor[], {
+        status: res.status,
+        headers: respHeaders,
+        body: parsedBody,
+      });
+
+      // Merge into currentVariables for subsequent steps
+      Object.assign(currentVariables, extractedVars);
+
+      // Evaluate assertions
+      const rules = (step.assertions as unknown as AssertionRule[]) || [];
+      if (rules.length > 0) {
+        assertionResults = rules.map((rule) =>
+          evaluateAssertion(rule, {
+            status: res.status,
+            headers: respHeaders,
+            body: parsedBody,
+            responseTimeMs,
+          })
+        );
+        const hasFailedAssertion = assertionResults.some((a) => !a.passed);
+        if (hasFailedAssertion) {
+          stepStatus = 'FAILED';
+          stepError = assertionResults.find((a) => !a.passed)?.message || 'One or more assertions failed';
+        }
+      } else {
+        // If no explicit assertions, default rule: 2xx or 3xx is SUCCESS, 4xx/5xx is FAILED
+        if (res.status >= 400) {
+          stepStatus = 'FAILED';
+          stepError = `HTTP ${res.status} ${res.statusText}`;
+        }
+      }
+    } catch (err: any) {
+      stepStatus = 'FAILED';
+      stepError = err.name === 'AbortError' ? 'Request timed out after 30s' : err.message || 'Unknown network error';
+      responseSnapshot = {
+        status: 0,
+        statusText: 'Network Error',
+        headers: {},
+        body: null,
+        responseTimeMs: Date.now() - stepStartTime,
+      };
+    }
+
+    const stepDurationMs = Date.now() - stepStartTime;
+
+    if (stepStatus === 'SUCCESS') {
+      passedCount++;
+    } else {
+      failedCount++;
+      hasFailed = true;
+      if (!errorSummary) {
+        errorSummary = `Step ${step.stepOrder} (${step.name}) failed: ${stepError}`;
+      }
+    }
+
+    const savedStep = await createExecutionStepRecord({
+      executionId: execution.id,
+      flowStepId: step.id,
+      stepOrder: step.stepOrder,
+      stepName: step.name,
+      method: rawMethod,
+      url: fullUrl,
+      status: stepStatus,
+      httpStatusCode: responseSnapshot?.status || 0,
+      durationMs: stepDurationMs,
+      requestSnapshot,
+      responseSnapshot,
+      extractedVariables: extractedVars,
+      assertionResults,
+      errorMessage: stepError,
+    });
+
+    stepExecutionResults.push(savedStep);
+  }
+
+  const totalDurationMs = Date.now() - executionStartTime;
+  const finalExecutionStatus = failedCount > 0 ? 'FAILED' : 'SUCCESS';
+
+  const updatedExecution = await updateExecutionRecord(execution.id, {
+    status: finalExecutionStatus,
+    passedSteps: passedCount,
+    failedSteps: failedCount,
+    durationMs: totalDurationMs,
+    finalVariables: currentVariables,
+    errorSummary,
+  });
+
+  return {
+    execution: updatedExecution,
+    steps: stepExecutionResults,
+    finalVariables: currentVariables,
+  };
+}

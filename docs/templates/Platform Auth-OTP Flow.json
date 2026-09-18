@@ -1,0 +1,242 @@
+{
+  "$schema": "mock-api-studio/scenario-flow/v1",
+  "version": "1.0",
+  "exportedAt": "2026-09-17T11:15:00.000Z",
+  "environments": [
+    {
+      "id": "plat-auth-dev",
+      "name": "Platform AUTH DEV",
+      "environmentType": "DEVELOPMENT",
+      "baseUrl": "https://dev-plat-auth.kbfinansia.com",
+      "isDefault": true
+    },
+    {
+      "id": "plat-auth-stg",
+      "name": "Platform AUTH STG",
+      "environmentType": "STAGING",
+      "baseUrl": "https://stg-plat-auth.kbfinansia.com",
+      "isDefault": false
+    },
+    {
+      "id": "plat-otp-dev",
+      "name": "Platform OTP DEV",
+      "environmentType": "DEVELOPMENT",
+      "baseUrl": "https://dev-plat-otp.kbfinansia.com",
+      "isDefault": false
+    },
+    {
+      "id": "plat-otp-stg",
+      "name": "Platform OTP STG",
+      "environmentType": "STAGING",
+      "baseUrl": "https://stg-plat-otp.kbfinansia.com",
+      "isDefault": false
+    }
+  ],
+  "flow": {
+    "name": "Auth Login",
+    "description": "End-to-end Automated Chaining: Login, Request OTP, Validate OTP",
+    "stopOnFailure": true,
+    "variables": {
+      "authPlatformBaseUrl": "https://testing-api-gateway.kbfinansia.com",
+      "otpPlatformBaseUrl": "https://testing-kpm-api.kbfinansia.com",
+      "source_application": "KPM",
+      "secret_key": "SifiyjmAhoVus2T5fC57F0BHy/AxzLXQUOUFsUWmLY62vld0wj+Mk4pxt6bFl1tH",
+      "mobile_phone_otp": "081374777005",
+      "process_otp": "LOGIN",
+      "type_otp": "SMS",
+      "static_code_otp": "QiTaS2KET/GV+gcWm83PhDLfGE7jHQ=="
+    }
+  },
+  "steps": [
+    {
+      "order": 1,
+      "name": "Service Login",
+      "description": "Melakukan login dengan source_apps & secret_key untuk mendapatkan token sesi JWT Bearer",
+      "enabled": true,
+      "delayMs": 0,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v1/auth/login",
+        "name": "Login Service",
+        "collection": "Platform",
+        "description": "Endpoint autentikasi login Platform",
+        "targetEnvironment": "auth",
+        "environmentIds": [
+          "plat-auth-dev",
+          "plat-auth-stg"
+        ]
+      },
+      "requestScenario": {
+        "name": "Scenario Success Login",
+        "description": "Kredensial valid menghasilkan token JWT",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "source_application": "{{source_application}}",
+          "secret_key": "{{secret_key}}"
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Success Login Response",
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "PLT-ASP-200",
+          "message": "OK",
+          "errors": null,
+          "data": {
+            "access_token": "mock-jwt-token",
+            "expired_at": "2026-09-25T10:57:43+07:00",
+            "refresh_token": "mock-jwt-refresh-token"
+          }
+        }
+      },
+      "extractors": [
+        {
+          "variable": "access_token",
+          "from": "body",
+          "path": "data.access_token"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.access_token",
+          "operator": "exists"
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "name": "Request OTP",
+      "description": "Request OTP untuk bisa di validate",
+      "enabled": true,
+      "delayMs": 200,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v1/otp/request-otp",
+        "name": "Request OTP",
+        "collection": "Platform",
+        "description": "Request OTP untuk bisa di validate",
+        "targetEnvironment": "otp",
+        "environmentIds": [
+          "plat-otp-dev",
+          "plat-otp-stg"
+        ]
+      },
+      "requestScenario": {
+        "name": "Scenario Request OTP",
+        "description": "Request OTP",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{access_token}}"
+        },
+        "body": {
+          "mobile_phone": "{{mobile_phone_otp}}",
+          "process": "{{process_otp}}",
+          "source_application": "{{source_application}}",
+          "type": "{{type_otp}}"
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Request OTP Response",
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "PLT-OSP-200",
+          "message": "OK",
+          "data": {
+            "expired_at": "2026-09-18T10:52:40+07:00",
+            "mobile_phone": "mock-mobile-phone",
+            "session_id": "mock-session-id"
+          }
+        }
+      },
+      "extractors": [
+        {
+          "variable": "session_id",
+          "from": "body",
+          "path": "data.session_id"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.session_id",
+          "operator": "exists"
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "name": "Validate OTP",
+      "description": "Melakukan validasi OTP",
+      "enabled": true,
+      "delayMs": 100,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v1/otp/validate-otp",
+        "name": "Validate OTP",
+        "collection": "Platform",
+        "description": "Melakukan validasi OTP",
+        "targetEnvironment": "otp",
+        "environmentIds": [
+          "plat-otp-dev",
+          "plat-otp-stg"
+        ]
+      },
+      "requestScenario": {
+        "name": "Scenario Validate OTP",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "{{access_token}}"
+        },
+        "body": {
+          "code": "{{static_code_otp}}",
+          "mobile_phone": "{{mobile_phone_otp}}",
+          "session_id": "{{session_id}}"
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Validate OTP Response",
+        "statusCode": 200,
+        "body": {
+          "code": "PLT-OSP-200",
+          "message": "OK",
+          "data": {
+            "mobile_phone": "mock-mobile-phone",
+            "session_id": "mock-session-id"
+          }
+        }
+      },
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        }
+      ]
+    }
+  ]
+}

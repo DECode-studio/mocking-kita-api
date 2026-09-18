@@ -3,7 +3,7 @@ import { ENV } from '@/src/core/constants/env';
 
 export interface NotificationPayload {
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'EXPORT' | 'RESET';
-  entityType: 'project' | 'collection' | 'api' | 'request_scenario' | 'response_scenario' | 'database' | 'environment';
+  entityType: 'project' | 'collection' | 'api' | 'request_scenario' | 'response_scenario' | 'database' | 'environment' | 'scenario_flow';
   entityId?: string | null;
   projectId?: string | null;
   userId?: string | null;

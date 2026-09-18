@@ -14,4 +14,8 @@ export const ROUTES = {
   PROJECT_ENVIRONMENTS: (projectId: string) => `/projects/${projectId}/environments`,
   PROJECT_APIS: (projectId: string) => `/projects/${projectId}`,
   API_DETAIL: (projectId: string, apiId: string) => `/projects/${projectId}/apis/${apiId}`,
+  PROJECT_SCENARIO_FLOWS: (projectId: string) => `/projects/${projectId}/scenario-flows`,
+  SCENARIO_FLOW_DETAIL: (projectId: string, flowId: string) => `/projects/${projectId}/scenario-flows/${flowId}`,
+  SCENARIO_FLOWS: '/scenario-flows',
+  SCENARIO_FLOW_DETAIL_GLOBAL: (flowId: string) => `/scenario-flows/${flowId}`,
 } as const;

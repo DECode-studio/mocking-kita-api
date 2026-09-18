@@ -1,0 +1,476 @@
+{
+  "$schema": "mock-api-studio/scenario-flow/v1",
+  "version": "1.0",
+  "exportedAt": "2026-09-17T11:15:00.000Z",
+  "environments": [
+    {
+      "id": "kpm-staging-gateway",
+      "name": "KPM Testing (Apigee Gateway)",
+      "environmentType": "STAGING",
+      "baseUrl": "https://testing-api-gateway.kbfinansia.com",
+      "isDefault": true
+    },
+    {
+      "id": "kpm-dev-gateway",
+      "name": "KPM Dev (Apigee Gateway)",
+      "environmentType": "DEVELOPMENT",
+      "baseUrl": "https://dev-api-gateway.kbfinansia.com",
+      "isDefault": false
+    },
+    {
+      "id": "kpm-dev-direct",
+      "name": "KPM Dev (Direct API)",
+      "environmentType": "DEVELOPMENT",
+      "baseUrl": "https://dev-kpm-api.kbfinansia.com",
+      "isDefault": false
+    }
+  ],
+  "flow": {
+    "name": "KPM Limit Submission Flow (Login to Final Approval)",
+    "description": "End-to-end Automated Chaining: Login, Check Order, Customer Sections, Step 1 (Summary Personal), Step 2 (Background Assessment), dan Step 3 (Emergency Contact & Final Limit Assessment)",
+    "stopOnFailure": true,
+    "variables": {
+      "baseUrl": "https://testing-api-gateway.kbfinansia.com",
+      "apigeeBaseUrl": "https://testing-api-gateway.kbfinansia.com",
+      "kpmBaseUrl": "https://testing-kpm-api.kbfinansia.com",
+      "apigeeApiKey": "QpoVAx8WO7AsiPKy0zeJdL3AxSmkEldf6dOGAGiQ0pSulI86",
+      "platformToken": "PLATFORM_TOKEN",
+      "phone_no": "081234567890",
+      "pin": "123456",
+      "device_code": "kpm-device-mock-uuid-001"
+    }
+  },
+  "steps": [
+    {
+      "order": 1,
+      "name": "User Sign In (Authentication)",
+      "description": "Melakukan login dengan phone_no, PIN, dan device_code untuk mendapatkan token sesi JWT Bearer",
+      "enabled": true,
+      "delayMs": 0,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v6/kpm-account/authentication/login",
+        "name": "Login User",
+        "collection": "KPM Account & Auth",
+        "description": "Endpoint autentikasi login KPM gateway",
+        "targetEnvironment": "gateway",
+        "environmentIds": [
+          "kpm-dev-gateway",
+          "kpm-staging-gateway"
+        ]
+      },
+      "requestScenario": {
+        "name": "Success Login Scenario",
+        "description": "Kredensial valid menghasilkan token JWT",
+        "headers": {
+          "Content-Type": "application/json",
+          "apikey": "{{apigeeApiKey}}",
+          "authorization": "{{platformToken}}",
+          "x-response-version": "v1"
+        },
+        "body": {
+          "phone_no": "{{phone_no}}",
+          "pin": "{{pin}}",
+          "device_code": "{{device_code}}",
+          "model_name": "iPhone 15 Pro",
+          "os_version": "iOS 18.0",
+          "adid": "{{$uuid}}",
+          "gps_adid": "{{$uuid}}",
+          "device_code_vendor": "vendor-device-001",
+          "journey_type": "TRUSTED_DEVICE",
+          "fazpass_id": "fazpass-dummy-id",
+          "merchant_app_id": "kreditplus-mobile"
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Success Login Response",
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "00",
+          "message": "Success",
+          "data": {
+            "customer_id": 1029384,
+            "token": "mock-jwt-token-ey1234567890",
+            "expired_at": "2026-12-31T23:59:59Z",
+            "refresh_token": "mock-refresh-token-9876543210",
+            "expired_refresh_at": "2027-12-31T23:59:59Z"
+          }
+        }
+      },
+      "extractors": [
+        {
+          "variable": "token",
+          "from": "body",
+          "path": "data.token"
+        },
+        {
+          "variable": "customerId",
+          "from": "body",
+          "path": "data.customer_id"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.token",
+          "operator": "exists"
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "name": "Check Order Status (Onboarding Pre-Check)",
+      "description": "Memeriksa eligibility order limit submission dan status user sebelum masuk ke form",
+      "enabled": true,
+      "delayMs": 200,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v6/kpm-wg/submission/check-order",
+        "name": "Check Order",
+        "collection": "KPM WG Submission",
+        "description": "Pemeriksaan status order limit submission",
+        "targetEnvironment": "gateway",
+        "environmentIds": [
+          "kpm-dev-gateway",
+          "kpm-staging-gateway"
+        ]
+      },
+      "requestScenario": {
+        "name": "Active Order Pre-Check Scenario",
+        "description": "Request check order dengan device_code",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}",
+          "apikey": "{{apigeeApiKey}}"
+        },
+        "body": {
+          "device_code": "{{device_code}}"
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Check Order Empty Response",
+        "statusCode": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "code": "00",
+          "message": "Order status retrieved",
+          "data": {
+            "is_active_order": false,
+            "is_suspend_user": false,
+            "status_code": "EMPTY",
+            "step": "EMPTY",
+            "decision": "EMPTY"
+          }
+        }
+      },
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "code",
+          "operator": "equals",
+          "expected": "00"
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "name": "Get Customer Sections Summary",
+      "description": "Mengambil data personal, alamat, dan penghasilan customer untuk verifikasi ringkasan",
+      "enabled": true,
+      "delayMs": 100,
+      "continueOnError": false,
+      "api": {
+        "method": "GET",
+        "path": "/v6/kpm-account/customer/sections",
+        "name": "Get Customer Sections",
+        "collection": "KPM Customer",
+        "description": "Mengambil section data customer (personal, residence, income, detail work)",
+        "targetEnvironment": "gateway",
+        "environmentIds": [
+          "kpm-dev-gateway",
+          "kpm-staging-gateway"
+        ]
+      },
+      "requestScenario": {
+        "name": "Get Sections Summary Scenario",
+        "headers": {
+          "Authorization": "Bearer {{token}}",
+          "apikey": "{{apigeeApiKey}}"
+        },
+        "queryParams": {
+          "section": "personal"
+        }
+      },
+      "expectedResponseScenario": {
+        "name": "Customer Sections Response",
+        "statusCode": 200,
+        "body": {
+          "code": "00",
+          "message": "Success",
+          "data": {
+            "customer_id": "{{customerId}}",
+            "personal": {
+              "personal": {
+                "legal_name": "Budi Santoso",
+                "ktp_no": "3171012345670001",
+                "email": "budi.santoso@example.com",
+                "mobile_phone": "{{phone_no}}",
+                "residence_village": {
+                  "latitude": -6.2088,
+                  "longitude": 106.8456
+                }
+              }
+            },
+            "income": {
+              "income": {
+                "profession": {
+                  "id": 1,
+                  "name": "Karyawan Swasta"
+                },
+                "monthly_income": 15000000
+              }
+            }
+          }
+        }
+      },
+      "extractors": [
+        {
+          "variable": "latitude",
+          "from": "body",
+          "path": "data.personal.personal.residence_village.latitude"
+        },
+        {
+          "variable": "longitude",
+          "from": "body",
+          "path": "data.personal.personal.residence_village.longitude"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "name": "Submission Step 1 (Summary Personal)",
+      "description": "Submit data ringkasan personal tahap 1 ke decision engine",
+      "enabled": true,
+      "delayMs": 300,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v6/kpm-wg/submission/step1",
+        "name": "Submission Step 1",
+        "collection": "KPM WG Submission",
+        "description": "Pengiriman tahap 1 pengajuan limit",
+        "targetEnvironment": "gateway",
+        "environmentIds": [
+          "kpm-dev-gateway",
+          "kpm-staging-gateway"
+        ]
+      },
+      "requestScenario": {
+        "name": "Step 1 Submit Scenario",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}",
+          "apikey": "{{apigeeApiKey}}"
+        },
+        "body": {
+          "device_code": "{{device_code}}",
+          "latitude": -6.2088,
+          "longitude": 106.8456,
+          "payload": null
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Step 1 PASS Decision Response",
+        "statusCode": 200,
+        "body": {
+          "code": "00",
+          "message": "Step 1 approved",
+          "data": {
+            "prospect_id": "PRSP-202609-001234",
+            "decision": "PASS",
+            "step_order": 1,
+            "status_code": "00"
+          }
+        }
+      },
+      "extractors": [
+        {
+          "variable": "prospectId",
+          "from": "body",
+          "path": "data.prospect_id"
+        },
+        {
+          "variable": "stepOneDecision",
+          "from": "body",
+          "path": "data.decision"
+        }
+      ],
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.decision",
+          "operator": "equals",
+          "expected": "PASS"
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "name": "Submission Step 2 (Credit Assessment Background)",
+      "description": "Submit data pekerjaan dan background verification untuk tahap 2",
+      "enabled": true,
+      "delayMs": 300,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v6/kpm-wg/submission/step2",
+        "name": "Submission Step 2",
+        "collection": "KPM WG Submission",
+        "description": "Pengiriman tahap 2 background assessment",
+        "targetEnvironment": "gateway",
+        "environmentIds": [
+          "kpm-dev-gateway",
+          "kpm-staging-gateway"
+        ]
+      },
+      "requestScenario": {
+        "name": "Step 2 Submit Scenario",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}",
+          "apikey": "{{apigeeApiKey}}"
+        },
+        "body": {
+          "device_code": "{{device_code}}",
+          "merchant": "dinomarket",
+          "device_code_vendor": ""
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Step 2 APPROVED Decision Response",
+        "statusCode": 200,
+        "body": {
+          "code": "00",
+          "message": "Step 2 approved",
+          "data": {
+            "decision": "APPROVED",
+            "step_order": 2,
+            "status_code": "00"
+          }
+        }
+      },
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.decision",
+          "operator": "equals",
+          "expected": "APPROVED"
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "name": "Submission Step 3 (Emergency Contact & Final Limit)",
+      "description": "Submit kontak darurat dan final credit assessment approval untuk mendapatkan limit",
+      "enabled": true,
+      "delayMs": 500,
+      "continueOnError": false,
+      "api": {
+        "method": "POST",
+        "path": "/v6/kpm-wg/submission/step3",
+        "name": "Submission Step 3 Final",
+        "collection": "KPM WG Submission",
+        "description": "Tahap final pengajuan limit dan penerbitan plafon pinjaman",
+        "targetEnvironment": "gateway",
+        "environmentIds": [
+          "kpm-dev-gateway",
+          "kpm-staging-gateway"
+        ]
+      },
+      "requestScenario": {
+        "name": "Step 3 Final Submit Scenario",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer {{token}}",
+          "apikey": "{{apigeeApiKey}}"
+        },
+        "body": {
+          "device_code": "{{device_code}}",
+          "merchant": "dinomarket"
+        },
+        "bodyType": "JSON"
+      },
+      "expectedResponseScenario": {
+        "name": "Final Limit PASS Approval Response",
+        "statusCode": 200,
+        "body": {
+          "code": "00",
+          "message": "Limit Approved Successfully",
+          "data": {
+            "decision": "PASS",
+            "limit_amount": 25000000,
+            "prospect_id": "PRSP-202609-001234",
+            "step_order": 3,
+            "status_code": "00"
+          }
+        }
+      },
+      "assertions": [
+        {
+          "type": "statusCode",
+          "operator": "equals",
+          "expected": 200
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.decision",
+          "operator": "equals",
+          "expected": "PASS"
+        },
+        {
+          "type": "bodyPath",
+          "path": "data.limit_amount",
+          "operator": "exists"
+        }
+      ]
+    }
+  ]
+}
