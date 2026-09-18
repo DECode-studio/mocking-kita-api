@@ -21,6 +21,7 @@ model Project {
   environments Environment[]
   collections  Collection[]
   apis         Api[]
+  scenarioFlows ScenarioFlow[]
 
   @@map("tblProject")
 }
@@ -44,8 +45,10 @@ model Environment {
   updatedAt       DateTime        @updatedAt @map("updated_at")
   deletedAt       DateTime?       @map("deleted_at")
 
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  apiEnvironments ApiEnvironment[]
+  project                Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  apiEnvironments        ApiEnvironment[]
+  scenarioFlows          ScenarioFlow[]
+  scenarioFlowExecutions ScenarioFlowExecution[]
 
   @@map("tblEnvironment")
 }
@@ -79,11 +82,12 @@ model Api {
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
 
-  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  collection       Collection?       @relation(fields: [collectionId], references: [id], onDelete: SetNull)
-  pics             ApiPic[]
-  apiEnvironments  ApiEnvironment[]
-  requestScenarios RequestScenario[]
+  project           Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  collection        Collection?        @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  pics              ApiPic[]
+  apiEnvironments   ApiEnvironment[]
+  requestScenarios  RequestScenario[]
+  scenarioFlowSteps ScenarioFlowStep[]
 
   @@unique([projectId, path, methodRequest], name: "tblApi_index_0")
   @@map("tblApi")
@@ -153,6 +157,7 @@ model RequestScenario {
 
   api               Api                @relation(fields: [apiId], references: [id], onDelete: Cascade)
   responseScenarios ResponseScenario[]
+  scenarioFlowSteps ScenarioFlowStep[]
 
   @@map("tblRequestScenario")
 }
@@ -179,6 +184,112 @@ model ResponseScenario {
   requestScenario RequestScenario @relation(fields: [requestScenarioId], references: [id], onDelete: Cascade)
 
   @@map("tblResponseScenario")
+}
+
+model ScenarioFlow {
+  id                   String    @id @default(uuid())
+  projectId            String?   @map("project_id")
+  name                 String
+  description          String?
+  status               Boolean   @default(true)
+  defaultEnvironmentId String?   @map("default_environment_id")
+  stopOnFailure        Boolean   @default(true) @map("stop_on_failure")
+  variables            Json?
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  project            Project?                @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  defaultEnvironment Environment?            @relation(fields: [defaultEnvironmentId], references: [id], onDelete: SetNull)
+  steps              ScenarioFlowStep[]
+  executions         ScenarioFlowExecution[]
+
+  @@index([projectId])
+  @@map("tblScenarioFlow")
+}
+
+model ScenarioFlowStep {
+  id                  String    @id @default(uuid())
+  flowId              String    @map("flow_id")
+  apiId               String?   @map("api_id")
+  requestScenarioId   String?   @map("request_scenario_id")
+  stepOrder           Int       @map("step_order")
+  name                String
+  description         String?
+  enabled             Boolean   @default(true)
+  delayMs             Int       @default(0) @map("delay_ms")
+  continueOnError     Boolean   @default(false) @map("continue_on_error")
+  methodOverride      String?   @map("method_override")
+  pathOverride        String?   @map("path_override")
+  headersOverride     Json?     @map("headers_override")
+  queryParamsOverride Json?     @map("query_params_override")
+  pathParamsOverride  Json?     @map("path_params_override")
+  bodyOverride        Json?     @map("body_override")
+  extractors          Json?
+  assertions          Json?
+  targetEnvironmentType String?  @default("DEFAULT") @map("target_environment_type")
+  targetEnvironment     String?  @map("target_environment")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  flow           ScenarioFlow                @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  api            Api?                        @relation(fields: [apiId], references: [id], onDelete: SetNull)
+  requestScenario RequestScenario?           @relation(fields: [requestScenarioId], references: [id], onDelete: SetNull)
+  executionSteps ScenarioFlowExecutionStep[]
+
+  @@index([flowId, stepOrder])
+  @@map("tblScenarioFlowStep")
+}
+
+model ScenarioFlowExecution {
+  id               String    @id @default(uuid())
+  flowId           String    @map("flow_id")
+  environmentId    String?   @map("environment_id")
+  status           String    @default("RUNNING")
+  triggerSource    String    @default("MANUAL") @map("trigger_source")
+  targetMode       String    @default("LIVE") @map("target_mode")
+  totalSteps       Int       @default(0) @map("total_steps")
+  passedSteps      Int       @default(0) @map("passed_steps")
+  failedSteps      Int       @default(0) @map("failed_steps")
+  durationMs       Int       @default(0) @map("duration_ms")
+  initialVariables Json?     @map("initial_variables")
+  finalVariables   Json?     @map("final_variables")
+  executedBy       String?   @map("executed_by")
+  errorSummary     String?   @map("error_summary")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  flow        ScenarioFlow                @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  environment Environment?                @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  steps       ScenarioFlowExecutionStep[]
+
+  @@index([flowId])
+  @@index([createdAt(sort: Desc)])
+  @@map("tblScenarioFlowExecution")
+}
+
+model ScenarioFlowExecutionStep {
+  id                 String    @id @default(uuid())
+  executionId        String    @map("execution_id")
+  flowStepId         String?   @map("flow_step_id")
+  stepOrder          Int       @map("step_order")
+  stepName           String    @map("step_name")
+  method             String
+  url                String
+  status             String
+  httpStatusCode     Int?      @map("http_status_code")
+  durationMs         Int       @default(0) @map("duration_ms")
+  requestSnapshot    Json?     @map("request_snapshot")
+  responseSnapshot   Json?     @map("response_snapshot")
+  extractedVariables Json?     @map("extracted_variables")
+  assertionResults   Json?     @map("assertion_results")
+  errorMessage       String?   @map("error_message")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  execution ScenarioFlowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  flowStep  ScenarioFlowStep?     @relation(fields: [flowStepId], references: [id], onDelete: SetNull)
+
+  @@index([executionId])
+  @@map("tblScenarioFlowExecutionStep")
 }
 
 model Account {
