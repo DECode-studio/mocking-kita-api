@@ -13,6 +13,7 @@ import type { FaqRepository } from "@/src/client/domain/faq/repository/faq_repos
 import type { AccountAdminRepository } from "@/src/client/domain/account/repository/account_admin_repository";
 import type { ChangeLogRepository } from "@/src/client/domain/change-log/repository/change_log_repository";
 import type { DashboardRepository } from "@/src/client/domain/dashboard/repository/dashboard_repository";
+import type { ScenarioFlowRepository } from "@/src/client/domain/scenario-flow/repository/scenario_flow_repository";
 
 // Domain UseCases Contracts
 import type { ApiUseCase } from "@/src/client/domain/api/usecase/api_usecase";
@@ -27,6 +28,7 @@ import type { ProjectUseCase } from "@/src/client/domain/project/usecase/project
 import type { AccountAdminUseCase } from "@/src/client/domain/account/usecase/account_admin_usecase";
 import type { ChangeLogUseCase } from "@/src/client/domain/change-log/usecase/change_log_usecase";
 import type { DashboardUseCase } from "@/src/client/domain/dashboard/usecase/dashboard_usecase";
+import type { ScenarioFlowUseCase } from "@/src/client/domain/scenario-flow/usecase/scenario_flow_usecase";
 
 export const CLIENT_DI_TOKENS = {
   // Repositories
@@ -44,6 +46,7 @@ export const CLIENT_DI_TOKENS = {
   accountAdminRepository: new InjectionToken<AccountAdminRepository>("AccountAdminRepository"),
   changeLogRepository: new InjectionToken<ChangeLogRepository>("ChangeLogRepository"),
   dashboardRepository: new InjectionToken<DashboardRepository>("DashboardRepository"),
+  scenarioFlowRepository: new InjectionToken<ScenarioFlowRepository>("ScenarioFlowRepository"),
 
   // UseCases
   apiUseCase: new InjectionToken<ApiUseCase>("ApiUseCase"),
@@ -58,4 +61,5 @@ export const CLIENT_DI_TOKENS = {
   accountAdminUseCase: new InjectionToken<AccountAdminUseCase>("AccountAdminUseCase"),
   changeLogUseCase: new InjectionToken<ChangeLogUseCase>("ChangeLogUseCase"),
   dashboardUseCase: new InjectionToken<DashboardUseCase>("DashboardUseCase"),
+  scenarioFlowUseCase: new InjectionToken<ScenarioFlowUseCase>("ScenarioFlowUseCase"),
 } as const;
