@@ -12,6 +12,7 @@ export function configureAuthStore(nextAuthUseCase: AuthUseCase) {
 interface AuthState {
   session: UserSession | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   login: (username: string, pass: string, rememberMe?: boolean) => Promise<AuthLoginResponse>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -21,12 +22,13 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   isAuthenticated: false,
+  isInitialized: false,
 
   login: async (username: string, pass: string, rememberMe = false) => {
     if (!authUseCase) throw new Error('Auth store is not configured');
     const res = await authUseCase.login(username, pass, rememberMe);
     if (res.success && res.session) {
-      set({ session: res.session, isAuthenticated: true });
+      set({ session: res.session, isAuthenticated: true, isInitialized: true });
     }
     return res;
   },
@@ -34,13 +36,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     if (!authUseCase) throw new Error('Auth store is not configured');
     await authUseCase.logout();
-    set({ session: null, isAuthenticated: false });
+    set({ session: null, isAuthenticated: false, isInitialized: true });
   },
 
   checkAuth: async () => {
     if (!authUseCase) throw new Error('Auth store is not configured');
-    const session = await authUseCase.getSession();
-    set({ session, isAuthenticated: !!session });
+    try {
+      const session = await authUseCase.getSession();
+      set({ session, isAuthenticated: !!session, isInitialized: true });
+    } catch {
+      set({ session: null, isAuthenticated: false, isInitialized: true });
+    }
   },
 
   updateSession: (partial: Partial<UserSession>) => {
