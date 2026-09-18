@@ -1,0 +1,18 @@
+export const SCENARIO_FLOWS_TEXT = {
+  TITLE: 'Scenario Flow Chaining',
+  SUBTITLE: 'Build, chain, and run automated end-to-end API test flows with dynamic data passing and real-time execution.',
+  CREATE_BTN: 'New Flow',
+  IMPORT_BTN: 'Import Flow JSON',
+  SEARCH_PLACEHOLDER: 'Search scenario flows by name or description...',
+  EMPTY_TITLE: 'No Scenario Flows Yet',
+  EMPTY_DESC: 'Create a flow manually or import an existing JSON template to start chaining APIs.',
+  RUN_NOW: 'Run Testing',
+  EDIT: 'Edit Flow',
+  DELETE: 'Delete Flow',
+  EXPORT_JSON: 'Export JSON',
+  STEPS_COUNT: 'steps',
+  STATUS_ACTIVE: 'Active',
+  STATUS_INACTIVE: 'Draft',
+  LAST_RUN: 'Last Run',
+  NO_RUNS_YET: 'Never run',
+};

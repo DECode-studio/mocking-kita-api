@@ -22,6 +22,7 @@ import {
   Shield,
   History,
   Server,
+  Layers,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -74,13 +75,19 @@ export const AppSidebar: React.FC = () => {
       name: 'Projects',
       href: ROUTES.PROJECTS,
       icon: FolderGit2,
-      isActive: pathname.startsWith(ROUTES.PROJECTS),
+      isActive: pathname.startsWith(ROUTES.PROJECTS) && !pathname.includes('/scenario-flows'),
     },
     {
       name: 'Environments',
       href: ROUTES.ENVIRONMENTS,
       icon: Server,
       isActive: pathname === ROUTES.ENVIRONMENTS,
+    },
+    {
+      name: 'Scenario Flows',
+      href: ROUTES.SCENARIO_FLOWS,
+      icon: Layers,
+      isActive: pathname.startsWith(ROUTES.SCENARIO_FLOWS) || pathname.includes('/scenario-flows'),
     },
     {
       name: 'External APIs Docs',

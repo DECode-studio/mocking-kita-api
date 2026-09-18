@@ -12,10 +12,12 @@ import { ROUTES } from '@/src/core/constants/routes';
 import { OnboardingTour } from './OnboardingTour';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { session, isAuthenticated, logout } = useAuthStore();
+  const { session, isAuthenticated, isInitialized, logout } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
+    if (!isInitialized) return;
+
     if (!isAuthenticated) {
       router.replace(ROUTES.SIGN_IN);
     } else if (session && !session.googleId && session.username.includes('@')) {
@@ -24,9 +26,9 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
         router.replace(ROUTES.SIGN_IN);
       });
     }
-  }, [isAuthenticated, session, router, logout]);
+  }, [isInitialized, isAuthenticated, session, router, logout]);
 
-  if (!isAuthenticated) {
+  if (!isInitialized || !isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
