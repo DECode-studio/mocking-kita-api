@@ -27,6 +27,7 @@ import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { ROUTES } from '@/src/core/constants/routes';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 
 interface AddStepModalProps {
   isOpen: boolean;
@@ -79,6 +80,19 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastFocusedField, setLastFocusedField] = useState<'path' | 'headers' | 'queryParams' | 'body'>('body');
+
+  const handleInsertDataSheetToken = (token: string) => {
+    if (lastFocusedField === 'path') {
+      setPathOverride((prev) => (prev ? `${prev}${token}` : token));
+    } else if (lastFocusedField === 'headers') {
+      setHeadersJson((prev) => (prev ? `${prev} ${token}` : token));
+    } else if (lastFocusedField === 'queryParams') {
+      setQueryParamsJson((prev) => (prev ? `${prev} ${token}` : token));
+    } else {
+      setBodyJson((prev) => (prev ? `${prev} ${token}` : token));
+    }
+  };
 
   // Helper to load scenarios for an API
   const loadScenariosForApi = async (apiId: string) => {
@@ -540,12 +554,20 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Endpoint Path <span className="text-slate-400 font-normal">(supports &#123;&#123;var&#125;&#125;)</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Endpoint Path <span className="text-slate-400 font-normal">(supports &#123;&#123;var&#125;&#125;)</span>
+                      </label>
+                      <DataSheetVariablePicker
+                        buttonLabel="Data Sheet"
+                        triggerClassName="text-[10px] py-0.5 px-2"
+                        onInsert={(token) => setPathOverride((prev) => (prev ? `${prev}${token}` : token))}
+                      />
+                    </div>
                     <input
                       type="text"
                       value={pathOverride}
+                      onFocus={() => setLastFocusedField('path')}
                       onChange={(e) => setPathOverride(e.target.value)}
                       placeholder="/api/v1/users/{{userId}}"
                       className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white"
@@ -677,6 +699,21 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
 
               {/* Tab: Overrides & Body */}
               <Tabs.Content value="payload" className="space-y-4">
+                <div className="flex items-center justify-between p-2.5 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/60 rounded-xl">
+                  <div>
+                    <span className="text-xs text-purple-700 dark:text-purple-300 font-medium block">
+                      Use dynamic emails, phone numbers, or datasets:
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Token will be inserted into active field (focused: <span className="font-semibold font-mono text-purple-600 dark:text-purple-400">{lastFocusedField}</span>)
+                    </span>
+                  </div>
+                  <DataSheetVariablePicker
+                    buttonLabel="Data Sheet Variables"
+                    onInsert={handleInsertDataSheetToken}
+                  />
+                </div>
+
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -689,6 +726,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <textarea
                     rows={3}
                     value={headersJson}
+                    onFocus={() => setLastFocusedField('headers')}
                     onChange={(e) => setHeadersJson(e.target.value)}
                     className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200"
                   />
@@ -701,6 +739,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <textarea
                     rows={2}
                     value={queryParamsJson}
+                    onFocus={() => setLastFocusedField('queryParams')}
                     onChange={(e) => setQueryParamsJson(e.target.value)}
                     className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200"
                   />
@@ -718,6 +757,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <textarea
                     rows={6}
                     value={bodyJson}
+                    onFocus={() => setLastFocusedField('body')}
                     onChange={(e) => setBodyJson(e.target.value)}
                     className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200"
                   />
@@ -846,17 +886,47 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                           <option value="notExists">not exists</option>
                           <option value="greaterThan">&gt; greater than</option>
                           <option value="lessThan">&lt; less than</option>
+                          <option value="in_datasheet">in data sheet</option>
                         </select>
 
-                        {ast.operator !== 'exists' && ast.operator !== 'notExists' && (
-                          <input
-                            type="text"
-                            placeholder="Expected"
-                            value={ast.expected !== undefined ? String(ast.expected) : ''}
-                            onChange={(e) => updateAssertion(idx, 'expected', e.target.value)}
-                            className="flex-1 px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white min-w-20"
-                          />
-                        )}
+                        {ast.operator === 'in_datasheet' ? (
+                          <div className="flex items-center gap-1 flex-1 min-w-40">
+                            <input
+                              type="text"
+                              placeholder="Sheet code e.g. emails"
+                              value={ast.expected !== undefined ? String(ast.expected) : ''}
+                              onChange={(e) => updateAssertion(idx, 'expected', e.target.value)}
+                              className="flex-1 px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                            />
+                            <DataSheetVariablePicker
+                              buttonLabel="Pick Sheet"
+                              triggerClassName="text-[10px] py-0.5 px-2"
+                              onInsert={(token) => {
+                                const cleanCode = token
+                                  .replace(/^\{\{\s*datasheet\./, '')
+                                  .replace(/\..*$/, '')
+                                  .replace(/\[.*$/, '')
+                                  .replace(/\}\}/, '');
+                                updateAssertion(idx, 'expected', cleanCode);
+                              }}
+                            />
+                          </div>
+                        ) : ast.operator !== 'exists' && ast.operator !== 'notExists' ? (
+                          <div className="flex items-center gap-1 flex-1 min-w-40">
+                            <input
+                              type="text"
+                              placeholder="Expected"
+                              value={ast.expected !== undefined ? String(ast.expected) : ''}
+                              onChange={(e) => updateAssertion(idx, 'expected', e.target.value)}
+                              className="flex-1 px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                            />
+                            <DataSheetVariablePicker
+                              buttonLabel="Tag"
+                              triggerClassName="text-[10px] py-0.5 px-1.5"
+                              onInsert={(token) => updateAssertion(idx, 'expected', token)}
+                            />
+                          </div>
+                        ) : null}
 
                         <button
                           type="button"

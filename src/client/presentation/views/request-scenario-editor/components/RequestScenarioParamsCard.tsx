@@ -1,9 +1,7 @@
-'use client';
-
-
 import React from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { KeyValueOrJsonEditor } from '@/src/client/presentation/views/api-detail/components/KeyValueOrJsonEditor';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import {
   REQUEST_SCENARIO_EDITOR_TEXT,
   REQUEST_SCENARIO_EDITOR_SEMANTIC_ID,
@@ -22,15 +20,55 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
   headers,
   onHeadersChange,
 }) => {
+  const handleInsertQueryParamToken = (token: string) => {
+    try {
+      const parsed = JSON.parse(queryParams.trim() || '{}');
+      const key =
+        token
+          .replace(/^\{\{\s*datasheet\./, '')
+          .replace(/\}\}/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '') || 'param';
+      parsed[key] = token;
+      onQueryParamsChange(JSON.stringify(parsed, null, 2));
+    } catch {
+      onQueryParamsChange(queryParams ? `${queryParams}\n"${token}"` : token);
+    }
+  };
+
+  const handleInsertHeaderToken = (token: string) => {
+    try {
+      const parsed = JSON.parse(headers.trim() || '{}');
+      const key =
+        token
+          .replace(/^\{\{\s*datasheet\./, '')
+          .replace(/\}\}/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '') || 'header';
+      parsed[key] = token;
+      onHeadersChange(JSON.stringify(parsed, null, 2));
+    } catch {
+      onHeadersChange(headers ? `${headers}\n"${token}"` : token);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Query Params Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            {REQUEST_SCENARIO_EDITOR_TEXT.QUERY_PARAMS_TITLE}
-          </h2>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {REQUEST_SCENARIO_EDITOR_TEXT.QUERY_PARAMS_TITLE}
+            </h2>
+          </div>
+          <DataSheetVariablePicker
+            buttonLabel="Data Sheets"
+            onInsert={handleInsertQueryParamToken}
+          />
         </div>
         <KeyValueOrJsonEditor
           label="Query Params"
@@ -43,11 +81,17 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
 
       {/* Headers Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            {REQUEST_SCENARIO_EDITOR_TEXT.HEADERS_TITLE}
-          </h2>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              {REQUEST_SCENARIO_EDITOR_TEXT.HEADERS_TITLE}
+            </h2>
+          </div>
+          <DataSheetVariablePicker
+            buttonLabel="Data Sheets"
+            onInsert={handleInsertHeaderToken}
+          />
         </div>
         <KeyValueOrJsonEditor
           label="Headers"

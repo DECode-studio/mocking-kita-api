@@ -6,6 +6,7 @@ import * as Switch from '@radix-ui/react-switch';
 import { X, Layers, Save, Server, Loader2 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 
 interface EditFlowModalProps {
   isOpen: boolean;
@@ -50,6 +51,24 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
       setJsonError(null);
     }
   }, [isOpen, flow]);
+
+  const handleInsertVariableToken = (token: string) => {
+    try {
+      const parsed = JSON.parse(variablesJson.trim() || '{}');
+      const cleanKey =
+        token
+          .replace(/^\{\{\s*datasheet\./, '')
+          .replace(/\}\}/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '') || 'datasheet_value';
+      parsed[cleanKey] = token;
+      setVariablesJson(JSON.stringify(parsed, null, 2));
+      setJsonError(null);
+    } catch {
+      setVariablesJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,9 +218,17 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono">
                   Initial Variables (JSON)
                 </label>
-                {jsonError && (
-                  <span className="text-[11px] text-rose-500 font-medium">{jsonError}</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {jsonError && (
+                    <span className="text-[11px] text-rose-500 font-medium">{jsonError}</span>
+                  )}
+                  <DataSheetVariablePicker
+                    buttonLabel="Data Sheet"
+                    triggerClassName="text-[10px] py-0.5 px-2"
+                    projectId={flow.projectId || undefined}
+                    onInsert={handleInsertVariableToken}
+                  />
+                </div>
               </div>
               <textarea
                 rows={4}
