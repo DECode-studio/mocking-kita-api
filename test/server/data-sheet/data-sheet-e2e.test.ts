@@ -5,7 +5,6 @@ import {
   createStepDataSheetCounters,
 } from '@/src/server/scenario-flow/scenario-flow.runner';
 import {
-  evaluateParamOperator,
   evaluateBodyPathRules,
   matchesParamsMap,
   registerDataSheetLookup,

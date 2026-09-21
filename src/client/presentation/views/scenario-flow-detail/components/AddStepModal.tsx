@@ -29,7 +29,8 @@ import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environm
 import { ROUTES } from '@/src/core/constants/routes';
 import { ApiSearchSelect } from '@/src/client/presentation/components/shared/ApiSearchSelect';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
-import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface AddStepModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ interface AddStepModalProps {
   projects?: Project[];
   environments?: Environment[];
   stepCount: number;
+  projectId?: string;
   onSave: (stepData: Partial<ScenarioFlowStep> & { name: string; stepOrder: number }) => Promise<void>;
   onLoadScenarios?: (apiId: string) => Promise<any[]>;
 }
@@ -51,6 +53,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
   projects = [],
   environments = [],
   stepCount,
+  projectId,
   onSave,
   onLoadScenarios,
 }) => {
@@ -86,15 +89,41 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastFocusedField, setLastFocusedField] = useState<'path' | 'headers' | 'queryParams' | 'body'>('body');
 
-  const handleInsertDataSheetToken = (token: string) => {
+  const handleInsertToken = (token: string) => {
+    const cleanKey = (fallback: string) =>
+      token
+        .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
+        .replace(/\}\}.*$/, '')
+        .replace(/[^a-zA-Z0-9_]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '') || fallback;
+
     if (lastFocusedField === 'path') {
       setPathOverride((prev) => (prev ? `${prev}${token}` : token));
     } else if (lastFocusedField === 'headers') {
-      setHeadersJson((prev) => (prev ? `${prev} ${token}` : token));
+      try {
+        const parsed = JSON.parse(headersJson.trim() || '{}');
+        parsed[cleanKey('header')] = token;
+        setHeadersJson(JSON.stringify(parsed, null, 2));
+      } catch {
+        setHeadersJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+      }
     } else if (lastFocusedField === 'queryParams') {
-      setQueryParamsJson((prev) => (prev ? `${prev} ${token}` : token));
+      try {
+        const parsed = JSON.parse(queryParamsJson.trim() || '{}');
+        parsed[cleanKey('param')] = token;
+        setQueryParamsJson(JSON.stringify(parsed, null, 2));
+      } catch {
+        setQueryParamsJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+      }
     } else {
-      setBodyJson((prev) => (prev ? `${prev} ${token}` : token));
+      try {
+        const parsed = JSON.parse(bodyJson.trim() || '{}');
+        parsed[cleanKey('field')] = token;
+        setBodyJson(JSON.stringify(parsed, null, 2));
+      } catch {
+        setBodyJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+      }
     }
   };
 
@@ -567,11 +596,20 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         Endpoint Path <span className="text-slate-400 font-normal">(supports &#123;&#123;var&#125;&#125;)</span>
                       </label>
-                      <DataSheetVariablePicker
-                        buttonLabel="Data Sheet"
-                        triggerClassName="text-[10px] py-0.5 px-2"
-                        onInsert={(token) => setPathOverride((prev) => (prev ? `${prev}${token}` : token))}
-                      />
+                      <div className="flex items-center gap-1.5">
+                        <EnvironmentVariablePicker
+                          buttonLabel="Env"
+                          triggerClassName="text-[10px] py-0.5 px-2"
+                          projectId={projectId}
+                          onInsert={(token) => setPathOverride((prev) => (prev ? `${prev}${token}` : token))}
+                        />
+                        <DataSheetVariablePicker
+                          buttonLabel="Data Sheet"
+                          triggerClassName="text-[10px] py-0.5 px-2"
+                          projectId={projectId}
+                          onInsert={(token) => setPathOverride((prev) => (prev ? `${prev}${token}` : token))}
+                        />
+                      </div>
                     </div>
                     <input
                       type="text"
@@ -716,16 +754,24 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                 <div className="flex items-center justify-between p-2.5 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/60 rounded-xl">
                   <div>
                     <span className="text-xs text-purple-700 dark:text-purple-300 font-medium block">
-                      Use dynamic emails, phone numbers, or datasets:
+                      Use dynamic variables, envs, or datasets:
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400">
                       Token will be inserted into active field (focused: <span className="font-semibold font-mono text-purple-600 dark:text-purple-400">{lastFocusedField}</span>)
                     </span>
                   </div>
-                  <DataSheetVariablePicker
-                    buttonLabel="Data Sheet Variables"
-                    onInsert={handleInsertDataSheetToken}
-                  />
+                  <div className="flex items-center gap-2">
+                    <EnvironmentVariablePicker
+                      buttonLabel="Env Variables"
+                      projectId={projectId}
+                      onInsert={handleInsertToken}
+                    />
+                    <DataSheetVariablePicker
+                      buttonLabel="Data Sheet Variables"
+                      projectId={projectId}
+                      onInsert={handleInsertToken}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -934,9 +980,16 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                               onChange={(e) => updateAssertion(idx, 'expected', e.target.value)}
                               className="flex-1 px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                             />
+                            <EnvironmentVariablePicker
+                              buttonLabel="Env"
+                              triggerClassName="text-[10px] py-0.5 px-1.5"
+                              projectId={projectId}
+                              onInsert={(token) => updateAssertion(idx, 'expected', token)}
+                            />
                             <DataSheetVariablePicker
                               buttonLabel="Tag"
                               triggerClassName="text-[10px] py-0.5 px-1.5"
+                              projectId={projectId}
                               onInsert={(token) => updateAssertion(idx, 'expected', token)}
                             />
                           </div>

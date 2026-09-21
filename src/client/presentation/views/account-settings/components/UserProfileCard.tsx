@@ -1,5 +1,4 @@
-import React from 'react';
-import { User, Shield, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Shield, KeyRound, CheckCircle2 } from 'lucide-react';
 import { ACCOUNT_SETTINGS_TEXT, ACCOUNT_SETTINGS_SEMANTIC_ID } from '../constant';
 import { UserAccountData } from '../hook/useAccountSettings';
 

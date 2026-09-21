@@ -1,4 +1,3 @@
-import { ApiCollection } from '../entity/api_collection';
 import { ApiCollectionRepository } from '../repository/api_repository';
 import { ProjectRepository } from '@/src/client/domain/project/repository/project_repository';
 import { RequestScenarioRepository } from '@/src/client/domain/request-scenario/repository/request_scenario_repository';

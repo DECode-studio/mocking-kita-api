@@ -112,6 +112,7 @@ export const RequestScenarioEditorView: React.FC<RequestScenarioEditorViewProps>
 
         {/* Card: Query Params & Headers */}
         <RequestScenarioParamsCard
+          projectId={projectId}
           queryParams={queryParams}
           onQueryParamsChange={setQueryParams}
           headers={headers}
@@ -120,6 +121,7 @@ export const RequestScenarioEditorView: React.FC<RequestScenarioEditorViewProps>
 
         {/* Card: Request Body & Path Rules */}
         <RequestScenarioBodyCard
+          projectId={projectId}
           body={body}
           onBodyChange={setBody}
           bodyType={bodyType}

@@ -5,7 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { X, UploadCloud, FileJson, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getErrorMessage } from '@/src/core/utils/error';
 import { Project } from '@/src/client/domain/project/entity/project';
-import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
 
 interface ImportScenarioFlowModalProps {
   isOpen: boolean;

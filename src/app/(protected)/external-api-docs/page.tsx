@@ -1,4 +1,3 @@
-import React from 'react';
 import { ExternalApiDocsView } from '@/src/client/presentation/views/external-api-docs';
 
 export const metadata = {

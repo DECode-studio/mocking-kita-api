@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ZoomIn,
   ZoomOut,
@@ -9,8 +9,6 @@ import {
   Plus,
   PanelRightOpen,
   PanelRightClose,
-  Play,
-  Loader2,
   GitFork,
   Move,
 } from 'lucide-react';

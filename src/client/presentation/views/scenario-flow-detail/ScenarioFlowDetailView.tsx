@@ -46,8 +46,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     isLoading,
     selectedEnvironmentType,
     setSelectedEnvironmentType,
-    selectedEnvironmentId,
-    setSelectedEnvironmentId,
     targetMode,
     setTargetMode,
     isRunning,
@@ -78,7 +76,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     handleMoveStep,
     handleRunFlow,
     handleExport,
-    setLatestExecution,
     loadScenariosForApi,
     handleSelectExecution,
     handleExportExecutionLog,
@@ -304,6 +301,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         projects={projects}
         environments={environments}
         stepCount={steps.length}
+        projectId={flow.projectId}
         onSave={handleSaveStep}
         onLoadScenarios={loadScenariosForApi}
       />

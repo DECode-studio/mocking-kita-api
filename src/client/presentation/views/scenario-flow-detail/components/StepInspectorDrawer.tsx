@@ -4,11 +4,8 @@ import React from 'react';
 import {
   X,
   Activity,
-  Layers,
-  ChevronRight,
   CheckCircle2,
   XCircle,
-  Clock,
   Loader2,
 } from 'lucide-react';
 import {

@@ -7,7 +7,8 @@ import { X, Layers, Save, Server, Loader2 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
-import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface EditFlowModalProps {
   isOpen: boolean;
@@ -58,11 +59,11 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
       const parsed = JSON.parse(variablesJson.trim() || '{}');
       const cleanKey =
         token
-          .replace(/^\{\{\s*datasheet\./, '')
-          .replace(/\}\}/, '')
+          .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
+          .replace(/\}\}.*$/, '')
           .replace(/[^a-zA-Z0-9_]/g, '_')
           .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '') || 'datasheet_value';
+          .replace(/^_|_$/g, '') || 'variable';
       parsed[cleanKey] = token;
       setVariablesJson(JSON.stringify(parsed, null, 2));
       setJsonError(null);
@@ -229,6 +230,12 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
                   {jsonError && (
                     <span className="text-[11px] text-rose-500 font-medium">{jsonError}</span>
                   )}
+                  <EnvironmentVariablePicker
+                    buttonLabel="Env Vars"
+                    triggerClassName="text-[10px] py-0.5 px-2"
+                    projectId={flow.projectId || undefined}
+                    onInsert={handleInsertVariableToken}
+                  />
                   <DataSheetVariablePicker
                     buttonLabel="Data Sheet"
                     triggerClassName="text-[10px] py-0.5 px-2"

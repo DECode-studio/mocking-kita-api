@@ -18,7 +18,7 @@ import {
   exportExecutionToMarkdown,
   exportExecutionToCsv,
 } from '../utils/scenarioFlowLogExport';
-import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface ExecutionHistoryModalProps {
   isOpen: boolean;

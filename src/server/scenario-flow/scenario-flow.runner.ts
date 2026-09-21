@@ -17,7 +17,6 @@ import {
   getEnvironmentBaseUrl,
   getEnvironmentValue,
   getEnvironmentVariablesMap,
-  EnvironmentVariable,
 } from '@/src/client/domain/environment/entity/environment';
 
 /**

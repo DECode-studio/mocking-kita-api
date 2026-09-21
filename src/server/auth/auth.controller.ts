@@ -3,7 +3,6 @@ import { UserSession } from '@/src/client/domain/auth/entity/user_session';
 import { accountRepository } from '@/src/server/account';
 import { verifyPassword, hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
-import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { ENV } from '@/src/core/constants/env';
 import { clearServerSession, getServerSession, setServerSession } from '@/src/core/server/auth/session';
 import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';

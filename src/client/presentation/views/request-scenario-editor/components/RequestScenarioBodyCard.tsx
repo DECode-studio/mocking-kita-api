@@ -4,12 +4,14 @@ import { BodyPathRule, RequestBodyType } from '@/src/core/utils/types';
 import { KeyValueOrJsonEditor } from '@/src/client/presentation/views/api-detail/components/KeyValueOrJsonEditor';
 import { BodyPathRulesEditor } from '@/src/client/presentation/views/api-detail/components/BodyPathRulesEditor';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
 import {
   REQUEST_SCENARIO_EDITOR_TEXT,
   REQUEST_SCENARIO_EDITOR_SEMANTIC_ID,
 } from '../constant';
 
 interface RequestScenarioBodyCardProps {
+  projectId?: string;
   body: string;
   onBodyChange: (value: string) => void;
   bodyType: RequestBodyType;
@@ -21,6 +23,7 @@ interface RequestScenarioBodyCardProps {
 }
 
 export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = ({
+  projectId,
   body,
   onBodyChange,
   bodyType,
@@ -30,16 +33,18 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
   strictBodyStructure,
   onStrictBodyStructureChange,
 }) => {
+  const cleanTokenKey = (token: string, fallback: string) =>
+    token
+      .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
+      .replace(/\}\}.*$/, '')
+      .replace(/[^a-zA-Z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '') || fallback;
+
   const handleInsertBodyToken = (token: string) => {
     try {
       const parsed = JSON.parse(body.trim() || '{}');
-      const key =
-        token
-          .replace(/^\{\{\s*datasheet\./, '')
-          .replace(/\}\}/, '')
-          .replace(/[^a-zA-Z0-9_]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '') || 'field';
+      const key = cleanTokenKey(token, 'field');
       parsed[key] = token;
       onBodyChange(JSON.stringify(parsed, null, 2));
     } catch {
@@ -57,7 +62,12 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
           </h2>
         </div>
 
-        <div className="flex items-center gap-3 text-xs flex-wrap">
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <EnvironmentVariablePicker
+            projectId={projectId}
+            buttonLabel="Env Vars"
+            onInsert={handleInsertBodyToken}
+          />
           <DataSheetVariablePicker
             buttonLabel="Data Sheets"
             onInsert={handleInsertBodyToken}
@@ -90,6 +100,7 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
           {/* Full Body Payload Editor */}
           <div className="space-y-2">
             <KeyValueOrJsonEditor
+              projectId={projectId}
               label={
                 bodyType === 'JSON'
                   ? 'Full Body Payload Matching (JSON)'
@@ -108,6 +119,7 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
           {/* Body Path Rules (Dot-Notation Matcher) */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <BodyPathRulesEditor
+              projectId={projectId}
               rules={bodyRules}
               onChange={onBodyRulesChange}
               bodyContent={body}

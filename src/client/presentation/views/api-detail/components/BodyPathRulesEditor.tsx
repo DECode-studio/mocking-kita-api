@@ -8,6 +8,7 @@ import { extractAllJsonPaths } from '@/src/core/utils/param-matcher';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { PathAutocompleteInput } from './PathAutocompleteInput';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
 
 interface BodyPathRulesEditorProps {
   rules: BodyPathRule[];
@@ -16,6 +17,7 @@ interface BodyPathRulesEditorProps {
   strictBodyStructure?: boolean;
   onStrictBodyStructureChange?: (strict: boolean) => void;
   idPrefix?: string;
+  projectId?: string;
 }
 
 export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
@@ -25,6 +27,7 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
   strictBodyStructure = true,
   onStrictBodyStructureChange,
   idPrefix = 'body-path-rules',
+  projectId,
 }) => {
   const suggestions = React.useMemo(() => {
     return extractAllJsonPaths(bodyContent);
@@ -166,11 +169,19 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
                     }}
                   />
                 ) : !isValDisabled ? (
-                  <DataSheetVariablePicker
-                    buttonLabel="Tag"
-                    triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
-                    onInsert={(token) => updateRule(index, { value: token })}
-                  />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <EnvironmentVariablePicker
+                      projectId={projectId}
+                      buttonLabel="Env"
+                      triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+                      onInsert={(token) => updateRule(index, { value: token })}
+                    />
+                    <DataSheetVariablePicker
+                      buttonLabel="Tag"
+                      triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+                      onInsert={(token) => updateRule(index, { value: token })}
+                    />
+                  </div>
                 ) : null}
 
                 <button

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import * as Tabs from '@radix-ui/react-tabs';
 import { Table2, X, List, Code2, AlertCircle, Sparkles, Upload, CopyCheck, Trash2 } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { Project } from '@/src/client/domain/project/entity/project';

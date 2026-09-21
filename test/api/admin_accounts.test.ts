@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GET, POST, PUT, DELETE } from '@/src/app/api/admin/accounts/route';
+import { GET, POST, DELETE } from '@/src/app/api/admin/accounts/route';
 import { cookies } from 'next/headers';
 import { accountRepository } from '@/src/server/account/account.repository';
 
