@@ -53,7 +53,7 @@ describe('parseOpenApiSpecToProjectData', () => {
     });
   });
 
-  it('should extract environments from OpenAPI servers and Swagger host', () => {
+  it('should extract environments into matrix model from OpenAPI servers and Swagger host', () => {
     const specWithServers = {
       openapi: '3.0.0',
       info: { title: 'Test API', version: '1.0.0' },
@@ -66,13 +66,15 @@ describe('parseOpenApiSpecToProjectData', () => {
 
     const result = parseOpenApiSpecToProjectData('test-project-id', specWithServers);
 
-    expect(result.environments).toHaveLength(2);
-    expect(result.environments[0].name).toBe('Development Server');
-    expect(result.environments[0].environmentType).toBe('DEVELOPMENT');
-    expect(result.environments[0].baseUrl).toBe('https://dev-api.example.com/v1');
-
-    expect(result.environments[1].name).toBe('Production Server');
-    expect(result.environments[1].environmentType).toBe('PRODUCTION');
-    expect(result.environments[1].baseUrl).toBe('https://api.example.com/v1');
+    expect(result.environments).toHaveLength(1);
+    const env = result.environments[0];
+    expect(env.name).toBe('Test API');
+    expect(env.isBaseUrl).toBe(true);
+    expect(env.values?.DEVELOPMENT).toBe('https://dev-api.example.com/v1');
+    expect(env.values?.PRODUCTION).toBe('https://api.example.com/v1');
+    expect(env.values?.LOCAL).toBeNull();
+    expect(env.variables).toEqual([
+      expect.objectContaining({ key: 'baseUrl', value: 'https://dev-api.example.com/v1' }),
+    ]);
   });
 });

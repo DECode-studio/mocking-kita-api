@@ -2,6 +2,8 @@ import prisma from '@/src/core/db/prisma-client';
 import { MockApiDatabase } from '@/src/client/domain/database/entity/mock_api_database';
 import { INITIAL_SEED_DATA } from './seed-data';
 import { Prisma } from '@prisma/client';
+import { getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
+import { generateId } from '@/src/core/utils/uuid';
 
 export async function readDatabase(): Promise<MockApiDatabase> {
   const [
@@ -47,7 +49,8 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       projectId: e.projectId,
       name: e.name,
       environmentType: e.environmentType as any,
-      baseUrl: e.baseUrl ?? undefined,
+      variables: (e.variables as any) ?? [],
+      baseUrl: getEnvironmentBaseUrl(e as any) || undefined,
       status: e.status,
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),
@@ -181,17 +184,25 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
       if (data.environments && data.environments.length > 0) {
         for (const chunk of chunkArray(data.environments, CHUNK_SIZE)) {
           await tx.environment.createMany({
-            data: chunk.map((item) => ({
-              id: item.id,
-              projectId: item.projectId,
-              name: item.name,
-              environmentType: item.environmentType,
-              baseUrl: item.baseUrl ?? null,
-              status: item.status,
-              createdAt: new Date(item.createdAt),
-              updatedAt: new Date(item.updatedAt),
-              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
-            })),
+            data: chunk.map((item: any) => {
+              const cleanBaseUrl = item.baseUrl ? String(item.baseUrl).trim() : '';
+              const vars = Array.isArray(item.variables)
+                ? item.variables
+                : cleanBaseUrl
+                ? [{ id: generateId(), key: 'baseUrl', value: cleanBaseUrl, type: 'plain', enabled: true }]
+                : [];
+              return {
+                id: item.id,
+                projectId: item.projectId,
+                name: item.name,
+                environmentType: item.environmentType,
+                variables: vars as any,
+                status: item.status,
+                createdAt: new Date(item.createdAt),
+                updatedAt: new Date(item.updatedAt),
+                deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+              };
+            }),
           });
         }
       }

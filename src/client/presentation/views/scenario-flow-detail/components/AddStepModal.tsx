@@ -25,7 +25,7 @@ import {
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { Project } from '@/src/client/domain/project/entity/project';
-import { Environment } from '@/src/client/domain/environment/entity/environment';
+import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
 import { ROUTES } from '@/src/core/constants/routes';
 import { ApiSearchSelect } from '@/src/client/presentation/components/shared/ApiSearchSelect';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
@@ -199,25 +199,37 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
 
   const serviceEnvironmentGroups = React.useMemo(() => {
     if (!environments || environments.length === 0) return [];
-    const groupMap = new Map<string, { label: string; slug: string; envs: Environment[] }>();
+    
+    // Filter base URL services
+    const baseUrlEnvs = environments.filter((e) => e.isBaseUrl !== false);
 
-    for (const env of environments) {
-      if (!env.baseUrl) continue;
-      const cleanLabel = env.name
-        .replace(/\b(dev|development|stg|staging|test|testing|prod|production|local)\b/gi, '')
-        .replace(/\(\s*\)/g, '')
-        .replace(/[-_]+/g, ' ')
-        .trim() || env.name;
-
-      const slug = cleanLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || env.id;
-
-      if (!groupMap.has(slug)) {
-        groupMap.set(slug, { label: cleanLabel, slug, envs: [] });
+    return baseUrlEnvs.map((env) => {
+      const slug = env.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || env.id;
+      
+      const stages: { stage: string; url: string }[] = [];
+      if (env.values) {
+        if (env.values.DEVELOPMENT) stages.push({ stage: 'DEVELOPMENT', url: String(env.values.DEVELOPMENT) });
+        if (env.values.TESTING) stages.push({ stage: 'TESTING', url: String(env.values.TESTING) });
+        if (env.values.STAGING) stages.push({ stage: 'STAGING', url: String(env.values.STAGING) });
+        if (env.values.PRODUCTION) stages.push({ stage: 'PRODUCTION', url: String(env.values.PRODUCTION) });
       }
-      groupMap.get(slug)!.envs.push(env);
-    }
+      
+      // Legacy fallback
+      if (stages.length === 0 && getEnvironmentBaseUrl(env)) {
+        stages.push({
+          stage: env.environmentType || 'DEVELOPMENT',
+          url: getEnvironmentBaseUrl(env),
+        });
+      }
 
-    return Array.from(groupMap.values());
+      return {
+        id: env.id,
+        label: env.name,
+        slug,
+        env,
+        stages,
+      };
+    });
   }, [environments]);
 
   const selectedServiceGroup = React.useMemo(() => {
@@ -226,10 +238,12 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
     return (
       serviceEnvironmentGroups.find(
         (g) =>
+          g.id === cleanTarget ||
           g.slug === cleanTarget ||
           g.slug.includes(cleanTarget) ||
           cleanTarget.includes(g.slug) ||
-          g.envs.some((e) => e.id === cleanTarget || e.name.toLowerCase().includes(cleanTarget))
+          g.label.toLowerCase() === cleanTarget ||
+          g.label.toLowerCase().includes(cleanTarget)
       ) || null
     );
   }, [serviceEnvironmentGroups, targetEnvironment]);
@@ -641,16 +655,21 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                             Base URLs terdaftar untuk {selectedServiceGroup.label}:
                           </div>
                           <div className="space-y-1">
-                            {selectedServiceGroup.envs.map((e) => (
-                              <div key={e.id} className="flex items-center justify-between font-mono text-[10px]">
+                            {selectedServiceGroup.stages.map((s) => (
+                              <div key={s.stage} className="flex items-center justify-between font-mono text-[10px]">
                                 <span className="font-bold px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-300">
-                                  {e.environmentType}
+                                  {s.stage}
                                 </span>
-                                <span className="text-slate-600 dark:text-slate-400 truncate max-w-[320px]" title={e.baseUrl}>
-                                  {e.baseUrl}
+                                <span className="text-slate-600 dark:text-slate-400 truncate max-w-[320px]" title={s.url}>
+                                  {s.url}
                                 </span>
                               </div>
                             ))}
+                            {selectedServiceGroup.stages.length === 0 && (
+                              <div className="text-[10px] text-slate-400 italic">
+                                Belum ada URL stage yang dikonfigurasi
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

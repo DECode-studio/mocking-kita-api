@@ -4,10 +4,38 @@ import { jsonUnknownError } from '@/src/core/server/http/responses';
 import { generateId } from '@/src/core/utils/uuid';
 import { logChange } from '@/src/core/db/change_log_helper';
 import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cache';
-import { createEnvironment, getAllEnvironments, getEnvironmentById, getEnvironmentsByProjectId, softDeleteEnvironment, updateEnvironment } from './environment.repository';
+import {
+  createEnvironment,
+  getAllEnvironments,
+  getEnvironmentById,
+  getEnvironmentsByProjectId,
+  softDeleteEnvironment,
+  updateEnvironment,
+} from './environment.repository';
 
-const ObjectSchema = z.record(z.string(), z.unknown());
 const IdParamsSchema = z.object({ id: z.string().trim().min(1) });
+
+const EnvironmentCreateSchema = z.object({
+  projectId: z.string().min(1, 'Project ID is required'),
+  name: z.string().trim().min(1, 'Environment name is required'),
+  isBaseUrl: z.boolean().optional().default(true),
+  values: z.record(z.string(), z.unknown()).optional(),
+  environmentType: z.string().optional(),
+  variables: z.unknown().optional(),
+  baseUrl: z.string().optional(),
+  status: z.boolean().optional().default(true),
+});
+
+const EnvironmentUpdateSchema = z.object({
+  projectId: z.string().optional(),
+  name: z.string().trim().min(1).optional(),
+  isBaseUrl: z.boolean().optional(),
+  values: z.record(z.string(), z.unknown()).optional(),
+  environmentType: z.string().optional(),
+  variables: z.unknown().optional(),
+  baseUrl: z.string().optional(),
+  status: z.boolean().optional(),
+});
 
 export async function GET(_request: Request, context?: { params: Promise<{ id: string }> | { id: string } }) {
   try {
@@ -30,7 +58,8 @@ export async function listEnvironmentsByProjectRoute(_request: Request, context:
 
 export async function POST(request: Request) {
   try {
-    const input = ObjectSchema.parse(await request.json());
+    const raw = await request.json();
+    const input = EnvironmentCreateSchema.parse(raw);
     const now = new Date().toISOString();
     const id = generateId();
     const environment = await createEnvironment({ ...input, id, createdAt: now, updatedAt: now } as never);
@@ -45,17 +74,23 @@ export async function POST(request: Request) {
     clearInternalProxyCache();
     return ok(environment);
   } catch (error) {
-    if (error instanceof z.ZodError || error instanceof SyntaxError) return fail('Invalid environment request', 400, 'INVALID_ENVIRONMENT_REQUEST');
+    if (error instanceof z.ZodError) {
+      return fail(error.issues[0]?.message || 'Invalid environment request', 400, 'INVALID_ENVIRONMENT_REQUEST');
+    }
+    if (error instanceof SyntaxError) {
+      return fail('Invalid JSON payload', 400, 'INVALID_ENVIRONMENT_REQUEST');
+    }
     return jsonUnknownError('Environment create failed', error, 'Environment create failed', 'ENVIRONMENT_CREATE_FAILED');
   }
 }
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const input = ObjectSchema.parse(await request.json());
+    const raw = await request.json();
+    const input = EnvironmentUpdateSchema.parse(raw);
     const { id } = IdParamsSchema.parse(await context.params);
     const before = await getEnvironmentById(id);
-    const environment = await updateEnvironment(id, input);
+    const environment = await updateEnvironment(id, input as any);
     await logChange({
       action: 'UPDATE',
       entityType: 'environment',
@@ -68,7 +103,12 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     clearInternalProxyCache();
     return ok(environment);
   } catch (error) {
-    if (error instanceof z.ZodError || error instanceof SyntaxError) return fail('Invalid environment request', 400, 'INVALID_ENVIRONMENT_REQUEST');
+    if (error instanceof z.ZodError) {
+      return fail(error.issues[0]?.message || 'Invalid environment request', 400, 'INVALID_ENVIRONMENT_REQUEST');
+    }
+    if (error instanceof SyntaxError) {
+      return fail('Invalid JSON payload', 400, 'INVALID_ENVIRONMENT_REQUEST');
+    }
     return jsonUnknownError('Environment update failed', error, 'Environment update failed', 'ENVIRONMENT_UPDATE_FAILED');
   }
 }
