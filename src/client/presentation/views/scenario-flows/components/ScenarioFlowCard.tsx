@@ -17,6 +17,7 @@ import {
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { ROUTES } from '@/src/core/constants/routes';
 import { formatDate } from '@/src/core/utils/date';
+import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
 
 interface ScenarioFlowCardProps {
   flow: ScenarioFlow;
@@ -42,7 +43,10 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
     : ROUTES.SCENARIO_FLOW_DETAIL_GLOBAL(flow.id);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-purple-500/30 dark:hover:border-purple-500/30 transition-all flex flex-col justify-between group">
+    <div
+      id={SCENARIO_FLOWS_SEMANTIC_ID.FLOW_CARD_PREFIX(flow.id)}
+      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-purple-500/30 dark:hover:border-purple-500/30 transition-all flex flex-col justify-between group"
+    >
       <div className="space-y-3.5">
         {/* Top bar */}
         <div className="flex items-start justify-between gap-3">
@@ -152,6 +156,7 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
       {/* Footer action buttons */}
       <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2">
         <button
+          id={SCENARIO_FLOWS_SEMANTIC_ID.FLOW_RUN_BTN_PREFIX(flow.id)}
           onClick={() => onQuickRun(flow)}
           disabled={isRunning || stepsCount === 0}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 shadow-xs shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"

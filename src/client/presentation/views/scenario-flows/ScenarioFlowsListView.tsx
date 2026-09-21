@@ -11,7 +11,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useScenarioFlows } from './hook/useScenarioFlows';
-import { SCENARIO_FLOWS_TEXT } from './constant/scenarioFlowsText';
+import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from './constant';
 import {
   ScenarioFlowCard,
   CreateScenarioFlowModal,
@@ -40,17 +40,18 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
     runningFlowId,
     handleCreateFlow,
     handleImportSuccess,
+    handleImportFlow,
     handleDeleteFlow,
     handleQuickRun,
     handleExportFlow,
   } = useScenarioFlows(projectId);
 
   return (
-    <div className="space-y-6">
+    <div id={SCENARIO_FLOWS_SEMANTIC_ID.CONTAINER} className="space-y-6">
       {/* Top Banner / Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div id={SCENARIO_FLOWS_SEMANTIC_ID.HEADER} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 id={SCENARIO_FLOWS_SEMANTIC_ID.TITLE} className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Layers className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             {SCENARIO_FLOWS_TEXT.TITLE}
           </h2>
@@ -61,6 +62,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
+            id={SCENARIO_FLOWS_SEMANTIC_ID.IMPORT_BTN}
             onClick={() => setIsImportModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-2xs transition-all cursor-pointer"
           >
@@ -69,6 +71,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
           </button>
 
           <button
+            id={SCENARIO_FLOWS_SEMANTIC_ID.CREATE_BTN}
             onClick={() => setIsCreateModalOpen(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 shadow-sm shadow-purple-500/20 transition-all cursor-pointer"
           >
@@ -83,6 +86,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
+            id={SCENARIO_FLOWS_SEMANTIC_ID.SEARCH_INPUT}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -93,14 +97,17 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
 
         {!projectId && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-slate-500">Filter Project:</span>
+            <span className="text-xs text-slate-500">{SCENARIO_FLOWS_TEXT.FILTER_PROJECT_LABEL}</span>
             <select
+              id={SCENARIO_FLOWS_SEMANTIC_ID.PROJECT_FILTER}
               value={filterProjectId}
               onChange={(e) => setFilterProjectId(e.target.value)}
               className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/30"
             >
-              <option value="ALL">All Flows ({allFlowsCount})</option>
-              <option value="CROSS_PROJECT">🌐 Cross-Project Flows Only</option>
+              <option value="ALL">
+                {SCENARIO_FLOWS_TEXT.ALL_PROJECTS} ({allFlowsCount})
+              </option>
+              <option value="CROSS_PROJECT">🌐 {SCENARIO_FLOWS_TEXT.CROSS_PROJECT_FLOWS}</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   📁 {p.name}
@@ -148,7 +155,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div id={SCENARIO_FLOWS_SEMANTIC_ID.FLOWS_GRID} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {flows.map((flow) => (
             <ScenarioFlowCard
               key={flow.id}
@@ -179,6 +186,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
         projectId={projectId}
         projects={projects}
         onSuccess={handleImportSuccess}
+        onImportFlow={handleImportFlow}
       />
     </div>
   );

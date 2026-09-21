@@ -182,6 +182,10 @@ export function useScenarioFlows(projectId?: string) {
     window.open(`/api/scenario-flows/${encodeURIComponent(flowId)}/export`, '_blank');
   };
 
+  const handleImportFlow = async (targetProjectId: string, template: any) => {
+    return flowUseCase.importTemplate(targetProjectId, template);
+  };
+
   return {
     flows: filteredFlows,
     allFlowsCount: flows.length,
@@ -199,6 +203,7 @@ export function useScenarioFlows(projectId?: string) {
     runningFlowId,
     handleCreateFlow,
     handleImportSuccess,
+    handleImportFlow,
     handleDeleteFlow,
     handleQuickRun,
     handleExportFlow,
