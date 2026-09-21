@@ -27,6 +27,7 @@ import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { ROUTES } from '@/src/core/constants/routes';
+import { ApiSearchSelect } from '@/src/client/presentation/components/shared/ApiSearchSelect';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
@@ -496,22 +497,12 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                     )}
                   </div>
 
-                  <select
-                    value={selectedApiId}
-                    onChange={(e) => handleApiChange(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">-- Or enter Custom Endpoint below --</option>
-                    {groupedApis.map((group) => (
-                      <optgroup key={group.projectId} label={`📁 ${group.projectName}`}>
-                        {group.apis.map((api) => (
-                          <option key={api.id} value={api.id}>
-                            [{api.methodRequest}] {api.path} - {api.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                  <ApiSearchSelect
+                    groupedApis={groupedApis}
+                    selectedApiId={selectedApiId}
+                    selectedApi={selectedApi}
+                    onSelect={handleApiChange}
+                  />
 
                   {selectedApiId && availableScenarios.length > 0 && (
                     <div className="pt-1.5 space-y-1">
