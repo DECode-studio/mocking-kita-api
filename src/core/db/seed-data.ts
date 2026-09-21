@@ -29,6 +29,9 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
       projectId: 'proj-ecommerce-001',
       name: 'Local',
       environmentType: 'LOCAL',
+      variables: [
+        { id: 'var-local-url', key: 'baseUrl', value: 'http://localhost:3000', type: 'plain', enabled: true },
+      ],
       baseUrl: 'http://localhost:3000',
       status: true,
       createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
@@ -40,6 +43,10 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
       projectId: 'proj-ecommerce-001',
       name: 'Development',
       environmentType: 'DEVELOPMENT',
+      variables: [
+        { id: 'var-dev-url', key: 'baseUrl', value: 'https://mock-dev.example.local', type: 'plain', enabled: true },
+        { id: 'var-dev-key', key: 'apiKey', value: 'dev_mock_key_9981', type: 'secret', enabled: true },
+      ],
       baseUrl: 'https://mock-dev.example.local',
       status: true,
       createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
@@ -51,6 +58,10 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
       projectId: 'proj-ecommerce-001',
       name: 'Staging',
       environmentType: 'STAGING',
+      variables: [
+        { id: 'var-stg-url', key: 'baseUrl', value: 'https://mock-staging.example.local', type: 'plain', enabled: true },
+        { id: 'var-stg-key', key: 'apiKey', value: 'stg_mock_key_1122', type: 'secret', enabled: true },
+      ],
       baseUrl: 'https://mock-staging.example.local',
       status: true,
       createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
@@ -62,6 +73,9 @@ export const INITIAL_SEED_DATA: MockApiDatabase = {
       projectId: 'proj-payment-002',
       name: 'Local Sandbox',
       environmentType: 'LOCAL',
+      variables: [
+        { id: 'var-pay-url', key: 'baseUrl', value: 'http://localhost:4000', type: 'plain', enabled: true },
+      ],
       baseUrl: 'http://localhost:4000',
       status: true,
       createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
