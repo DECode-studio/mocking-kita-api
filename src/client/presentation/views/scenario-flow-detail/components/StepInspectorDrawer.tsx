@@ -17,6 +17,7 @@ import {
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { FlowExecutionPanel } from './FlowExecutionPanel';
 import { StepExecutionInspector } from './StepExecutionInspector';
+import { RunFlowButton } from './RunFlowButton';
 
 interface StepInspectorDrawerProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ interface StepInspectorDrawerProps {
   selectedStepIndex: number;
   isRunning?: boolean;
   elapsedMs?: number;
+  runningProgress?: { current: number; total: number } | null;
+  onRunFlow?: (iterations?: number) => void;
   onSelectStep: (index: number) => void;
 }
 
@@ -37,6 +40,8 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
   selectedStepIndex,
   isRunning,
   elapsedMs,
+  runningProgress,
+  onRunFlow,
   onSelectStep,
 }) => {
   if (!isOpen) return null;
@@ -71,13 +76,27 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Close Inspector"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          {onRunFlow && (
+            <RunFlowButton
+              isRunning={isRunning}
+              elapsedMs={elapsedMs}
+              runningProgress={runningProgress}
+              disabled={!flow.steps || flow.steps.length === 0}
+              onRunFlow={onRunFlow}
+              size="sm"
+              label="Run Test"
+            />
+          )}
+
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            title="Close Inspector"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Step Selector Tab Pills */}

@@ -22,6 +22,7 @@ import { Environment } from '@/src/client/domain/environment/entity/environment'
 import { EnvironmentType } from '@/src/core/utils/types';
 import { SCENARIO_FLOW_DETAIL_TEXT } from '../constant/scenarioFlowDetailText';
 import { ROUTES } from '@/src/core/constants/routes';
+import { RunFlowButton } from './RunFlowButton';
 
 const ENVIRONMENT_TYPES: EnvironmentType[] = [
   'DEVELOPMENT',
@@ -44,7 +45,8 @@ interface ScenarioFlowDetailHeaderProps {
   onAutoArrange?: () => void;
   isRunning: boolean;
   elapsedMs?: number;
-  onRunFlow: () => void;
+  runningProgress?: { current: number; total: number } | null;
+  onRunFlow: (iterations?: number) => void;
   onExport: () => void;
   onOpenAddStep: () => void;
   onOpenHistory: () => void;
@@ -64,6 +66,7 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
   onAutoArrange,
   isRunning,
   elapsedMs,
+  runningProgress,
   onRunFlow,
   onExport,
   onOpenAddStep,
@@ -222,30 +225,15 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
             <span>{SCENARIO_FLOW_DETAIL_TEXT.ADD_STEP_BTN}</span>
           </button>
 
-          {/* Run Real Testing Button */}
-          <button
-            onClick={onRunFlow}
-            disabled={isRunning || !flow.steps || flow.steps.length === 0}
-            className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all cursor-pointer ${
-              isRunning
-                ? 'bg-linear-to-r from-purple-600 via-indigo-600 to-purple-700 shadow-lg shadow-purple-500/30 ring-2 ring-purple-400/50'
-                : 'bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-98 shadow-md shadow-purple-500/20 disabled:opacity-50'
-            }`}
-          >
-            {isRunning ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin text-purple-200" />
-                <span>
-                  Running... ({((elapsedMs || 0) / 1000).toFixed(1)}s)
-                </span>
-              </>
-            ) : (
-              <>
-                <Play className="w-4 h-4 fill-current" />
-                <span>{SCENARIO_FLOW_DETAIL_TEXT.RUN_TEST_BTN}</span>
-              </>
-            )}
-          </button>
+          {/* Run Real Testing Button with Multi-run Dropdown */}
+          <RunFlowButton
+            isRunning={isRunning}
+            elapsedMs={elapsedMs}
+            runningProgress={runningProgress}
+            disabled={!flow.steps || flow.steps.length === 0}
+            onRunFlow={onRunFlow}
+            label={SCENARIO_FLOW_DETAIL_TEXT.RUN_TEST_BTN}
+          />
         </div>
       </div>
     </div>

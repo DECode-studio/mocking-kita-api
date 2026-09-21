@@ -49,6 +49,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     setTargetMode,
     isRunning,
     elapsedMs,
+    runningProgress,
     latestExecution,
     selectedStepIndex,
     setSelectedStepIndex,
@@ -133,6 +134,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         onAutoArrange={handleAutoArrange}
         isRunning={isRunning}
         elapsedMs={elapsedMs}
+        runningProgress={runningProgress}
         onRunFlow={handleRunFlow}
         onExport={handleExport}
         onOpenAddStep={() => {
@@ -277,6 +279,8 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         selectedStepIndex={selectedStepIndex}
         isRunning={isRunning}
         elapsedMs={elapsedMs}
+        runningProgress={runningProgress}
+        onRunFlow={handleRunFlow}
         onSelectStep={setSelectedStepIndex}
       />
 
