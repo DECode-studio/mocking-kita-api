@@ -4,6 +4,7 @@ import React from 'react';
 import { Table2, Edit2, Trash2, FolderGit2, Hash, Layers, Eye } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { DataSheetVariableTagBadge } from './DataSheetVariableTagBadge';
+import { DATA_SHEET_SEMANTIC_ID } from '../constant';
 
 interface DataSheetCardProps {
   sheet: DataSheet;
@@ -24,7 +25,10 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
   const sampleItems = Array.isArray(sheet.data) ? sheet.data.slice(0, 3) : [];
 
   return (
-    <div className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700/60 rounded-xl p-5 shadow-xs hover:shadow-md transition-all space-y-4">
+    <div
+      id={DATA_SHEET_SEMANTIC_ID.CARD_PREFIX(sheet.id)}
+      className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700/60 rounded-xl p-5 shadow-xs hover:shadow-md transition-all space-y-4"
+    >
       {/* Top Header: Title, Category, Status Switch */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
@@ -51,6 +55,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
         {/* Status Toggle & Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
           <button
+            id={DATA_SHEET_SEMANTIC_ID.CARD_TOGGLE_PREFIX(sheet.id)}
             type="button"
             onClick={() => onToggleStatus(sheet.id)}
             className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
@@ -62,6 +67,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
             {sheet.status ? 'Active' : 'Inactive'}
           </button>
           <button
+            id={DATA_SHEET_SEMANTIC_ID.CARD_PREVIEW_BTN_PREFIX(sheet.id)}
             type="button"
             onClick={() => onPreview(sheet)}
             className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors"
@@ -70,6 +76,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
             <Eye className="w-3.5 h-3.5" />
           </button>
           <button
+            id={DATA_SHEET_SEMANTIC_ID.CARD_EDIT_BTN_PREFIX(sheet.id)}
             type="button"
             onClick={() => onEdit(sheet)}
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -78,6 +85,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
+            id={DATA_SHEET_SEMANTIC_ID.CARD_DELETE_BTN_PREFIX(sheet.id)}
             type="button"
             onClick={() => onDelete(sheet.id, sheet.name)}
             className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"

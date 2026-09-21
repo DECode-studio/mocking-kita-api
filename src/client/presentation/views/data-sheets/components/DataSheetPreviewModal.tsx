@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Table2, X, Search, Copy, Check, Download, Edit2, Sparkles } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { DataSheetVariableTagBadge } from './DataSheetVariableTagBadge';
+import { DATA_SHEET_SEMANTIC_ID } from '../constant';
 
 interface DataSheetPreviewModalProps {
   sheet: DataSheet | null;
@@ -69,7 +70,10 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] flex flex-col space-y-4">
+        <Dialog.Content
+          id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] flex flex-col space-y-4"
+        >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">

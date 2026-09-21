@@ -6,7 +6,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { Table2, X, List, Code2, AlertCircle, Sparkles, Upload, CopyCheck, Trash2 } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { Project } from '@/src/client/domain/project/entity/project';
-import { DATA_SHEET_CATEGORIES } from '../constant';
+import { DATA_SHEET_CATEGORIES, DATA_SHEET_SEMANTIC_ID } from '../constant';
 
 interface DataSheetModalProps {
   isOpen: boolean;
@@ -272,7 +272,10 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-5">
+        <Dialog.Content
+          id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-5"
+        >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
