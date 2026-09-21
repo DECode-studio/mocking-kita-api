@@ -9,7 +9,7 @@ export interface AssertionRule {
   id?: string;
   type: 'statusCode' | 'bodyPath' | 'header' | 'responseTime';
   path?: string;
-  operator: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'exists' | 'notExists' | 'greaterThan' | 'lessThan';
+  operator: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'exists' | 'notExists' | 'greaterThan' | 'lessThan' | 'in_datasheet';
   expected?: any;
 }
 
