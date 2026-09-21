@@ -238,6 +238,15 @@ export async function updateScenarioFlowStep(stepId: string, input: Partial<Scen
   });
 }
 
+export async function getScenarioFlowStepById(stepId: string) {
+  return prisma.scenarioFlowStep.findUnique({
+    where: { id: stepId },
+    include: {
+      flow: { select: { id: true, name: true, projectId: true } },
+    },
+  });
+}
+
 export async function deleteScenarioFlowStep(stepId: string) {
   return prisma.scenarioFlowStep.delete({
     where: { id: stepId },

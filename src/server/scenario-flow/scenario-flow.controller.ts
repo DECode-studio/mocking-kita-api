@@ -10,6 +10,7 @@ import {
   updateScenarioFlow,
   softDeleteScenarioFlow,
   createScenarioFlowStep,
+  getScenarioFlowStepById,
   updateScenarioFlowStep,
   deleteScenarioFlowStep,
   reorderScenarioFlowSteps,
@@ -276,7 +277,18 @@ export async function addScenarioFlowStepRoute(
     const { id: flowId } = IdParamSchema.parse(await context.params);
     const body = await request.json();
 
+    const flow = await getScenarioFlowById(flowId);
     const step = await createScenarioFlowStep(flowId, body);
+
+    await logChange({
+      action: 'CREATE',
+      entityType: 'scenario_flow',
+      entityId: flowId,
+      projectId: flow?.projectId,
+      afterState: { id: flowId, name: flow?.name, step },
+      description: `Added step '${step.name}' to scenario flow '${flow?.name || flowId}'`,
+    });
+
     return ok(step);
   } catch (error) {
     return jsonUnknownError('Failed to add flow step', error, 'Step creation failed');
@@ -294,7 +306,19 @@ export async function updateScenarioFlowStepRoute(
     const { stepId } = FlowStepParamSchema.parse(await context.params);
     const body = await request.json();
 
+    const before = await getScenarioFlowStepById(stepId);
     const updated = await updateScenarioFlowStep(stepId, body);
+
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'scenario_flow',
+      entityId: before?.flowId || before?.flow?.id,
+      projectId: before?.flow?.projectId,
+      beforeState: before,
+      afterState: { id: before?.flowId, name: before?.flow?.name, step: updated },
+      description: `Updated step '${updated.name}' in scenario flow '${before?.flow?.name || before?.flowId}'`,
+    });
+
     return ok(updated);
   } catch (error) {
     return jsonUnknownError('Failed to update flow step', error, 'Step update failed');
@@ -310,7 +334,19 @@ export async function deleteScenarioFlowStepRoute(
 ) {
   try {
     const { stepId } = FlowStepParamSchema.parse(await context.params);
+    const before = await getScenarioFlowStepById(stepId);
     await deleteScenarioFlowStep(stepId);
+
+    await logChange({
+      action: 'DELETE',
+      entityType: 'scenario_flow',
+      entityId: before?.flowId || before?.flow?.id,
+      projectId: before?.flow?.projectId,
+      beforeState: before,
+      afterState: { id: before?.flowId, name: before?.flow?.name },
+      description: `Deleted step '${before?.name || stepId}' from scenario flow '${before?.flow?.name || before?.flowId}'`,
+    });
+
     return okNoContent();
   } catch (error) {
     return jsonUnknownError('Failed to delete flow step', error, 'Step delete failed');
@@ -332,7 +368,19 @@ export async function reorderScenarioFlowStepsRoute(
       return fail('stepIds must be an array of IDs', 400, 'INVALID_STEP_IDS');
     }
 
+    const flow = await getScenarioFlowById(flowId);
     await reorderScenarioFlowSteps(flowId, stepIds);
+
+    await logChange({
+      action: 'UPDATE',
+      entityType: 'scenario_flow',
+      entityId: flowId,
+      projectId: flow?.projectId,
+      beforeState: flow,
+      afterState: { id: flowId, name: flow?.name, stepIds },
+      description: `Reordered steps in scenario flow '${flow?.name || flowId}'`,
+    });
+
     return ok({ success: true });
   } catch (error) {
     return jsonUnknownError('Failed to reorder flow steps', error, 'Step reorder failed');
