@@ -49,6 +49,7 @@ export const ProjectDetailHeader: React.FC<ProjectDetailHeaderProps> = ({
       <div className="flex items-center gap-3">
         {onOpenApiClick && (
           <button
+            id={PROJECT_DETAIL_SEMANTIC_ID.EXPORT_IMPORT_BTN}
             type="button"
             onClick={onOpenApiClick}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800/60 rounded-lg transition-colors"
