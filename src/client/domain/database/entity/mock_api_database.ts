@@ -5,6 +5,7 @@ import { Project } from '@/src/client/domain/project/entity/project';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { Collection } from '@/src/client/domain/collection/entity/collection';
+import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 
 export interface MockApiDatabase {
   version: string;
@@ -15,4 +16,5 @@ export interface MockApiDatabase {
   apiEnvironments: ApiEnvironment[];
   requestScenarios: RequestScenario[];
   responseScenarios: ResponseScenario[];
+  dataSheets?: DataSheet[];
 }
