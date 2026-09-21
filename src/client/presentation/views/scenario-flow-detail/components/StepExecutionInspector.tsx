@@ -14,6 +14,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { ScenarioFlowExecutionStep } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface StepExecutionInspectorProps {
   step: ScenarioFlowExecutionStep | null;
@@ -25,7 +26,10 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
 
   if (isRunning) {
     return (
-      <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-500/30 rounded-2xl space-y-3">
+      <div
+        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_INSPECTOR}
+        className="h-64 flex flex-col items-center justify-center text-center p-6 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-500/30 rounded-2xl space-y-3"
+      >
         <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/20 animate-pulse">
           <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
         </div>
@@ -44,9 +48,12 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
 
   if (!step) {
     return (
-      <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-slate-50/50 dark:bg-slate-950/40 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400">
-        <Code2 className="w-8 h-8 mb-2 opacity-50" />
-        <p className="text-xs font-semibold">Select a step above to inspect its execution details</p>
+      <div
+        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_INSPECTOR}
+        className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/40 dark:bg-slate-900/40 space-y-2"
+      >
+        <Code2 className="w-8 h-8 mx-auto text-slate-400" />
+        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">No Step Selected</h3>
         <p className="text-[11px] text-slate-500">View sent headers, payload, response body, and assertions</p>
       </div>
     );
@@ -57,7 +64,10 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
   const extractedVars = step.extractedVariables || {};
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+    <div
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_INSPECTOR}
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4"
+    >
       {/* Top Inspector Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2.5">

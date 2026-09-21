@@ -18,6 +18,10 @@ import {
 import { FlowExecutionPanel } from './FlowExecutionPanel';
 import { StepExecutionInspector } from './StepExecutionInspector';
 import { RunFlowButton } from './RunFlowButton';
+import {
+  SCENARIO_FLOW_DETAIL_TEXT,
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+} from '../constant';
 
 interface StepInspectorDrawerProps {
   isOpen: boolean;
@@ -51,7 +55,10 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
   const currentStep = steps[selectedStepIndex] || null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full sm:w-140 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transition-all duration-300 animate-in slide-in-from-right">
+    <div
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.DRAWER}
+      className="fixed inset-y-0 right-0 z-50 w-full sm:w-140 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transition-all duration-300 animate-in slide-in-from-right"
+    >
       {/* Drawer Header */}
       <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-950/70">
         <div className="flex items-center gap-2.5">
@@ -61,17 +68,11 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                Live Runner & Step Inspector
+                {SCENARIO_FLOW_DETAIL_TEXT.DRAWER_TITLE}
               </h2>
-              {isRunning && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 animate-pulse">
-                  <Loader2 className="w-2.5 h-2.5 animate-spin text-purple-500" />
-                  RUNNING ({((elapsedMs || 0) / 1000).toFixed(1)}s)
-                </span>
-              )}
             </div>
             <p className="text-[11px] text-slate-500">
-              Inspect sent payload, headers, response, and assertions
+              {SCENARIO_FLOW_DETAIL_TEXT.DRAWER_SUBTITLE}
             </p>
           </div>
         </div>
@@ -85,14 +86,15 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
               disabled={!flow.steps || flow.steps.length === 0}
               onRunFlow={onRunFlow}
               size="sm"
-              label="Run Test"
+              label={SCENARIO_FLOW_DETAIL_TEXT.RUN_TEST}
             />
           )}
 
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.DRAWER_CLOSE_BTN}
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-            title="Close Inspector"
+            title={SCENARIO_FLOW_DETAIL_TEXT.CLOSE_INSPECTOR}
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,6 +113,7 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
             return (
               <button
                 key={step.id}
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_PREFIX(`drawer-${step.id}`)}
                 onClick={() => onSelectStep(idx)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition-all shrink-0 cursor-pointer ${
                   isSelected

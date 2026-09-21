@@ -68,6 +68,52 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   const envUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.environmentUseCase), []);
   const apiUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.apiUseCase), []);
   const projectUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.projectUseCase), []);
+  const requestScenarioRepo = useMemo(() => getService(CLIENT_DI_TOKENS.requestScenarioRepository), []);
+
+  const loadScenariosForApi = useCallback(
+    async (apiId: string) => {
+      if (!apiId) return [];
+      try {
+        return await requestScenarioRepo.getByApiId(apiId);
+      } catch {
+        return [];
+      }
+    },
+    [requestScenarioRepo]
+  );
+
+  const handleSelectExecution = useCallback(
+    async (exec: ScenarioFlowExecution) => {
+      try {
+        const full = await flowUseCase.getExecutionDetail(exec.id);
+        setLatestExecution(full || exec);
+      } catch {
+        setLatestExecution(exec);
+      }
+      setSelectedStepIndex(0);
+    },
+    [flowUseCase]
+  );
+
+  const handleExportExecutionLog = useCallback(
+    async (exec: ScenarioFlowExecution, format: 'md' | 'csv') => {
+      let full = exec;
+      try {
+        const res = await flowUseCase.getExecutionDetail(exec.id);
+        if (res) full = res;
+      } catch {
+        // fallback to exec
+      }
+      if (format === 'md') {
+        const { exportExecutionToMarkdown } = await import('../utils/scenarioFlowLogExport');
+        exportExecutionToMarkdown(full, flow?.name);
+      } else {
+        const { exportExecutionToCsv } = await import('../utils/scenarioFlowLogExport');
+        exportExecutionToCsv(full, flow?.name);
+      }
+    },
+    [flowUseCase, flow?.name]
+  );
 
   // Compute layout positions for steps
   const computeInitialPositions = useCallback(
@@ -456,6 +502,9 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     handleRunFlow,
     handleExport,
     setLatestExecution,
+    loadScenariosForApi,
+    handleSelectExecution,
+    handleExportExecutionLog,
     refresh: loadData,
   };
 }

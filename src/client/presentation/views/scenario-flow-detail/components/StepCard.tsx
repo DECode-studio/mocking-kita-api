@@ -18,6 +18,7 @@ import {
   ScenarioFlowStep,
   ScenarioFlowExecutionStep,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface StepCardProps {
   step: ScenarioFlowStep;
@@ -79,6 +80,7 @@ export const StepCard: React.FC<StepCardProps> = ({
 
   return (
     <div
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_PREFIX(step.id)}
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('a') || target.closest('input')) {
@@ -187,6 +189,7 @@ export const StepCard: React.FC<StepCardProps> = ({
             </span>
           )}
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_TOGGLE_PREFIX(step.id)}
             onClick={() => onToggleEnabled(step)}
             className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${
               step.enabled
@@ -197,6 +200,7 @@ export const StepCard: React.FC<StepCardProps> = ({
             {step.enabled ? 'Enabled' : 'Disabled'}
           </button>
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_EDIT_PREFIX(step.id)}
             onClick={() => onEdit(step)}
             className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             title="Edit Step"
@@ -204,6 +208,7 @@ export const StepCard: React.FC<StepCardProps> = ({
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_DELETE_PREFIX(step.id)}
             onClick={() => onDelete(step.id, step.name)}
             className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             title="Delete Step"

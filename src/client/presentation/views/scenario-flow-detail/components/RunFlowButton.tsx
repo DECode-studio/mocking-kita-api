@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Play, ChevronDown, Loader2, Repeat, Zap, Hash } from 'lucide-react';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 export interface RunFlowButtonProps {
   isRunning?: boolean;
@@ -68,6 +69,7 @@ export const RunFlowButton: React.FC<RunFlowButtonProps> = ({
     >
       {/* Main Single Run Action Button */}
       <button
+        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.RUN_BTN}
         type="button"
         onClick={() => onRunFlow(1)}
         disabled={disabled}

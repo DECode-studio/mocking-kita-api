@@ -20,6 +20,7 @@ import {
   ScenarioFlowExecution,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { CanvasStepNode } from './CanvasStepNode';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface ScenarioFlowCanvasProps {
   flow: ScenarioFlow;
@@ -256,7 +257,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      id="canvas-surface"
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_CONTAINER}
       onPointerDown={handleCanvasPointerDown}
       onPointerMove={handleCanvasPointerMove}
       onPointerUp={handleCanvasPointerUp}
@@ -346,6 +347,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
       {/* Top Controls Overlay Island */}
       <div className="absolute top-4 left-4 z-40 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-xl p-1.5 shadow-lg">
         <button
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_TOOLBAR_ARRANGE}
           onClick={onAutoArrange}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-colors cursor-pointer"
           title="Auto-Arrange Layout (Align Left-to-Right)"
@@ -357,6 +359,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800" />
 
         <button
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_TOOLBAR_ADD}
           onClick={onOpenAddStep}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           title="Add New Step"
@@ -369,6 +372,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
       {/* Floating Inspector Toggle Button */}
       <div className="absolute top-4 right-4 z-40">
         <button
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_TOOLBAR_INSPECTOR}
           onClick={onToggleInspector}
           className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-lg cursor-pointer ${
             isInspectorOpen

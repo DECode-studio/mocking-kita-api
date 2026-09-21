@@ -20,7 +20,7 @@ import {
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { EnvironmentType } from '@/src/core/utils/types';
-import { SCENARIO_FLOW_DETAIL_TEXT } from '../constant/scenarioFlowDetailText';
+import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 import { ROUTES } from '@/src/core/constants/routes';
 import { RunFlowButton } from './RunFlowButton';
 
@@ -74,7 +74,10 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
   onOpenEditFlow,
 }) => {
   return (
-    <div className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+    <div
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.HEADER}
+      className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4"
+    >
       {/* Top Indeterminate Progress Bar */}
       {isRunning && (
         <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden bg-purple-100 dark:bg-purple-950/60 z-10">
@@ -84,6 +87,7 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
       {/* Top Row: Flow Title & Meta Info */}
       <div className="flex items-start gap-3.5">
         <Link
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.BACK_BTN}
           href={projectId ? ROUTES.PROJECT_SCENARIO_FLOWS(projectId) : ROUTES.SCENARIO_FLOWS}
           className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 mt-0.5"
           title={SCENARIO_FLOW_DETAIL_TEXT.BACK_TO_FLOWS}
@@ -98,14 +102,18 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug">
+              <h1
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.TITLE}
+                className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-snug"
+              >
                 {flow.name}
               </h1>
               {onOpenEditFlow && (
                 <button
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EDIT_FLOW_BTN}
                   onClick={onOpenEditFlow}
                   className="p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/60 rounded-lg transition-colors cursor-pointer shrink-0"
-                  title="Edit Flow Title & Description"
+                  title={SCENARIO_FLOW_DETAIL_TEXT.EDIT_FLOW_TOOLTIP}
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
@@ -113,16 +121,20 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
             </div>
 
             <span
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STATUS_BADGE}
               className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
                 flow.status
                   ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                   : 'bg-slate-500/10 text-slate-500'
               }`}
             >
-              {flow.status ? 'Active' : 'Draft'}
+              {flow.status ? SCENARIO_FLOW_DETAIL_TEXT.ACTIVE_STATUS : SCENARIO_FLOW_DETAIL_TEXT.DRAFT_STATUS}
             </span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
-              {flow.project?.name ? `📁 ${flow.project.name}` : '🌐 Cross-Project Flow'}
+            <span
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.PROJECT_BADGE}
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60"
+            >
+              {flow.project?.name ? `📁 ${flow.project.name}` : `🌐 ${SCENARIO_FLOW_DETAIL_TEXT.CROSS_PROJECT}`}
             </span>
           </div>
 
@@ -135,7 +147,7 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
               onClick={onOpenEditFlow}
               className="text-xs text-slate-400 hover:text-purple-500 italic transition-colors cursor-pointer"
             >
-              + Add flow description...
+              {SCENARIO_FLOW_DETAIL_TEXT.ADD_DESCRIPTION_PLACEHOLDER}
             </button>
           ) : null}
         </div>
@@ -148,28 +160,30 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
           {/* View Mode Switcher */}
           <div className="flex items-center p-0.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950 text-xs">
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.VIEW_MODE_CANVAS}
               onClick={() => onToggleViewMode('canvas')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'canvas'
                   ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-2xs font-bold'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
-              title="Interactive Diagram Flow Canvas"
+              title={SCENARIO_FLOW_DETAIL_TEXT.DIAGRAM_FLOW}
             >
               <Network className="w-3.5 h-3.5" />
-              <span>Diagram Flow</span>
+              <span>{SCENARIO_FLOW_DETAIL_TEXT.DIAGRAM_FLOW}</span>
             </button>
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.VIEW_MODE_LIST}
               onClick={() => onToggleViewMode('list')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-2xs font-bold'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
-              title="Classic Sequential List"
+              title={SCENARIO_FLOW_DETAIL_TEXT.CLASSIC_LIST}
             >
               <List className="w-3.5 h-3.5" />
-              <span>Classic List</span>
+              <span>{SCENARIO_FLOW_DETAIL_TEXT.CLASSIC_LIST}</span>
             </button>
           </div>
 
@@ -177,6 +191,7 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs shadow-2xs">
             <Server className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
             <select
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.ENV_SELECT}
               value={selectedEnvironmentType}
               onChange={(e) => setSelectedEnvironmentType(e.target.value)}
               className="bg-transparent border-none text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-hidden cursor-pointer"
@@ -198,9 +213,10 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
         <div className="flex flex-wrap items-center gap-2">
           {/* History Modal Button */}
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.HISTORY_BTN}
             onClick={onOpenHistory}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            title="View Run History"
+            title={SCENARIO_FLOW_DETAIL_TEXT.HISTORY_BTN}
           >
             <History className="w-3.5 h-3.5 text-slate-500" />
             <span className="hidden sm:inline">{SCENARIO_FLOW_DETAIL_TEXT.HISTORY_BTN}</span>
@@ -208,9 +224,10 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
 
           {/* Export Button */}
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXPORT_BTN}
             onClick={onExport}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-            title="Export JSON"
+            title={SCENARIO_FLOW_DETAIL_TEXT.EXPORT_BTN}
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
             <span className="hidden sm:inline">{SCENARIO_FLOW_DETAIL_TEXT.EXPORT_BTN}</span>
@@ -218,6 +235,7 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
 
           {/* Add Step Button */}
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.ADD_STEP_BTN}
             onClick={onOpenAddStep}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
           >

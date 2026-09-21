@@ -28,6 +28,7 @@ import { Project } from '@/src/client/domain/project/entity/project';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { ROUTES } from '@/src/core/constants/routes';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface AddStepModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ interface AddStepModalProps {
   environments?: Environment[];
   stepCount: number;
   onSave: (stepData: Partial<ScenarioFlowStep> & { name: string; stepOrder: number }) => Promise<void>;
+  onLoadScenarios?: (apiId: string) => Promise<any[]>;
 }
 
 export const AddStepModal: React.FC<AddStepModalProps> = ({
@@ -49,6 +51,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
   environments = [],
   stepCount,
   onSave,
+  onLoadScenarios,
 }) => {
   const [activeTab, setActiveTab] = useState('basic');
   const [filterProjectId, setFilterProjectId] = useState<string>('ALL');
@@ -102,12 +105,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
     }
     setIsLoadingScenarios(true);
     try {
-      const res = await fetch(`/api/apis/${apiId}/request-scenarios`);
-      if (res.ok) {
-        const json = await res.json();
-        const list = Array.isArray(json) ? json : json.data || [];
-        setAvailableScenarios(list);
-        return list;
+      if (onLoadScenarios) {
+        const list = await onLoadScenarios(apiId);
+        setAvailableScenarios(list || []);
+        return list || [];
       }
     } catch {
       // ignore
@@ -382,7 +383,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-5">
+        <Dialog.Content
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-5"
+        >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">

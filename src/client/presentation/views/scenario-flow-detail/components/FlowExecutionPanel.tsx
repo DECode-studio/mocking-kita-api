@@ -13,6 +13,7 @@ import {
   exportExecutionToMarkdown,
   exportExecutionToCsv,
 } from '../utils/scenarioFlowLogExport';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface FlowExecutionPanelProps {
   execution: ScenarioFlowExecution | null;
@@ -33,7 +34,10 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
 }) => {
   if (!execution && !isRunning) {
     return (
-      <div className="p-6 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/40 dark:bg-slate-900/40 space-y-2">
+      <div
+        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_PANEL}
+        className="p-6 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/40 dark:bg-slate-900/40 space-y-2"
+      >
         <Activity className="w-8 h-8 mx-auto text-purple-500 opacity-60" />
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
           Ready for Real Testing
@@ -49,7 +53,10 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
   const steps = execution?.steps || [];
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+    <div
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_PANEL}
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4"
+    >
       {/* Live Running Shimmer Banner */}
       {isRunning && (
         <div className="relative overflow-hidden rounded-2xl bg-linear-to-r from-purple-500/10 via-indigo-500/10 to-pink-500/10 border border-purple-500/30 p-4 shadow-sm space-y-2.5">
