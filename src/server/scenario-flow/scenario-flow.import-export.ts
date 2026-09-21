@@ -3,6 +3,10 @@ import { generateId } from '@/src/core/utils/uuid';
 import { FlowExportTemplate } from './scenario-flow.types';
 import { getScenarioFlowById } from './scenario-flow.repository';
 import { Prisma } from '@prisma/client';
+import {
+  getEnvironmentBaseUrl,
+  normalizeEnvironmentValues,
+} from '@/src/client/domain/environment/entity/environment';
 
 function toEnvSlug(str: string): string {
   return (str || '')
@@ -23,7 +27,7 @@ export async function exportScenarioFlowToTemplate(flowId: string): Promise<Flow
   // Fetch response scenarios for linked request scenarios
   const reqScenarioIds = flow.steps
     .map((s) => s.requestScenarioId)
-    .filter((id): id is string => Boolean(id));
+    .filter((id): id is string => !!id);
 
   const responseScenarios = reqScenarioIds.length > 0
     ? await prisma.responseScenario.findMany({
@@ -38,6 +42,7 @@ export async function exportScenarioFlowToTemplate(flowId: string): Promise<Flow
     }
   }
 
+  // Collect project environments if present
   const envs = flow.projectId
     ? await prisma.environment.findMany({
         where: { projectId: flow.projectId, deletedAt: null },
@@ -51,8 +56,11 @@ export async function exportScenarioFlowToTemplate(flowId: string): Promise<Flow
     environments: envs.map((e) => ({
       id: toEnvSlug(e.name),
       name: e.name,
-      environmentType: e.environmentType,
-      baseUrl: e.baseUrl || '',
+      isBaseUrl: e.isBaseUrl !== false,
+      values: (e.values as any) || {},
+      environmentType: (e.environmentType as any) || undefined,
+      baseUrl: getEnvironmentBaseUrl(e as any),
+      variables: (e.variables as any) || [],
       isDefault: e.id === flow.defaultEnvironmentId,
     })),
     flow: {
@@ -198,14 +206,29 @@ export async function importScenarioFlowFromTemplate(
 
   if (projectId && envDefinitions.length > 0) {
     for (const envItem of envDefinitions) {
-      if (!envItem.baseUrl) continue;
-      const cleanBaseUrl = String(envItem.baseUrl).trim();
+      const isBaseUrl = (envItem as any).isBaseUrl !== false;
+      const cleanBaseUrl = envItem.baseUrl ? String(envItem.baseUrl).trim() : '';
+      let values = normalizeEnvironmentValues((envItem as any).values, isBaseUrl);
+
+      // If legacy baseUrl was provided and values is empty, populate the appropriate stage
+      if (cleanBaseUrl && Object.values(values).every((v) => !v)) {
+        const stage = (envItem.environmentType as any) || 'DEVELOPMENT';
+        if (!isBaseUrl || stage !== 'LOCAL') {
+          values[stage as any] = cleanBaseUrl;
+        }
+      }
+
       const envName = envItem.name || 'Default Environment';
+      const envVariables = Array.isArray((envItem as any).variables)
+        ? (envItem as any).variables
+        : cleanBaseUrl
+        ? [{ id: generateId(), key: 'baseUrl', value: cleanBaseUrl, type: 'plain', enabled: true }]
+        : [];
 
       const existingEnv = await prisma.environment.findFirst({
         where: {
           projectId,
-          OR: [{ name: envName }, { baseUrl: cleanBaseUrl }],
+          name: envName,
           deletedAt: null,
         },
       });
@@ -216,7 +239,9 @@ export async function importScenarioFlowFromTemplate(
         await prisma.environment.update({
           where: { id: existingEnv.id },
           data: {
-            baseUrl: cleanBaseUrl,
+            isBaseUrl,
+            values: values as any,
+            variables: envVariables as any,
             updatedAt: now,
           },
         });
@@ -225,8 +250,10 @@ export async function importScenarioFlowFromTemplate(
           data: {
             projectId,
             name: envName,
-            baseUrl: cleanBaseUrl,
-            environmentType: (envItem.environmentType as any) || 'DEVELOPMENT',
+            isBaseUrl,
+            values: values as any,
+            variables: envVariables as any,
+            environmentType: (envItem.environmentType as any) || null,
             status: true,
             createdAt: now,
             updatedAt: now,
@@ -258,7 +285,7 @@ export async function importScenarioFlowFromTemplate(
       (pe) =>
         pe.name.toLowerCase() === cleanName.toLowerCase() ||
         toEnvSlug(pe.name) === toEnvSlug(cleanName) ||
-        (def.baseUrl && pe.baseUrl === def.baseUrl)
+        (def.baseUrl && getEnvironmentBaseUrl(pe as any) === def.baseUrl)
     );
     if (dbMatch) {
       if (rawDef.id) {

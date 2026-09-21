@@ -5,7 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Switch from '@radix-ui/react-switch';
 import { X, Layers, Save, Server, Loader2 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
-import { Environment } from '@/src/client/domain/environment/entity/environment';
+import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
@@ -183,11 +183,14 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
                 className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 focus:outline-hidden focus:border-purple-500 text-slate-900 dark:text-white cursor-pointer"
               >
                 <option value="">No Default Environment</option>
-                {environments.map((env) => (
-                  <option key={env.id} value={env.id}>
-                    {env.name} ({env.environmentType}) - {env.baseUrl}
-                  </option>
-                ))}
+                {environments.map((env) => {
+                  const url = getEnvironmentBaseUrl(env);
+                  return (
+                    <option key={env.id} value={env.id}>
+                      {env.name} ({env.environmentType}){url ? ` - ${url}` : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

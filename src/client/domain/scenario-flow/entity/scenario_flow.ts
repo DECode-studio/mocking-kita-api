@@ -115,6 +115,7 @@ export interface ScenarioFlowExecution {
     id: string;
     name: string;
     environmentType: string;
+    variables?: any;
     baseUrl?: string | null;
   } | null;
   steps?: ScenarioFlowExecutionStep[];
@@ -138,6 +139,7 @@ export interface ScenarioFlow {
     id: string;
     name: string;
     environmentType: string;
+    variables?: any;
     baseUrl?: string | null;
   } | null;
 

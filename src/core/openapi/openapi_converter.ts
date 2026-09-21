@@ -1,6 +1,6 @@
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Collection } from '@/src/client/domain/collection/entity/collection';
-import { Environment } from '@/src/client/domain/environment/entity/environment';
+import { Environment, normalizeEnvironmentValues } from '@/src/client/domain/environment/entity/environment';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
@@ -43,6 +43,7 @@ export interface OpenApiSpec {
     description?: string;
     version: string;
   };
+  servers?: Array<{ url: string; description?: string }>;
   tags?: Array<{ name: string; description?: string }>;
   paths: Record<string, Record<string, OpenApiOperation>>;
 }
@@ -92,7 +93,8 @@ export function exportProjectToOpenApiSpec(
   collections: Collection[],
   apis: ApiCollection[],
   requestScenarios: RequestScenario[],
-  responseScenarios: ResponseScenario[]
+  responseScenarios: ResponseScenario[],
+  environments?: Environment[]
 ): OpenApiSpec {
   const collectionMap = new Map<string, Collection>();
   collections.forEach((c) => collectionMap.set(c.id, c));
@@ -235,6 +237,24 @@ export function exportProjectToOpenApiSpec(
     };
   }
 
+  const servers: Array<{ url: string; description?: string }> = [];
+  if (Array.isArray(environments)) {
+    for (const env of environments) {
+      if (env.isBaseUrl === false) continue;
+      const values = normalizeEnvironmentValues(env.values, true);
+      const stageOrder: EnvironmentType[] = ['DEVELOPMENT', 'TESTING', 'STAGING', 'PRODUCTION'];
+      for (const stage of stageOrder) {
+        const stageUrl = values[stage];
+        if (stageUrl) {
+          servers.push({
+            url: stageUrl,
+            description: `${env.name} (${stage})`,
+          });
+        }
+      }
+    }
+  }
+
   return {
     openapi: '3.0.3',
     info: {
@@ -242,6 +262,7 @@ export function exportProjectToOpenApiSpec(
       description: project.description || 'API documentation exported from Mock API Studio',
       version: '1.0.0',
     },
+    servers: servers.length > 0 ? servers : undefined,
     tags: tags.length > 0 ? tags : undefined,
     paths,
   };
@@ -432,34 +453,78 @@ export function parseOpenApiSpecToProjectData(
     return 'DEVELOPMENT';
   }
 
-  // Parse OpenAPI servers / Swagger host -> Environments
+  // Parse OpenAPI servers / Swagger host -> Environments (Matrix Model)
   if (Array.isArray(rawSpec.servers) && rawSpec.servers.length > 0) {
+    const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
+    const values: Partial<Record<EnvironmentType, string | null>> = {
+      LOCAL: null,
+      DEVELOPMENT: null,
+      TESTING: null,
+      STAGING: null,
+      PRODUCTION: null,
+    };
+
+    let firstUrl = '';
     for (let i = 0; i < rawSpec.servers.length; i++) {
       const serverObj = rawSpec.servers[i];
       if (serverObj && typeof serverObj.url === 'string' && serverObj.url.trim()) {
         const url = serverObj.url.trim();
-        const desc = serverObj.description ? String(serverObj.description).trim() : `Server ${i + 1}`;
+        if (!firstUrl) firstUrl = url;
+        const desc = serverObj.description ? String(serverObj.description).trim() : '';
         const envType = inferEnvType(`${desc} ${url}`);
-        environmentsToCreate.push({
-          id: generateId(),
-          projectId,
-          name: desc || `${envType} Server`,
-          environmentType: envType,
-          baseUrl: url,
-          status: true,
-        });
+        if (envType !== 'LOCAL') {
+          values[envType] = url;
+        }
       }
     }
+
+    if (firstUrl && !values.DEVELOPMENT && !values.STAGING && !values.PRODUCTION && !values.TESTING) {
+      values.DEVELOPMENT = firstUrl;
+    }
+
+    const envId = generateId();
+    environmentsToCreate.push({
+      id: envId,
+      projectId,
+      name: serviceName,
+      isBaseUrl: true,
+      values,
+      environmentType: 'DEVELOPMENT',
+      variables: firstUrl
+        ? [{ id: generateId(), key: 'baseUrl', value: firstUrl, type: 'plain', enabled: true }]
+        : [],
+      baseUrl: firstUrl,
+      status: true,
+    });
   } else if (rawSpec.host && typeof rawSpec.host === 'string' && rawSpec.host.trim()) {
     const scheme = Array.isArray(rawSpec.schemes) && rawSpec.schemes.length > 0 ? rawSpec.schemes[0] : 'https';
     const basePath = typeof rawSpec.basePath === 'string' ? rawSpec.basePath : '';
     const fullUrl = `${scheme}://${rawSpec.host.trim()}${basePath}`;
     const envType = inferEnvType(fullUrl);
+    const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
+    const envId = generateId();
+
+    const values: Partial<Record<EnvironmentType, string | null>> = {
+      LOCAL: null,
+      DEVELOPMENT: null,
+      TESTING: null,
+      STAGING: null,
+      PRODUCTION: null,
+    };
+    if (envType !== 'LOCAL') {
+      values[envType] = fullUrl;
+    } else {
+      values.DEVELOPMENT = fullUrl;
+    }
+
     environmentsToCreate.push({
-      id: generateId(),
+      id: envId,
       projectId,
-      name: `${envType} Environment`,
+      name: serviceName,
+      isBaseUrl: true,
+      values,
       environmentType: envType,
+      variables: [{ id: generateId(), key: 'baseUrl', value: fullUrl, type: 'plain', enabled: true }],
       baseUrl: fullUrl,
       status: true,
     });

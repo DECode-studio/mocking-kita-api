@@ -249,5 +249,71 @@ describe('Scenario Flow Runner Unit Tests', () => {
       expect(resolveStepBaseUrl(otpStep, 'DEVELOPMENT', multiProjectEnvs)).toBe('https://dev-plat-otp.kbfinansia.com');
       expect(resolveStepBaseUrl(otpStep, 'STAGING', multiProjectEnvs)).toBe('https://stg-plat-otp.kbfinansia.com');
     });
+
+    it('should resolve base URL from consolidated Matrix Environment model per stage', () => {
+      const matrixProjectEnvs = [
+        {
+          id: 'env-matrix-auth',
+          name: 'Platform AUTH',
+          isBaseUrl: true,
+          values: {
+            LOCAL: null,
+            DEVELOPMENT: 'https://dev-plat-auth.kbfinansia.com',
+            STAGING: 'https://stg-plat-auth.kbfinansia.com',
+            PRODUCTION: 'https://auth.kbfinansia.com',
+          },
+          status: true,
+        },
+        {
+          id: 'env-matrix-otp',
+          name: 'Platform OTP',
+          isBaseUrl: true,
+          values: {
+            LOCAL: null,
+            DEVELOPMENT: 'https://dev-plat-otp.kbfinansia.com',
+            STAGING: 'https://stg-plat-otp.kbfinansia.com',
+          },
+          status: true,
+        },
+      ];
+
+      const authStepById = {
+        targetEnvironmentType: 'DEFAULT',
+        targetEnvironment: 'env-matrix-auth',
+      };
+
+      const authStepByName = {
+        targetEnvironmentType: 'DEFAULT',
+        targetEnvironment: 'Platform AUTH',
+      };
+
+      const authStepLocal = {
+        targetEnvironmentType: 'LOCAL',
+        targetEnvironment: 'env-matrix-auth',
+      };
+
+      // When target is DEVELOPMENT
+      expect(resolveStepBaseUrl(authStepById, 'DEVELOPMENT', matrixProjectEnvs)).toBe(
+        'https://dev-plat-auth.kbfinansia.com'
+      );
+      expect(resolveStepBaseUrl(authStepByName, 'DEVELOPMENT', matrixProjectEnvs)).toBe(
+        'https://dev-plat-auth.kbfinansia.com'
+      );
+
+      // When target is STAGING
+      expect(resolveStepBaseUrl(authStepById, 'STAGING', matrixProjectEnvs)).toBe(
+        'https://stg-plat-auth.kbfinansia.com'
+      );
+
+      // When target is PRODUCTION
+      expect(resolveStepBaseUrl(authStepById, 'PRODUCTION', matrixProjectEnvs)).toBe(
+        'https://auth.kbfinansia.com'
+      );
+
+      // When step specifies LOCAL, always returns internal mock URL regardless of matrix target
+      expect(resolveStepBaseUrl(authStepLocal, 'DEVELOPMENT', matrixProjectEnvs)).toMatch(
+        /^http:\/\//
+      );
+    });
   });
 });

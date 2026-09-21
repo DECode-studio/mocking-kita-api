@@ -7,6 +7,7 @@ import { RequestScenario } from '@/src/client/domain/request-scenario/entity/req
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { generateId } from '@/src/core/utils/uuid';
 import { Prisma } from '@prisma/client';
+import { getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
 
 /**
  * Export all endpoints, collections, and scenarios belonging strictly to a single project into OpenAPI 3.0 spec.
@@ -81,7 +82,23 @@ export async function exportProjectOpenApi(projectId: string): Promise<OpenApiSp
     }
   }
 
-  return exportProjectToOpenApiSpec(project, collections, apis, requestScenarios, responseScenarios);
+  const envRows = await prisma.environment.findMany({
+    where: { projectId, deletedAt: null },
+  });
+  const environments = envRows.map((e) => ({
+    id: e.id,
+    projectId: e.projectId,
+    name: e.name,
+    isBaseUrl: e.isBaseUrl,
+    values: (e.values as any) || {},
+    environmentType: e.environmentType as any,
+    variables: (e.variables as any) || [],
+    status: e.status,
+    createdAt: e.createdAt.toISOString(),
+    updatedAt: e.updatedAt.toISOString(),
+  }));
+
+  return exportProjectToOpenApiSpec(project, collections, apis, requestScenarios, responseScenarios, environments);
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -129,7 +146,7 @@ function buildMergePlan(
   projectId: string,
   extracted: ReturnType<typeof parseOpenApiSpecToProjectData>,
   existingCols: Array<{ id: string; name: string; description: string | null; status: boolean }>,
-  existingEnvs: Array<{ id: string; name: string; environmentType: string; baseUrl: string | null; status: boolean }>,
+  existingEnvs: Array<{ id: string; name: string; isBaseUrl?: boolean; values?: any; environmentType: string | null; variables: unknown; status: boolean }>,
   existingApis: Array<{ id: string; collectionId: string | null; methodRequest: string; path: string; name: string; description: string | null; status: boolean }>,
   existingReqScenarios: Array<{ id: string; apiId: string; name: string; description: string | null; headers: unknown; queryParams: unknown; pathParams: unknown; body: unknown; bodyType: string; matchType: string; priority: number; status: boolean }>,
   existingRespScenarios: Array<{ id: string; requestScenarioId: string; name: string; description: string | null; statusCode: number | null; headers: unknown; body: unknown; responseType: string; filePath: string | null; fileName: string | null; delayMs: number; weight: number; priority: number; status: boolean }>
@@ -176,13 +193,34 @@ function buildMergePlan(
   const envsToUpdate: Array<{ id: string; data: Prisma.EnvironmentUncheckedUpdateInput }> = [];
 
   for (const env of extracted.environments) {
-    const existing = envByNameMap.get(env.name.toLowerCase()) || existingEnvs.find((e) => e.baseUrl && e.baseUrl === env.baseUrl);
+    const existing =
+      envByNameMap.get(env.name.toLowerCase()) ||
+      existingEnvs.find((e) => env.baseUrl && getEnvironmentBaseUrl(e as any) === env.baseUrl);
+
+    const isBaseUrl = (env as any).isBaseUrl !== false;
+    const values = (env.values as any) || {};
+
     if (existing) {
+      let existingVars = (existing.variables as any[]) || [];
+      if (env.baseUrl) {
+        const hasBaseUrl = existingVars.some((v) => v.key === 'baseUrl');
+        if (hasBaseUrl) {
+          existingVars = existingVars.map((v) => (v.key === 'baseUrl' ? { ...v, value: env.baseUrl } : v));
+        } else {
+          existingVars = [...existingVars, { id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true }];
+        }
+      }
+      const mergedValues = {
+        ...(((existing as any).values as any) || {}),
+        ...values,
+      };
       envsToUpdate.push({
         id: existing.id,
         data: {
+          isBaseUrl,
+          values: mergedValues,
           environmentType: (env.environmentType as any) ?? existing.environmentType,
-          baseUrl: env.baseUrl ?? existing.baseUrl,
+          variables: existingVars as any,
           status: env.status ?? true,
           updatedAt: now,
         },
@@ -190,12 +228,17 @@ function buildMergePlan(
     } else {
       const envId = env.id || generateId();
       envByNameMap.set(env.name.toLowerCase(), { id: envId, name: env.name } as any);
+      const envVars = env.baseUrl
+        ? [{ id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true }]
+        : [];
       envsToCreate.push({
         id: envId,
         projectId,
         name: env.name,
-        environmentType: env.environmentType as any,
-        baseUrl: env.baseUrl ?? null,
+        isBaseUrl,
+        values,
+        environmentType: (env.environmentType as any) || null,
+        variables: envVars as any,
         status: env.status ?? true,
         createdAt: now,
         updatedAt: now,
@@ -534,7 +577,9 @@ export async function importProjectOpenApi(
             projectId,
             name: env.name,
             environmentType: env.environmentType as any,
-            baseUrl: env.baseUrl ?? null,
+            variables: (env.baseUrl
+              ? [{ id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true }]
+              : []) as any,
             status: env.status ?? true,
             createdAt: now,
             updatedAt: now,
@@ -613,7 +658,7 @@ export async function importProjectOpenApi(
 
     const existingEnvs = await prisma.environment.findMany({
       where: { projectId, deletedAt: null },
-      select: { id: true, name: true, environmentType: true, baseUrl: true, status: true },
+      select: { id: true, name: true, isBaseUrl: true, values: true, environmentType: true, variables: true, status: true },
     });
 
     const existingApis = await prisma.api.findMany({
