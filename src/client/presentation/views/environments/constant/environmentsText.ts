@@ -15,6 +15,10 @@ export const ENVIRONMENTS_TEXT = {
     PROJECT_LABEL: 'Target Project',
     SELECT_PROJECT: 'Select a project',
     TYPE_LABEL: 'Environment Type',
+    VARIABLES_LABEL: 'Environment Variables & Values',
+    VARIABLES_SUBTITLE: 'Define key-value pairs (baseUrl, apiKey, user, password, tokens) available in scenario flows and requests via {{key}}.',
+    ADD_VARIABLE: 'Add Variable',
+    NO_VARIABLES: 'No variables configured yet. Click "Add Variable" to add baseUrl, API keys, credentials, etc.',
     BASE_URL_LABEL: 'Base URL',
     BASE_URL_PLACEHOLDER: 'https://api-dev.example.com',
     STATUS_LABEL: 'Active Status',
@@ -26,5 +30,6 @@ export const ENVIRONMENTS_TEXT = {
     UPDATE_SUCCESS: 'Environment updated successfully',
     DELETE_SUCCESS: 'Environment deleted successfully',
     COPIED_URL: 'Base URL copied to clipboard',
+    COPIED_VALUE: 'Variable value copied to clipboard',
   },
 };

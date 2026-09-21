@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Environment } from '@/src/client/domain/environment/entity/environment';
+import { Environment, EnvironmentVariable } from '@/src/client/domain/environment/entity/environment';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { EnvironmentType } from '@/src/core/utils/types';
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
@@ -12,8 +12,11 @@ import { getErrorMessage } from '@/src/core/utils/error';
 export interface EnvironmentFormData {
   name: string;
   projectId: string;
-  environmentType: EnvironmentType;
-  baseUrl: string;
+  isBaseUrl?: boolean;
+  values?: import('@/src/client/domain/environment/entity/environment').EnvironmentValuesMap;
+  environmentType?: EnvironmentType;
+  variables: EnvironmentVariable[];
+  baseUrl?: string;
   status: boolean;
 }
 
@@ -69,8 +72,17 @@ export function useEnvironments() {
       const matchesSearch =
         !q ||
         env.name.toLowerCase().includes(q) ||
-        (env.baseUrl && env.baseUrl.toLowerCase().includes(q)) ||
-        env.environmentType.toLowerCase().includes(q);
+        (env.environmentType && env.environmentType.toLowerCase().includes(q)) ||
+        (Array.isArray(env.variables) &&
+          env.variables.some(
+            (v) =>
+              v.key.toLowerCase().includes(q) ||
+              (v.type !== 'secret' && v.value.toLowerCase().includes(q))
+          )) ||
+        (env.values &&
+          Object.values(env.values).some(
+            (val) => typeof val === 'string' && val.toLowerCase().includes(q)
+          ));
       return matchesProject && matchesSearch;
     });
   }, [environments, selectedProjectId, searchQuery]);
@@ -96,7 +108,10 @@ export function useEnvironments() {
         const updated = await environmentUseCase.update(editingEnvironment.id, {
           name: data.name,
           projectId: data.projectId,
+          isBaseUrl: data.isBaseUrl,
+          values: data.values,
           environmentType: data.environmentType,
+          variables: data.variables,
           baseUrl: data.baseUrl,
           status: data.status,
         });
@@ -106,7 +121,10 @@ export function useEnvironments() {
         const created = await environmentUseCase.create({
           name: data.name,
           projectId: data.projectId,
+          isBaseUrl: data.isBaseUrl,
+          values: data.values,
           environmentType: data.environmentType,
+          variables: data.variables,
           baseUrl: data.baseUrl,
           status: data.status,
         });

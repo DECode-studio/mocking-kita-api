@@ -4,6 +4,7 @@ import { EnvironmentType } from '@/src/core/utils/types';
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 import { getErrorMessage } from '@/src/core/utils/error';
+import { EnvironmentFormData } from '@/src/client/presentation/views/environments/hook/useEnvironments';
 
 export function useProjectEnvironments(projectId: string) {
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -59,13 +60,7 @@ export function useProjectEnvironments(projectId: string) {
     }
   };
 
-  const handleSaveEnvironment = async (data: {
-    name: string;
-    projectId: string;
-    environmentType: EnvironmentType;
-    baseUrl: string;
-    status: boolean;
-  }) => {
+  const handleSaveEnvironment = async (data: EnvironmentFormData) => {
     try {
       if (editingEnvironment) {
         const updated = await environmentUseCase.update(editingEnvironment.id, data);

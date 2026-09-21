@@ -1,9 +1,8 @@
-import React from 'react';
-import { Plus, Server, Globe } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Server, Globe, KeyRound } from 'lucide-react';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
-import { EnvironmentTypeBadge } from '@/src/client/presentation/components/shared/EnvironmentTypeBadge';
-import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { EnvironmentFormModal } from '@/src/client/presentation/views/environments/components/EnvironmentFormModal';
+import { EnvironmentCard } from '@/src/client/presentation/views/environments/components/EnvironmentCard';
 import { ConfirmDialog } from '@/src/client/presentation/components/shared/ConfirmDialog';
 import { EmptyState } from '@/src/client/presentation/components/shared/EmptyState';
 import { useProjectEnvironments } from '../hook/useProjectEnvironments';
@@ -11,6 +10,8 @@ import { useProjectEnvironments } from '../hook/useProjectEnvironments';
 interface ProjectEnvironmentsTabProps {
   projectId: string;
 }
+
+type FilterCategory = 'ALL' | 'BASE_URL' | 'VARIABLES';
 
 export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ projectId }) => {
   const {
@@ -28,33 +29,91 @@ export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ 
     handleSaveEnvironment,
   } = useProjectEnvironments(projectId);
 
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('ALL');
+
+  const filteredEnvironments = useMemo(() => {
+    if (activeFilter === 'BASE_URL') {
+      return environments.filter((e) => e.isBaseUrl !== false);
+    }
+    if (activeFilter === 'VARIABLES') {
+      return environments.filter((e) => e.isBaseUrl === false);
+    }
+    return environments;
+  }, [environments, activeFilter]);
+
+  const serviceCount = environments.filter((e) => e.isBaseUrl !== false).length;
+  const variableCount = environments.filter((e) => e.isBaseUrl === false).length;
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
             Project Environments
           </h3>
           <p className="text-xs text-slate-500">
-            Configure server URLs and variables for this project.
+            Multi-stage service matrix (Base URLs) and shared environment variables.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditingEnvironment(null);
-            setIsFormOpen(true);
-          }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Add Environment</span>
-        </button>
+
+        <div className="flex items-center gap-2">
+          {/* Filter Pills */}
+          {environments.length > 0 && (
+            <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-medium">
+              <button
+                onClick={() => setActiveFilter('ALL')}
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                  activeFilter === 'ALL'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                All ({environments.length})
+              </button>
+              <button
+                onClick={() => setActiveFilter('BASE_URL')}
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
+                  activeFilter === 'BASE_URL'
+                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Globe className="w-3 h-3" />
+                Services ({serviceCount})
+              </button>
+              <button
+                onClick={() => setActiveFilter('VARIABLES')}
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
+                  activeFilter === 'VARIABLES'
+                    ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-300 shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <KeyRound className="w-3 h-3" />
+                Variables ({variableCount})
+              </button>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setEditingEnvironment(null);
+              setIsFormOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Environment</span>
+          </button>
+        </div>
       </div>
 
+      {/* Grid or Empty */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
           {[1, 2].map((n) => (
-            <div key={n} className="h-32 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+            <div key={n} className="h-44 bg-slate-200 dark:bg-slate-800 rounded-xl" />
           ))}
         </div>
       ) : environments.length === 0 ? (
@@ -62,7 +121,7 @@ export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ 
           <EmptyState
             icon={Server}
             title="No Environments Configured"
-            description="Create an environment or import from OpenAPI spec to get started."
+            description="Create an environment or import from OpenAPI spec to configure target stages."
             actionLabel="Add Environment"
             onAction={() => {
               setEditingEnvironment(null);
@@ -70,54 +129,28 @@ export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ 
             }}
           />
         </div>
+      ) : filteredEnvironments.length === 0 ? (
+        <div className="p-8 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl text-center text-xs text-slate-500">
+          No environments match the selected category.
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {environments.map((env) => (
-            <div
+          {filteredEnvironments.map((env) => (
+            <EnvironmentCard
               key={env.id}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-xs flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">
-                      {env.name}
-                    </span>
-                    <EnvironmentTypeBadge type={env.environmentType} size="sm" />
-                  </div>
-                  <StatusSwitch checked={env.status} onCheckedChange={() => handleToggleStatus(env)} />
-                </div>
-
-                <div className="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-lg border border-slate-100 dark:border-slate-850 flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="text-xs font-mono text-slate-700 dark:text-slate-300 truncate">
-                    {env.baseUrl || 'No base URL'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 mt-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  onClick={() => {
-                    setEditingEnvironment(env);
-                    setIsFormOpen(true);
-                  }}
-                  className="px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => setDeleteTargetId(env.id)}
-                  className="px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 cursor-pointer"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+              environment={env}
+              onEdit={(e) => {
+                setEditingEnvironment(e);
+                setIsFormOpen(true);
+              }}
+              onDelete={(id) => setDeleteTargetId(id)}
+              onToggleStatus={handleToggleStatus}
+            />
           ))}
         </div>
       )}
 
+      {/* Form Modal */}
       <EnvironmentFormModal
         isOpen={isFormOpen}
         onClose={() => {
@@ -130,12 +163,13 @@ export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ 
         defaultProjectId={projectId}
       />
 
+      {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={!!deleteTargetId}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={handleConfirmDelete}
         title="Delete Environment"
-        description="Are you sure you want to delete this environment?"
+        description="Are you sure you want to delete this environment? This action cannot be undone."
         confirmLabel="Delete"
         variant="danger"
       />
