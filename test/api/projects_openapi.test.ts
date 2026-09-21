@@ -85,4 +85,44 @@ describe('OpenAPI Export & Import API routes', () => {
     expect(json.data.importedApiCount).toBe(2);
     expect(importProjectOpenApi).toHaveBeenCalledWith('p1', { openapi: '3.0.0' }, 'upsert');
   });
+
+  it('IMPORT_POST should allow non-admin roles (e.g. Backend Developer, QA, PM) to import OpenAPI spec', async () => {
+    const nonAdminRoles = [
+      'Backend Developer',
+      'Frontend Developer',
+      'Product / Project Manager',
+      'Mobile Developer',
+      'Quality Assurance',
+    ];
+
+    for (const role of nonAdminRoles) {
+      (cookies as any).mockResolvedValue({
+        get: vi.fn().mockReturnValue({
+          value: JSON.stringify({
+            username: `user_${role.toLowerCase().replace(/\s+/g, '_')}`,
+            name: `User ${role}`,
+            role,
+            token: 'test-token',
+            rememberMe: false,
+            loginAt: '2026-09-03T00:00:00.000Z',
+          }),
+        }),
+      });
+
+      (importProjectOpenApi as any).mockResolvedValue({ success: true, importedApiCount: 1, importedCollectionCount: 1 });
+      (prisma.api.count as any).mockResolvedValue(0);
+
+      const req = new Request('http://localhost/api/projects/p1/import-openapi', {
+        method: 'POST',
+        body: JSON.stringify({ openApiJson: { openapi: '3.0.0' }, mode: 'upsert' }),
+      });
+      const params = Promise.resolve({ id: 'p1' });
+
+      const res = await IMPORT_POST(req, { params });
+      const json = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json.success).toBe(true);
+    }
+  });
 });

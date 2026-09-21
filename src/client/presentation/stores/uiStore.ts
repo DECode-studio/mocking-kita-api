@@ -26,6 +26,10 @@ interface UIState {
   // Import / Export dialog state
   isImportModalOpen: boolean;
   setImportModalOpen: (open: boolean) => void;
+
+  // Breadcrumb dynamic title
+  breadcrumbTitle?: string;
+  setBreadcrumbTitle: (title?: string) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -55,4 +59,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   isImportModalOpen: false,
   setImportModalOpen: (open) => set({ isImportModalOpen: open }),
+
+  breadcrumbTitle: undefined,
+  setBreadcrumbTitle: (breadcrumbTitle) => set({ breadcrumbTitle }),
 }));

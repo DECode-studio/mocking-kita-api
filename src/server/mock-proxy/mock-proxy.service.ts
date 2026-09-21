@@ -17,9 +17,29 @@ import {
   matchesHeadersMap,
   matchesParamsMap,
   matchesStructure,
+  registerDataSheetLookup,
 } from '@/src/core/utils/param-matcher';
 import { getUploadDirectory } from '@/src/server/upload/upload.paths';
 import { getProxyConfigCache, responseCache, setProxyConfigCache, throttleStates } from './mock-proxy.cache';
+import { interpolateVariables, createStepDataSheetCounters } from '@/src/server/scenario-flow/scenario-flow.runner';
+
+export const mockDataSheetCounters: Record<string, number> = {};
+
+export function resetMockDataSheetCounters(): void {
+  for (const key of Object.keys(mockDataSheetCounters)) {
+    delete mockDataSheetCounters[key];
+  }
+}
+
+function hasDynamicTokens(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return /\{\{\s*(datasheet\.|\$)/.test(value);
+  }
+  if (value && typeof value === 'object') {
+    return /\{\{\s*(datasheet\.|\$)/.test(JSON.stringify(value));
+  }
+  return false;
+}
 
 const INTERNAL_ROUTE_PREFIXES = [
   '/api/auth',
@@ -94,6 +114,7 @@ type ProxyConfig = {
   apiEnvironmentsByApiId: Map<string, ApiEnvironment[]>;
   requestScenariosByApiId: Map<string, RequestScenario[]>;
   responseScenariosByRequestScenarioId: Map<string, ResponseScenario[]>;
+  dataSheetsByCode: Map<string, any[]>;
 };
 
 function normalizePath(value: string): string {
@@ -250,14 +271,23 @@ function buildProxyConfig(database: Awaited<ReturnType<typeof readDatabase>>): P
       database.responseScenarios.filter((scenario) => scenario.status && !scenario.deletedAt),
       (scenario) => scenario.requestScenarioId
     ),
+    dataSheetsByCode: new Map(
+      (database.dataSheets || [])
+        .filter((ds) => ds.status && !ds.deletedAt)
+        .map((ds) => [ds.code, Array.isArray(ds.data) ? ds.data : []])
+    ),
   };
 }
 
 async function getProxyConfig(): Promise<ProxyConfig> {
   const cached = getProxyConfigCache<ProxyConfig>(PROXY_CONFIG_CACHE_KEY);
-  if (cached) return cached;
+  if (cached) {
+    registerDataSheetLookup((code: string) => cached.dataSheetsByCode.get(code));
+    return cached;
+  }
 
   const config = buildProxyConfig(await readDatabase());
+  registerDataSheetLookup((code: string) => config.dataSheetsByCode.get(code));
   setProxyConfigCache(PROXY_CONFIG_CACHE_KEY, config, PROXY_CONFIG_TTL_MS);
   return config;
 }
@@ -1067,19 +1097,32 @@ async function processInternalApiRequest(request: Request): Promise<NextResponse
     responseHeaders.set('content-type', 'application/json');
   }
 
-  const responseBody = typeof selectedResponse.body === 'string' ? selectedResponse.body : selectedResponse.body ?? null;
-  const responseHeadersObject = headersToObject(responseHeaders);
+  const isDynamic = hasDynamicTokens(selectedResponse.body);
+  let responseBody = typeof selectedResponse.body === 'string' ? selectedResponse.body : selectedResponse.body ?? null;
+
   if (
     cacheKey &&
+    !isDynamic &&
     selectedResponse.statusCode >= 200 &&
     selectedResponse.statusCode < 300 &&
     isDeterministicResponseSelection(responseScenarios, selectedResponse)
   ) {
+    const responseHeadersObject = headersToObject(responseHeaders);
     setCachedResponse(cacheKey, {
       status: selectedResponse.statusCode,
       headers: responseHeadersObject,
       body: responseBody,
     });
+  }
+
+  // Dynamically interpolate Data Sheet & dynamic generator tokens in response body
+  if (responseBody !== null && proxyConfig.dataSheetsByCode && proxyConfig.dataSheetsByCode.size > 0) {
+    const dsVariables = {
+      datasheet: Object.fromEntries(proxyConfig.dataSheetsByCode.entries()),
+    };
+    const { stepCounters, commitStep } = createStepDataSheetCounters(mockDataSheetCounters);
+    responseBody = interpolateVariables(responseBody, dsVariables, stepCounters);
+    commitStep();
   }
 
   if (request.method === 'HEAD') {

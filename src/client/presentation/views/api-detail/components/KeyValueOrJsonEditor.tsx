@@ -15,6 +15,7 @@ import { useKeyValueOrJsonEditor, parsePrimitiveValue } from '../hook/useKeyValu
 import { ParamMatchOperator } from '@/src/core/utils/types';
 import { isParamRule, extractParamRule } from '@/src/core/utils/param-matcher';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 
 interface KeyValueOrJsonEditorProps {
   label: string;
@@ -139,6 +140,7 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
           <option value="regex">.* regex</option>
           <option value="null">∅ null</option>
           <option value="empty_array">[] empty_array</option>
+          <option value="in_datasheet">∈ in_datasheet</option>
         </select>
 
         <input
@@ -153,6 +155,8 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
           placeholder={
             isValDisabled
               ? `(${rule.operator})`
+              : rule.operator === 'in_datasheet'
+              ? 'Data sheet code (e.g. emails)'
               : isFile
               ? 'File name pattern (e.g. avatar.png)'
               : placeholderValue
@@ -161,6 +165,27 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
             isValDisabled ? 'opacity-40 italic cursor-not-allowed' : ''
           } ${!isEnabled ? 'line-through opacity-50' : ''}`}
         />
+
+        {rule.operator === 'in_datasheet' ? (
+          <DataSheetVariablePicker
+            buttonLabel="Sheet"
+            triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+            onInsert={(token) => {
+              const code = token
+                .replace(/^\{\{\s*datasheet\./, '')
+                .replace(/\..*$/, '')
+                .replace(/\[.*$/, '')
+                .replace(/\}\}/, '');
+              onUpdateLeaf(path, { value: code });
+            }}
+          />
+        ) : !isValDisabled && !isFile ? (
+          <DataSheetVariablePicker
+            buttonLabel="Tag"
+            triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+            onInsert={(token) => onUpdateLeaf(path, { value: token })}
+          />
+        ) : null}
 
         {supportFiles && (
           <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer select-none">
@@ -343,6 +368,7 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
         <option value="regex">.* regex</option>
         <option value="null">∅ null</option>
         <option value="empty_array">[] empty_array</option>
+        <option value="in_datasheet">∈ in_datasheet</option>
       </select>
 
       <input
@@ -358,6 +384,14 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
         }
         className="flex-1 px-2 py-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md text-slate-900 dark:text-slate-100 text-xs font-mono focus:outline-none focus:border-indigo-500"
       />
+
+      {!isFile && (
+        <DataSheetVariablePicker
+          buttonLabel="Tag"
+          triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+          onInsert={(token) => onUpdateLeaf(path, { value: token })}
+        />
+      )}
 
       {supportFiles && (
         <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer select-none">

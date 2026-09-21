@@ -1,0 +1,18 @@
+export const DATA_SHEET_SEMANTIC_ID = {
+  CONTAINER: 'data-sheets-container',
+  HEADER: 'data-sheets-header',
+  TITLE: 'data-sheets-title',
+  CREATE_BTN: 'data-sheets-create-btn',
+  SEARCH_INPUT: 'data-sheets-search-input',
+  PROJECT_FILTER: 'data-sheets-project-filter',
+  CATEGORY_FILTER: 'data-sheets-category-filter',
+  GRID: 'data-sheets-grid',
+  EMPTY_STATE: 'data-sheets-empty-state',
+  CARD_PREFIX: (id: string) => `data-sheet-card-${id}`,
+  CARD_PREVIEW_BTN_PREFIX: (id: string) => `data-sheet-card-preview-btn-${id}`,
+  CARD_EDIT_BTN_PREFIX: (id: string) => `data-sheet-card-edit-btn-${id}`,
+  CARD_DELETE_BTN_PREFIX: (id: string) => `data-sheet-card-delete-btn-${id}`,
+  CARD_TOGGLE_PREFIX: (id: string) => `data-sheet-card-toggle-${id}`,
+  MODAL_FORM: 'data-sheet-modal-form',
+  MODAL_PREVIEW: 'data-sheet-modal-preview',
+} as const;

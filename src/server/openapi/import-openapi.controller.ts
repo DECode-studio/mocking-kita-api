@@ -4,7 +4,6 @@ import { importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
 import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cache';
 import { logChange } from '@/src/core/db/change_log_helper';
 import { getProjectById } from '@/src/server/project';
-import { requireAdminSession } from '@/src/core/server/auth/session';
 import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
 import { OpenApiImportSchema, ProjectParamsSchema } from './openapi.schema';
 
@@ -12,10 +11,6 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const adminSession = await requireAdminSession();
-  if (!adminSession) {
-    return jsonFail('Forbidden', 403, 'FORBIDDEN');
-  }
 
   try {
     const parsedParams = ProjectParamsSchema.safeParse(await params);

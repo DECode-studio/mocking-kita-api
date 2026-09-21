@@ -3,10 +3,9 @@
 import React, { useState, useRef } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, UploadCloud, FileJson, CheckCircle2, AlertCircle } from 'lucide-react';
-import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 import { getErrorMessage } from '@/src/core/utils/error';
-
 import { Project } from '@/src/client/domain/project/entity/project';
+import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
 
 interface ImportScenarioFlowModalProps {
   isOpen: boolean;
@@ -14,6 +13,7 @@ interface ImportScenarioFlowModalProps {
   projectId?: string;
   projects?: Project[];
   onSuccess: (result: any) => void;
+  onImportFlow?: (targetProjectId: string, template: any) => Promise<any>;
 }
 
 export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = ({
@@ -22,6 +22,7 @@ export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = (
   projectId,
   projects = [],
   onSuccess,
+  onImportFlow,
 }) => {
   const [targetProjectId, setTargetProjectId] = useState(projectId || '');
   const [jsonText, setJsonText] = useState('');
@@ -29,8 +30,6 @@ export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = (
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const flowUseCase = getService(CLIENT_DI_TOKENS.scenarioFlowUseCase);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,10 +74,12 @@ export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = (
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await flowUseCase.importTemplate(effectiveProjectId, parsed);
-      onSuccess(res);
-      setJsonText('');
-      setFileName(null);
+      if (onImportFlow) {
+        const res = await onImportFlow(effectiveProjectId, parsed);
+        onSuccess(res);
+        setJsonText('');
+        setFileName(null);
+      }
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to import scenario flow.'));
     } finally {
@@ -90,7 +91,10 @@ export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-5">
+        <Dialog.Content
+          id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_IMPORT}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-5"
+        >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">

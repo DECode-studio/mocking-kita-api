@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 import { ROUTES } from '@/src/core/constants/routes';
+import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 
 export const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
+  const breadcrumbTitle = useUIStore((state) => state.breadcrumbTitle);
 
   const pathSegments = pathname.split('/').filter(Boolean);
 
@@ -36,8 +38,45 @@ export const Breadcrumbs: React.FC = () => {
             breadcrumbItems.push({ label: 'Edit Request Scenario', href: pathname });
           }
         }
+      } else if (pathSegments[2] === 'scenario-flows') {
+        breadcrumbItems.push({
+          label: 'Scenario Flows',
+          href: ROUTES.PROJECT_SCENARIO_FLOWS(projectId),
+        });
+        if (pathSegments[3]) {
+          const flowId = pathSegments[3];
+          breadcrumbItems.push({
+            label: breadcrumbTitle || 'Scenario Flow Detail',
+            href: ROUTES.SCENARIO_FLOW_DETAIL(projectId, flowId),
+          });
+        }
+      } else if (pathSegments[2] === 'data-sheets') {
+        breadcrumbItems.push({
+          label: 'Data Sheets',
+          href: ROUTES.PROJECT_DATA_SHEETS(projectId),
+        });
+      } else if (pathSegments[2] === 'environments') {
+        breadcrumbItems.push({
+          label: 'Environments',
+          href: ROUTES.PROJECT_ENVIRONMENTS(projectId),
+        });
       }
     }
+  } else if (pathSegments[0] === 'scenario-flows') {
+    breadcrumbItems.push({ label: 'Scenario Flows', href: ROUTES.SCENARIO_FLOWS });
+    if (pathSegments[1]) {
+      const flowId = pathSegments[1];
+      breadcrumbItems.push({
+        label: breadcrumbTitle || 'Scenario Flow Detail',
+        href: ROUTES.SCENARIO_FLOW_DETAIL_GLOBAL(flowId),
+      });
+    }
+  } else if (pathSegments[0] === 'data-sheets') {
+    breadcrumbItems.push({ label: 'Data Sheets', href: ROUTES.DATA_SHEETS });
+  } else if (pathSegments[0] === 'environments') {
+    breadcrumbItems.push({ label: 'Environments', href: ROUTES.ENVIRONMENTS });
+  } else if (pathSegments[0] === 'apis') {
+    breadcrumbItems.push({ label: 'APIs', href: ROUTES.APIS });
   } else if (pathSegments[0] === 'settings') {
     breadcrumbItems.push({ label: 'Settings', href: ROUTES.SETTINGS });
   } else if (pathSegments[0] === 'account-settings') {

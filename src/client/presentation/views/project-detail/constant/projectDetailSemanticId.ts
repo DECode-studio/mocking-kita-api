@@ -5,4 +5,5 @@ export const PROJECT_DETAIL_SEMANTIC_ID = {
   METADATA_CARD: 'project-detail-metadata-card',
   BACK_BTN: 'project-detail-back-btn',
   DELETE_BTN: 'project-detail-delete-btn',
+  EXPORT_IMPORT_BTN: 'project-detail-export-import-btn',
 } as const;

@@ -24,7 +24,8 @@ export type ParamMatchOperator =
   | 'equal'
   | 'regex'
   | 'null'
-  | 'empty_array';
+  | 'empty_array'
+  | 'in_datasheet';
 
 export type MatchStrategy = 'ALL' | 'ANY';
 
