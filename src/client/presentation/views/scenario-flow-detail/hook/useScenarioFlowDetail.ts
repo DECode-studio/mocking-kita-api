@@ -29,6 +29,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   const [targetMode, setTargetMode] = useState<'LIVE' | 'MOCK'>('LIVE');
   const [isRunning, setIsRunning] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [runningProgress, setRunningProgress] = useState<{ current: number; total: number } | null>(null);
   const [latestExecution, setLatestExecution] = useState<ScenarioFlowExecution | null>(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
 
@@ -295,32 +296,67 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     }
   };
 
-  // Run Flow (Real Testing)
-  const handleRunFlow = async () => {
+  // Run Flow (Real Testing - Single or Multiple Iterations)
+  const handleRunFlow = async (iterations: number = 1) => {
     if (!flow) return;
+    const totalRuns = Math.max(1, Math.min(100, Math.floor(Number(iterations) || 1)));
     setIsRunning(true);
     setIsInspectorOpen(true);
+    setRunningProgress({ current: 1, total: totalRuns });
+
     try {
       const matchedEnv = environments.find((e) => e.environmentType === selectedEnvironmentType);
-      const result = await flowUseCase.runFlow(flow.id, {
-        environmentType: selectedEnvironmentType,
-        environmentId: matchedEnv?.id || selectedEnvironmentId || undefined,
-        targetMode,
-      });
+      let passedRuns = 0;
+      let failedRuns = 0;
+      let lastExecution: ScenarioFlowExecution | null = null;
 
-      // Load full execution result
-      const fullExec = await flowUseCase.getExecutionDetail(result.execution.id);
-      if (fullExec) {
-        setLatestExecution(fullExec);
+      for (let runIdx = 1; runIdx <= totalRuns; runIdx++) {
+        setRunningProgress({ current: runIdx, total: totalRuns });
+
+        const result = await flowUseCase.runFlow(flow.id, {
+          environmentType: selectedEnvironmentType,
+          environmentId: matchedEnv?.id || selectedEnvironmentId || undefined,
+          targetMode,
+        });
+
+        // Load full execution detail
+        const fullExec = await flowUseCase.getExecutionDetail(result.execution.id);
+        if (fullExec) {
+          lastExecution = fullExec;
+          setLatestExecution(fullExec);
+        }
+
+        if (result.execution.status === 'SUCCESS') {
+          passedRuns++;
+        } else {
+          failedRuns++;
+          if (flow.stopOnFailure && totalRuns > 1) {
+            addToast({
+              title: `Multi-run stopped at run #${runIdx} due to failure (stopOnFailure = true)`,
+              type: 'warning',
+            });
+            break;
+          }
+        }
       }
 
-      const passed = result.execution.status === 'SUCCESS';
-      addToast({
-        title: passed
-          ? `All ${result.execution.totalSteps} steps PASSED! (${result.execution.durationMs}ms)`
-          : `Flow failed: ${result.execution.passedSteps}/${result.execution.totalSteps} passed`,
-        type: passed ? 'success' : 'error',
-      });
+      if (totalRuns === 1) {
+        const passed = lastExecution?.status === 'SUCCESS';
+        addToast({
+          title: passed
+            ? `All ${lastExecution?.totalSteps ?? 0} steps PASSED! (${lastExecution?.durationMs ?? 0}ms)`
+            : `Flow failed: ${lastExecution?.passedSteps ?? 0}/${lastExecution?.totalSteps ?? 0} passed`,
+          type: passed ? 'success' : 'error',
+        });
+      } else {
+        const allPassed = failedRuns === 0;
+        addToast({
+          title: allPassed
+            ? `All ${passedRuns}/${totalRuns} flow iterations PASSED successfully!`
+            : `Completed ${passedRuns + failedRuns}/${totalRuns} runs: ${passedRuns} passed, ${failedRuns} failed`,
+          type: allPassed ? 'success' : 'error',
+        });
+      }
     } catch (err) {
       addToast({
         title: getErrorMessage(err, 'Failed to execute flow testing'),
@@ -328,6 +364,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
       });
     } finally {
       setIsRunning(false);
+      setRunningProgress(null);
     }
   };
 
@@ -344,6 +381,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
       setFlow((prev) => (prev ? { ...prev, ...updated } : updated));
       addToast({ title: 'Flow details updated', type: 'success' });
       await loadData();
+      setIsEditFlowModalOpen(false);
     } catch (err) {
       addToast({
         title: getErrorMessage(err, 'Failed to update flow details'),
@@ -353,16 +391,35 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     }
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!flow) return;
-    window.open(`/api/scenario-flows/${encodeURIComponent(flow.id)}/export`, '_blank');
+    try {
+      const template = await flowUseCase.exportTemplate(flow.id);
+      const blob = new Blob([JSON.stringify(template, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${flow.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_flow_template.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast({ title: 'Template exported successfully', type: 'success' });
+    } catch (err) {
+      addToast({
+        title: getErrorMessage(err, 'Failed to export flow template'),
+        type: 'error',
+      });
+    }
   };
 
   return {
     flow,
+    projects,
     environments,
     projectApis,
-    projects,
     isLoading,
     selectedEnvironmentType,
     setSelectedEnvironmentType,
@@ -372,6 +429,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     setTargetMode,
     isRunning,
     elapsedMs,
+    runningProgress,
     latestExecution,
     selectedStepIndex,
     setSelectedStepIndex,
