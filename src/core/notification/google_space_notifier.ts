@@ -25,6 +25,7 @@ const ICONS = {
   RESPONSE_IMAGE: 'https://cdn-icons-png.flaticon.com/512/3342/3342137.png',
   OPENAPI_IMPORT: 'https://cdn-icons-png.flaticon.com/512/875/875615.png',
   DATABASE: 'https://cdn-icons-png.flaticon.com/512/4248/4248443.png',
+  SCENARIO_FLOW: 'https://cdn-icons-png.flaticon.com/512/2620/2620582.png',
 };
 
 function isImageResponse(state: any): boolean {
@@ -46,7 +47,7 @@ function isImageResponse(state: any): boolean {
 
 /**
  * Sends a pure Card v2 notification (without chat balloon container) to Google Space webhook when target operations occur:
- * - Create, update, and delete on Project, Collection, Environment, Api, Request Scenario, Response Scenario
+ * - Create, update, and delete on Project, Collection, Environment, Api, Request Scenario, Response Scenario, Scenario Flow, Database
  */
 export async function sendGoogleSpaceNotification(payload: NotificationPayload): Promise<void> {
   const webhookUrl = ENV.GOOGLE_SPACE_WEBHOOK_URL;
@@ -62,7 +63,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     return;
   }
 
-  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario', 'database'];
+  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario', 'database', 'scenario_flow'];
   const isTargetEntity = targetEntities.includes(entityType);
 
   if (!isTargetEntity) {
@@ -130,6 +131,10 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     case 'request_scenario':
       entityLabel = 'Request Scenario';
       cardHeaderImageUrl = ICONS.REQUEST_SCENARIO;
+      break;
+    case 'scenario_flow':
+      entityLabel = 'Scenario Flow';
+      cardHeaderImageUrl = ICONS.SCENARIO_FLOW;
       break;
     case 'response_scenario': {
       const isFile = state.responseType === 'FILE';
@@ -314,6 +319,19 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
       } catch {
         // Ignore DB query errors for project pic
       }
+    }
+  } else if (entityType !== 'project' && resolvedProjectId) {
+    // 3. For other non-project entities (Scenario Flow, Collection, Environment) resolve Project PIC if linked
+    try {
+      const proj = await prisma.project.findUnique({
+        where: { id: resolvedProjectId },
+        select: { pics: { select: { account: { select: { id: true, name: true, username: true, googleId: true } } } } },
+      });
+      if (proj?.pics) {
+        await resolvePicFromAccount(proj.pics, 'Project');
+      }
+    } catch {
+      // Ignore DB query errors for project pic
     }
   }
 

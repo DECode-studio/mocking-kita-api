@@ -24,7 +24,7 @@ describe('Google Space notifier', () => {
     vi.restoreAllMocks();
   });
 
-  it.each(['collection', 'environment'] as const)('dispatches %s change notifications', async (entityType) => {
+  it.each(['collection', 'environment', 'scenario_flow'] as const)('dispatches %s change notifications', async (entityType) => {
     await sendGoogleSpaceNotification({
       action: 'CREATE',
       entityType,
