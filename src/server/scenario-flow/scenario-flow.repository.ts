@@ -13,7 +13,7 @@ export async function getScenarioFlowsByProjectId(projectId?: string) {
         select: { id: true, name: true },
       },
       defaultEnvironment: {
-        select: { id: true, name: true, environmentType: true, baseUrl: true },
+        select: { id: true, name: true, environmentType: true, variables: true },
       },
       steps: {
         where: {},
@@ -64,7 +64,7 @@ export async function getScenarioFlowById(id: string) {
         select: { id: true, name: true },
       },
       defaultEnvironment: {
-        select: { id: true, name: true, environmentType: true, baseUrl: true },
+        select: { id: true, name: true, environmentType: true, variables: true },
       },
       steps: {
         orderBy: { stepOrder: 'asc' },
@@ -350,7 +350,7 @@ export async function getExecutionById(executionId: string) {
     where: { id: executionId },
     include: {
       flow: { select: { id: true, name: true, projectId: true } },
-      environment: { select: { id: true, name: true, environmentType: true, baseUrl: true } },
+      environment: { select: { id: true, name: true, environmentType: true, variables: true } },
       steps: {
         orderBy: { stepOrder: 'asc' },
       },

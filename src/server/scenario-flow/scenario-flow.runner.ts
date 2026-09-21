@@ -13,6 +13,12 @@ import {
   createExecutionStepRecord,
 } from './scenario-flow.repository';
 import prisma from '@/src/core/db/prisma-client';
+import {
+  getEnvironmentBaseUrl,
+  getEnvironmentValue,
+  getEnvironmentVariablesMap,
+  EnvironmentVariable,
+} from '@/src/client/domain/environment/entity/environment';
 
 /**
  * Extract nested value by dot or bracket notation, e.g. "data.users[0].id"
@@ -134,9 +140,9 @@ export function interpolateVariables(
 ): any {
   if (typeof template === 'string') {
     // Check if entire string is single variable substitution e.g. "{{count}}" or "{{datasheet.emails.random}}"
-    const exactMatch = template.match(/^\{\{\s*([a-zA-Z0-9_$.\[\]]+)\s*\}\}$/);
+    const exactMatch = template.match(/^\{\{\s*([^\}]+?)\s*\}\}$/);
     if (exactMatch) {
-      const varKey = exactMatch[1];
+      const varKey = exactMatch[1].trim();
       const dynamicVal = resolveDynamicGenerator(varKey);
       if (dynamicVal !== null) return dynamicVal;
 
@@ -148,7 +154,8 @@ export function interpolateVariables(
     }
 
     // Replace all {{var}} inside string
-    return template.replace(/\{\{\s*([a-zA-Z0-9_$.\[\]]+)\s*\}\}/g, (_match, varKey) => {
+    return template.replace(/\{\{\s*([^\}]+?)\s*\}\}/g, (_match, rawVarKey) => {
+      const varKey = rawVarKey.trim();
       const dynamicVal = resolveDynamicGenerator(varKey);
       if (dynamicVal !== null) return String(dynamicVal);
 
@@ -473,9 +480,9 @@ export function extractVariables(
  *   3. Falls back to variables.baseUrl
  */
 export function resolveStepBaseUrl(
-  step: { targetEnvironmentType?: string | null; api?: any },
+  step: { targetEnvironmentType?: string | null; targetEnvironment?: string | null; api?: any },
   targetEnvType: string,
-  projectEnvironments: Array<{ environmentType: string; status?: boolean; baseUrl?: string }> = [],
+  projectEnvironments: Array<any> = [],
   currentVariables: Record<string, any> = {}
 ): string {
   const isStepLocal = (step as any).targetEnvironmentType === 'LOCAL';
@@ -486,59 +493,78 @@ export function resolveStepBaseUrl(
     return (process.env.APP_URL || `http://localhost:${defaultPort}`).replace(/\/+$/, '');
   }
 
-  // Check explicit targetEnvironment if specified on step or step.api (e.g. "auth", "otp", "gateway")
+  // Check explicit targetEnvironment if specified on step or step.api (can be ID, name, or slug)
   const apiEnvs = (step.api as any)?.apiEnvironments || [];
-  const explicitTarget = String((step as any).targetEnvironment || (step.api as any)?.targetEnvironment || '').toLowerCase().trim();
+  const explicitTarget = String(
+    (step as any).targetEnvironment || (step.api as any)?.targetEnvironment || ''
+  ).trim();
+
   if (explicitTarget) {
-    // 1. Check in apiEnvs
+    const explicitTargetLower = explicitTarget.toLowerCase();
+    const explicitSlug = explicitTargetLower.replace(/[^a-z0-9]+/g, '-');
+
+    // 1. Check in step.api.apiEnvironments
     const matchedByTargetInApi = apiEnvs.find((ae: any) => {
-      const envName = (ae.environment?.name || '').toLowerCase();
+      const env = ae.environment;
+      if (!env || env.status === false || ae.enabled === false) return false;
+      const envName = (env.name || '').toLowerCase();
       const envSlug = envName.replace(/[^a-z0-9]+/g, '-');
-      return (
-        ae.enabled !== false &&
-        ae.environment?.environmentType === effectiveStepEnvType &&
-        ae.environment?.status !== false &&
-        (envSlug.includes(explicitTarget) || envName.includes(explicitTarget) || ae.environmentId === explicitTarget)
-      );
+      const matchesTarget =
+        ae.environmentId === explicitTarget ||
+        env.id === explicitTarget ||
+        envName === explicitTargetLower ||
+        envSlug === explicitSlug ||
+        envSlug.includes(explicitSlug) ||
+        explicitSlug.includes(envSlug);
+      if (!matchesTarget) return false;
+      if (env.environmentType && env.environmentType !== effectiveStepEnvType) {
+        if (!env.values || !env.values[effectiveStepEnvType]) return false;
+      }
+      return true;
     });
-    if (matchedByTargetInApi?.environment?.baseUrl) {
-      return matchedByTargetInApi.environment.baseUrl.replace(/\/+$/, '');
+
+    if (matchedByTargetInApi?.environment) {
+      const url = getEnvironmentBaseUrl(matchedByTargetInApi.environment, effectiveStepEnvType);
+      if (url) return url.replace(/\/+$/, '');
     }
 
     // 2. Check in projectEnvironments
     const matchedByTargetInProj = projectEnvironments.find((e: any) => {
+      if (e.status === false) return false;
       const envName = (e.name || '').toLowerCase();
       const envSlug = envName.replace(/[^a-z0-9]+/g, '-');
-      return (
-        e.environmentType === effectiveStepEnvType &&
-        e.status !== false &&
-        (envSlug.includes(explicitTarget) || envName.includes(explicitTarget) || e.id === explicitTarget)
-      );
+      const matchesTarget =
+        e.id === explicitTarget ||
+        envName === explicitTargetLower ||
+        envSlug === explicitSlug ||
+        envSlug.includes(explicitSlug) ||
+        explicitSlug.includes(envSlug);
+      if (!matchesTarget) return false;
+      if (e.environmentType && e.environmentType !== effectiveStepEnvType) {
+        if (!e.values || !e.values[effectiveStepEnvType]) return false;
+      }
+      return true;
     });
-    if (matchedByTargetInProj?.baseUrl) {
-      return matchedByTargetInProj.baseUrl.replace(/\/+$/, '');
+
+    if (matchedByTargetInProj) {
+      const url = getEnvironmentBaseUrl(matchedByTargetInProj, effectiveStepEnvType);
+      if (url) return url.replace(/\/+$/, '');
     }
   }
 
-  // Option A: Check step.api.apiEnvironments
-  const matchedApiEnv = apiEnvs.find(
-    (ae: any) =>
-      ae.enabled !== false &&
-      ae.environment?.environmentType === effectiveStepEnvType &&
-      ae.environment?.status !== false
-  );
-
-  if (matchedApiEnv?.environment?.baseUrl) {
-    return matchedApiEnv.environment.baseUrl.replace(/\/+$/, '');
+  // Option A: Check step.api.apiEnvironments (first enabled Base URL environment)
+  for (const ae of apiEnvs) {
+    if (ae.enabled !== false && ae.environment && ae.environment.status !== false) {
+      const url = getEnvironmentBaseUrl(ae.environment, effectiveStepEnvType);
+      if (url) return url.replace(/\/+$/, '');
+    }
   }
 
-  // Fallback: Check projectEnvironments matching effectiveStepEnvType
-  if (projectEnvironments.length > 0) {
-    const matchedProjectEnv = projectEnvironments.find(
-      (e) => e.environmentType === effectiveStepEnvType && e.status && e.baseUrl
-    );
-    if (matchedProjectEnv?.baseUrl) {
-      return matchedProjectEnv.baseUrl.replace(/\/+$/, '');
+  // Fallback: Check projectEnvironments (first Base URL environment with a URL for effectiveStepEnvType)
+  for (const pe of projectEnvironments) {
+    if (pe.status !== false) {
+      const url = getEnvironmentBaseUrl(pe, effectiveStepEnvType);
+      if (url) return url.replace(/\/+$/, '');
     }
   }
 
@@ -571,7 +597,7 @@ export async function executeScenarioFlow(
       where: { id: options.environmentId },
     });
     if (env) {
-      targetEnvType = env.environmentType;
+      targetEnvType = env.environmentType || 'DEVELOPMENT';
       recordedEnvId = env.id;
     }
   }
@@ -581,7 +607,7 @@ export async function executeScenarioFlow(
       where: { id: flow.defaultEnvironmentId },
     });
     if (defaultEnv) {
-      targetEnvType = defaultEnv.environmentType;
+      targetEnvType = defaultEnv.environmentType || 'DEVELOPMENT';
       if (!recordedEnvId) recordedEnvId = defaultEnv.id;
     }
   }
@@ -590,7 +616,7 @@ export async function executeScenarioFlow(
     targetEnvType = 'DEVELOPMENT';
   }
 
-  // Pre-load project environments for fallback matching
+  // Pre-load project environments
   const projectEnvironments = flow.projectId
     ? await prisma.environment.findMany({
         where: { projectId: flow.projectId, deletedAt: null },
@@ -598,19 +624,50 @@ export async function executeScenarioFlow(
     : [];
 
   if (!recordedEnvId && projectEnvironments.length > 0) {
-    const matchedEnv = projectEnvironments.find(
-      (e) => e.environmentType === targetEnvType && e.status
-    );
-    if (matchedEnv) {
-      recordedEnvId = matchedEnv.id;
-    }
+    const firstBaseUrlEnv = projectEnvironments.find((e) => e.isBaseUrl !== false && e.status);
+    recordedEnvId = firstBaseUrlEnv ? firstBaseUrlEnv.id : projectEnvironments[0]?.id || null;
   }
 
   const enabledSteps = flow.steps.filter((s) => s.enabled);
 
+  // Extract variables from all active project environments for the target stage
+  let activeEnvVars: Record<string, string> = {};
+
+  // 1. Extract non-baseUrl matrix variables (e.g. API keys, secrets) for active stage
+  for (const envRecord of projectEnvironments) {
+    if (envRecord.status === false) continue;
+    if (envRecord.isBaseUrl === false && envRecord.name) {
+      const stageVal = getEnvironmentValue(envRecord, targetEnvType);
+      if (stageVal) {
+        activeEnvVars[envRecord.name] = stageVal;
+        const normalizedKey = envRecord.name.toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+        if (normalizedKey && !activeEnvVars[normalizedKey]) {
+          activeEnvVars[normalizedKey] = stageVal;
+        }
+      }
+    }
+    // Also include granular variables if present
+    const envVars = getEnvironmentVariablesMap(envRecord, targetEnvType);
+    activeEnvVars = { ...activeEnvVars, ...envVars };
+  }
+
+  // 2. Specific recorded environment variables if available
+  const activeEnvRecord = recordedEnvId
+    ? projectEnvironments.find((e) => e.id === recordedEnvId) ||
+      (await prisma.environment.findUnique({ where: { id: recordedEnvId } }))
+    : null;
+
+  if (activeEnvRecord) {
+    const specificVars = getEnvironmentVariablesMap(activeEnvRecord, targetEnvType);
+    activeEnvVars = { ...activeEnvVars, ...specificVars };
+  }
+
   // Initialize runtime variables
+  // Priority: Active Env Variables -> Flow Variables -> Runtime Invocation Variables
   const initialFlowVars = (flow.variables as Record<string, any>) || {};
   const currentVariables: Record<string, any> = {
+    ...activeEnvVars,
+    env: activeEnvVars, // makes both {{API_KEY}} and {{env.API_KEY}} available
     ...initialFlowVars,
     ...(options.initialVariables || {}),
   };

@@ -69,8 +69,11 @@ export interface FlowExportTemplate {
   environments?: Array<{
     id?: string;
     name: string;
+    isBaseUrl?: boolean;
+    values?: Partial<Record<'LOCAL' | 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING', string | null>>;
     environmentType?: 'LOCAL' | 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING';
-    baseUrl: string;
+    baseUrl?: string;
+    variables?: any[];
     isDefault?: boolean;
   }>;
   flow: {
