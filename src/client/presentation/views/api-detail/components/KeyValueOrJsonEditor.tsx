@@ -16,6 +16,7 @@ import { ParamMatchOperator } from '@/src/core/utils/types';
 import { isParamRule, extractParamRule } from '@/src/core/utils/param-matcher';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
 
 interface KeyValueOrJsonEditorProps {
   label: string;
@@ -24,6 +25,7 @@ interface KeyValueOrJsonEditorProps {
   supportFiles?: boolean;
   placeholderValue?: string;
   idPrefix?: string;
+  projectId?: string;
 }
 
 interface TreeNodeEditorProps {
@@ -35,6 +37,7 @@ interface TreeNodeEditorProps {
   supportFiles?: boolean;
   placeholderValue?: string;
   idPrefix?: string;
+  projectId?: string;
   onUpdateLeaf: (
     path: (string | number)[],
     update: {
@@ -65,6 +68,7 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
   supportFiles = false,
   placeholderValue = 'Value',
   idPrefix,
+  projectId,
   onUpdateLeaf,
   onRenameKey,
   onDeletePath,
@@ -180,11 +184,19 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
             }}
           />
         ) : !isValDisabled && !isFile ? (
-          <DataSheetVariablePicker
-            buttonLabel="Tag"
-            triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
-            onInsert={(token) => onUpdateLeaf(path, { value: token })}
-          />
+          <div className="flex items-center gap-1">
+            <EnvironmentVariablePicker
+              projectId={projectId}
+              buttonLabel="Env"
+              triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+              onInsert={(token) => onUpdateLeaf(path, { value: token })}
+            />
+            <DataSheetVariablePicker
+              buttonLabel="Tag"
+              triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+              onInsert={(token) => onUpdateLeaf(path, { value: token })}
+            />
+          </div>
         ) : null}
 
         {supportFiles && (
@@ -310,6 +322,7 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
                   supportFiles={supportFiles}
                   placeholderValue={placeholderValue}
                   idPrefix={idPrefix}
+                  projectId={projectId}
                   onUpdateLeaf={onUpdateLeaf}
                   onRenameKey={onRenameKey}
                   onDeletePath={onDeletePath}
@@ -386,11 +399,19 @@ const TreeNodeEditor: React.FC<TreeNodeEditorProps> = ({
       />
 
       {!isFile && (
-        <DataSheetVariablePicker
-          buttonLabel="Tag"
-          triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
-          onInsert={(token) => onUpdateLeaf(path, { value: token })}
-        />
+        <div className="flex items-center gap-1">
+          <EnvironmentVariablePicker
+            projectId={projectId}
+            buttonLabel="Env"
+            triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+            onInsert={(token) => onUpdateLeaf(path, { value: token })}
+          />
+          <DataSheetVariablePicker
+            buttonLabel="Tag"
+            triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+            onInsert={(token) => onUpdateLeaf(path, { value: token })}
+          />
+        </div>
       )}
 
       {supportFiles && (
@@ -424,6 +445,7 @@ export const KeyValueOrJsonEditor: React.FC<KeyValueOrJsonEditorProps> = ({
   supportFiles = false,
   placeholderValue = 'Value',
   idPrefix,
+  projectId,
 }) => {
   const {
     mode,
@@ -524,6 +546,7 @@ export const KeyValueOrJsonEditor: React.FC<KeyValueOrJsonEditorProps> = ({
                   supportFiles={supportFiles}
                   placeholderValue={placeholderValue}
                   idPrefix={idPrefix}
+                  projectId={projectId}
                   onUpdateLeaf={updateLeaf}
                   onRenameKey={renameKey}
                   onDeletePath={deletePath}

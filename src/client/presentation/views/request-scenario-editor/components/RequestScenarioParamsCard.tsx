@@ -2,12 +2,14 @@ import React from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { KeyValueOrJsonEditor } from '@/src/client/presentation/views/api-detail/components/KeyValueOrJsonEditor';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
 import {
   REQUEST_SCENARIO_EDITOR_TEXT,
   REQUEST_SCENARIO_EDITOR_SEMANTIC_ID,
 } from '../constant';
 
 interface RequestScenarioParamsCardProps {
+  projectId?: string;
   queryParams: string;
   onQueryParamsChange: (value: string) => void;
   headers: string;
@@ -15,21 +17,24 @@ interface RequestScenarioParamsCardProps {
 }
 
 export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps> = ({
+  projectId,
   queryParams,
   onQueryParamsChange,
   headers,
   onHeadersChange,
 }) => {
+  const cleanTokenKey = (token: string, fallback: string) =>
+    token
+      .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
+      .replace(/\}\}.*$/, '')
+      .replace(/[^a-zA-Z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '') || fallback;
+
   const handleInsertQueryParamToken = (token: string) => {
     try {
       const parsed = JSON.parse(queryParams.trim() || '{}');
-      const key =
-        token
-          .replace(/^\{\{\s*datasheet\./, '')
-          .replace(/\}\}/, '')
-          .replace(/[^a-zA-Z0-9_]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '') || 'param';
+      const key = cleanTokenKey(token, 'param');
       parsed[key] = token;
       onQueryParamsChange(JSON.stringify(parsed, null, 2));
     } catch {
@@ -40,13 +45,7 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
   const handleInsertHeaderToken = (token: string) => {
     try {
       const parsed = JSON.parse(headers.trim() || '{}');
-      const key =
-        token
-          .replace(/^\{\{\s*datasheet\./, '')
-          .replace(/\}\}/, '')
-          .replace(/[^a-zA-Z0-9_]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '') || 'header';
+      const key = cleanTokenKey(token, 'header');
       parsed[key] = token;
       onHeadersChange(JSON.stringify(parsed, null, 2));
     } catch {
@@ -65,12 +64,20 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
               {REQUEST_SCENARIO_EDITOR_TEXT.QUERY_PARAMS_TITLE}
             </h2>
           </div>
-          <DataSheetVariablePicker
-            buttonLabel="Data Sheets"
-            onInsert={handleInsertQueryParamToken}
-          />
+          <div className="flex items-center gap-2">
+            <EnvironmentVariablePicker
+              projectId={projectId}
+              buttonLabel="Env Vars"
+              onInsert={handleInsertQueryParamToken}
+            />
+            <DataSheetVariablePicker
+              buttonLabel="Data Sheets"
+              onInsert={handleInsertQueryParamToken}
+            />
+          </div>
         </div>
         <KeyValueOrJsonEditor
+          projectId={projectId}
           label="Query Params"
           value={queryParams}
           onChange={onQueryParamsChange}
@@ -88,12 +95,20 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
               {REQUEST_SCENARIO_EDITOR_TEXT.HEADERS_TITLE}
             </h2>
           </div>
-          <DataSheetVariablePicker
-            buttonLabel="Data Sheets"
-            onInsert={handleInsertHeaderToken}
-          />
+          <div className="flex items-center gap-2">
+            <EnvironmentVariablePicker
+              projectId={projectId}
+              buttonLabel="Env Vars"
+              onInsert={handleInsertHeaderToken}
+            />
+            <DataSheetVariablePicker
+              buttonLabel="Data Sheets"
+              onInsert={handleInsertHeaderToken}
+            />
+          </div>
         </div>
         <KeyValueOrJsonEditor
+          projectId={projectId}
           label="Headers"
           value={headers}
           onChange={onHeadersChange}
@@ -104,3 +119,4 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
     </div>
   );
 };
+
