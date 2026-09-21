@@ -11,15 +11,36 @@ import {
   ShieldCheck,
   Send,
   DownloadCloud,
+  Loader2,
 } from 'lucide-react';
 import { ScenarioFlowExecutionStep } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 
 interface StepExecutionInspectorProps {
   step: ScenarioFlowExecutionStep | null;
+  isRunning?: boolean;
 }
 
-export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ step }) => {
+export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ step, isRunning }) => {
   const [activeTab, setActiveTab] = useState('response');
+
+  if (isRunning) {
+    return (
+      <div className="h-64 flex flex-col items-center justify-center text-center p-6 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-500/30 rounded-2xl space-y-3">
+        <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/20 animate-pulse">
+          <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+        </div>
+        <div className="space-y-1">
+          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1.5">
+            <span>Dispatching API Request...</span>
+            <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
+          </h4>
+          <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+            Executing HTTP request, calculating duration, and running assertions...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!step) {
     return (

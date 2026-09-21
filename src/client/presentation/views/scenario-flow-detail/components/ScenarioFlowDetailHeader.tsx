@@ -43,6 +43,7 @@ interface ScenarioFlowDetailHeaderProps {
   onToggleViewMode: (mode: 'canvas' | 'list') => void;
   onAutoArrange?: () => void;
   isRunning: boolean;
+  elapsedMs?: number;
   onRunFlow: () => void;
   onExport: () => void;
   onOpenAddStep: () => void;
@@ -62,6 +63,7 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
   onToggleViewMode,
   onAutoArrange,
   isRunning,
+  elapsedMs,
   onRunFlow,
   onExport,
   onOpenAddStep,
@@ -69,11 +71,17 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
   onOpenEditFlow,
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+    <div className="relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+      {/* Top Indeterminate Progress Bar */}
+      {isRunning && (
+        <div className="absolute top-0 left-0 right-0 h-1 overflow-hidden bg-purple-100 dark:bg-purple-950/60 z-10">
+          <div className="h-full w-full bg-linear-to-r from-purple-500 via-pink-500 to-indigo-500 animate-pulse" />
+        </div>
+      )}
       {/* Top Row: Flow Title & Meta Info */}
       <div className="flex items-start gap-3.5">
         <Link
-          href={projectId ? ROUTES.PROJECT_DETAIL(projectId) : ROUTES.SCENARIO_FLOWS}
+          href={projectId ? ROUTES.PROJECT_SCENARIO_FLOWS(projectId) : ROUTES.SCENARIO_FLOWS}
           className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0 mt-0.5"
           title={SCENARIO_FLOW_DETAIL_TEXT.BACK_TO_FLOWS}
         >
@@ -218,12 +226,18 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
           <button
             onClick={onRunFlow}
             disabled={isRunning || !flow.steps || flow.steps.length === 0}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-98 shadow-md shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"
+            className={`inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all cursor-pointer ${
+              isRunning
+                ? 'bg-linear-to-r from-purple-600 via-indigo-600 to-purple-700 shadow-lg shadow-purple-500/30 ring-2 ring-purple-400/50'
+                : 'bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-98 shadow-md shadow-purple-500/20 disabled:opacity-50'
+            }`}
           >
             {isRunning ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{SCENARIO_FLOW_DETAIL_TEXT.RUNNING_BTN}</span>
+                <Loader2 className="w-4 h-4 animate-spin text-purple-200" />
+                <span>
+                  Running... ({((elapsedMs || 0) / 1000).toFixed(1)}s)
+                </span>
               </>
             ) : (
               <>

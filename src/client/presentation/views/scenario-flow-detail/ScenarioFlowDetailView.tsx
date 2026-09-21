@@ -23,6 +23,7 @@ import {
   EditFlowModal,
 } from './components';
 import { ROUTES } from '@/src/core/constants/routes';
+import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 
 interface ScenarioFlowDetailViewProps {
   projectId?: string;
@@ -33,6 +34,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   projectId,
   flowId,
 }) => {
+  const setBreadcrumbTitle = useUIStore((state) => state.setBreadcrumbTitle);
   const {
     flow,
     environments,
@@ -46,6 +48,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     targetMode,
     setTargetMode,
     isRunning,
+    elapsedMs,
     latestExecution,
     selectedStepIndex,
     setSelectedStepIndex,
@@ -74,6 +77,15 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     setLatestExecution,
   } = useScenarioFlowDetail(projectId, flowId);
 
+  React.useEffect(() => {
+    if (flow?.name) {
+      setBreadcrumbTitle(flow.name);
+    }
+    return () => {
+      setBreadcrumbTitle(undefined);
+    };
+  }, [flow?.name, setBreadcrumbTitle]);
+
   if (isLoading && !flow) {
     return (
       <div className="py-24 text-center space-y-3">
@@ -93,10 +105,10 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
           The requested scenario flow does not exist or was deleted.
         </p>
         <Link
-          href={projectId ? ROUTES.PROJECT_DETAIL(projectId) : ROUTES.SCENARIO_FLOWS}
+          href={projectId ? ROUTES.PROJECT_SCENARIO_FLOWS(projectId) : ROUTES.SCENARIO_FLOWS}
           className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-500"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to {projectId ? 'Project' : 'Scenario Flows'}
+          <ArrowLeft className="w-3.5 h-3.5" /> Back to Scenario Flows
         </Link>
       </div>
     );
@@ -120,6 +132,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         onToggleViewMode={setViewMode}
         onAutoArrange={handleAutoArrange}
         isRunning={isRunning}
+        elapsedMs={elapsedMs}
         onRunFlow={handleRunFlow}
         onExport={handleExport}
         onOpenAddStep={() => {
@@ -154,16 +167,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
             }}
             onDeleteStep={handleDeleteStep}
             onToggleStepEnabled={handleToggleStepEnabled}
-          />
-
-          {/* Slide-over Live Runner & Inspector Drawer */}
-          <StepInspectorDrawer
-            isOpen={isInspectorOpen}
-            onClose={() => setIsInspectorOpen(false)}
-            flow={flow}
-            latestExecution={latestExecution}
-            selectedStepIndex={selectedStepIndex}
-            onSelectStep={setSelectedStepIndex}
           />
         </div>
       ) : (
@@ -222,6 +225,14 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
                     step={step}
                     index={idx}
                     totalSteps={steps.length}
+                    isSelected={selectedStepIndex === idx}
+                    isRunning={isRunning}
+                    executionStep={latestExecution?.steps?.[idx] || null}
+                    onSelect={() => setSelectedStepIndex(idx)}
+                    onDoubleClick={() => {
+                      setSelectedStepIndex(idx);
+                      setIsInspectorOpen(true);
+                    }}
                     onEdit={(s) => {
                       setEditingStep(s);
                       setIsAddStepModalOpen(true);
@@ -247,13 +258,27 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
               execution={latestExecution}
               flowName={flow.name}
               selectedStepIndex={selectedStepIndex}
+              isRunning={isRunning}
+              elapsedMs={elapsedMs}
               onSelectStep={setSelectedStepIndex}
             />
 
-            <StepExecutionInspector step={activeExecutionStep} />
+            <StepExecutionInspector step={activeExecutionStep} isRunning={isRunning} />
           </div>
         </div>
       )}
+
+      {/* Slide-over Live Runner & Inspector Drawer */}
+      <StepInspectorDrawer
+        isOpen={isInspectorOpen}
+        onClose={() => setIsInspectorOpen(false)}
+        flow={flow}
+        latestExecution={latestExecution}
+        selectedStepIndex={selectedStepIndex}
+        isRunning={isRunning}
+        elapsedMs={elapsedMs}
+        onSelectStep={setSelectedStepIndex}
+      />
 
       {/* Modals */}
       <AddStepModal

@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Loader2,
 } from 'lucide-react';
 import {
   ScenarioFlow,
@@ -23,6 +24,8 @@ interface StepInspectorDrawerProps {
   flow: ScenarioFlow;
   latestExecution: ScenarioFlowExecution | null;
   selectedStepIndex: number;
+  isRunning?: boolean;
+  elapsedMs?: number;
   onSelectStep: (index: number) => void;
 }
 
@@ -32,6 +35,8 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
   flow,
   latestExecution,
   selectedStepIndex,
+  isRunning,
+  elapsedMs,
   onSelectStep,
 }) => {
   if (!isOpen) return null;
@@ -49,9 +54,17 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
             <Activity className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-              Live Runner & Step Inspector
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                Live Runner & Step Inspector
+              </h2>
+              {isRunning && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 animate-pulse">
+                  <Loader2 className="w-2.5 h-2.5 animate-spin text-purple-500" />
+                  RUNNING ({((elapsedMs || 0) / 1000).toFixed(1)}s)
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-slate-500">
               Inspect sent payload, headers, response, and assertions
             </p>
@@ -73,8 +86,8 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
           {steps.map((step, idx) => {
             const isSelected = selectedStepIndex === idx;
             const execStep = latestExecution?.steps?.[idx];
-            const isSuccess = execStep?.status === 'SUCCESS';
-            const isFailed = execStep?.status === 'FAILED';
+            const isSuccess = !isRunning && execStep?.status === 'SUCCESS';
+            const isFailed = !isRunning && execStep?.status === 'FAILED';
 
             return (
               <button
@@ -88,6 +101,7 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
               >
                 <span className="opacity-80">#{idx + 1}</span>
                 <span className="truncate max-w-27.5">{step.name}</span>
+                {isRunning && <Loader2 className="w-3 h-3 animate-spin text-purple-400" />}
                 {isSuccess && <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
                 {isFailed && <XCircle className="w-3 h-3 text-rose-400" />}
               </button>
@@ -101,12 +115,15 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
         {/* Flow Execution Progress Overview */}
         <FlowExecutionPanel
           execution={latestExecution}
+          flowName={flow.name}
           selectedStepIndex={selectedStepIndex}
+          isRunning={isRunning}
+          elapsedMs={elapsedMs}
           onSelectStep={onSelectStep}
         />
 
         {/* Selected Step Execution Inspector */}
-        <StepExecutionInspector step={activeExecutionStep} />
+        <StepExecutionInspector step={activeExecutionStep} isRunning={isRunning} />
       </div>
     </div>
   );

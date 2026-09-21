@@ -28,8 +28,26 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const [targetMode, setTargetMode] = useState<'LIVE' | 'MOCK'>('LIVE');
   const [isRunning, setIsRunning] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const [latestExecution, setLatestExecution] = useState<ScenarioFlowExecution | null>(null);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
+
+  // Runner live timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isRunning) {
+      const start = Date.now();
+      setElapsedMs(0);
+      interval = setInterval(() => {
+        setElapsedMs(Date.now() - start);
+      }, 100);
+    } else {
+      setElapsedMs(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning]);
 
   // Canvas & View State
   const [viewMode, setViewMode] = useState<'canvas' | 'list'>('canvas');
@@ -353,6 +371,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     targetMode,
     setTargetMode,
     isRunning,
+    elapsedMs,
     latestExecution,
     selectedStepIndex,
     setSelectedStepIndex,

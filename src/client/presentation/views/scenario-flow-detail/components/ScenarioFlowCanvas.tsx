@@ -180,24 +180,24 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
 
       // Execution status of stepA
       const execStepA = latestExecution?.steps?.[i];
-      const isSuccess = execStepA?.status === 'SUCCESS';
-      const isFailed = execStepA?.status === 'FAILED';
-      const isStepRunning = isRunning && !execStepA;
+      const isStepRunning = isRunning;
+      const isSuccess = !isRunning && execStepA?.status === 'SUCCESS';
+      const isFailed = !isRunning && execStepA?.status === 'FAILED';
 
       let strokeColor = '#64748b'; // default slate-500
       let strokeWidth = 2.5;
       let strokeDash = 'none';
 
-      if (isSuccess) {
+      if (isStepRunning) {
+        strokeColor = '#a855f7'; // purple-500
+        strokeWidth = 3;
+        strokeDash = '8 6';
+      } else if (isSuccess) {
         strokeColor = '#10b981'; // emerald-500
         strokeWidth = 3;
       } else if (isFailed) {
         strokeColor = '#f43f5e'; // rose-500
         strokeWidth = 3;
-      } else if (isStepRunning) {
-        strokeColor = '#a855f7'; // purple-500
-        strokeWidth = 3;
-        strokeDash = '6 6';
       }
 
       curves.push(
@@ -208,7 +208,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
             fill="none"
             stroke={strokeColor}
             strokeWidth={strokeWidth + 4}
-            strokeOpacity={0.15}
+            strokeOpacity={isStepRunning ? 0.35 : 0.15}
             strokeLinecap="round"
           />
 
@@ -220,17 +220,32 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
             strokeWidth={strokeWidth}
             strokeDasharray={strokeDash}
             strokeLinecap="round"
-            className={isStepRunning ? 'animate-pulse' : ''}
-          />
+          >
+            {isStepRunning && (
+              <animate
+                attributeName="stroke-dashoffset"
+                from="28"
+                to="0"
+                dur="0.8s"
+                repeatCount="indefinite"
+              />
+            )}
+          </path>
 
-          {/* Flow Direction Indicator Circle */}
-          <circle
-            cx={(x1 + x2) / 2}
-            cy={(y1 + y2) / 2}
-            r="4"
-            fill={strokeColor}
-            className="shadow-sm"
-          />
+          {/* Flow Direction Indicator or Traveling Particle */}
+          {isStepRunning ? (
+            <circle r="4.5" fill="#d8b4fe">
+              <animateMotion path={pathData} dur="1.2s" repeatCount="indefinite" />
+            </circle>
+          ) : (
+            <circle
+              cx={(x1 + x2) / 2}
+              cy={(y1 + y2) / 2}
+              r="4"
+              fill={strokeColor}
+              className="shadow-sm"
+            />
+          )}
         </g>
       );
     }
@@ -290,7 +305,12 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
                 onPositionChange={onPositionChange}
                 onSelect={() => {
                   onSelectStep(idx);
-                  if (!isInspectorOpen) onToggleInspector();
+                }}
+                onDoubleClick={() => {
+                  onSelectStep(idx);
+                  if (!isInspectorOpen) {
+                    onToggleInspector();
+                  }
                 }}
                 onEdit={onEditStep}
                 onDelete={onDeleteStep}
