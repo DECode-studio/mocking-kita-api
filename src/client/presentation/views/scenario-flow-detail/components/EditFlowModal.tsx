@@ -6,6 +6,8 @@ import * as Switch from '@radix-ui/react-switch';
 import { X, Layers, Save, Server, Loader2 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { SCENARIO_FLOW_DETAIL_TEXT, SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface EditFlowModalProps {
   isOpen: boolean;
@@ -51,6 +53,24 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
     }
   }, [isOpen, flow]);
 
+  const handleInsertVariableToken = (token: string) => {
+    try {
+      const parsed = JSON.parse(variablesJson.trim() || '{}');
+      const cleanKey =
+        token
+          .replace(/^\{\{\s*datasheet\./, '')
+          .replace(/\}\}/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '') || 'datasheet_value';
+      parsed[cleanKey] = token;
+      setVariablesJson(JSON.stringify(parsed, null, 2));
+      setJsonError(null);
+    } catch {
+      setVariablesJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -90,7 +110,10 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 p-6 space-y-5 animate-in zoom-in-95">
+        <Dialog.Content
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_EDIT_FLOW}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 p-6 space-y-5 animate-in zoom-in-95"
+        >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
@@ -199,9 +222,17 @@ export const EditFlowModal: React.FC<EditFlowModalProps> = ({
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono">
                   Initial Variables (JSON)
                 </label>
-                {jsonError && (
-                  <span className="text-[11px] text-rose-500 font-medium">{jsonError}</span>
-                )}
+                <div className="flex items-center gap-2">
+                  {jsonError && (
+                    <span className="text-[11px] text-rose-500 font-medium">{jsonError}</span>
+                  )}
+                  <DataSheetVariablePicker
+                    buttonLabel="Data Sheet"
+                    triggerClassName="text-[10px] py-0.5 px-2"
+                    projectId={flow.projectId || undefined}
+                    onInsert={handleInsertVariableToken}
+                  />
+                </div>
               </div>
               <textarea
                 rows={4}

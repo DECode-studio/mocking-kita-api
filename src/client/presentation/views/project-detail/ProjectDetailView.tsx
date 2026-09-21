@@ -5,6 +5,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { ArrowLeft } from 'lucide-react';
 import { ApiCollectionsView } from '../api-collections/ApiCollectionsView';
 import { ScenarioFlowsListView } from '../scenario-flows/ScenarioFlowsListView';
+import { DataSheetsListView } from '../data-sheets/DataSheetsListView';
 import { formatDate } from '@/src/core/utils/date';
 import { useProjectDetail } from './hook/useProjectDetail';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
@@ -128,6 +129,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            value="data-sheets"
+            className={`pb-2.5 text-xs font-semibold transition-colors relative ${
+              activeTab === 'data-sheets'
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Data Sheets
+          </Tabs.Trigger>
+
+          <Tabs.Trigger
             value="overview"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'overview'
@@ -149,6 +161,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
 
         <Tabs.Content value="scenario-flows">
           <ScenarioFlowsListView projectId={project.id} />
+        </Tabs.Content>
+
+        <Tabs.Content value="data-sheets">
+          <DataSheetsListView projectId={project.id} />
         </Tabs.Content>
 
         <Tabs.Content value="overview">

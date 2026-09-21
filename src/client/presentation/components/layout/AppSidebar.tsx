@@ -23,6 +23,7 @@ import {
   History,
   Server,
   Layers,
+  Table2,
 } from 'lucide-react';
 import { useThemeStore } from '@/src/core/theme/themeStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -88,6 +89,12 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.SCENARIO_FLOWS,
       icon: Layers,
       isActive: pathname.startsWith(ROUTES.SCENARIO_FLOWS) || pathname.includes('/scenario-flows'),
+    },
+    {
+      name: 'Data Sheets',
+      href: ROUTES.DATA_SHEETS,
+      icon: Table2,
+      isActive: pathname.startsWith(ROUTES.DATA_SHEETS) || pathname.includes('/data-sheets'),
     },
     {
       name: 'External APIs Docs',

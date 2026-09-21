@@ -29,6 +29,7 @@ interface CanvasStepNodeProps {
   zoom: number;
   onPositionChange: (stepId: string, x: number, y: number) => void;
   onSelect: () => void;
+  onDoubleClick?: () => void;
   onEdit: (step: ScenarioFlowStep) => void;
   onDelete: (stepId: string, stepName: string) => void;
   onToggleEnabled: (step: ScenarioFlowStep) => void;
@@ -53,6 +54,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
   zoom,
   onPositionChange,
   onSelect,
+  onDoubleClick,
   onEdit,
   onDelete,
   onToggleEnabled,
@@ -117,14 +119,17 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
   };
 
   // Execution badge & border state
-  const isStepRunning = isRunning && executionStep === undefined;
-  const isStepSuccess = executionStep?.status === 'SUCCESS';
-  const isStepFailed = executionStep?.status === 'FAILED';
+  const isStepRunning = isRunning;
+  const isStepSuccess = !isRunning && executionStep?.status === 'SUCCESS';
+  const isStepFailed = !isRunning && executionStep?.status === 'FAILED';
 
   let borderStyle = 'border-slate-200/90 dark:border-slate-800';
   let glowShadow = 'shadow-md';
 
-  if (isSelected) {
+  if (isStepRunning) {
+    borderStyle = 'border-purple-500 ring-2 ring-purple-500/60 animate-pulse';
+    glowShadow = 'shadow-xl shadow-purple-500/25';
+  } else if (isSelected) {
     borderStyle = 'border-purple-500 ring-2 ring-purple-500/30';
     glowShadow = 'shadow-lg shadow-purple-500/10';
   } else if (isStepSuccess) {
@@ -149,9 +154,22 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('a') || target.closest('input')) {
+          return;
+        }
         e.stopPropagation();
         onSelect();
       }}
+      onDoubleClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('a') || target.closest('input')) {
+          return;
+        }
+        e.stopPropagation();
+        onDoubleClick?.();
+      }}
+      title="Double-click to open step inspector"
       className={`group select-none rounded-2xl border transition-shadow cursor-grab active:cursor-grabbing ${borderStyle} ${glowShadow} ${
         step.enabled
           ? 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-md'
@@ -193,9 +211,9 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
         {/* Execution Status Badge */}
         <div className="flex items-center gap-1.5">
           {isStepRunning && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-500/10 text-purple-400 animate-pulse border border-purple-500/20">
-              <Loader2 className="w-2.5 h-2.5 animate-spin" />
-              running
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 animate-pulse border border-purple-500/40 shadow-xs shadow-purple-500/20">
+              <Loader2 className="w-3 h-3 animate-spin text-purple-500" />
+              RUNNING
             </span>
           )}
           {isStepSuccess && (

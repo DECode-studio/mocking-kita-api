@@ -10,7 +10,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useScenarioFlowDetail } from './hook/useScenarioFlowDetail';
-import { SCENARIO_FLOW_DETAIL_TEXT } from './constant/scenarioFlowDetailText';
+import {
+  SCENARIO_FLOW_DETAIL_TEXT,
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+} from './constant';
 import {
   ScenarioFlowDetailHeader,
   StepCard,
@@ -23,6 +26,7 @@ import {
   EditFlowModal,
 } from './components';
 import { ROUTES } from '@/src/core/constants/routes';
+import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 
 interface ScenarioFlowDetailViewProps {
   projectId?: string;
@@ -33,6 +37,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   projectId,
   flowId,
 }) => {
+  const setBreadcrumbTitle = useUIStore((state) => state.setBreadcrumbTitle);
   const {
     flow,
     environments,
@@ -46,6 +51,8 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     targetMode,
     setTargetMode,
     isRunning,
+    elapsedMs,
+    runningProgress,
     latestExecution,
     selectedStepIndex,
     setSelectedStepIndex,
@@ -72,13 +79,27 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     handleRunFlow,
     handleExport,
     setLatestExecution,
+    loadScenariosForApi,
+    handleSelectExecution,
+    handleExportExecutionLog,
   } = useScenarioFlowDetail(projectId, flowId);
+
+  React.useEffect(() => {
+    if (flow?.name) {
+      setBreadcrumbTitle(flow.name);
+    }
+    return () => {
+      setBreadcrumbTitle(undefined);
+    };
+  }, [flow?.name, setBreadcrumbTitle]);
 
   if (isLoading && !flow) {
     return (
       <div className="py-24 text-center space-y-3">
         <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-slate-500 font-medium">Loading scenario flow details...</p>
+        <p className="text-xs text-slate-500 font-medium">
+          {SCENARIO_FLOW_DETAIL_TEXT.LOADING_TITLE}
+        </p>
       </div>
     );
   }
@@ -87,16 +108,16 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     return (
       <div className="py-16 text-center space-y-3">
         <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
-          Flow Not Found
+          {SCENARIO_FLOW_DETAIL_TEXT.NOT_FOUND_TITLE}
         </h2>
         <p className="text-xs text-slate-500">
-          The requested scenario flow does not exist or was deleted.
+          {SCENARIO_FLOW_DETAIL_TEXT.NOT_FOUND_DESC}
         </p>
         <Link
-          href={projectId ? ROUTES.PROJECT_DETAIL(projectId) : ROUTES.SCENARIO_FLOWS}
+          href={projectId ? ROUTES.PROJECT_SCENARIO_FLOWS(projectId) : ROUTES.SCENARIO_FLOWS}
           className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-500"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to {projectId ? 'Project' : 'Scenario Flows'}
+          <ArrowLeft className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.BACK_TO_SCENARIO_FLOWS}
         </Link>
       </div>
     );
@@ -106,7 +127,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   const activeExecutionStep = latestExecution?.steps?.[selectedStepIndex] || null;
 
   return (
-    <div className="space-y-6">
+    <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CONTAINER} className="space-y-6">
       {/* Top Header */}
       <ScenarioFlowDetailHeader
         flow={flow}
@@ -120,6 +141,8 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         onToggleViewMode={setViewMode}
         onAutoArrange={handleAutoArrange}
         isRunning={isRunning}
+        elapsedMs={elapsedMs}
+        runningProgress={runningProgress}
         onRunFlow={handleRunFlow}
         onExport={handleExport}
         onOpenAddStep={() => {
@@ -154,16 +177,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
             }}
             onDeleteStep={handleDeleteStep}
             onToggleStepEnabled={handleToggleStepEnabled}
-          />
-
-          {/* Slide-over Live Runner & Inspector Drawer */}
-          <StepInspectorDrawer
-            isOpen={isInspectorOpen}
-            onClose={() => setIsInspectorOpen(false)}
-            flow={flow}
-            latestExecution={latestExecution}
-            selectedStepIndex={selectedStepIndex}
-            onSelectStep={setSelectedStepIndex}
           />
         </div>
       ) : (
@@ -222,6 +235,14 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
                     step={step}
                     index={idx}
                     totalSteps={steps.length}
+                    isSelected={selectedStepIndex === idx}
+                    isRunning={isRunning}
+                    executionStep={latestExecution?.steps?.[idx] || null}
+                    onSelect={() => setSelectedStepIndex(idx)}
+                    onDoubleClick={() => {
+                      setSelectedStepIndex(idx);
+                      setIsInspectorOpen(true);
+                    }}
                     onEdit={(s) => {
                       setEditingStep(s);
                       setIsAddStepModalOpen(true);
@@ -247,13 +268,29 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
               execution={latestExecution}
               flowName={flow.name}
               selectedStepIndex={selectedStepIndex}
+              isRunning={isRunning}
+              elapsedMs={elapsedMs}
               onSelectStep={setSelectedStepIndex}
             />
 
-            <StepExecutionInspector step={activeExecutionStep} />
+            <StepExecutionInspector step={activeExecutionStep} isRunning={isRunning} />
           </div>
         </div>
       )}
+
+      {/* Slide-over Live Runner & Inspector Drawer */}
+      <StepInspectorDrawer
+        isOpen={isInspectorOpen}
+        onClose={() => setIsInspectorOpen(false)}
+        flow={flow}
+        latestExecution={latestExecution}
+        selectedStepIndex={selectedStepIndex}
+        isRunning={isRunning}
+        elapsedMs={elapsedMs}
+        runningProgress={runningProgress}
+        onRunFlow={handleRunFlow}
+        onSelectStep={setSelectedStepIndex}
+      />
 
       {/* Modals */}
       <AddStepModal
@@ -268,6 +305,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         environments={environments}
         stepCount={steps.length}
         onSave={handleSaveStep}
+        onLoadScenarios={loadScenariosForApi}
       />
 
       <ExecutionHistoryModal
@@ -275,10 +313,8 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         onClose={() => setIsHistoryModalOpen(false)}
         flowName={flow.name}
         executions={flow.executions || []}
-        onSelectExecution={(exec) => {
-          setLatestExecution(exec);
-          setSelectedStepIndex(0);
-        }}
+        onSelectExecution={handleSelectExecution}
+        onExportExecution={handleExportExecutionLog}
       />
 
       <EditFlowModal

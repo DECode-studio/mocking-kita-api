@@ -1,0 +1,18 @@
+export const SCENARIO_FLOWS_SEMANTIC_ID = {
+  CONTAINER: 'scenario-flows-container',
+  HEADER: 'scenario-flows-header',
+  TITLE: 'scenario-flows-title',
+  SEARCH_INPUT: 'scenario-flows-search-input',
+  PROJECT_FILTER: 'scenario-flows-project-filter',
+  IMPORT_BTN: 'scenario-flows-import-btn',
+  CREATE_BTN: 'scenario-flows-create-btn',
+  FLOWS_GRID: 'scenario-flows-grid',
+  EMPTY_STATE: 'scenario-flows-empty-state',
+  FLOW_CARD_PREFIX: (id: string) => `scenario-flow-card-${id}`,
+  FLOW_RUN_BTN_PREFIX: (id: string) => `scenario-flow-run-btn-${id}`,
+  FLOW_EDIT_BTN_PREFIX: (id: string) => `scenario-flow-edit-btn-${id}`,
+  FLOW_DELETE_BTN_PREFIX: (id: string) => `scenario-flow-delete-btn-${id}`,
+  FLOW_EXPORT_BTN_PREFIX: (id: string) => `scenario-flow-export-btn-${id}`,
+  MODAL_CREATE: 'scenario-flows-modal-create',
+  MODAL_IMPORT: 'scenario-flows-modal-import',
+} as const;

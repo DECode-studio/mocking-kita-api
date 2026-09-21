@@ -1,11 +1,9 @@
-'use client';
-
-
 import React from 'react';
 import { Layers } from 'lucide-react';
 import { BodyPathRule, RequestBodyType } from '@/src/core/utils/types';
 import { KeyValueOrJsonEditor } from '@/src/client/presentation/views/api-detail/components/KeyValueOrJsonEditor';
 import { BodyPathRulesEditor } from '@/src/client/presentation/views/api-detail/components/BodyPathRulesEditor';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import {
   REQUEST_SCENARIO_EDITOR_TEXT,
   REQUEST_SCENARIO_EDITOR_SEMANTIC_ID,
@@ -32,6 +30,23 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
   strictBodyStructure,
   onStrictBodyStructureChange,
 }) => {
+  const handleInsertBodyToken = (token: string) => {
+    try {
+      const parsed = JSON.parse(body.trim() || '{}');
+      const key =
+        token
+          .replace(/^\{\{\s*datasheet\./, '')
+          .replace(/\}\}/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '') || 'field';
+      parsed[key] = token;
+      onBodyChange(JSON.stringify(parsed, null, 2));
+    } catch {
+      onBodyChange(body ? `${body}\n"${token}"` : token);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -42,21 +57,27 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
           </h2>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <label className="font-semibold text-slate-700 dark:text-slate-300 shrink-0">
-            {REQUEST_SCENARIO_EDITOR_TEXT.BODY_TYPE_LABEL}
-          </label>
-          <select
-            id={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.SELECT_BODY_TYPE}
-            value={bodyType}
-            onChange={(e) => onBodyTypeChange(e.target.value as RequestBodyType)}
-            className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 cursor-pointer font-medium"
-          >
-            <option value="JSON">JSON (application/json)</option>
-            <option value="FORM_DATA">Form Data (multipart/form-data)</option>
-            <option value="URL_ENCODED">URL Encoded (application/x-www-form-urlencoded)</option>
-            <option value="NONE">None (No Request Body)</option>
-          </select>
+        <div className="flex items-center gap-3 text-xs flex-wrap">
+          <DataSheetVariablePicker
+            buttonLabel="Data Sheets"
+            onInsert={handleInsertBodyToken}
+          />
+          <div className="flex items-center gap-2">
+            <label className="font-semibold text-slate-700 dark:text-slate-300 shrink-0">
+              {REQUEST_SCENARIO_EDITOR_TEXT.BODY_TYPE_LABEL}
+            </label>
+            <select
+              id={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.SELECT_BODY_TYPE}
+              value={bodyType}
+              onChange={(e) => onBodyTypeChange(e.target.value as RequestBodyType)}
+              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 cursor-pointer font-medium"
+            >
+              <option value="JSON">JSON (application/json)</option>
+              <option value="FORM_DATA">Form Data (multipart/form-data)</option>
+              <option value="URL_ENCODED">URL Encoded (application/x-www-form-urlencoded)</option>
+              <option value="NONE">None (No Request Body)</option>
+            </select>
+          </div>
         </div>
       </div>
 

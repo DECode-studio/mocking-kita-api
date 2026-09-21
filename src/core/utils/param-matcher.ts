@@ -6,15 +6,21 @@ export function hasHighRiskRegexPattern(pattern: string): boolean {
   return /(\([^)]*[+*][^)]*\)[+*?])|(\[[^\]]+\][+*?][+*?])|(\.\*[+*?])/.test(pattern);
 }
 
+let dataSheetLookupFn: ((code: string) => any[] | undefined) | null = null;
+
+export function registerDataSheetLookup(fn: ((code: string) => any[] | undefined) | null): void {
+  dataSheetLookupFn = fn;
+}
+
 export function isParamRule(val: unknown): val is ParamRule {
   if (!val || typeof val !== 'object' || Array.isArray(val)) {
     return false;
   }
   const obj = val as Record<string, unknown>;
-  const op = obj.$operator ?? (obj.$rule ? obj.operator : undefined);
+  const op = obj.$operator ?? (obj.$rule || obj.__rule || 'operator' in obj ? obj.operator : undefined);
   return (
     typeof op === 'string' &&
-    ['equal', 'regex', 'regex_i', 'null', 'empty_array'].includes(op)
+    ['equal', 'regex', 'regex_i', 'null', 'empty_array', 'in_datasheet'].includes(op)
   );
 }
 
@@ -75,6 +81,24 @@ export function isBinaryFilePlaceholder(value: unknown): boolean {
   return false;
 }
 
+function matchValueInPool(pool: any[], actualValue: unknown, modifier?: string): boolean {
+  if (!Array.isArray(pool) || pool.length === 0) return false;
+  if (modifier) {
+    const idxMatch = modifier.match(/^\[(\d+)\]$/);
+    if (idxMatch) {
+      const idx = Number(idxMatch[1]);
+      return String(pool[idx] ?? '') === String(actualValue ?? '');
+    }
+  }
+  const actualStr = String(actualValue ?? '');
+  return pool.some((item) => {
+    if (typeof item === 'object' && item !== null) {
+      return Object.values(item).some((v) => String(v) === actualStr);
+    }
+    return String(item) === actualStr;
+  });
+}
+
 export function evaluateParamOperator(
   operator: ParamMatchOperator,
   expectedValue: unknown,
@@ -86,6 +110,16 @@ export function evaluateParamOperator(
   }
 
   switch (operator) {
+    case 'in_datasheet': {
+      const code = String(expectedValue ?? '')
+        .replace(/^\{\{\s*datasheet\./, '')
+        .replace(/(\.any|\.random|\.asc|\.desc|\.dsc|\.next|\.prev|\.inc|\.dec|\[\d+\])?\s*\}\}$/, '')
+        .trim();
+      const pool = dataSheetLookupFn ? dataSheetLookupFn(code) : undefined;
+      if (!Array.isArray(pool)) return false;
+      return matchValueInPool(pool, actualValue);
+    }
+
     case 'null': {
       if (actualValue === null || actualValue === undefined) return true;
       if (typeof actualValue === 'string' && (actualValue.trim() === '' || actualValue === 'null')) return true;
@@ -130,6 +164,20 @@ export function evaluateParamOperator(
     case 'equal':
     default: {
       if (isEmptyValue(expectedValue)) return true;
+
+      // Match {{datasheet.<code>}} tokens in equal comparison
+      if (typeof expectedValue === 'string') {
+        const dsMatch = expectedValue.match(/^\{\{\s*datasheet\.([a-zA-Z0-9_.-]+)(\[.+\]|\..+)?\s*\}\}$/);
+        if (dsMatch) {
+          const code = dsMatch[1];
+          const modifier = dsMatch[2];
+          const pool = dataSheetLookupFn ? dataSheetLookupFn(code) : undefined;
+          if (Array.isArray(pool)) {
+            return matchValueInPool(pool, actualValue, modifier);
+          }
+        }
+      }
+
       if (Array.isArray(expectedValue) || (expectedValue && typeof expectedValue === 'object')) {
         return evaluateDeepMatch(expectedValue, actualValue, looseScalars);
       }

@@ -7,6 +7,7 @@ import { BodyPathRule, ParamMatchOperator } from '@/src/core/utils/types';
 import { extractAllJsonPaths } from '@/src/core/utils/param-matcher';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { PathAutocompleteInput } from './PathAutocompleteInput';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 
 interface BodyPathRulesEditorProps {
   rules: BodyPathRule[];
@@ -129,6 +130,7 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
                   <option value="regex">.* regex</option>
                   <option value="null">∅ null</option>
                   <option value="empty_array">[] empty_array</option>
+                  <option value="in_datasheet">∈ in_datasheet</option>
                 </select>
 
                 {/* Expected value input */}
@@ -138,11 +140,38 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
                   value={isValDisabled ? `(${rule.operator})` : String(rule.value ?? '')}
                   disabled={!rule.enabled || isValDisabled}
                   onChange={(e) => updateRule(index, { value: e.target.value })}
-                  placeholder={isValDisabled ? `(${rule.operator})` : 'Expected value'}
+                  placeholder={
+                    isValDisabled
+                      ? `(${rule.operator})`
+                      : rule.operator === 'in_datasheet'
+                      ? 'Datasheet code (e.g. emails)'
+                      : 'Expected value'
+                  }
                   className={`flex-1 px-2 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md text-slate-900 dark:text-slate-100 focus:outline-none text-xs font-mono ${
                     isValDisabled ? 'opacity-40 italic cursor-not-allowed' : ''
                   }`}
                 />
+
+                {rule.operator === 'in_datasheet' ? (
+                  <DataSheetVariablePicker
+                    buttonLabel="Pick Sheet"
+                    triggerClassName="text-[10px] py-0.5 px-2 shrink-0"
+                    onInsert={(token) => {
+                      const cleanCode = token
+                        .replace(/^\{\{\s*datasheet\./, '')
+                        .replace(/\..*$/, '')
+                        .replace(/\[.*$/, '')
+                        .replace(/\}\}/, '');
+                      updateRule(index, { value: cleanCode });
+                    }}
+                  />
+                ) : !isValDisabled ? (
+                  <DataSheetVariablePicker
+                    buttonLabel="Tag"
+                    triggerClassName="text-[10px] py-0.5 px-1.5 shrink-0"
+                    onInsert={(token) => updateRule(index, { value: token })}
+                  />
+                ) : null}
 
                 <button
                   type="button"

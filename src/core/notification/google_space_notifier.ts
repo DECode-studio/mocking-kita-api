@@ -3,7 +3,7 @@ import { ENV } from '@/src/core/constants/env';
 
 export interface NotificationPayload {
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'IMPORT' | 'EXPORT' | 'RESET';
-  entityType: 'project' | 'collection' | 'api' | 'request_scenario' | 'response_scenario' | 'database' | 'environment' | 'scenario_flow';
+  entityType: 'project' | 'collection' | 'api' | 'request_scenario' | 'response_scenario' | 'database' | 'environment' | 'scenario_flow' | 'data_sheet';
   entityId?: string | null;
   projectId?: string | null;
   userId?: string | null;
@@ -26,6 +26,7 @@ const ICONS = {
   OPENAPI_IMPORT: 'https://cdn-icons-png.flaticon.com/512/875/875615.png',
   DATABASE: 'https://cdn-icons-png.flaticon.com/512/4248/4248443.png',
   SCENARIO_FLOW: 'https://cdn-icons-png.flaticon.com/512/2620/2620582.png',
+  DATA_SHEET: 'https://cdn-icons-png.flaticon.com/512/2965/2965300.png',
 };
 
 function isImageResponse(state: any): boolean {
@@ -63,7 +64,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     return;
   }
 
-  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario', 'database', 'scenario_flow'];
+  const targetEntities = ['project', 'collection', 'environment', 'api', 'request_scenario', 'response_scenario', 'database', 'scenario_flow', 'data_sheet'];
   const isTargetEntity = targetEntities.includes(entityType);
 
   if (!isTargetEntity) {
@@ -135,6 +136,10 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     case 'scenario_flow':
       entityLabel = 'Scenario Flow';
       cardHeaderImageUrl = ICONS.SCENARIO_FLOW;
+      break;
+    case 'data_sheet':
+      entityLabel = 'Data Sheet';
+      cardHeaderImageUrl = ICONS.DATA_SHEET;
       break;
     case 'response_scenario': {
       const isFile = state.responseType === 'FILE';

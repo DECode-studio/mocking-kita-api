@@ -6,6 +6,8 @@ import * as Switch from '@radix-ui/react-switch';
 import { X, Sparkles, Layers } from 'lucide-react';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { Project } from '@/src/client/domain/project/entity/project';
+import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
 
 interface CreateScenarioFlowModalProps {
   isOpen: boolean;
@@ -84,7 +86,10 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 animate-in fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-6">
+        <Dialog.Content
+          id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl z-50 max-h-[90vh] overflow-y-auto space-y-6"
+        >
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">

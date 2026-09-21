@@ -16,6 +16,7 @@ import { AccountAdminRepositoryImpl } from '@/src/client/data/account/repository
 import { ChangeLogRepositoryImpl } from '@/src/client/data/change-log/repository/change_log_repository_impl';
 import { DashboardRepositoryImpl } from '@/src/client/data/dashboard/repository/dashboard_repository_impl';
 import { ScenarioFlowRepositoryImpl } from '@/src/client/data/scenario-flow/repository/scenario_flow_repository_impl';
+import { DataSheetRepositoryImpl } from '@/src/client/data/data-sheet/repository/data_sheet_repository_impl';
 
 // Domain UseCases Implementations
 import { ApiDetailUseCaseImpl } from '@/src/client/domain/api/usecase/api_detail_usecase_impl';
@@ -31,6 +32,7 @@ import { AccountAdminUseCaseImpl } from '@/src/client/domain/account/usecase/acc
 import { ChangeLogUseCaseImpl } from '@/src/client/domain/change-log/usecase/change_log_usecase_impl';
 import { DashboardUseCaseImpl } from '@/src/client/domain/dashboard/usecase/dashboard_usecase_impl';
 import { ScenarioFlowUseCaseImpl } from '@/src/client/domain/scenario-flow/usecase/scenario_flow_usecase_impl';
+import { DataSheetUseCaseImpl } from '@/src/client/domain/data-sheet/usecase/data_sheet_usecase_impl';
 
 import { CLIENT_DI_TOKENS } from './tokens';
 
@@ -97,6 +99,10 @@ appContainer.bindAll(
   {
     provide: CLIENT_DI_TOKENS.scenarioFlowRepository,
     useFactory: () => new ScenarioFlowRepositoryImpl(),
+  },
+  {
+    provide: CLIENT_DI_TOKENS.dataSheetRepository,
+    useFactory: () => new DataSheetRepositoryImpl(),
   },
 
   // UseCases bound to InjectionTokens
@@ -175,6 +181,11 @@ appContainer.bindAll(
     provide: CLIENT_DI_TOKENS.scenarioFlowUseCase,
     useFactory: (container) =>
       new ScenarioFlowUseCaseImpl(container.get(CLIENT_DI_TOKENS.scenarioFlowRepository)),
+  },
+  {
+    provide: CLIENT_DI_TOKENS.dataSheetUseCase,
+    useFactory: (container) =>
+      new DataSheetUseCaseImpl(container.get(CLIENT_DI_TOKENS.dataSheetRepository)),
   }
 );
 

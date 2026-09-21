@@ -1,97 +1,32 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React from 'react';
 import { Plus, Server, Globe } from 'lucide-react';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
-import { EnvironmentType } from '@/src/core/utils/types';
-import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
-import { useUIStore } from '@/src/client/presentation/stores/uiStore';
-import { getErrorMessage } from '@/src/core/utils/error';
 import { EnvironmentTypeBadge } from '@/src/client/presentation/components/shared/EnvironmentTypeBadge';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { EnvironmentFormModal } from '@/src/client/presentation/views/environments/components/EnvironmentFormModal';
 import { ConfirmDialog } from '@/src/client/presentation/components/shared/ConfirmDialog';
 import { EmptyState } from '@/src/client/presentation/components/shared/EmptyState';
+import { useProjectEnvironments } from '../hook/useProjectEnvironments';
 
 interface ProjectEnvironmentsTabProps {
   projectId: string;
 }
 
 export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ projectId }) => {
-  const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingEnvironment, setEditingEnvironment] = useState<Environment | null>(null);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-
-  const addToast = useUIStore((state) => state.addToast);
-  const environmentUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.environmentUseCase), []);
-  const projectUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.projectUseCase), []);
-  const [projectList, setProjectList] = useState<{ id: string; name: string }[]>([]);
-
-  const loadEnvironments = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [envs, projects] = await Promise.all([
-        environmentUseCase.getByProjectId(projectId),
-        projectUseCase.getAll(),
-      ]);
-      setEnvironments(envs);
-      setProjectList(projects.map((p) => ({ id: p.id, name: p.name })));
-    } catch (err) {
-      addToast({ title: getErrorMessage(err, 'Failed to load project environments'), type: 'error' });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [projectId, environmentUseCase, projectUseCase, addToast]);
-
-  useEffect(() => {
-    loadEnvironments();
-  }, [loadEnvironments]);
-
-  const handleToggleStatus = async (env: Environment) => {
-    try {
-      const updated = await environmentUseCase.update(env.id, { status: !env.status });
-      setEnvironments((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-    } catch (err) {
-      addToast({ title: getErrorMessage(err, 'Failed to update status'), type: 'error' });
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTargetId) return;
-    try {
-      await environmentUseCase.softDelete(deleteTargetId);
-      setEnvironments((prev) => prev.filter((e) => e.id !== deleteTargetId));
-      addToast({ title: 'Environment deleted successfully', type: 'success' });
-    } catch (err) {
-      addToast({ title: getErrorMessage(err, 'Failed to delete environment'), type: 'error' });
-    } finally {
-      setDeleteTargetId(null);
-    }
-  };
-
-  const handleSaveEnvironment = async (data: {
-    name: string;
-    projectId: string;
-    environmentType: EnvironmentType;
-    baseUrl: string;
-    status: boolean;
-  }) => {
-    try {
-      if (editingEnvironment) {
-        const updated = await environmentUseCase.update(editingEnvironment.id, data);
-        setEnvironments((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-        addToast({ title: 'Environment updated successfully', type: 'success' });
-      } else {
-        const created = await environmentUseCase.create(data);
-        setEnvironments((prev) => [created, ...prev]);
-        addToast({ title: 'Environment created successfully', type: 'success' });
-      }
-      setIsFormOpen(false);
-      setEditingEnvironment(null);
-    } catch (err) {
-      addToast({ title: getErrorMessage(err, 'Failed to save environment'), type: 'error' });
-    }
-  };
+  const {
+    environments,
+    isLoading,
+    isFormOpen,
+    setIsFormOpen,
+    editingEnvironment,
+    setEditingEnvironment,
+    deleteTargetId,
+    setDeleteTargetId,
+    projectList,
+    handleToggleStatus,
+    handleConfirmDelete,
+    handleSaveEnvironment,
+  } = useProjectEnvironments(projectId);
 
   return (
     <div className="space-y-4">

@@ -16,6 +16,7 @@ const UI_ROUTES = [
   '/faq',
   '/admin',
   '/external-api-docs',
+  '/data-sheets',
 ];
 
 const STUDIO_INTERNAL_API_PREFIXES = [
@@ -28,6 +29,7 @@ const STUDIO_INTERNAL_API_PREFIXES = [
   '/api/upload',
   '/api/projects',
   '/api/scenario-flows',
+  '/api/data-sheets',
   '/api/change-logs',
   '/api/faq',
   '/api/v1/external',

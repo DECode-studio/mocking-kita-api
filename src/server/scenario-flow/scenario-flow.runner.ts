@@ -53,44 +53,182 @@ function resolveDynamicGenerator(token: string): any {
 }
 
 /**
- * Interpolates string or objects with variable values
+ * Resolves datasheet tokens like {{datasheet.emails.random}} or {{datasheet.emails.next}} or {{datasheet.emails[0]}}
  */
-export function interpolateVariables(template: any, variables: Record<string, any>): any {
+function resolveDataSheetToken(
+  varKey: string,
+  variables: Record<string, any>,
+  counters?: Record<string, number>
+): any {
+  if (!varKey.startsWith('datasheet.')) return undefined;
+
+  const normalized = varKey.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+  const parts = normalized.split('.');
+  // parts[0] is 'datasheet'
+  const sheetCode = parts[1];
+  const pool = variables.datasheet?.[sheetCode];
+  if (!Array.isArray(pool) || pool.length === 0) {
+    return undefined;
+  }
+
+  const modifier = parts[2];
+  let selectedItem: any;
+  let remainingStartIdx = 3;
+
+  if (modifier === 'random' || modifier === '$random') {
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    selectedItem = pool[randomIndex];
+  } else if (
+    modifier === 'asc' ||
+    modifier === 'next' ||
+    modifier === '$next' ||
+    modifier === 'inc'
+  ) {
+    if (!counters) {
+      selectedItem = pool[0];
+    } else {
+      const ascKey = `${sheetCode}_asc`;
+      const idx = (counters[ascKey] ?? counters[sheetCode] ?? 0) % pool.length;
+      counters[ascKey] = idx + 1;
+      counters[sheetCode] = idx + 1;
+      selectedItem = pool[idx];
+    }
+  } else if (
+    modifier === 'desc' ||
+    modifier === 'dsc' ||
+    modifier === 'prev' ||
+    modifier === '$prev' ||
+    modifier === 'dec'
+  ) {
+    if (!counters) {
+      selectedItem = pool[pool.length - 1];
+    } else {
+      const descKey = `${sheetCode}_desc`;
+      const count = counters[descKey] ?? 0;
+      const idx = ((pool.length - 1 - (count % pool.length)) + pool.length) % pool.length;
+      counters[descKey] = count + 1;
+      selectedItem = pool[idx];
+    }
+  } else if (!isNaN(Number(modifier))) {
+    const idx = Number(modifier);
+    selectedItem = pool[idx];
+  } else {
+    return undefined;
+  }
+
+  if (parts.length > remainingStartIdx && selectedItem && typeof selectedItem === 'object') {
+    const subPath = parts.slice(remainingStartIdx).join('.');
+    return getNestedValue(selectedItem, subPath);
+  }
+
+  return selectedItem;
+}
+
+/**
+ * Interpolates string or objects with variable values, dynamic generators, and data sheet tokens
+ */
+export function interpolateVariables(
+  template: any,
+  variables: Record<string, any>,
+  counters?: Record<string, number>
+): any {
   if (typeof template === 'string') {
-    // Check if entire string is single variable substitution e.g. "{{count}}"
-    const exactMatch = template.match(/^\{\{\s*([a-zA-Z0-9_$.]+)\s*\}\}$/);
+    // Check if entire string is single variable substitution e.g. "{{count}}" or "{{datasheet.emails.random}}"
+    const exactMatch = template.match(/^\{\{\s*([a-zA-Z0-9_$.\[\]]+)\s*\}\}$/);
     if (exactMatch) {
       const varKey = exactMatch[1];
       const dynamicVal = resolveDynamicGenerator(varKey);
       if (dynamicVal !== null) return dynamicVal;
-      
+
+      const dsVal = resolveDataSheetToken(varKey, variables, counters);
+      if (dsVal !== undefined) return dsVal;
+
       const val = getNestedValue(variables, varKey);
       return val !== undefined ? val : template;
     }
 
     // Replace all {{var}} inside string
-    return template.replace(/\{\{\s*([a-zA-Z0-9_$.]+)\s*\}\}/g, (_match, varKey) => {
+    return template.replace(/\{\{\s*([a-zA-Z0-9_$.\[\]]+)\s*\}\}/g, (_match, varKey) => {
       const dynamicVal = resolveDynamicGenerator(varKey);
       if (dynamicVal !== null) return String(dynamicVal);
 
+      const dsVal = resolveDataSheetToken(varKey, variables, counters);
+      if (dsVal !== undefined && dsVal !== null) {
+        return typeof dsVal === 'object' ? JSON.stringify(dsVal) : String(dsVal);
+      }
+
       const val = getNestedValue(variables, varKey);
-      return val !== undefined && val !== null ? String(val) : '';
+      return val !== undefined && val !== null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '';
     });
   }
 
   if (Array.isArray(template)) {
-    return template.map((item) => interpolateVariables(item, variables));
+    return template.map((item) => interpolateVariables(item, variables, counters));
   }
 
   if (template !== null && typeof template === 'object') {
     const result: Record<string, any> = {};
     for (const [key, value] of Object.entries(template)) {
-      result[key] = interpolateVariables(value, variables);
+      result[key] = interpolateVariables(value, variables, counters);
     }
     return result;
   }
 
   return template;
+}
+
+/**
+ * Global in-memory persistent counters for scenario flows across multiple runs.
+ */
+export const persistentFlowCounters: Record<string, number> = {};
+
+export function resetPersistentFlowCounters(flowId?: string): void {
+  if (!flowId) {
+    for (const k of Object.keys(persistentFlowCounters)) {
+      delete persistentFlowCounters[k];
+    }
+  } else {
+    const prefix = `${flowId}:`;
+    for (const k of Object.keys(persistentFlowCounters)) {
+      if (k.startsWith(prefix)) {
+        delete persistentFlowCounters[k];
+      }
+    }
+  }
+}
+
+/**
+ * Creates a step-scoped counter proxy so that multiple references to the same
+ * sheet modifier (e.g. users.asc.id and users.asc.name) in a single step resolve
+ * to the exact same row index, and the master counter is incremented once per used modifier at step completion.
+ */
+export function createStepDataSheetCounters(masterCounters: Record<string, number>) {
+  const stepIndices: Record<string, number> = {};
+  const usedKeys = new Set<string>();
+
+  const proxy = new Proxy(masterCounters, {
+    get(target, prop: string) {
+      if (typeof prop !== 'string') return undefined;
+      if (stepIndices[prop] === undefined) {
+        stepIndices[prop] = target[prop] ?? 0;
+      }
+      return stepIndices[prop];
+    },
+    set(_target, prop: string, _val: number) {
+      if (typeof prop === 'string') {
+        usedKeys.add(prop);
+      }
+      return true;
+    },
+  });
+
+  const commitStep = () => {
+    for (const key of usedKeys) {
+      masterCounters[key] = (masterCounters[key] ?? 0) + 1;
+    }
+  };
+
+  return { stepCounters: proxy, commitStep };
 }
 
 /**
@@ -104,7 +242,8 @@ export function interpolateVariables(template: any, variables: Record<string, an
 export function buildNormalizedHeaders(
   scenarioHeaders: Record<string, string> | undefined | null,
   overrideHeaders: Record<string, string> | undefined | null,
-  variables: Record<string, any>
+  variables: Record<string, any>,
+  counters?: Record<string, number>
 ): Record<string, string> {
   const normalized: Record<string, string> = {};
 
@@ -141,7 +280,7 @@ export function buildNormalizedHeaders(
   // 4. Interpolate variables in all values
   const interpolated: Record<string, string> = {};
   for (const [k, v] of Object.entries(normalized)) {
-    interpolated[k] = String(interpolateVariables(v, variables));
+    interpolated[k] = String(interpolateVariables(v, variables, counters));
   }
 
   // 5. Standard flutter-package-core client headers injection:
@@ -183,7 +322,9 @@ export function evaluateAssertion(
     headers: Record<string, string>;
     body: any;
     responseTimeMs: number;
-  }
+  },
+  variables?: Record<string, any>,
+  counters?: Record<string, number>
 ): AssertionResult {
   let actual: any;
   let passed = false;
@@ -210,7 +351,11 @@ export function evaluateAssertion(
       actual = undefined;
   }
 
-  const expected = rule.expected;
+  const rawExpected = rule.expected;
+  const expected =
+    variables && rawExpected !== undefined && rawExpected !== null
+      ? interpolateVariables(rawExpected, variables, counters)
+      : rawExpected;
 
   switch (rule.operator) {
     case 'equals':
@@ -249,6 +394,24 @@ export function evaluateAssertion(
     case 'lessThan':
       passed = Number(actual) < Number(expected);
       break;
+    case 'in_datasheet': {
+      const targetCode = String(rawExpected || '')
+        .replace(/^\{\{\s*datasheet\./, '')
+        .replace(/\s*\}\}$/, '')
+        .replace(/^datasheet\./, '')
+        .trim();
+      const pool =
+        variables?.datasheet && Array.isArray(variables.datasheet[targetCode])
+          ? variables.datasheet[targetCode]
+          : [];
+      passed = pool.some((item) => {
+        if (typeof item === 'object') {
+          return JSON.stringify(item) === JSON.stringify(actual);
+        }
+        return String(item) === String(actual);
+      });
+      break;
+    }
     default:
       passed = false;
   }
@@ -452,6 +615,48 @@ export async function executeScenarioFlow(
     ...(options.initialVariables || {}),
   };
 
+  // Load Active Data Sheets for project or global
+  try {
+    const activeDataSheets = await prisma.dataSheet.findMany({
+      where: {
+        status: true,
+        deletedAt: null,
+        OR: [
+          ...(flow.projectId ? [{ projectId: flow.projectId }] : []),
+          { projectId: null },
+        ],
+      },
+    });
+
+    const datasheetPools: Record<string, any[]> = {};
+    for (const ds of activeDataSheets) {
+      datasheetPools[ds.code] = Array.isArray(ds.data) ? ds.data : [];
+    }
+    currentVariables['datasheet'] = datasheetPools;
+  } catch (err) {
+    console.warn('Failed to pre-load data sheets for scenario flow execution:', err);
+  }
+
+  // Load persistent counters: from DB flow.variables._dataSheetCounters, overlaid with in-memory persistentFlowCounters
+  const flowSavedCounters =
+    ((flow.variables as Record<string, any>)?._dataSheetCounters as Record<string, number>) || {};
+
+  const dataSheetCounters: Record<string, number> = {
+    ...flowSavedCounters,
+  };
+
+  const flowPrefix = `${flow.id}:`;
+  for (const [k, v] of Object.entries(persistentFlowCounters)) {
+    if (k.startsWith(flowPrefix)) {
+      const bareKey = k.slice(flowPrefix.length);
+      dataSheetCounters[bareKey] = v;
+    } else if (!k.includes(':')) {
+      if (dataSheetCounters[k] === undefined) {
+        dataSheetCounters[k] = v;
+      }
+    }
+  }
+
   // Create Execution Record in DB
   const execution = await createExecutionRecord({
     flowId: flow.id,
@@ -483,7 +688,7 @@ export async function executeScenarioFlow(
         url: step.pathOverride || step.api?.path || '',
         status: 'SKIPPED',
         durationMs: 0,
-        errorMessage: 'Skipped due to failure in previous step.',
+        errorMessage: 'Skipped because previous step failed and stopOnFailure is true',
       });
       stepExecutionResults.push(skippedStepResult);
       continue;
@@ -493,6 +698,9 @@ export async function executeScenarioFlow(
     if (step.delayMs && step.delayMs > 0) {
       await new Promise((resolve) => setTimeout(resolve, step.delayMs));
     }
+
+    // Step-scoped counter proxy so all tokens in this step lock to the same row index
+    const { stepCounters, commitStep } = createStepDataSheetCounters(dataSheetCounters);
 
     // Resolve Method & Path
     const rawMethod = (step.methodOverride || step.api?.methodRequest || 'GET').toUpperCase();
@@ -507,14 +715,14 @@ export async function executeScenarioFlow(
 
     // Replace :param and {param}
     for (const [k, v] of Object.entries(pathParamsObj)) {
-      const resolvedVal = interpolateVariables(v, currentVariables);
+      const resolvedVal = interpolateVariables(v, currentVariables, stepCounters);
       interpolatedPath = interpolatedPath
         .replace(new RegExp(`:${k}\\b`, 'g'), String(resolvedVal))
         .replace(new RegExp(`\\{${k}\\}`, 'g'), String(resolvedVal));
     }
 
     // Interpolate any remaining {{variables}} directly in the URL path
-    interpolatedPath = interpolateVariables(interpolatedPath, currentVariables);
+    interpolatedPath = interpolateVariables(interpolatedPath, currentVariables, stepCounters);
 
     // Resolve Step Base URL (handles LOCAL override vs global targetEnvType)
     const stepBaseUrl = resolveStepBaseUrl(step, targetEnvType, projectEnvironments, currentVariables);
@@ -534,7 +742,7 @@ export async function executeScenarioFlow(
       ...((step.requestScenario?.queryParams as Record<string, string>) || {}),
       ...((step.queryParamsOverride as Record<string, string>) || {}),
     };
-    const interpolatedQuery = interpolateVariables(queryParamsObj, currentVariables);
+    const interpolatedQuery = interpolateVariables(queryParamsObj, currentVariables, stepCounters);
     const queryParts: string[] = [];
     for (const [k, v] of Object.entries(interpolatedQuery)) {
       if (v !== undefined && v !== null && v !== '') {
@@ -549,7 +757,8 @@ export async function executeScenarioFlow(
     const interpolatedHeaders = buildNormalizedHeaders(
       step.requestScenario?.headers as Record<string, string>,
       step.headersOverride as Record<string, string>,
-      currentVariables
+      currentVariables,
+      stepCounters
     );
 
     // Body
@@ -559,8 +768,11 @@ export async function executeScenarioFlow(
 
     let finalBody: any = undefined;
     if (rawBody !== undefined && rawBody !== null && rawMethod !== 'GET' && rawMethod !== 'HEAD') {
-      finalBody = interpolateVariables(rawBody, currentVariables);
+      finalBody = interpolateVariables(rawBody, currentVariables, stepCounters);
     }
+
+    // Commit step counters so that subsequent steps advance to the next row
+    commitStep();
 
     // Request snapshot
     const requestSnapshot = {
@@ -636,12 +848,17 @@ export async function executeScenarioFlow(
       const rules = (step.assertions as unknown as AssertionRule[]) || [];
       if (rules.length > 0) {
         assertionResults = rules.map((rule) =>
-          evaluateAssertion(rule, {
-            status: res.status,
-            headers: respHeaders,
-            body: parsedBody,
-            responseTimeMs,
-          })
+          evaluateAssertion(
+            rule,
+            {
+              status: res.status,
+              headers: respHeaders,
+              body: parsedBody,
+              responseTimeMs,
+            },
+            currentVariables,
+            dataSheetCounters
+          )
         );
         const hasFailedAssertion = assertionResults.some((a) => !a.passed);
         if (hasFailedAssertion) {
@@ -701,6 +918,30 @@ export async function executeScenarioFlow(
 
   const totalDurationMs = Date.now() - executionStartTime;
   const finalExecutionStatus = failedCount > 0 ? 'FAILED' : 'SUCCESS';
+
+  // Persist updated counters into in-memory store
+  for (const [k, v] of Object.entries(dataSheetCounters)) {
+    persistentFlowCounters[`${flow.id}:${k}`] = v;
+    persistentFlowCounters[k] = v;
+  }
+
+  // Persist updated counters into database ScenarioFlow.variables._dataSheetCounters
+  try {
+    const currentDbVars = (flow.variables as Record<string, any>) || {};
+    await prisma.scenarioFlow.update({
+      where: { id: flow.id },
+      data: {
+        variables: {
+          ...currentDbVars,
+          _dataSheetCounters: dataSheetCounters,
+        },
+      },
+    });
+  } catch (err) {
+    console.warn('Failed to persist flow data sheet counters to DB:', err);
+  }
+
+  currentVariables['_dataSheetCounters'] = dataSheetCounters;
 
   const updatedExecution = await updateExecutionRecord(execution.id, {
     status: finalExecutionStatus,
