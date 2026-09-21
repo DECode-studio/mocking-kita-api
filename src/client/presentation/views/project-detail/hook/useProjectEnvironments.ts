@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
-import { EnvironmentType } from '@/src/core/utils/types';
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 import { getErrorMessage } from '@/src/core/utils/error';

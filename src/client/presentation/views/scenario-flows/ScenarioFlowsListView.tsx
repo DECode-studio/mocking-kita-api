@@ -6,9 +6,7 @@ import {
   UploadCloud,
   Search,
   Layers,
-  Sparkles,
   GitFork,
-  ArrowRight,
 } from 'lucide-react';
 import { useScenarioFlows } from './hook/useScenarioFlows';
 import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from './constant';

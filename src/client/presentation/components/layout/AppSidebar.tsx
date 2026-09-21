@@ -14,7 +14,6 @@ import {
   Moon,
   Plus,
   Code2,
-  Zap,
   X,
   PanelLeftClose,
   PanelLeftOpen,

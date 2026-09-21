@@ -3,7 +3,7 @@
 
 import React from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { LogOut, User, Settings, Shield } from 'lucide-react';
+import { LogOut, Settings, Shield } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/src/core/constants/routes';

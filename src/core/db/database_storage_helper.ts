@@ -1,6 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
 import { MockApiDatabase } from '@/src/client/domain/database/entity/mock_api_database';
-import { INITIAL_SEED_DATA } from './seed-data';
 import { Prisma } from '@prisma/client';
 import { getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
 import { generateId } from '@/src/core/utils/uuid';

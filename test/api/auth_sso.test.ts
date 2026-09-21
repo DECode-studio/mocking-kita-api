@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET as SSO_GET } from '@/src/app/api/auth/sso/route';
 import { GET as CALLBACK_GET } from '@/src/app/api/auth/sso/callback/route';
 import { cookies } from 'next/headers';
-import { accountRepository } from '@/src/server/account';
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import prisma from '@/src/core/db/prisma-client';
 import {
   importScenarioFlowFromTemplate,
-  exportScenarioFlowToTemplate,
 } from '@/src/server/scenario-flow/scenario-flow.import-export';
 
 vi.mock('@/src/core/db/prisma-client', () => {

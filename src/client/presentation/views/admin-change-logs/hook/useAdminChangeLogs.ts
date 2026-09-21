@@ -1,7 +1,5 @@
 'use client';
 
-import { ChangeLogUseCase } from '@/src/client/domain/change-log/usecase/change_log_usecase';
-import { ProjectUseCase } from '@/src/client/domain/project/usecase/project_usecase';
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 
 import { useState, useEffect, useMemo } from 'react';

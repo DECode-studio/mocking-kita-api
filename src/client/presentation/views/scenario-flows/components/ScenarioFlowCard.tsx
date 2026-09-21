@@ -16,8 +16,7 @@ import {
 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { ROUTES } from '@/src/core/constants/routes';
-import { formatDate } from '@/src/core/utils/date';
-import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
 
 interface ScenarioFlowCardProps {
   flow: ScenarioFlow;

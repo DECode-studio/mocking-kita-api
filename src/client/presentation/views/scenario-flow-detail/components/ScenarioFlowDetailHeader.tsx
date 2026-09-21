@@ -4,17 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  Play,
   Download,
   Plus,
   History,
   Server,
-  Loader2,
-  CheckCircle2,
   Layers,
   Network,
   List,
-  Sparkles,
   Edit2,
 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';

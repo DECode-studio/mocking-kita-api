@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Server, Globe, KeyRound } from 'lucide-react';
-import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { EnvironmentFormModal } from '@/src/client/presentation/views/environments/components/EnvironmentFormModal';
 import { EnvironmentCard } from '@/src/client/presentation/views/environments/components/EnvironmentCard';
 import { ConfirmDialog } from '@/src/client/presentation/components/shared/ConfirmDialog';

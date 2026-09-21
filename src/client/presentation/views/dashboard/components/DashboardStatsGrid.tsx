@@ -1,8 +1,7 @@
 'use client';
 
 
-import React from 'react';
-import { FolderGit2, Globe, Layers, FileCode } from 'lucide-react';
+import { FolderGit2, Layers, FileCode } from 'lucide-react';
 import { DashboardSummary } from '@/src/client/domain/dashboard/entity/dashboard_summary';
 import { DASHBOARD_TEXT, DASHBOARD_SEMANTIC_ID } from '../constant';
 
