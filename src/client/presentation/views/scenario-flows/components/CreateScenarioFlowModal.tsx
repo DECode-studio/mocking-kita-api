@@ -7,6 +7,7 @@ import { X, Sparkles, Layers } from 'lucide-react';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
+import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
 import { SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
 
 interface CreateScenarioFlowModalProps {
@@ -47,6 +48,24 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
       setSelectedProjectId(initialProjectId);
     }
   }, [initialProjectId]);
+
+  const handleInsertVariableToken = (token: string) => {
+    try {
+      const parsed = JSON.parse(variablesJson.trim() || '{}');
+      const cleanKey =
+        token
+          .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
+          .replace(/\}\}.*$/, '')
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '') || 'variable';
+      parsed[cleanKey] = token;
+      setVariablesJson(JSON.stringify(parsed, null, 2));
+      setJsonError(null);
+    } catch {
+      setVariablesJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,9 +222,20 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Initial Variables (JSON)
                 </label>
-                <span className="text-[11px] text-slate-500 font-mono">
-                  Accessible as &#123;&#123;varName&#125;&#125;
-                </span>
+                <div className="flex items-center gap-2">
+                  <EnvironmentVariablePicker
+                    buttonLabel="Env Vars"
+                    triggerClassName="text-[10px] py-0.5 px-2"
+                    projectId={selectedProjectId || undefined}
+                    onInsert={handleInsertVariableToken}
+                  />
+                  <DataSheetVariablePicker
+                    buttonLabel="Data Sheet"
+                    triggerClassName="text-[10px] py-0.5 px-2"
+                    projectId={selectedProjectId || undefined}
+                    onInsert={handleInsertVariableToken}
+                  />
+                </div>
               </div>
               <textarea
                 rows={4}
