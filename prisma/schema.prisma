@@ -39,8 +39,10 @@ model Environment {
   id              String          @id @default(uuid())
   projectId       String          @map("project_id")
   name            String
-  environmentType EnvironmentType @default(LOCAL) @map("environment_type")
-  baseUrl         String?         @map("base_url")
+  isBaseUrl       Boolean          @default(true) @map("is_base_url")
+  values          Json             @default("{}")
+  environmentType EnvironmentType? @default(LOCAL) @map("environment_type")
+  variables       Json?            @default("[]")
   status          Boolean         @default(true)
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
