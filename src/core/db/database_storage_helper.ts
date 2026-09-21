@@ -12,6 +12,7 @@ export async function readDatabase(): Promise<MockApiDatabase> {
     apiEnvironmentsRaw,
     requestScenariosRaw,
     responseScenariosRaw,
+    dataSheetsRaw,
   ] = await Promise.all([
     prisma.project.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
     prisma.environment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
@@ -23,6 +24,10 @@ export async function readDatabase(): Promise<MockApiDatabase> {
     }),
     prisma.responseScenario.findMany({
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.dataSheet.findMany({
+      where: { deletedAt: null, status: true },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     }),
   ]);
 
@@ -118,6 +123,20 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
       deletedAt: r.deletedAt ? r.deletedAt.toISOString() : null,
+    })),
+    dataSheets: dataSheetsRaw.map((ds) => ({
+      id: ds.id,
+      projectId: ds.projectId,
+      name: ds.name,
+      code: ds.code,
+      category: ds.category ?? undefined,
+      description: ds.description ?? undefined,
+      format: ds.format as any,
+      data: Array.isArray(ds.data) ? ds.data : [],
+      status: ds.status,
+      createdAt: ds.createdAt.toISOString(),
+      updatedAt: ds.updatedAt.toISOString(),
+      deletedAt: ds.deletedAt ? ds.deletedAt.toISOString() : null,
     })),
   };
 }

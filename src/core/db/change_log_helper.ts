@@ -13,7 +13,8 @@ export type ChangeLogEntityType =
   | 'response_scenario'
   | 'database'
   | 'environment'
-  | 'scenario_flow';
+  | 'scenario_flow'
+  | 'data_sheet';
 
 export interface ChangeLogInput {
   action: ChangeLogAction;
