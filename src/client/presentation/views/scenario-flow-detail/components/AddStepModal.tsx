@@ -17,12 +17,15 @@ import {
   Globe,
   Laptop,
   ExternalLink,
+  List,
+  FileUp,
 } from 'lucide-react';
 import {
   ScenarioFlowStep,
   VariableExtractor,
   AssertionRule,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { RequestBodyType } from '@/src/core/utils/types';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
@@ -31,6 +34,75 @@ import { ApiSearchSelect } from '@/src/client/presentation/components/shared/Api
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
 import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+
+export interface FormFieldItem {
+  id: string;
+  key: string;
+  value: string;
+  isFile?: boolean;
+  enabled: boolean;
+}
+
+function jsonToFormFields(jsonStr: string): FormFieldItem[] {
+  try {
+    const trimmed = jsonStr.trim();
+    if (!trimmed || trimmed === '{}') return [];
+    const parsed = JSON.parse(trimmed);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return [];
+    return Object.entries(parsed).map(([key, val], idx) => {
+      const isFile =
+        typeof val === 'object' &&
+        val !== null &&
+        ('filename' in (val as Record<string, unknown>) || 'type' in (val as Record<string, unknown>));
+      const displayVal = isFile
+        ? String((val as Record<string, unknown>).filename || '')
+        : typeof val === 'object'
+        ? JSON.stringify(val)
+        : String(val ?? '');
+      return {
+        id: `ff-${idx}-${Math.random().toString(36).substring(2, 7)}`,
+        key,
+        value: displayVal,
+        isFile,
+        enabled: true,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+function formFieldsToJson(fields: FormFieldItem[]): string {
+  const obj: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (field.enabled !== false && field.key.trim() !== '') {
+      if (field.isFile) {
+        obj[field.key.trim()] = {
+          filename: field.value.trim() || 'file.bin',
+          type: 'application/octet-stream',
+        };
+      } else {
+        const val = field.value;
+        if (val === 'true') obj[field.key.trim()] = true;
+        else if (val === 'false') obj[field.key.trim()] = false;
+        else if (val !== '' && !isNaN(Number(val)) && !val.startsWith('0') && val !== '0') {
+          obj[field.key.trim()] = Number(val);
+        } else if (val === '0') {
+          obj[field.key.trim()] = 0;
+        } else if (val.startsWith('{') || val.startsWith('[')) {
+          try {
+            obj[field.key.trim()] = JSON.parse(val);
+          } catch {
+            obj[field.key.trim()] = val;
+          }
+        } else {
+          obj[field.key.trim()] = val;
+        }
+      }
+    }
+  }
+  return JSON.stringify(obj, null, 2);
+}
 
 interface AddStepModalProps {
   isOpen: boolean;
@@ -76,6 +148,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
   const [headersJson, setHeadersJson] = useState('{}');
   const [queryParamsJson, setQueryParamsJson] = useState('{}');
   const [bodyJson, setBodyJson] = useState('{}');
+  const [bodyType, setBodyType] = useState<RequestBodyType>('JSON');
+  const [bodyInputMode, setBodyInputMode] = useState<'fields' | 'raw'>('raw');
+  const [formFields, setFormFields] = useState<FormFieldItem[]>([]);
+  const [focusedFieldId, setFocusedFieldId] = useState<string | null>(null);
 
   // Extractors & Assertions
   const [extractors, setExtractors] = useState<VariableExtractor[]>([]);
@@ -88,6 +164,41 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFocusedField, setLastFocusedField] = useState<'path' | 'headers' | 'queryParams' | 'body'>('body');
+
+  const handleAddFormField = () => {
+    const newField: FormFieldItem = {
+      id: `ff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      key: '',
+      value: '',
+      isFile: false,
+      enabled: true,
+    };
+    const updated = [...formFields, newField];
+    setFormFields(updated);
+    setFocusedFieldId(newField.id);
+    setBodyJson(formFieldsToJson(updated));
+  };
+
+  const handleRemoveFormField = (id: string) => {
+    const updated = formFields.filter((f) => f.id !== id);
+    setFormFields(updated);
+    if (focusedFieldId === id) setFocusedFieldId(null);
+    setBodyJson(formFieldsToJson(updated));
+  };
+
+  const handleUpdateFormField = (id: string, patch: Partial<FormFieldItem>) => {
+    const updated = formFields.map((f) => (f.id === id ? { ...f, ...patch } : f));
+    setFormFields(updated);
+    setBodyJson(formFieldsToJson(updated));
+  };
+
+  const handleInsertTokenToField = (fieldId: string, token: string) => {
+    const updated = formFields.map((f) =>
+      f.id === fieldId ? { ...f, value: f.value ? `${f.value}${token}` : token } : f
+    );
+    setFormFields(updated);
+    setBodyJson(formFieldsToJson(updated));
+  };
 
   const handleInsertToken = (token: string) => {
     const cleanKey = (fallback: string) =>
@@ -117,12 +228,34 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
         setQueryParamsJson((prev) => (prev ? `${prev}\n"${token}"` : token));
       }
     } else {
-      try {
-        const parsed = JSON.parse(bodyJson.trim() || '{}');
-        parsed[cleanKey('field')] = token;
-        setBodyJson(JSON.stringify(parsed, null, 2));
-      } catch {
-        setBodyJson((prev) => (prev ? `${prev}\n"${token}"` : token));
+      if (bodyInputMode === 'fields') {
+        const targetId = focusedFieldId || (formFields.length > 0 ? formFields[formFields.length - 1].id : null);
+        if (targetId) {
+          handleInsertTokenToField(targetId, token);
+        } else {
+          const newField: FormFieldItem = {
+            id: `ff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            key: cleanKey('field'),
+            value: token,
+            isFile: false,
+            enabled: true,
+          };
+          const updated = [...formFields, newField];
+          setFormFields(updated);
+          setFocusedFieldId(newField.id);
+          setBodyJson(formFieldsToJson(updated));
+        }
+      } else {
+        try {
+          const parsed = JSON.parse(bodyJson.trim() || '{}');
+          parsed[cleanKey('field')] = token;
+          const newJson = JSON.stringify(parsed, null, 2);
+          setBodyJson(newJson);
+          setFormFields(jsonToFormFields(newJson));
+        } catch {
+          const newJson = bodyJson ? `${bodyJson}\n"${token}"` : token;
+          setBodyJson(newJson);
+        }
       }
     }
   };
@@ -174,7 +307,16 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
       setPathOverride(effectivePath);
       setHeadersJson(typeof effectiveHeaders === 'string' ? effectiveHeaders : JSON.stringify(effectiveHeaders || {}, null, 2));
       setQueryParamsJson(typeof effectiveQueryParams === 'string' ? effectiveQueryParams : JSON.stringify(effectiveQueryParams || {}, null, 2));
-      setBodyJson(typeof effectiveBody === 'string' ? effectiveBody : JSON.stringify(effectiveBody || {}, null, 2));
+      const effectiveBodyType: RequestBodyType =
+        (editingStep.bodyType as RequestBodyType) ||
+        (matchedScenario?.bodyType as RequestBodyType) ||
+        'JSON';
+      setBodyType(effectiveBodyType);
+      const parsedBodyStr = typeof effectiveBody === 'string' ? effectiveBody : JSON.stringify(effectiveBody || {}, null, 2);
+      setBodyJson(parsedBodyStr);
+      setFormFields(jsonToFormFields(parsedBodyStr));
+      setBodyInputMode(effectiveBodyType === 'FORM_DATA' || effectiveBodyType === 'URL_ENCODED' ? 'fields' : 'raw');
+
       setExtractors((editingStep.extractors as VariableExtractor[]) || []);
       setAssertions((editingStep.assertions as AssertionRule[]) || []);
       setTargetEnvironmentType(editingStep.targetEnvironmentType === 'LOCAL' ? 'LOCAL' : 'DEFAULT');
@@ -199,6 +341,9 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
       setHeadersJson('{}');
       setQueryParamsJson('{}');
       setBodyJson('{}');
+      setBodyType('JSON');
+      setBodyInputMode('raw');
+      setFormFields([]);
       setExtractors([]);
       setAssertions([
         { type: 'statusCode', operator: 'equals', expected: 200 },
@@ -307,11 +452,16 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
         if (first.headers && Object.keys(first.headers).length > 0) {
           setHeadersJson(JSON.stringify(first.headers, null, 2));
         }
-        if (first.queryParams && Object.keys(first.queryParams).length > 0) {
-          setQueryParamsJson(JSON.stringify(first.queryParams, null, 2));
+        if (first.bodyType) {
+          setBodyType(first.bodyType as RequestBodyType);
+          if (first.bodyType === 'FORM_DATA' || first.bodyType === 'URL_ENCODED') {
+            setBodyInputMode('fields');
+          }
         }
         if (first.body && (typeof first.body !== 'object' || Object.keys(first.body).length > 0)) {
-          setBodyJson(typeof first.body === 'string' ? first.body : JSON.stringify(first.body, null, 2));
+          const bodyStr = typeof first.body === 'string' ? first.body : JSON.stringify(first.body, null, 2);
+          setBodyJson(bodyStr);
+          setFormFields(jsonToFormFields(bodyStr));
         }
       }
     } else {
@@ -323,6 +473,12 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
     setSelectedScenarioId(scenarioId);
     const scenario = availableScenarios.find((s) => s.id === scenarioId);
     if (scenario) {
+      if (scenario.bodyType) {
+        setBodyType(scenario.bodyType as RequestBodyType);
+        if (scenario.bodyType === 'FORM_DATA' || scenario.bodyType === 'URL_ENCODED') {
+          setBodyInputMode('fields');
+        }
+      }
       if (scenario.headers) {
         setHeadersJson(JSON.stringify(scenario.headers, null, 2));
       }
@@ -330,7 +486,9 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
         setQueryParamsJson(JSON.stringify(scenario.queryParams, null, 2));
       }
       if (scenario.body !== undefined && scenario.body !== null) {
-        setBodyJson(typeof scenario.body === 'string' ? scenario.body : JSON.stringify(scenario.body, null, 2));
+        const bodyStr = typeof scenario.body === 'string' ? scenario.body : JSON.stringify(scenario.body, null, 2);
+        setBodyJson(bodyStr);
+        setFormFields(jsonToFormFields(bodyStr));
       }
     }
   };
@@ -400,6 +558,17 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
+      let effectiveBodyOverride = parsedBody;
+      if (bodyType === 'NONE') {
+        effectiveBodyOverride = null;
+      } else if (bodyInputMode === 'fields') {
+        try {
+          effectiveBodyOverride = JSON.parse(formFieldsToJson(formFields));
+        } catch {
+          effectiveBodyOverride = parsedBody;
+        }
+      }
+
       await onSave({
         name: name.trim(),
         description: description.trim() || undefined,
@@ -414,7 +583,8 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
         targetEnvironment: targetEnvironment.trim() || undefined,
         headersOverride: parsedHeaders,
         queryParamsOverride: parsedQueryParams,
-        bodyOverride: parsedBody,
+        bodyOverride: effectiveBodyOverride,
+        bodyType,
         extractors,
         assertions,
       });
@@ -805,22 +975,228 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Request Body (JSON)
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-purple-500" />
+                      <span>Request Body Content-Type</span>
                     </label>
-                    <span className="text-[11px] text-purple-600 dark:text-purple-400 font-mono">
-                      Supports &#123;&#123;var&#125;&#125;, &#123;&#123;$uuid&#125;&#125;, &#123;&#123;$timestamp&#125;&#125;
-                    </span>
+                    <select
+                      value={bodyType}
+                      onChange={(e) => {
+                        const newType = e.target.value as RequestBodyType;
+                        setBodyType(newType);
+                        if (newType === 'FORM_DATA' || newType === 'URL_ENCODED') {
+                          setBodyInputMode('fields');
+                          if (formFields.length === 0 && bodyJson && bodyJson !== '{}') {
+                            setFormFields(jsonToFormFields(bodyJson));
+                          }
+                        }
+                      }}
+                      className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-medium focus:outline-hidden focus:ring-1 focus:ring-purple-500 cursor-pointer"
+                    >
+                      <option value="JSON">JSON (application/json)</option>
+                      <option value="FORM_DATA">Form Data (multipart/form-data)</option>
+                      <option value="URL_ENCODED">URL Encoded (application/x-www-form-urlencoded)</option>
+                      <option value="NONE">None (No Request Body)</option>
+                    </select>
                   </div>
-                  <textarea
-                    rows={6}
-                    value={bodyJson}
-                    onFocus={() => setLastFocusedField('body')}
-                    onChange={(e) => setBodyJson(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200"
-                  />
+
+                  {bodyType === 'NONE' ? (
+                    <div className="py-6 text-center text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+                      No request body will be sent for this step.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Sub-header / Mode Switcher */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormFields(jsonToFormFields(bodyJson));
+                              setBodyInputMode('fields');
+                            }}
+                            className={`px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                              bodyInputMode === 'fields'
+                                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 ring-1 ring-purple-500/30 font-bold'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            <List className="w-3.5 h-3.5" />
+                            <span>Form Fields ({formFields.length})</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBodyJson(formFieldsToJson(formFields));
+                              setBodyInputMode('raw');
+                            }}
+                            className={`px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                              bodyInputMode === 'raw'
+                                ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 ring-1 ring-purple-500/30 font-bold'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            <Code2 className="w-3.5 h-3.5" />
+                            <span>Raw JSON</span>
+                          </button>
+                        </div>
+
+                        {bodyInputMode === 'fields' ? (
+                          <button
+                            type="button"
+                            onClick={handleAddFormField}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Field
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-purple-600 dark:text-purple-400 font-mono">
+                            Supports &#123;&#123;var&#125;&#125;, &#123;&#123;$uuid&#125;&#125;
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Content based on bodyInputMode */}
+                      {bodyInputMode === 'fields' ? (
+                        formFields.length === 0 ? (
+                          <div className="py-6 text-center text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                            <p>No form fields configured yet for this {bodyType === 'FORM_DATA' ? 'Form Data' : bodyType === 'URL_ENCODED' ? 'URL-Encoded' : 'JSON'} payload.</p>
+                            <button
+                              type="button"
+                              onClick={handleAddFormField}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Add First Field
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-2 max-h-72 overflow-y-auto p-0.5">
+                            {formFields.map((field) => (
+                              <div
+                                key={field.id}
+                                className={`flex items-center gap-2 p-2 rounded-xl border transition-all ${
+                                  field.enabled
+                                    ? 'bg-slate-50/80 dark:bg-slate-950 border-slate-200 dark:border-slate-800'
+                                    : 'bg-slate-100/50 dark:bg-slate-900/30 border-slate-200/50 dark:border-slate-800/50 opacity-60'
+                                }`}
+                              >
+                                <Switch.Root
+                                  checked={field.enabled}
+                                  onCheckedChange={(checked) =>
+                                    handleUpdateFormField(field.id, { enabled: checked })
+                                  }
+                                  className="w-7 h-3.5 bg-slate-300 dark:bg-slate-700 rounded-full relative data-[state=checked]:bg-purple-600 outline-hidden transition-colors shrink-0"
+                                >
+                                  <Switch.Thumb className="block w-3 h-3 bg-white rounded-full transition-transform duration-100 translate-x-0.5 data-[state=checked]:translate-x-3.5" />
+                                </Switch.Root>
+
+                                <input
+                                  type="text"
+                                  placeholder="Field key / name"
+                                  value={field.key}
+                                  onFocus={() => {
+                                    setLastFocusedField('body');
+                                    setFocusedFieldId(field.id);
+                                  }}
+                                  onChange={(e) =>
+                                    handleUpdateFormField(field.id, { key: e.target.value })
+                                  }
+                                  className="w-1/3 min-w-24 px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-purple-500"
+                                />
+
+                                <div className="flex-1 flex items-center gap-1.5 relative">
+                                  <input
+                                    type="text"
+                                    placeholder={
+                                      field.isFile
+                                        ? 'Filename (e.g. avatar.png, {{fileName}})'
+                                        : 'Field value (supports {{var}})'
+                                    }
+                                    value={field.value}
+                                    onFocus={() => {
+                                      setLastFocusedField('body');
+                                      setFocusedFieldId(field.id);
+                                    }}
+                                    onChange={(e) =>
+                                      handleUpdateFormField(field.id, { value: e.target.value })
+                                    }
+                                    className={`w-full px-2.5 py-1.5 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-purple-500 ${
+                                      field.isFile ? 'text-indigo-600 dark:text-indigo-400 font-semibold' : ''
+                                    }`}
+                                  />
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <EnvironmentVariablePicker
+                                      buttonLabel="Env"
+                                      triggerClassName="text-[10px] py-0.5 px-1.5"
+                                      projectId={projectId}
+                                      onInsert={(token) => handleInsertTokenToField(field.id, token)}
+                                    />
+                                    <DataSheetVariablePicker
+                                      buttonLabel="Sheet"
+                                      triggerClassName="text-[10px] py-0.5 px-1.5"
+                                      projectId={projectId}
+                                      onInsert={(token) => handleInsertTokenToField(field.id, token)}
+                                    />
+                                  </div>
+                                </div>
+
+                                {bodyType === 'FORM_DATA' && (
+                                  <label
+                                    title="Mark this field as a file upload (multipart binary blob simulation)"
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer shrink-0 ${
+                                      field.isFile
+                                        ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-bold'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={!!field.isFile}
+                                      onChange={(e) =>
+                                        handleUpdateFormField(field.id, { isFile: e.target.checked })
+                                      }
+                                      className="sr-only"
+                                    />
+                                    <FileUp className="w-3 h-3" />
+                                    <span>File</span>
+                                  </label>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveFormField(field.id)}
+                                  className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+                                  title="Delete Field"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      ) : (
+                        <textarea
+                          rows={6}
+                          value={bodyJson}
+                          onFocus={() => setLastFocusedField('body')}
+                          onChange={(e) => {
+                            setBodyJson(e.target.value);
+                            setFormFields(jsonToFormFields(e.target.value));
+                          }}
+                          placeholder={
+                            bodyType === 'FORM_DATA'
+                              ? '{\n  "file": { "filename": "avatar.png" },\n  "description": "User profile avatar"\n}'
+                              : bodyType === 'URL_ENCODED'
+                              ? '{\n  "username": "user123",\n  "grant_type": "password"\n}'
+                              : '{\n  "name": "Sample",\n  "isActive": true\n}'
+                          }
+                          className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200"
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               </Tabs.Content>
 
