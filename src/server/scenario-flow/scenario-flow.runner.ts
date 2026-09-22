@@ -249,7 +249,8 @@ export function buildNormalizedHeaders(
   scenarioHeaders: Record<string, string> | undefined | null,
   overrideHeaders: Record<string, string> | undefined | null,
   variables: Record<string, any>,
-  counters?: Record<string, number>
+  counters?: Record<string, number>,
+  bodyType?: string
 ): Record<string, string> {
   const normalized: Record<string, string> = {};
 
@@ -266,8 +267,19 @@ export function buildNormalizedHeaders(
   };
 
   // 1. Standard base headers (matches flutter-package-core Dio defaults)
-  setHeader('Content-Type', 'application/json');
-  setHeader('Accept', 'application/json');
+  const normalizedBodyType = (bodyType || 'JSON').toUpperCase();
+  if (normalizedBodyType === 'FORM_DATA') {
+    // For multipart/form-data, fetch automatically sets Content-Type with boundary.
+    setHeader('Accept', 'application/json');
+  } else if (normalizedBodyType === 'URL_ENCODED') {
+    setHeader('Content-Type', 'application/x-www-form-urlencoded');
+    setHeader('Accept', 'application/json');
+  } else if (normalizedBodyType === 'NONE') {
+    setHeader('Accept', 'application/json');
+  } else {
+    setHeader('Content-Type', 'application/json');
+    setHeader('Accept', 'application/json');
+  }
 
   // 2. Merge scenario headers
   if (scenarioHeaders && typeof scenarioHeaders === 'object') {
@@ -287,6 +299,18 @@ export function buildNormalizedHeaders(
   const interpolated: Record<string, string> = {};
   for (const [k, v] of Object.entries(normalized)) {
     interpolated[k] = String(interpolateVariables(v, variables, counters));
+  }
+
+  // If FORM_DATA, strip manually added Content-Type without boundary so fetch can generate it
+  if (normalizedBodyType === 'FORM_DATA') {
+    for (const k of Object.keys(interpolated)) {
+      if (k.toLowerCase() === 'content-type') {
+        const val = interpolated[k].toLowerCase();
+        if (val.includes('application/json') || (val.includes('multipart/form-data') && !val.includes('boundary='))) {
+          delete interpolated[k];
+        }
+      }
+    }
   }
 
   // 5. Standard flutter-package-core client headers injection:
@@ -809,12 +833,16 @@ export async function executeScenarioFlow(
       fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryParts.join('&');
     }
 
+    // Resolve effective bodyType
+    const effectiveBodyType = (step.bodyType || step.requestScenario?.bodyType || 'JSON').toUpperCase();
+
     // Headers: standardized & normalized conforming to flutter-package-core / network standards
     const interpolatedHeaders = buildNormalizedHeaders(
       step.requestScenario?.headers as Record<string, string>,
       step.headersOverride as Record<string, string>,
       currentVariables,
-      stepCounters
+      stepCounters,
+      effectiveBodyType
     );
 
     // Body
@@ -823,7 +851,7 @@ export async function executeScenarioFlow(
       : step.requestScenario?.body;
 
     let finalBody: any = undefined;
-    if (rawBody !== undefined && rawBody !== null && rawMethod !== 'GET' && rawMethod !== 'HEAD') {
+    if (effectiveBodyType !== 'NONE' && rawBody !== undefined && rawBody !== null && rawMethod !== 'GET' && rawMethod !== 'HEAD') {
       finalBody = interpolateVariables(rawBody, currentVariables, stepCounters);
     }
 
@@ -836,6 +864,7 @@ export async function executeScenarioFlow(
       url: fullUrl,
       headers: interpolatedHeaders,
       body: finalBody,
+      bodyType: effectiveBodyType,
     };
 
     const stepStartTime = Date.now();
@@ -861,8 +890,41 @@ export async function executeScenarioFlow(
         signal: controller.signal,
       };
 
-      if (finalBody !== undefined) {
-        fetchOptions.body = typeof finalBody === 'object' ? JSON.stringify(finalBody) : String(finalBody);
+      if (finalBody !== undefined && effectiveBodyType !== 'NONE') {
+        if (effectiveBodyType === 'FORM_DATA') {
+          const formData = new FormData();
+          if (typeof finalBody === 'object' && finalBody !== null) {
+            for (const [k, v] of Object.entries(finalBody)) {
+              if (v !== undefined && v !== null) {
+                if (typeof v === 'object' && v !== null && 'filename' in v) {
+                  const blob = new Blob([String((v as any).content || '')], { type: (v as any).type || 'application/octet-stream' });
+                  formData.append(k, blob, String((v as any).filename));
+                } else if (typeof v === 'object') {
+                  formData.append(k, JSON.stringify(v));
+                } else {
+                  formData.append(k, String(v));
+                }
+              }
+            }
+          } else {
+            formData.append('data', String(finalBody));
+          }
+          fetchOptions.body = formData;
+        } else if (effectiveBodyType === 'URL_ENCODED') {
+          const params = new URLSearchParams();
+          if (typeof finalBody === 'object' && finalBody !== null) {
+            for (const [k, v] of Object.entries(finalBody)) {
+              if (v !== undefined && v !== null) {
+                params.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+              }
+            }
+          } else {
+            params.append('data', String(finalBody));
+          }
+          fetchOptions.body = params.toString();
+        } else {
+          fetchOptions.body = typeof finalBody === 'object' ? JSON.stringify(finalBody) : String(finalBody);
+        }
       }
 
       const res = await fetch(fullUrl, fetchOptions);

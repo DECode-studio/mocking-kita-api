@@ -37,6 +37,7 @@ export interface ScenarioFlowStepInput {
   queryParamsOverride?: Record<string, string> | null;
   pathParamsOverride?: Record<string, string> | null;
   bodyOverride?: any;
+  bodyType?: string | null;
   extractors?: VariableExtractor[] | null;
   assertions?: AssertionRule[] | null;
   targetEnvironmentType?: string | null;

@@ -195,6 +195,7 @@ export async function createScenarioFlowStep(flowId: string, input: ScenarioFlow
       queryParamsOverride: (input.queryParamsOverride as Prisma.InputJsonValue) ?? null,
       pathParamsOverride: (input.pathParamsOverride as Prisma.InputJsonValue) ?? null,
       bodyOverride: (input.bodyOverride as Prisma.InputJsonValue) ?? null,
+      bodyType: input.bodyType ?? 'JSON',
       extractors: (input.extractors as unknown as Prisma.InputJsonValue) ?? [],
       assertions: (input.assertions as unknown as Prisma.InputJsonValue) ?? [],
       targetEnvironmentType: input.targetEnvironmentType ?? 'DEFAULT',
@@ -205,7 +206,7 @@ export async function createScenarioFlowStep(flowId: string, input: ScenarioFlow
         select: { id: true, name: true, methodRequest: true, path: true },
       },
       requestScenario: {
-        select: { id: true, name: true },
+        select: { id: true, name: true, bodyType: true },
       },
     },
   });
@@ -229,6 +230,7 @@ export async function updateScenarioFlowStep(stepId: string, input: Partial<Scen
       ...(input.queryParamsOverride !== undefined ? { queryParamsOverride: input.queryParamsOverride as Prisma.InputJsonValue } : {}),
       ...(input.pathParamsOverride !== undefined ? { pathParamsOverride: input.pathParamsOverride as Prisma.InputJsonValue } : {}),
       ...(input.bodyOverride !== undefined ? { bodyOverride: input.bodyOverride as Prisma.InputJsonValue } : {}),
+      ...(input.bodyType !== undefined ? { bodyType: input.bodyType } : {}),
       ...(input.extractors !== undefined ? { extractors: input.extractors as unknown as Prisma.InputJsonValue } : {}),
       ...(input.assertions !== undefined ? { assertions: input.assertions as unknown as Prisma.InputJsonValue } : {}),
       ...(input.targetEnvironmentType !== undefined ? { targetEnvironmentType: input.targetEnvironmentType } : {}),
