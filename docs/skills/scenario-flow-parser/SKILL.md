@@ -41,7 +41,15 @@ File template portabel menggunakan skema `$schema: "mock-api-studio/scenario-flo
       "id": "gateway-dev",
       "name": "API Gateway DEV",
       "environmentType": "DEVELOPMENT",
+      "values": {
+        "LOCAL": null,
+        "DEVELOPMENT": "https://dev-gateway.example.com",
+        "TESTING": null,
+        "STAGING": null,
+        "PRODUCTION": null
+      },
       "baseUrl": "https://dev-gateway.example.com",
+      "variables": [],
       "isDefault": true
     }
   ],
@@ -66,7 +74,9 @@ File template portabel menggunakan skema `$schema: "mock-api-studio/scenario-flo
         "path": "/v1/auth/request-otp",
         "name": "Request OTP Service",
         "collection": "Auth",
-        "targetEnvironment": "gateway-dev"
+        "targetEnvironment": "gateway-dev",
+        "environmentIds": ["gateway-dev"],
+        "targetEnvironmentType": "DEVELOPMENT"
       },
       "requestScenario": {
         "name": "Standard OTP Request",
@@ -75,6 +85,13 @@ File template portabel menggunakan skema `$schema: "mock-api-studio/scenario-flo
           "phone": "{{datasheet.users.next.phone}}",
           "requestId": "{{$uuid}}"
         },
+        "bodyType": "JSON"
+      },
+      "overrides": {
+        "headers": null,
+        "queryParams": null,
+        "pathParams": null,
+        "body": null,
         "bodyType": "JSON"
       },
       "expectedResponseScenario": {
@@ -108,14 +125,15 @@ Saat template diimpor via `importScenarioFlowFromTemplate(projectId, template)`:
 
 1. **Sinkronisasi Environment**:
    - Mendaftarkan entitas Environment jika belum ada.
-   - Mengonversi `baseUrl` ke Matrix Model sesuai stage (`DEVELOPMENT`, `STAGING`, `PRODUCTION`).
+   - Mengonversi `baseUrl` atau `values` ke Matrix Model sesuai stage (`LOCAL`, `DEVELOPMENT`, `TESTING`, `STAGING`, `PRODUCTION`).
 2. **Auto-Provisioning API & Collection**:
    - Jika suatu step mereferensikan endpoint API yang belum terdaftar di project, parser **langsung membuatkan API dan Collection baru** secara otomatis.
-   - Menghubungkan API dengan Environment melalui tabel relasi `tblApiEnvironment`.
+   - Menghubungkan API dengan Environment melalui `api.environmentIds`, `api.environments`, `api.targetEnvironment`, `api.environmentName`, atau `api.service` jika tersedia; jika tidak, engine memakai fallback heuristik.
 3. **Provisioning Skenario Request & Response**:
    - `requestScenario` dan `expectedResponseScenario` otomatis disimpan dan ditautkan ke API terkait.
+   - Legacy field `requestPayload` dan `responsePayload` masih diterima sebagai fallback.
 4. **Penyusunan Step Eksekusi (`tblScenarioFlowStep`)**:
-   - Menyimpan urutan (`stepOrder`), override (`path`, `headers`, `body`), `extractors`, dan `assertions`.
+   - Menyimpan urutan (`stepOrder`), override (`path`, `headers`, `queryParams`, `pathParams`, `body`, `bodyType`), `extractors`, `assertions`, `targetEnvironment`, dan `targetEnvironmentType`.
 
 ---
 
