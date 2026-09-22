@@ -5,6 +5,7 @@ import {
   evaluateAssertion,
   extractVariables,
   resolveStepBaseUrl,
+  buildNormalizedHeaders,
 } from '@/src/server/scenario-flow/scenario-flow.runner';
 
 describe('Scenario Flow Runner Unit Tests', () => {
@@ -316,4 +317,31 @@ describe('Scenario Flow Runner Unit Tests', () => {
       );
     });
   });
+
+  describe('buildNormalizedHeaders', () => {
+    it('should default Content-Type to application/json when bodyType is JSON or undefined', () => {
+      const headers = buildNormalizedHeaders(null, null, {}, {}, 'JSON');
+      expect(headers['Content-Type']).toBe('application/json');
+      expect(headers['Accept']).toBe('application/json');
+    });
+
+    it('should omit Content-Type header when bodyType is FORM_DATA', () => {
+      const headers = buildNormalizedHeaders(null, { 'Content-Type': 'multipart/form-data' }, {}, {}, 'FORM_DATA');
+      expect(headers['Content-Type']).toBeUndefined();
+      expect(headers['Accept']).toBe('application/json');
+    });
+
+    it('should set Content-Type to application/x-www-form-urlencoded when bodyType is URL_ENCODED', () => {
+      const headers = buildNormalizedHeaders(null, null, {}, {}, 'URL_ENCODED');
+      expect(headers['Content-Type']).toBe('application/x-www-form-urlencoded');
+      expect(headers['Accept']).toBe('application/json');
+    });
+
+    it('should omit Content-Type when bodyType is NONE', () => {
+      const headers = buildNormalizedHeaders(null, null, {}, {}, 'NONE');
+      expect(headers['Content-Type']).toBeUndefined();
+      expect(headers['Accept']).toBe('application/json');
+    });
+  });
 });
+
