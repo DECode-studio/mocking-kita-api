@@ -1,444 +1,268 @@
 ---
 name: insomnia-to-scenario-flow-parser
-description: Panduan arsitektur dan algoritma konversi koleksi Insomnia (YAML/JSON v5) ke Scenario Flow & API Mock API Studio, mencakup dekonstruksi URL, parsing Nunjucks response chaining tags, afterResponse scripts, de-duplikasi environment, dan penentuan urutan eksekusi (Topological Sort).
+description: Panduan konversi ekspor Insomnia YAML/JSON v5 menjadi Scenario Flow Template JSON Mock API Studio, termasuk mapping folder/API, request/response scenario, environment/subEnvironment, response chaining, dan batasan import saat ini.
 ---
 
-# Skill: Insomnia Collection to Scenario Flow & API Parser
+# Skill: Insomnia Collection to Scenario Flow Template
 
-Skill ini menyediakan panduan teknis mendalam dan algoritma konversi untuk mengimpor file ekspor **Insomnia Collection (YAML / JSON v4 & v5)**—seperti [`.extra/reff/los-cms-collection.yaml`](file:///Users/gadget/Development/experiment/mock-api-studio/.extra/reff/los-cms-collection.yaml)—menjadi entitas **API Catalog** dan **Scenario Flow Template** di Mock API Studio.
+Skill ini digunakan saat mengubah ekspor **Insomnia Collection** seperti `.extra/reff/Insomnia_LOS_CMS_simplified.yaml` menjadi **Scenario Flow Template JSON** yang bisa di-import oleh Mock API Studio.
 
----
+## Status Implementasi Saat Ini
 
-## 1. Perbandingan Arsitektur: Insomnia vs Mock API Studio
+Import Scenario Flow di aplikasi **belum menerima YAML Insomnia langsung**. UI import hanya membaca dan memvalidasi JSON template. Karena itu pipeline yang benar adalah:
 
-| Aspek | Insomnia Collection (`collection.insomnia.rest/5.0`) | Mock API Studio Scenario Flow & API |
-|---|---|---|
-| **Struktur Folder** | Bersarang bebas tanpa batas (`fld_...`) dengan array `children`. | `Collection` (kategori 1-level) dan `ScenarioFlowStep` (urutan linear). |
-| **Format URL** | Satu string template: `{{ _.base_url }}/api/v1/resource`. | Terpisah: `api.path` (`/api/v1/resource`) dan `stepBaseUrl` (Environment). |
-| **Response Chaining** | **Inline Template Tag Nunjucks**: `{% response 'body', 'req_id', 'b64::...::46b', ... %}` dan script `afterResponse`. | **Decoupled Variable Extractor**: Step sumber memiliki `VariableExtractor`, step tujuan memanggil `{{variableName}}`. |
-| **Environment Variables** | `{{ _.var_name }}` atau `{{ var_name }}` tersimpan di Base Environment & subEnvironments. | `{{var_name}}` terintegrasi dengan Matrix Model stages (`DEVELOPMENT`, `STAGING`, `PRODUCTION`). |
-| **Scripts** | `scripts.preRequest` dan `scripts.afterResponse` berbasis Node.js/CryptoJS. | Native `VariableExtractor` (JSON path) dan `AssertionRule` (`equals`, `contains`, dll). |
-
----
-
-## 2. Anatomi Format Insomnia (`los-cms-collection.yaml`)
-
-### A. Tag Chaining Nunjucks (`{% response ... %}`)
-Insomnia menyisipkan referensi nilai respon antar-request langsung di dalam string body, header, atau parameter:
-```yaml
-text: >-
-  {
-    "lms": {% response 'body', 'req_e25b8c3e0f49483189dc5bace3543358', 'b64::JC5kYXRhWzBdLmlk::46b', 'never', 60 %},
-    "region": {% response 'body', 'req_22ebbbb51eae41ceac4b13996acd53ed', 'b64::JC5kYXRhWzBdLmlk::46b', 'never', 60 %},
-    "branch": "{% response 'body', 'req_40955a11837b4794a00f214d9b572284', 'b64::JC5kYXRhWzBdLmJyYW5jaF9pZA==::46b', 'never', 60 %}"
-  }
+```text
+Insomnia YAML/JSON
+  -> pre-converter Insomnia
+  -> mock-api-studio/scenario-flow/v1 JSON template
+  -> importScenarioFlowFromTemplate(projectId, template)
 ```
 
-#### Struktur Parameter Tag:
-1. `type`: `'body'` atau `'header'`.
-2. `requestId`: ID request sumber (misal `req_e25b...`).
-3. `filter`: Berisi ekspresi JSONPath yang di-encode Base64 dengan format:
-   ```
-   b64::<base64_string>::46b
-   ```
-   **Contoh Decode**:
-   - `JC5kYXRhWzBdLmlk` $\rightarrow$ `$.data[0].id`
-   - `JC5kYXRhWzBdLmJyYW5jaF9pZA==` $\rightarrow$ `$.data[0].branch_id`
-   - `JC5kYXRhWzBdLm1hbnVmYWN0dXJpbmdfeWVhcg==` $\rightarrow$ `$.data[0].manufacturing_year`
-4. `resendBehavior`: `'never'`, `'when-expired'`, atau `'always'`.
-5. `maxAge`: Durasi cache respon dalam detik (misal `60`).
+Jangan menganggap file `.yaml` Insomnia dapat langsung dikirim ke endpoint import flow. Converter Insomnia harus menghasilkan template JSON dengan kontrak `FlowExportTemplate`.
 
----
+Kode utama yang harus dijadikan acuan:
 
-### B. Script Post-Request (`afterResponse`)
-Insomnia juga menyimpan token atau state ke environment melalui script JavaScript:
-```yaml
-afterResponse: >-
-  const response = insomnia.response.json();
-  insomnia.environment.set("it_support_access_token", response.data.access_token);
-```
+- `src/client/presentation/views/scenario-flows/components/ImportScenarioFlowModal.tsx`: import UI menerima JSON.
+- `src/server/scenario-flow/scenario-flow.types.ts`: kontrak `FlowExportTemplate`, `VariableExtractor`, dan `AssertionRule`.
+- `src/server/scenario-flow/scenario-flow.import-export.ts`: smart upsert environment, collection, API, request scenario, response scenario, dan step.
+- `src/server/scenario-flow/scenario-flow.runner.ts`: runtime interpolation, extractor, assertion, dynamic token, dan data sheet token.
 
----
+## Target Output Template
 
-### C. Variabel Environment & Sub-Environments
-```yaml
-environments:
-  name: Base Environment
-  data:
-    mdm_asset_testing: https://testing-masterdata-asset.kbfinansia.com
-    it_support_access_token: "token-string..."
-  subEnvironments:
-    - name: New Entry
-      data:
-        branch_id: "400"
-```
+Converter Insomnia harus menghasilkan JSON seperti:
 
----
-
-## 3. Tahapan Algoritma Konversi
-
-```
-Insomnia Collection (YAML / JSON)
-  │
-  ├── 1. Ekstraksi Environments
-  │      └── Base Environment & subEnvironments -> Entitas Environment Matrix Model
-  │
-  ├── 2. Traversal Hirarki Folder (Flattening)
-  │      └── Memetakan folder root/parent menjadi nama Collection (misal: "LOS CMS / OTR")
-  │
-  ├── 3. Analisis Dependensi & Chaining (DAG Resolution)
-  │      ├── Parse tag `{% response ... %}` -> Decode Base64 JSONPath
-  │      ├── Parse script `afterResponse` -> Regex insomnia.environment.set()
-  │      ├── Bentuk Directed Acyclic Graph (DAG)
-  │      └── Topological Sort untuk menentukan urutan eksekusi (stepOrder)
-  │
-  ├── 4. Transformasi Step
-  │      ├── Pisahkan Base URL token {{ _.base_url }} dari path endpoint
-  │      ├── Ubah `{{ _.var_name }}` menjadi `{{var_name}}`
-  │      ├── Sisipkan `VariableExtractor` pada step sumber
-  │      └── Ganti tag `{% response ... %}` di step target dengan `{{var_name}}`
-  │
-  └── 5. Output Generasi
-         ├── A. Entitas API & Scenarios (untuk openapi_storage_helper.ts)
-         └── B. Scenario Flow Template v1 (untuk scenario-flow.import-export.ts)
-```
-
----
-
-## 4. Rincian Implementasi Logika Parser
-
-### A. Dekonstruksi URL & Base URL
-URL Insomnia biasanya diawali dengan variabel:
-`{{ _.mdm_asset_testing }}/api/v6/otr/download`
-
-**Aturan Parsing**:
-1. Gunakan regex `^\{\{\s*(?:_\.)?([a-zA-Z0-9_-]+)\s*\}\}(.*)$`:
-   - Group 1: `mdm_asset_testing` (kunci base URL environment)
-   - Group 2: `/api/v6/otr/download` (path API murni)
-2. Jika URL berupa URL absolut langsung (misal `https://api.example.com/v1/resource`):
-   - Gunakan `new URL(rawUrl)` untuk memisahkan `origin` (sebagai base URL) dan `pathname` (sebagai `api.path`).
-
----
-
-### B. Konversi Tag `{% response %}` ke `VariableExtractor`
-
-1. **Regex Deteksi Tag**:
-   ```javascript
-   const RESPONSE_TAG_REGEX = /\{%\s*response\s*'(body|header)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'(?:[^%]*)\s*%\}/g;
-   ```
-2. **Decode Filter JSONPath**:
-   ```typescript
-   function decodeInsomniaFilter(rawFilter: string): string {
-     // Format: b64::JC5kYXRhWzBdLmlk::46b
-     const b64Match = rawFilter.match(/^b64::([^:]+)::46b$/);
-     let jsonPath = rawFilter;
-     if (b64Match) {
-       jsonPath = Buffer.from(b64Match[1], 'base64').toString('utf-8');
-     }
-     // Normalisasi: $.data[0].id -> data.0.id (kompatibel dengan getNestedValue)
-     return jsonPath
-       .replace(/^\$\./, '')
-       .replace(/\[(\w+)\]/g, '.$1')
-       .replace(/^\./, '');
-   }
-   ```
-3. **Penyusunan Nama Variabel & Penggantian Token**:
-   - Buat variabel unik: misal `${sourceReqId}_${cleanPath.replace(/\./g, '_')}`.
-   - Tambahkan ke `extractors` pada request sumber:
-     ```json
-     {
-       "variable": "req_e25b_data_0_id",
-       "from": "body",
-       "path": "data.0.id"
-     }
-     ```
-   - Ganti tag pada request pemanggil menjadi: `"{{req_e25b_data_0_id}}"`.
-
----
-
-### C. Konversi Script `afterResponse` ke `VariableExtractor`
-
-Untuk mengekstrak variabel yang disimpan melalui JavaScript:
-```typescript
-function extractVariablesFromAfterResponseScript(scriptText: string): Array<{ variable: string; from: 'body'; path: string }> {
-  const extractors: Array<{ variable: string; from: 'body'; path: string }> = [];
-  if (!scriptText) return extractors;
-
-  // Mencocokkan: insomnia.environment.set("it_support_access_token", response.data.access_token);
-  const regex = /insomnia\.environment\.set\(\s*["']([^"']+)["']\s*,\s*response\.([a-zA-Z0-9_.]+)\s*\)/g;
-  let match;
-  while ((match = regex.exec(scriptText)) !== null) {
-    const varName = match[1];
-    const rawPath = match[2]; // e.g. "data.access_token"
-    extractors.push({
-      variable: varName,
-      from: 'body',
-      path: rawPath.replace(/\[(\w+)\]/g, '.$1'),
-    });
-  }
-  return extractors;
+```json
+{
+  "$schema": "mock-api-studio/scenario-flow/v1",
+  "version": "1.0",
+  "exportedAt": "2026-09-22T00:00:00.000Z",
+  "environments": [],
+  "flow": {
+    "name": "LOS",
+    "description": "Converted from Insomnia collection",
+    "stopOnFailure": true,
+    "variables": {}
+  },
+  "steps": []
 }
 ```
 
----
+Setiap step minimal memiliki:
 
-### D. Topological Sort untuk Step Ordering
-Karena Insomnia mengizinkan request dipanggil dalam urutan sembarang di UI, namun chaining membutuhkan request sumber dieksekusi terlebih dahulu:
-1. Bangun graf ketergantungan: setiap kali request $B$ memiliki tag `{% response ... %}` yang mengarah ke request $A$, catat dependency edge: $A \rightarrow B$.
-2. Urutkan request menggunakan algoritma **Kahn's Algorithm (Topological Sort)** dengan fallback ke `meta.sortKey`.
-3. Hasil urutan menjadi nilai `stepOrder` (1, 2, 3, ...).
-
----
-
-## 5. Script / Converter Utility (TypeScript)
-
-Berikut adalah modul utilitas lengkap untuk mengonversi koleksi Insomnia ke template Scenario Flow:
-
-```typescript
-import yaml from 'js-yaml';
-
-export interface InsomniaConvertResult {
-  scenarioFlowTemplate: any;
-  apisToImport: any[];
-}
-
-export function parseInsomniaCollectionToScenarioFlow(rawContent: string): InsomniaConvertResult {
-  const parsed = typeof rawContent === 'string'
-    ? (rawContent.trim().startsWith('{') ? JSON.parse(rawContent) : yaml.load(rawContent) as any)
-    : rawContent;
-
-  if (!parsed || !Array.isArray(parsed.collection)) {
-    throw new Error('Format Insomnia tidak valid: field "collection" tidak ditemukan.');
-  }
-
-  // 1. Kumpulkan semua request secara rekursif
-  interface FlatRequest {
-    req: any;
-    folderPath: string;
-    dependencies: Set<string>;
-  }
-
-  const allRequests = new Map<string, FlatRequest>();
-
-  function traverse(items: any[], parentFolder: string = '') {
-    for (const item of items) {
-      if (item.children && Array.isArray(item.children)) {
-        const currentFolder = parentFolder ? `${parentFolder} / ${item.name}` : item.name;
-        traverse(item.children, currentFolder);
-      } else if (item.url && item.method) {
-        const reqId = item.meta?.id || item._id;
-        allRequests.set(reqId, {
-          req: item,
-          folderPath: parentFolder || 'Default',
-          dependencies: new Set<string>(),
-        });
-      }
-    }
-  }
-
-  traverse(parsed.collection);
-
-  // 2. Analisis ketergantungan (Chaining tags)
-  const extractorsByReqId = new Map<string, Array<{ variable: string; from: 'body' | 'headers'; path: string }>>();
-
-  const RESPONSE_TAG_REGEX = /\{%\s*response\s*'(body|header)'\s*,\s*'([^']+)'\s*,\s*'([^']+)'(?:[^%]*)\s*%\}/g;
-
-  for (const [targetId, item] of allRequests.entries()) {
-    const stringified = JSON.stringify({
-      body: item.req.body,
-      parameters: item.req.parameters,
-      headers: item.req.headers,
-    });
-
-    let match;
-    while ((match = RESPONSE_TAG_REGEX.exec(stringified)) !== null) {
-      const type = match[1] === 'header' ? 'headers' : 'body';
-      const sourceReqId = match[2];
-      const rawFilter = match[3];
-
-      // Decode base64 filter
-      const b64Match = rawFilter.match(/^b64::([^:]+)::46b$/);
-      let jsonPath = rawFilter;
-      if (b64Match) {
-        jsonPath = Buffer.from(b64Match[1], 'base64').toString('utf-8');
-      }
-      const normalizedPath = jsonPath
-        .replace(/^\$\./, '')
-        .replace(/\[(\w+)\]/g, '.$1')
-        .replace(/^\./, '');
-
-      const varName = `${sourceReqId.replace(/[^a-zA-Z0-9_]/g, '_')}_${normalizedPath.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-
-      // Daftarkan extractor di source request
-      const list = extractorsByReqId.get(sourceReqId) || [];
-      if (!list.some((e) => e.variable === varName)) {
-        list.push({ variable: varName, from: type, path: normalizedPath });
-      }
-      extractorsByReqId.set(sourceReqId, list);
-
-      // Catat dependensi
-      if (allRequests.has(sourceReqId)) {
-        item.dependencies.add(sourceReqId);
-      }
-    }
-
-    // Periksa afterResponse script
-    const afterScript = item.req.scripts?.afterResponse;
-    if (afterScript) {
-      const scriptExtractors = extractVariablesFromAfterResponseScript(afterScript);
-      const list = extractorsByReqId.get(targetId) || [];
-      scriptExtractors.forEach((se) => {
-        if (!list.some((e) => e.variable === se.variable)) {
-          list.push(se);
-        }
-      });
-      extractorsByReqId.set(targetId, list);
-    }
-  }
-
-  // 3. Normalisasi Token Variabel di Body, Query, Header
-  function replaceInsomniaTags(text: string): string {
-    if (!text) return text;
-    // Ganti tag response
-    let res = text.replace(RESPONSE_TAG_REGEX, (_match, _type, sourceReqId, rawFilter) => {
-      const b64Match = rawFilter.match(/^b64::([^:]+)::46b$/);
-      let jsonPath = rawFilter;
-      if (b64Match) {
-        jsonPath = Buffer.from(b64Match[1], 'base64').toString('utf-8');
-      }
-      const normalizedPath = jsonPath.replace(/^\$\./, '').replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
-      const varName = `${sourceReqId.replace(/[^a-zA-Z0-9_]/g, '_')}_${normalizedPath.replace(/[^a-zA-Z0-9_]/g, '_')}`;
-      return `{{${varName}}}`;
-    });
-
-    // Ganti {{ _.var_name }} -> {{var_name}}
-    res = res.replace(/\{\{\s*_\.([a-zA-Z0-9_-]+)\s*\}\}/g, '{{$1}}');
-    return res;
-  }
-
-  // 4. Susun Steps
-  const steps: any[] = [];
-  let orderIndex = 1;
-
-  for (const [reqId, item] of allRequests.entries()) {
-    const rawUrl = item.req.url || '';
-    const urlMatch = rawUrl.match(/^\{\{\s*(?:_\.)?([a-zA-Z0-9_-]+)\s*\}\}(.*)$/);
-    const path = urlMatch ? (urlMatch[2] || '/') : rawUrl;
-    const targetEnv = urlMatch ? urlMatch[1] : undefined;
-
-    // Headers
-    const headers: Record<string, string> = {};
-    (item.req.headers || []).forEach((h: any) => {
-      if (h.name && !h.disabled) {
-        headers[h.name] = replaceInsomniaTags(h.value);
-      }
-    });
-
-    // Query Params
-    const queryParams: Record<string, string> = {};
-    (item.req.parameters || []).forEach((p: any) => {
-      if (p.name && !p.disabled) {
-        queryParams[p.name] = replaceInsomniaTags(p.value);
-      }
-    });
-
-    // Body
-    let body: any = undefined;
-    let bodyType = 'NONE';
-    if (item.req.body?.text) {
-      bodyType = 'JSON';
-      const cleanBodyText = replaceInsomniaTags(item.req.body.text);
-      try {
-        body = JSON.parse(cleanBodyText);
-      } catch {
-        body = cleanBodyText;
-      }
-    }
-
-    steps.push({
-      order: orderIndex++,
-      name: item.req.name || `Step ${orderIndex}`,
-      enabled: true,
-      api: {
-        method: item.req.method.toUpperCase(),
-        path,
-        name: item.req.name,
-        collection: item.folderPath,
-        targetEnvironment: targetEnv,
-      },
-      requestScenario: {
-        name: `Scenario ${item.req.name}`,
-        headers,
-        queryParams,
-        body,
-        bodyType,
-      },
-      expectedResponseScenario: {
-        statusCode: 200,
-        body: { code: 'OK', message: 'Success' },
-      },
-      extractors: extractorsByReqId.get(reqId) || [],
-      assertions: [
-        {
-          type: 'statusCode',
-          operator: 'equals',
-          expected: 200,
-        },
-      ],
-    });
-  }
-
-  // 5. Susun Environment Matrix
-  const envData = parsed.environments?.data || {};
-  const templateEnvironments = [
-    {
-      id: 'insomnia-imported-env',
-      name: parsed.environments?.name || 'Insomnia Environment',
-      environmentType: 'DEVELOPMENT',
-      isDefault: true,
-      variables: Object.entries(envData).map(([key, val]) => ({
-        key,
-        value: String(val),
-        type: 'plain',
-        enabled: true,
-      })),
-    },
-  ];
-
-  return {
-    scenarioFlowTemplate: {
-      $schema: 'mock-api-studio/scenario-flow/v1',
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      environments: templateEnvironments,
-      flow: {
-        name: parsed.name || 'Imported Insomnia Flow',
-        description: parsed.meta?.description || 'Converted from Insomnia collection',
-        stopOnFailure: true,
-        variables: envData,
-      },
-      steps,
-    },
-    apisToImport: steps.map((s) => ({
-      name: s.api.name,
-      methodRequest: s.api.method,
-      path: s.api.path,
-      collection: s.api.collection,
-    })),
-  };
+```json
+{
+  "order": 1,
+  "name": "Province",
+  "enabled": true,
+  "api": {
+    "method": "GET",
+    "path": "/api/v2/master-data/area/province",
+    "name": "Province",
+    "collection": "LOS CMS / Master Data (MDM) / Common / Area",
+    "targetEnvironment": "MDM_API_AREA_URL"
+  },
+  "requestScenario": {
+    "name": "Province Scenario",
+    "headers": {},
+    "queryParams": {},
+    "pathParams": {},
+    "body": {},
+    "bodyType": "NONE"
+  },
+  "expectedResponseScenario": {
+    "statusCode": 200,
+    "headers": {},
+    "body": {}
+  },
+  "overrides": {},
+  "extractors": [],
+  "assertions": [
+    { "type": "statusCode", "operator": "equals", "expected": 200 }
+  ]
 }
 ```
 
----
+## Insomnia Reference Shape
 
-## 6. Integrasi dengan Storage & Runner Mock API Studio
+Reference `Insomnia_LOS_CMS_simplified.yaml` memakai format:
 
-1. **Import ke Database**:
-   Hasil `scenarioFlowTemplate` langsung kompatibel dan dapat diimpor menggunakan:
-   ```typescript
-   import { importScenarioFlowFromTemplate } from '@/src/server/scenario-flow/scenario-flow.import-export';
-   await importScenarioFlowFromTemplate(projectId, result.scenarioFlowTemplate);
-   ```
-2. **Kesesuaian dengan Runner Engine**:
-   - Token pengganti `{{req_source_data_id}}` langsung dikenali oleh `interpolateVariables()` di [`scenario-flow.runner.ts`](file:///Users/gadget/Development/experiment/mock-api-studio/src/server/scenario-flow/scenario-flow.runner.ts#L135).
-   - Ekstraktor otomatis diisi ke dalam `extractVariables()` dan nilainya dimuat ke `currentVariables` untuk langkah selanjutnya.
+- Root: `type: collection.insomnia.rest/5.0`, `schema_version: '5.1'`, `collection`.
+- Folder: object dengan `name`, `meta`, dan `children`.
+- Request: object dengan `url`, `name`, `meta.id`, `method`, `parameters`, `headers`, optional `body`, `scripts`, dan `settings`.
+- Environment: `environments.name`, `environments.data`, dan `environments.subEnvironments[]`.
+
+Pada file LOS CMS, `environments.data` bisa kosong dan nilai penting berada di `subEnvironments`, misalnya `Dev.data.MDM_API_AREA_URL`, `LOS_AUTH_API_BASE_URL`, `LOS_HEADER_PRIVATE_KEY`, dan service base URL lain. Converter wajib membaca `subEnvironments`, bukan hanya `environments.data`.
+
+## Mapping Environment
+
+Insomnia environment harus dikonversi menjadi `template.environments`.
+
+Aturan yang direkomendasikan:
+
+- Setiap base URL variable Insomnia, misalnya `MDM_API_AREA_URL`, `LOS_KMB_API_BASE_URL`, atau `LOS_AUTH_API_BASE_URL`, menjadi satu environment item dengan `id` sama dengan key variable.
+- Isi `values.DEVELOPMENT`, `values.TESTING`, `values.STAGING`, atau `values.PRODUCTION` dari `subEnvironments` jika nama sub-environment dapat dipetakan ke stage.
+- Jika stage tidak jelas, pakai `DEVELOPMENT` sebagai fallback.
+- Untuk variable non-base-url seperti API key, token placeholder, private key, atau branch id, masukkan ke `variables` environment atau `flow.variables`, sesuai kebutuhan runtime.
+- Untuk environment base URL, gunakan `isBaseUrl: true`.
+
+Contoh:
+
+```json
+{
+  "id": "MDM_API_AREA_URL",
+  "name": "MDM_API_AREA_URL",
+  "isBaseUrl": true,
+  "environmentType": "DEVELOPMENT",
+  "values": {
+    "LOCAL": null,
+    "DEVELOPMENT": "https://dev-masterdata-area.kbfinansia.com",
+    "TESTING": null,
+    "STAGING": null,
+    "PRODUCTION": null
+  },
+  "variables": [],
+  "isDefault": false
+}
+```
+
+Import engine akan mencoba mencocokkan `api.environmentIds`, `api.environments`, `api.targetEnvironment`, `api.environmentName`, atau `api.service` dengan environment yang ada. Untuk hasil Insomnia, isi `api.targetEnvironment` dengan variable base URL dari URL Insomnia, misalnya `MDM_API_AREA_URL`.
+
+## Mapping URL, API, dan Collection
+
+URL Insomnia biasanya berbentuk:
+
+```text
+{{ _.MDM_API_AREA_URL }}/api/v2/master-data/area/province
+```
+
+Parsing:
+
+- `MDM_API_AREA_URL` menjadi `api.targetEnvironment`.
+- `/api/v2/master-data/area/province` menjadi `api.path`.
+- `method` menjadi `api.method`.
+- Request `name` menjadi `api.name` dan default step name.
+- Folder parent digabung menjadi `api.collection`, misalnya `LOS CMS / Master Data (MDM) / Common / Area`.
+
+Gunakan regex:
+
+```ts
+/^\{\{\s*(?:_\.)?([a-zA-Z0-9_-]+)\s*\}\}(.*)$/
+```
+
+Jika URL absolut langsung, parse dengan `new URL(rawUrl)`: `origin` dapat menjadi environment base URL baru, dan `pathname + search` menjadi path/query sumber.
+
+URL dapat mengandung `{% response %}` di path. Converter harus mengganti tag itu menjadi `{{variableName}}` dan menambahkan extractor pada source request.
+
+## Mapping Request Scenario
+
+Insomnia arrays harus dinormalisasi menjadi object map:
+
+- `headers[]` -> `requestScenario.headers`.
+- `parameters[]` -> `requestScenario.queryParams`.
+- Path token hasil parsing URL atau `{% response %}` di path -> `requestScenario.pathParams` atau langsung `api.path`/`overrides.path` dengan `{{variableName}}`, sesuai bentuk URL internal yang diinginkan.
+- `body.text` JSON valid -> parse menjadi object.
+- `body.text` JSON invalid atau mengandung nilai raw yang tetap valid setelah replacement -> simpan string jika parse gagal.
+- Tidak ada body -> `bodyType: "NONE"`.
+
+Field disabled di Insomnia harus diabaikan.
+
+## Response Chaining `{% response %}`
+
+Insomnia menyisipkan dependency antar-request dengan tag:
+
+```text
+{% response 'body', 'req_source_id', 'b64::JC5kYXRhWzBdLmlk::46b', 'when-expired', 300 %}
+```
+
+Aturan:
+
+- `body` -> extractor `from: "body"`.
+- `header` -> extractor `from: "headers"`.
+- Decode filter `b64::<base64>::46b` menjadi JSONPath.
+- Normalisasi JSONPath dari `$.data[0].id` menjadi `data.0.id` atau `data[0].id`; runner mendukung bracket dan dot notation.
+- Buat nama variable stabil dan unik, misalnya `req_7ee4d29c910541c0b12b595ba9781edf_data_0_province_id`.
+- Tambahkan extractor ke step source request.
+- Ganti tag di target request dengan `{{variableName}}`.
+- Catat dependency `source -> target`.
+
+Regex dasar:
+
+```ts
+/\{%\s*response\s*['"]?(body|header)['"]?\s*,\s*['"]([^'"]+)['"]\s*,\s*['"]([^'"]+)['"][^%]*%\}/g
+```
+
+Gunakan regex yang toleran terhadap quote ganda YAML (`''`) setelah YAML di-load, karena YAML parser biasanya mengembalikan string normal dengan single quote.
+
+## Step Ordering
+
+Jangan hanya memakai traversal order. Converter harus melakukan ordering dengan dependency graph:
+
+1. Traverse semua request dan simpan `meta.id`.
+2. Scan body, header, parameter, dan URL untuk `{% response %}`.
+3. Bentuk edge `sourceReqId -> targetReqId`.
+4. Jalankan topological sort.
+5. Jika ada cycle atau missing source, pertahankan request terkait di posisi sortKey/folder order dan beri warning metadata/log.
+6. Fallback tie-breaker: `meta.sortKey`, lalu urutan traversal asli.
+
+Nilai `step.order` harus mengikuti hasil sort.
+
+## Script Insomnia
+
+Mock API Studio tidak menjalankan `scripts.preRequest` atau `scripts.afterResponse` JavaScript Insomnia.
+
+Mapping yang aman:
+
+- `afterResponse` dengan pola `insomnia.environment.set("name", response.data.token)` dapat dikonversi menjadi `extractors`.
+- `insomnia.test(...)` dapat dikonversi ke assertion sederhana jika pola jelas, terutama status code.
+- `preRequest` yang membuat header dinamis seperti HMAC `x-request-id` tidak otomatis bisa dieksekusi. Pilihan aman adalah:
+  - abaikan dan catat warning,
+  - map ke dynamic token bawaan jika setara (`{{$uuid}}`, `{{$timestamp}}`, `{{$isoDate}}`, `{{$randomInt}}`, `{{$randomEmail}}`),
+  - atau tambahkan dukungan runner/generator khusus sebelum mengklaim konversi penuh.
+
+Untuk file LOS CMS, banyak request memakai `preRequest` HMAC `x-request-id` dengan `LOS_HEADER_PRIVATE_KEY`; skill/converter harus menandai ini sebagai unsupported atau membutuhkan generator khusus.
+
+## Data Sheet
+
+Scenario Flow runner mendukung token:
+
+```text
+{{datasheet.<sheetCode>.random.<property>}}
+{{datasheet.<sheetCode>.next.<property>}}
+{{datasheet.<sheetCode>.asc.<property>}}
+{{datasheet.<sheetCode>.desc.<property>}}
+{{datasheet.<sheetCode>.<index>.<property>}}
+```
+
+Namun import Scenario Flow tidak otomatis membuat entity Data Sheet. Jika converter ingin menggunakan data sheet, masukkan data ke `flow.variables.datasheet` untuk runtime template, atau buat Data Sheet lewat fitur/repository Data Sheet terpisah. Jangan klaim Insomnia import otomatis memprovision Data Sheet kecuali implementasinya sudah ditambahkan.
+
+## Import Behavior Mock API Studio
+
+`importScenarioFlowFromTemplate(projectId, template)` melakukan:
+
+- Validasi minimal `template.flow.name`.
+- Upsert environment dari `template.environments`.
+- Jika environment tidak ada, infer dari `flow.variables.apigeeBaseUrl`, `flow.variables.baseUrl`, dan `flow.variables.kpmBaseUrl`.
+- Upsert collection berdasarkan `api.collection`.
+- Upsert API berdasarkan key `METHOD::PATH`.
+- Membuat request scenario dari `step.requestScenario` atau legacy `step.requestPayload`.
+- Membuat response scenario dari `step.expectedResponseScenario` atau legacy `step.responsePayload`.
+- Mengganti step flow lama saat nama flow sama dalam project yang sama.
+- Menyimpan `extractors`, `assertions`, `targetEnvironment`, dan `targetEnvironmentType`.
+
+Karena import API key API berdasarkan `METHOD::PATH`, pastikan hasil converter menormalisasi path secara konsisten agar tidak membuat duplikat.
+
+## Minimal Converter Checklist
+
+Sebelum hasil JSON dianggap siap import:
+
+- File YAML/JSON Insomnia berhasil di-load.
+- Semua request memiliki `meta.id` atau generated id stabil.
+- Folder hierarchy sudah menjadi `api.collection`.
+- URL base variable sudah menjadi environment dan `api.targetEnvironment`.
+- `subEnvironments` sudah diproses.
+- Headers, query params, path params, body, dan body type sudah terisi.
+- Semua `{% response %}` di URL/header/query/body sudah diganti menjadi `{{variable}}`.
+- Extractor source request sudah dibuat.
+- Step order sudah topological, bukan sekadar traversal.
+- Unsupported `preRequest` menghasilkan warning.
+- Output adalah JSON valid dengan `$schema: "mock-api-studio/scenario-flow/v1"`.

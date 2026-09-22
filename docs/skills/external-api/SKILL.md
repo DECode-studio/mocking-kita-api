@@ -233,7 +233,7 @@ Menerima payload spesifikasi OpenAPI 3.x atau Swagger 2.0 (JSON) dan secara otom
   {
     "projectId": "proj-uuid-001",
     "mode": "upsert", // "upsert" | "merge" | "replace"
-    "spec": {
+    "openApiJson": {
       "openapi": "3.0.3",
       "info": { "title": "Customer Service", "version": "1.0.0" },
       "paths": {
@@ -260,11 +260,14 @@ Menerima payload spesifikasi OpenAPI 3.x atau Swagger 2.0 (JSON) dan secara otom
   ```json
   {
     "success": true,
-    "message": "OpenAPI specification imported successfully",
+    "message": "OpenAPI specification imported/upserted successfully",
     "data": {
-      "importedApiCount": 1,
-      "updatedApiCount": 0,
-      "importedCollectionCount": 1
+      "projectId": "proj-uuid-001",
+      "mode": "upsert",
+      "importedApis": 1,
+      "updatedApis": 0,
+      "importedCollections": 1,
+      "details": {}
     }
   }
   ```
