@@ -228,6 +228,7 @@ model ScenarioFlowStep {
   queryParamsOverride Json?     @map("query_params_override")
   pathParamsOverride  Json?     @map("path_params_override")
   bodyOverride        Json?     @map("body_override")
+  bodyType            String?   @default("JSON") @map("body_type")
   extractors          Json?
   assertions          Json?
   targetEnvironmentType String?  @default("DEFAULT") @map("target_environment_type")
