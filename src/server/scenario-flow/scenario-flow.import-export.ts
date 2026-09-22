@@ -130,6 +130,7 @@ export async function exportScenarioFlowToTemplate(flowId: string): Promise<Flow
           queryParams: (step.queryParamsOverride as Record<string, string>) || null,
           pathParams: (step.pathParamsOverride as Record<string, string>) || null,
           body: step.bodyOverride,
+          bodyType: step.bodyType || step.requestScenario?.bodyType || 'JSON',
         },
         extractors: (step.extractors as any) || [],
         assertions: (step.assertions as any) || [],
@@ -333,6 +334,7 @@ export async function importScenarioFlowFromTemplate(
     queryParamsOverride: any;
     pathParamsOverride: any;
     bodyOverride: any;
+    bodyType?: string | null;
     extractors: any;
     assertions: any;
     targetEnvironmentType: string;
@@ -571,6 +573,7 @@ export async function importScenarioFlowFromTemplate(
       queryParamsOverride: step.overrides?.queryParams || null,
       pathParamsOverride: step.overrides?.pathParams || null,
       bodyOverride: step.overrides?.body || null,
+      bodyType: step.overrides?.bodyType || (step as any).bodyType || null,
       extractors: step.extractors || [],
       assertions: step.assertions || [],
       targetEnvironmentType:
@@ -646,6 +649,7 @@ export async function importScenarioFlowFromTemplate(
         queryParamsOverride: (step.queryParamsOverride as Prisma.InputJsonValue) ?? null,
         pathParamsOverride: (step.pathParamsOverride as Prisma.InputJsonValue) ?? null,
         bodyOverride: (step.bodyOverride as Prisma.InputJsonValue) ?? null,
+        bodyType: step.bodyType || 'JSON',
         extractors: (step.extractors as Prisma.InputJsonValue) ?? [],
         assertions: (step.assertions as Prisma.InputJsonValue) ?? [],
         targetEnvironmentType: step.targetEnvironmentType || 'DEFAULT',
