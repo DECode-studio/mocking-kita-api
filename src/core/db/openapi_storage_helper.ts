@@ -7,7 +7,7 @@ import { RequestScenario } from '@/src/client/domain/request-scenario/entity/req
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { generateId } from '@/src/core/utils/uuid';
 import { Prisma } from '@prisma/client';
-import { getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
+import { getEnvironmentBaseUrl, parseRawVariables } from '@/src/client/domain/environment/entity/environment';
 
 /**
  * Export all endpoints, collections, and scenarios belonging strictly to a single project into OpenAPI 3.0 spec.
@@ -199,17 +199,30 @@ function buildMergePlan(
 
     const isBaseUrl = (env as any).isBaseUrl !== false;
     const values = (env.values as any) || {};
+    const incomingVars = parseRawVariables(env.variables);
+
+    if (env.baseUrl && !incomingVars.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
+      incomingVars.push({ id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true });
+    }
 
     if (existing) {
-      let existingVars = (existing.variables as any[]) || [];
-      if (env.baseUrl) {
-        const hasBaseUrl = existingVars.some((v) => v.key === 'baseUrl');
-        if (hasBaseUrl) {
-          existingVars = existingVars.map((v) => (v.key === 'baseUrl' ? { ...v, value: env.baseUrl } : v));
+      const existingVarsList = parseRawVariables(existing.variables);
+      const mergedVars = [...existingVarsList];
+
+      for (const newVar of incomingVars) {
+        const idx = mergedVars.findIndex((v) => v.key === newVar.key);
+        if (idx >= 0) {
+          mergedVars[idx] = {
+            ...mergedVars[idx],
+            value: newVar.value,
+            enabled: newVar.enabled !== undefined ? newVar.enabled : mergedVars[idx].enabled,
+            type: newVar.type || mergedVars[idx].type,
+          };
         } else {
-          existingVars = [...existingVars, { id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true }];
+          mergedVars.push(newVar);
         }
       }
+
       const mergedValues = {
         ...(((existing as any).values as any) || {}),
         ...values,
@@ -220,7 +233,7 @@ function buildMergePlan(
           isBaseUrl,
           values: mergedValues,
           environmentType: (env.environmentType as any) ?? existing.environmentType,
-          variables: existingVars as any,
+          variables: mergedVars as any,
           status: env.status ?? true,
           updatedAt: now,
         },
@@ -228,9 +241,6 @@ function buildMergePlan(
     } else {
       const envId = env.id || generateId();
       envByNameMap.set(env.name.toLowerCase(), { id: envId, name: env.name } as any);
-      const envVars = env.baseUrl
-        ? [{ id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true }]
-        : [];
       envsToCreate.push({
         id: envId,
         projectId,
@@ -238,7 +248,7 @@ function buildMergePlan(
         isBaseUrl,
         values,
         environmentType: (env.environmentType as any) || null,
-        variables: envVars as any,
+        variables: incomingVars as any,
         status: env.status ?? true,
         createdAt: now,
         updatedAt: now,
@@ -572,18 +582,24 @@ export async function importProjectOpenApi(
     if (extracted.environments.length > 0) {
       await createManyInChunks(extracted.environments, (chunk) =>
         prisma.environment.createMany({
-          data: chunk.map((env) => ({
-            id: env.id || generateId(),
-            projectId,
-            name: env.name,
-            environmentType: env.environmentType as any,
-            variables: (env.baseUrl
-              ? [{ id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true }]
-              : []) as any,
-            status: env.status ?? true,
-            createdAt: now,
-            updatedAt: now,
-          })),
+          data: chunk.map((env) => {
+            const incomingVars = parseRawVariables(env.variables);
+            if (env.baseUrl && !incomingVars.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
+              incomingVars.push({ id: generateId(), key: 'baseUrl', value: env.baseUrl, type: 'plain', enabled: true });
+            }
+            return {
+              id: env.id || generateId(),
+              projectId,
+              name: env.name,
+              isBaseUrl: (env as any).isBaseUrl !== false,
+              values: (env as any).values || {},
+              environmentType: env.environmentType as any,
+              variables: incomingVars as any,
+              status: env.status ?? true,
+              createdAt: now,
+              updatedAt: now,
+            };
+          }),
         })
       );
     }
