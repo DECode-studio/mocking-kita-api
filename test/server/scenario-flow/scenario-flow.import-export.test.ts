@@ -14,6 +14,8 @@ vi.mock('@/src/core/db/prisma-client', () => {
       api: {
         findMany: vi.fn(),
         create: vi.fn(),
+        upsert: vi.fn(),
+        update: vi.fn(),
       },
       requestScenario: {
         create: vi.fn(),
@@ -30,6 +32,7 @@ vi.mock('@/src/core/db/prisma-client', () => {
       scenarioFlowStep: {
         deleteMany: vi.fn(),
         create: vi.fn(),
+        createMany: vi.fn(),
       },
       environment: {
         findFirst: vi.fn(),
@@ -64,7 +67,7 @@ describe('Scenario Flow Import / Export with Upsert', () => {
 
     // Mock APIs
     (prisma.api.findMany as any).mockResolvedValue([]);
-    (prisma.api.create as any).mockResolvedValue({
+    (prisma.api.upsert as any).mockResolvedValue({
       id: 'api-new-1',
       methodRequest: 'POST',
       path: '/api/v1/login',
@@ -132,10 +135,10 @@ describe('Scenario Flow Import / Export with Upsert', () => {
     expect(result.requestScenariosCreated).toBe(1);
     expect(result.stepsCount).toBe(1);
 
-    expect(prisma.api.create).toHaveBeenCalled();
+    expect(prisma.api.upsert).toHaveBeenCalled();
     expect(prisma.requestScenario.create).toHaveBeenCalled();
     expect(prisma.responseScenario.create).toHaveBeenCalled();
-    expect(prisma.scenarioFlowStep.create).toHaveBeenCalled();
+    expect(prisma.scenarioFlowStep.createMany).toHaveBeenCalled();
   });
 
   it('should successfully parse and import kpm_limit_submission_flow.json template', async () => {
@@ -151,9 +154,9 @@ describe('Scenario Flow Import / Export with Upsert', () => {
 
     // Mock APIs
     (prisma.api.findMany as any).mockResolvedValue([]);
-    (prisma.api.create as any).mockImplementation((args: any) => ({
-      id: `api-${args.data.path}`,
-      ...args.data,
+    (prisma.api.upsert as any).mockImplementation((args: any) => ({
+      id: `api-${args.create?.path || args.where?.tblApi_index_0?.path}`,
+      ...(args.create || {}),
       requestScenarios: [],
     }));
 
@@ -179,5 +182,48 @@ describe('Scenario Flow Import / Export with Upsert', () => {
     expect(result.flowName).toBe('KPM Limit Submission Flow (Login to Final Approval)');
     expect(result.stepsCount).toBe(6);
     expect(result.apisCreated).toBe(6);
+  });
+
+  it('should extract non-baseUrl flow variables and save them to tblEnvironment.variables', async () => {
+    (prisma.collection.findMany as any).mockResolvedValue([]);
+    (prisma.api.findMany as any).mockResolvedValue([]);
+    (prisma.scenarioFlow.findFirst as any).mockResolvedValue(null);
+    (prisma.scenarioFlow.create as any).mockResolvedValue({ id: 'flow-test', name: 'Var Test Flow' });
+    (prisma.scenarioFlowStep.createMany as any).mockResolvedValue({ count: 0 });
+
+    (prisma.environment.findFirst as any).mockResolvedValue(null);
+    let createdEnvData: any = null;
+    (prisma.environment.create as any).mockImplementation((args: any) => {
+      createdEnvData = args.data;
+      return { id: 'env-1', ...args.data };
+    });
+
+    const templateWithVars = {
+      flow: {
+        name: 'Var Test Flow',
+        variables: {
+          baseUrl: 'https://api.gateway.com',
+          apiKey: 'secret-key-12345',
+          tenantId: 'tenant-abc',
+          _canvasLayout: { node1: { x: 10, y: 20 } },
+        },
+      },
+      steps: [],
+    };
+
+    const res = await importScenarioFlowFromTemplate(projectId, templateWithVars);
+    expect(res.success).toBe(true);
+
+    expect(createdEnvData).not.toBeNull();
+    const envVars = createdEnvData.variables;
+    expect(Array.isArray(envVars)).toBe(true);
+
+    // Should include baseUrl
+    expect(envVars.some((v: any) => v.key === 'baseUrl' && v.value === 'https://api.gateway.com')).toBe(true);
+    // Should include custom non-baseUrl variables
+    expect(envVars.some((v: any) => v.key === 'apiKey' && v.value === 'secret-key-12345')).toBe(true);
+    expect(envVars.some((v: any) => v.key === 'tenantId' && v.value === 'tenant-abc')).toBe(true);
+    // Should filter out internal variables like _canvasLayout
+    expect(envVars.some((v: any) => v.key === '_canvasLayout')).toBe(false);
   });
 });
