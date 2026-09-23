@@ -26,6 +26,17 @@ Kode utama yang harus dijadikan acuan:
 - `src/server/scenario-flow/scenario-flow.types.ts`: kontrak `FlowExportTemplate`, `VariableExtractor`, dan `AssertionRule`.
 - `src/server/scenario-flow/scenario-flow.import-export.ts`: smart upsert environment, collection, API, request scenario, response scenario, dan step.
 - `src/server/scenario-flow/scenario-flow.runner.ts`: runtime interpolation, extractor, assertion, dynamic token, dan data sheet token.
+- `docs/skills/insomnia-parser/convert_insomnia.py`: helper converter Python untuk menjalankan konversi.
+- `docs/skills/insomnia-parser/requirements.txt`: dependency converter (`PyYAML`).
+
+Untuk menjalankan converter:
+
+```bash
+python3 -m pip install -r docs/skills/insomnia-parser/requirements.txt
+python3 docs/skills/insomnia-parser/convert_insomnia.py \
+  .extra/reff/Insomnia_LOS_CMS_simplified.yaml \
+  --output .extra/reff/insomnia_los_cms_scenario_flow.json
+```
 
 ## Target Output Template
 
@@ -103,6 +114,10 @@ Aturan yang direkomendasikan:
 - Isi `values.DEVELOPMENT`, `values.TESTING`, `values.STAGING`, atau `values.PRODUCTION` dari `subEnvironments` jika nama sub-environment dapat dipetakan ke stage.
 - Jika stage tidak jelas, pakai `DEVELOPMENT` sebagai fallback.
 - Untuk variable non-base-url seperti API key, token placeholder, private key, atau branch id, masukkan ke `variables` environment atau `flow.variables`, sesuai kebutuhan runtime.
+- Script `preRequest` dan `afterResponse` juga termasuk sumber environment yang harus diparse:
+  - `insomnia.environment.get("KEY")` menandai `KEY` sebagai required runtime variable dan harus masuk `flow.variables` jika bukan base URL.
+  - `insomnia.environment.set("KEY", value)` menandai `KEY` sebagai produced runtime variable dan harus masuk `flow.variables` jika bukan base URL.
+  - Jika `set()` mengambil nilai dari `response...`, tambahkan juga `VariableExtractor` pada step tersebut.
 - Untuk environment base URL, gunakan `isBaseUrl: true`.
 
 Contoh:
@@ -212,7 +227,9 @@ Mock API Studio tidak menjalankan `scripts.preRequest` atau `scripts.afterRespon
 
 Mapping yang aman:
 
-- `afterResponse` dengan pola `insomnia.environment.set("name", response.data.token)` dapat dikonversi menjadi `extractors`.
+- `insomnia.environment.get("name")` di `preRequest` atau `afterResponse` harus dicatat sebagai environment read dan dimasukkan ke `flow.variables` jika bukan base URL.
+- `insomnia.environment.set("name", value)` di `preRequest` atau `afterResponse` harus dicatat sebagai environment write dan dimasukkan ke `flow.variables` sebagai runtime-produced variable jika bukan base URL.
+- `afterResponse` dengan pola `insomnia.environment.set("name", response.data.token)` dapat dikonversi menjadi `extractors` sekaligus dicatat sebagai environment write.
 - `insomnia.test(...)` dapat dikonversi ke assertion sederhana jika pola jelas, terutama status code.
 - `preRequest` yang membuat header dinamis seperti HMAC `x-request-id` tidak otomatis bisa dieksekusi. Pilihan aman adalah:
   - abaikan dan catat warning,

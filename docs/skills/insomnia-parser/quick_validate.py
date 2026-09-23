@@ -31,6 +31,9 @@ REQUIRED_TERMS = [
     "pre-converter Insomnia",
     "mock-api-studio/scenario-flow/v1",
     "FlowExportTemplate",
+    "convert_insomnia.py",
+    "requirements.txt",
+    "PyYAML",
     "subEnvironments",
     "api.targetEnvironment",
     "topological sort",
@@ -62,9 +65,19 @@ def parse_frontmatter(text: str) -> dict[str, str]:
 def validate_skill(skill_dir: Path) -> list[str]:
     errors: list[str] = []
     skill_file = skill_dir / "SKILL.md"
+    converter_file = skill_dir / "convert_insomnia.py"
+    requirements_file = skill_dir / "requirements.txt"
 
     if not skill_file.exists():
         return [f"Missing required file: {skill_file}"]
+
+    if not converter_file.exists():
+        errors.append(f"Missing converter helper: {converter_file}")
+
+    if not requirements_file.exists():
+        errors.append(f"Missing converter requirements file: {requirements_file}")
+    elif "PyYAML" not in requirements_file.read_text(encoding="utf-8"):
+        errors.append("requirements.txt must include PyYAML.")
 
     text = skill_file.read_text(encoding="utf-8")
 
@@ -97,6 +110,9 @@ def validate_skill(skill_dir: Path) -> list[str]:
 
     if re.search(r"import\s+yaml|from\s+['\"]js-yaml['\"]", text):
         errors.append("Skill should not embed the old js-yaml converter implementation.")
+
+    if (skill_dir / "convert_insomnia.rb").exists():
+        errors.append("Ruby converter should not be present; use convert_insomnia.py.")
 
     if "file://" in text:
         errors.append("Skill should avoid file:// links; use repository-relative paths.")
