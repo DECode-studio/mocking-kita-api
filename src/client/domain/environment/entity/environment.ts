@@ -75,33 +75,41 @@ export function normalizeEnvironmentValues(
   return result;
 }
 
-function parseRawVariables(raw: any): EnvironmentVariable[] {
-  if (Array.isArray(raw)) return raw;
+export function parseRawVariables(raw: any): EnvironmentVariable[] {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((item) => item && typeof item === 'object')
+      .map((item) => ({
+        id: item.id || item.key || 'var-' + Math.random().toString(36).substring(2, 9),
+        key: String(item.key || ''),
+        value: typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value ?? ''),
+        type: (item.type === 'secret' ? 'secret' : 'plain') as 'plain' | 'secret',
+        enabled: item.enabled !== false,
+        description: item.description ? String(item.description) : undefined,
+      }))
+      .filter((v) => v.key.trim().length > 0);
+  }
   if (typeof raw === 'string') {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return parseRawVariables(parsed);
       if (parsed && typeof parsed === 'object') {
-        return Object.entries(parsed).map(([k, v]) => ({
-          id: k,
-          key: k,
-          value: String(v),
-          type: 'plain',
-          enabled: true,
-        }));
+        return parseRawVariables(parsed);
       }
     } catch {
       return [];
     }
   }
   if (raw && typeof raw === 'object') {
-    return Object.entries(raw).map(([k, v]) => ({
-      id: k,
-      key: k,
-      value: String(v),
-      type: 'plain',
-      enabled: true,
-    }));
+    return Object.entries(raw)
+      .filter(([k]) => k && k.trim().length > 0)
+      .map(([k, v]) => ({
+        id: k,
+        key: k,
+        value: typeof v === 'object' ? JSON.stringify(v) : String(v ?? ''),
+        type: 'plain',
+        enabled: true,
+      }));
   }
   return [];
 }

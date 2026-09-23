@@ -77,14 +77,14 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
   onDelete,
   onToggleStatus,
 }) => {
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showAllStages, setShowAllStages] = useState(false);
-  const [showVariables, setShowVariables] = useState(false);
-  const addToast = useUIStore((state) => state.addToast);
-
   const isBaseUrl = environment.isBaseUrl !== false;
   const values = environment.values || {};
   const variables = Array.isArray(environment.variables) ? environment.variables : [];
+
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showAllStages, setShowAllStages] = useState(false);
+  const [showVariables, setShowVariables] = useState(!isBaseUrl || variables.length <= 5);
+  const addToast = useUIStore((state) => state.addToast);
 
   const handleCopy = (text: string, label: string) => {
     if (!text) return;
