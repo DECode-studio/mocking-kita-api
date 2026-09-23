@@ -6,6 +6,8 @@ import { Prisma } from '@prisma/client';
 import {
   getEnvironmentBaseUrl,
   normalizeEnvironmentValues,
+  parseRawVariables,
+  EnvironmentVariable,
 } from '@/src/client/domain/environment/entity/environment';
 
 function toEnvSlug(str: string): string {
@@ -172,13 +174,35 @@ export async function importScenarioFlowFromTemplate(
   let apisExisting = 0;
   let requestScenariosCreated = 0;
 
-  // 0. Upsert Environments (from template.environments or inferred from variables)
+  // 0. Extract any custom non-baseUrl and non-internal variables from flowData and template
+  const rawFlowVars: Record<string, any> = {
+    ...(template.variables && typeof template.variables === 'object' && !Array.isArray(template.variables) ? template.variables : {}),
+    ...(flowData.variables && typeof flowData.variables === 'object' && !Array.isArray(flowData.variables) ? flowData.variables : {}),
+  };
+
+  const extractedCustomVars: EnvironmentVariable[] = [];
+  for (const [key, val] of Object.entries(rawFlowVars)) {
+    if (key.startsWith('_')) continue; // Skip internal flow metadata like _canvasLayout, _dataSheetCounters
+    if (key === 'baseUrl' || key === 'apigeeBaseUrl' || key === 'kpmBaseUrl') continue;
+    extractedCustomVars.push({
+      id: generateId(),
+      key,
+      value: typeof val === 'object' ? JSON.stringify(val) : String(val ?? ''),
+      type: 'plain',
+      enabled: true,
+    });
+  }
+
+  // Upsert Environments (from template.environments or inferred from variables)
   let defaultEnvId: string | null = null;
   const envDefinitions: Array<{
     name: string;
     environmentType?: string;
     baseUrl: string;
     isDefault?: boolean;
+    isBaseUrl?: boolean;
+    values?: any;
+    variables?: any;
   }> = [];
 
   if (Array.isArray(template.environments) && template.environments.length > 0) {
@@ -193,6 +217,7 @@ export async function importScenarioFlowFromTemplate(
         baseUrl: primaryUrl,
         environmentType: 'DEVELOPMENT',
         isDefault: true,
+        isBaseUrl: true,
       });
     }
     if (vars.kpmBaseUrl && typeof vars.kpmBaseUrl === 'string' && vars.kpmBaseUrl !== primaryUrl) {
@@ -201,12 +226,25 @@ export async function importScenarioFlowFromTemplate(
         baseUrl: vars.kpmBaseUrl,
         environmentType: 'DEVELOPMENT',
         isDefault: false,
+        isBaseUrl: true,
+      });
+    }
+
+    // If no base URL was provided, but custom variables exist, create a General Variables environment
+    if (envDefinitions.length === 0 && extractedCustomVars.length > 0) {
+      envDefinitions.push({
+        name: `${flowData.name || 'Default'} Variables`,
+        baseUrl: '',
+        environmentType: 'DEVELOPMENT',
+        isDefault: true,
+        isBaseUrl: false,
       });
     }
   }
 
   if (projectId && envDefinitions.length > 0) {
-    for (const envItem of envDefinitions) {
+    for (let i = 0; i < envDefinitions.length; i++) {
+      const envItem = envDefinitions[i];
       const isBaseUrl = (envItem as any).isBaseUrl !== false;
       const cleanBaseUrl = envItem.baseUrl ? String(envItem.baseUrl).trim() : '';
       let values = normalizeEnvironmentValues((envItem as any).values, isBaseUrl);
@@ -220,11 +258,28 @@ export async function importScenarioFlowFromTemplate(
       }
 
       const envName = envItem.name || 'Default Environment';
-      const envVariables = Array.isArray((envItem as any).variables)
-        ? (envItem as any).variables
-        : cleanBaseUrl
-        ? [{ id: generateId(), key: 'baseUrl', value: cleanBaseUrl, type: 'plain', enabled: true }]
-        : [];
+      let envVariables: EnvironmentVariable[] = parseRawVariables((envItem as any).variables);
+
+      // Ensure baseUrl is present in envVariables if cleanBaseUrl exists
+      if (cleanBaseUrl && !envVariables.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
+        envVariables.push({
+          id: generateId(),
+          key: 'baseUrl',
+          value: cleanBaseUrl,
+          type: 'plain',
+          enabled: true,
+        });
+      }
+
+      // Sync extracted non-baseUrl flow variables into the default (or primary) environment
+      const isPrimaryEnv = envItem.isDefault || i === 0;
+      if (isPrimaryEnv && extractedCustomVars.length > 0) {
+        for (const customVar of extractedCustomVars) {
+          if (!envVariables.some((v) => v.key === customVar.key)) {
+            envVariables.push({ ...customVar });
+          }
+        }
+      }
 
       const existingEnv = await prisma.environment.findFirst({
         where: {
@@ -237,12 +292,29 @@ export async function importScenarioFlowFromTemplate(
       let currentId: string;
       if (existingEnv) {
         currentId = existingEnv.id;
+        const existingVarsList = parseRawVariables(existingEnv.variables);
+        const mergedVars = [...existingVarsList];
+
+        for (const newVar of envVariables) {
+          const idx = mergedVars.findIndex((v) => v.key === newVar.key);
+          if (idx >= 0) {
+            mergedVars[idx] = {
+              ...mergedVars[idx],
+              value: newVar.value,
+              enabled: newVar.enabled !== undefined ? newVar.enabled : mergedVars[idx].enabled,
+              type: newVar.type || mergedVars[idx].type,
+            };
+          } else {
+            mergedVars.push(newVar);
+          }
+        }
+
         await prisma.environment.update({
           where: { id: existingEnv.id },
           data: {
             isBaseUrl,
             values: values as any,
-            variables: envVariables as any,
+            variables: mergedVars as any,
             updatedAt: now,
           },
         });
@@ -304,19 +376,26 @@ export async function importScenarioFlowFromTemplate(
   const collectionByName = new Map<string, string>();
   existingCollections.forEach((c) => collectionByName.set(c.name.toLowerCase(), c.id));
 
-  // 2. Find existing APIs for this project
+  // 2. Find existing APIs for this project (including soft-deleted to avoid unique constraint collision)
   const existingApis = await prisma.api.findMany({
-    where: { projectId, deletedAt: null },
+    where: { projectId },
     include: {
       requestScenarios: { where: { deletedAt: null } },
     },
   });
 
   const apiMap = new Map<string, (typeof existingApis)[0]>();
-  existingApis.forEach((api) => {
-    const key = `${api.methodRequest.toUpperCase()}::${api.path}`;
+  for (const api of existingApis) {
+    const key = `${api.methodRequest.toUpperCase()}::${api.path.trim()}`;
+    if (api.deletedAt) {
+      await prisma.api.update({
+        where: { id: api.id },
+        data: { deletedAt: null, updatedAt: now },
+      });
+      api.deletedAt = null;
+    }
     apiMap.set(key, api);
-  });
+  }
 
   // 3. Process each step and resolve/create API, RequestScenario, ResponseScenario
   const resolvedSteps: Array<{
@@ -347,8 +426,9 @@ export async function importScenarioFlowFromTemplate(
     const stepName = step.name || `Step ${stepOrder}`;
 
     const rawApi = step.api || {};
-    const method = (rawApi.method || 'GET').toUpperCase();
-    const path = rawApi.path || step.path || '';
+    const method = (rawApi.method || 'GET').toUpperCase().trim();
+    const rawPath = rawApi.path || step.path || '';
+    const path = rawPath.trim();
 
     if (!path) {
       throw new Error(`Step ${stepOrder} must have an api.path specified.`);
@@ -362,7 +442,7 @@ export async function importScenarioFlowFromTemplate(
       // Check collection
       let collectionId: string | null = null;
       if (rawApi.collection) {
-        const colNameLower = String(rawApi.collection).toLowerCase();
+        const colNameLower = String(rawApi.collection).toLowerCase().trim();
         let targetColId = collectionByName.get(colNameLower);
         if (!targetColId) {
           const newCol = await prisma.collection.create({
@@ -380,9 +460,21 @@ export async function importScenarioFlowFromTemplate(
         collectionId = targetColId;
       }
 
-      // Create API
-      const newApi = await prisma.api.create({
-        data: {
+      // Upsert API to prevent race conditions or soft-delete unique constraint collisions
+      const newApi = await prisma.api.upsert({
+        where: {
+          tblApi_index_0: {
+            projectId,
+            path,
+            methodRequest: method,
+          },
+        },
+        update: {
+          deletedAt: null,
+          ...(collectionId ? { collectionId } : {}),
+          updatedAt: now,
+        },
+        create: {
           projectId,
           collectionId,
           name: rawApi.name || `${method} ${path}`,
@@ -630,31 +722,36 @@ export async function importScenarioFlowFromTemplate(
     targetFlowId = newFlow.id;
   }
 
-  // 6. Insert new steps into database
-  for (const step of resolvedSteps) {
-    await prisma.scenarioFlowStep.create({
-      data: {
-        flowId: targetFlowId,
-        apiId: step.apiId,
-        requestScenarioId: step.requestScenarioId,
-        stepOrder: step.stepOrder,
-        name: step.name,
-        description: step.description,
-        enabled: step.enabled,
-        delayMs: step.delayMs,
-        continueOnError: step.continueOnError,
-        methodOverride: step.methodOverride,
-        pathOverride: step.pathOverride,
-        headersOverride: (step.headersOverride as Prisma.InputJsonValue) ?? null,
-        queryParamsOverride: (step.queryParamsOverride as Prisma.InputJsonValue) ?? null,
-        pathParamsOverride: (step.pathParamsOverride as Prisma.InputJsonValue) ?? null,
-        bodyOverride: (step.bodyOverride as Prisma.InputJsonValue) ?? null,
-        bodyType: step.bodyType || 'JSON',
-        extractors: (step.extractors as Prisma.InputJsonValue) ?? [],
-        assertions: (step.assertions as Prisma.InputJsonValue) ?? [],
-        targetEnvironmentType: step.targetEnvironmentType || 'DEFAULT',
-        targetEnvironment: step.targetEnvironment || null,
-      },
+  // 6. Insert new steps into database in chunks for high performance
+  const stepsToCreate = resolvedSteps.map((step) => ({
+    flowId: targetFlowId,
+    apiId: step.apiId,
+    requestScenarioId: step.requestScenarioId,
+    stepOrder: step.stepOrder,
+    name: step.name,
+    description: step.description,
+    enabled: step.enabled,
+    delayMs: step.delayMs,
+    continueOnError: step.continueOnError,
+    methodOverride: step.methodOverride,
+    pathOverride: step.pathOverride,
+    headersOverride: (step.headersOverride as Prisma.InputJsonValue) ?? undefined,
+    queryParamsOverride: (step.queryParamsOverride as Prisma.InputJsonValue) ?? undefined,
+    pathParamsOverride: (step.pathParamsOverride as Prisma.InputJsonValue) ?? undefined,
+    bodyOverride: (step.bodyOverride as Prisma.InputJsonValue) ?? undefined,
+    bodyType: step.bodyType || 'JSON',
+    extractors: (step.extractors as Prisma.InputJsonValue) ?? [],
+    assertions: (step.assertions as Prisma.InputJsonValue) ?? [],
+    targetEnvironmentType: step.targetEnvironmentType || 'DEFAULT',
+    targetEnvironment: step.targetEnvironment || null,
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  for (let i = 0; i < stepsToCreate.length; i += 100) {
+    const chunk = stepsToCreate.slice(i, i + 100);
+    await prisma.scenarioFlowStep.createMany({
+      data: chunk as any,
     });
   }
 

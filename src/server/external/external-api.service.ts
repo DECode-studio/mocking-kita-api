@@ -42,13 +42,12 @@ export async function upsertExternalApi(input: UpsertApiInput) {
     };
   }
 
-  // Check if API already exists by (projectId, path, methodRequest)
+  // Check if API already exists by (projectId, path, methodRequest) (including soft-deleted)
   const existingApi = await prisma.api.findFirst({
     where: {
       projectId: input.projectId,
       path: normalizedPath,
       methodRequest: normalizedMethod,
-      deletedAt: null,
     },
   });
 
@@ -64,6 +63,7 @@ export async function upsertExternalApi(input: UpsertApiInput) {
         description: input.description !== undefined ? input.description : existingApi.description,
         collectionId: input.collectionId !== undefined ? input.collectionId : existingApi.collectionId,
         status: input.status !== undefined ? input.status : existingApi.status,
+        deletedAt: null, // restore if it was soft-deleted
         updatedAt: new Date(),
       },
     });

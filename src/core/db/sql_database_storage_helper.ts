@@ -95,15 +95,17 @@ export async function generateDatabaseSqlDump(mode: 'upsert' | 'replace' = 'upse
     chunks.push(`-- 2. Environments (${environments.length} rows)`);
     for (const e of environments) {
       chunks.push(
-        `INSERT INTO "tblEnvironment" ("id", "project_id", "name", "environment_type", "variables", "status", "created_at", "updated_at", "deleted_at") VALUES (${escapeSqlString(
+        `INSERT INTO "tblEnvironment" ("id", "project_id", "name", "is_base_url", "values", "environment_type", "variables", "status", "created_at", "updated_at", "deleted_at") VALUES (${escapeSqlString(
           e.id
-        )}, ${escapeSqlString(e.projectId)}, ${escapeSqlString(e.name)}, ${escapeSqlString(
+        )}, ${escapeSqlString(e.projectId)}, ${escapeSqlString(e.name)}, ${escapeSqlBoolean(
+          (e as any).isBaseUrl !== false
+        )}, ${escapeSqlJson((e as any).values || {})}, ${escapeSqlString(
           e.environmentType
         )}, ${escapeSqlJson((e as any).variables || [])}, ${escapeSqlBoolean(
           e.status
         )}, ${escapeSqlDate(e.createdAt)}, ${escapeSqlDate(e.updatedAt)}, ${escapeSqlDate(
           e.deletedAt
-        )}) ON CONFLICT ("id") DO UPDATE SET "name" = EXCLUDED."name", "environment_type" = EXCLUDED."environment_type", "variables" = EXCLUDED."variables", "status" = EXCLUDED."status", "updated_at" = EXCLUDED."updated_at", "deleted_at" = EXCLUDED."deleted_at";`
+        )}) ON CONFLICT ("id") DO UPDATE SET "name" = EXCLUDED."name", "is_base_url" = EXCLUDED."is_base_url", "values" = EXCLUDED."values", "environment_type" = EXCLUDED."environment_type", "variables" = EXCLUDED."variables", "status" = EXCLUDED."status", "updated_at" = EXCLUDED."updated_at", "deleted_at" = EXCLUDED."deleted_at";`
       );
     }
     chunks.push(``);

@@ -1,6 +1,12 @@
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Collection } from '@/src/client/domain/collection/entity/collection';
-import { Environment, normalizeEnvironmentValues } from '@/src/client/domain/environment/entity/environment';
+import {
+  Environment,
+  normalizeEnvironmentValues,
+  parseRawVariables,
+  EnvironmentVariable,
+  getEnvironmentBaseUrl,
+} from '@/src/client/domain/environment/entity/environment';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
@@ -265,6 +271,19 @@ export function exportProjectToOpenApiSpec(
     servers: servers.length > 0 ? servers : undefined,
     tags: tags.length > 0 ? tags : undefined,
     paths,
+    ...(Array.isArray(environments) && environments.length > 0
+      ? {
+          'x-environments': environments.map((e) => ({
+            name: e.name,
+            isBaseUrl: e.isBaseUrl !== false,
+            values: e.values || {},
+            environmentType: e.environmentType,
+            baseUrl: getEnvironmentBaseUrl(e),
+            variables: parseRawVariables(e.variables),
+            status: e.status !== false,
+          })),
+        }
+      : {}),
   };
 }
 
@@ -454,7 +473,57 @@ export function parseOpenApiSpecToProjectData(
   }
 
   // Parse OpenAPI servers / Swagger host -> Environments (Matrix Model)
-  if (Array.isArray(rawSpec.servers) && rawSpec.servers.length > 0) {
+  const explicitEnvs = rawSpec['x-environments'] || rawSpec.environments;
+
+  // Extract any top-level custom variables (e.g. from extensions or Postman/Insomnia conversions)
+  const topLevelCustomVars: EnvironmentVariable[] = [];
+  const rawTopVars = rawSpec['x-variables'] || rawSpec['x-environment-variables'] || rawSpec.variables;
+  if (rawTopVars) {
+    topLevelCustomVars.push(...parseRawVariables(rawTopVars));
+  }
+
+  if (Array.isArray(explicitEnvs) && explicitEnvs.length > 0) {
+    for (let i = 0; i < explicitEnvs.length; i++) {
+      const rawEnv = explicitEnvs[i];
+      if (!rawEnv || typeof rawEnv !== 'object') continue;
+      const envName = rawEnv.name || `Environment ${i + 1}`;
+      const isBaseUrl = rawEnv.isBaseUrl !== false;
+      const cleanBaseUrl = rawEnv.baseUrl ? String(rawEnv.baseUrl).trim() : '';
+      const values = normalizeEnvironmentValues(rawEnv.values, isBaseUrl);
+      const parsedVars = parseRawVariables(rawEnv.variables);
+
+      if (cleanBaseUrl && !parsedVars.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
+        parsedVars.push({
+          id: generateId(),
+          key: 'baseUrl',
+          value: cleanBaseUrl,
+          type: 'plain',
+          enabled: true,
+        });
+      }
+
+      // Merge top level custom vars into the first or default environment
+      if (i === 0 && topLevelCustomVars.length > 0) {
+        for (const tVar of topLevelCustomVars) {
+          if (!parsedVars.some((v) => v.key === tVar.key)) {
+            parsedVars.push({ ...tVar });
+          }
+        }
+      }
+
+      environmentsToCreate.push({
+        id: rawEnv.id || generateId(),
+        projectId,
+        name: envName,
+        isBaseUrl,
+        values,
+        environmentType: (rawEnv.environmentType as any) || 'DEVELOPMENT',
+        variables: parsedVars,
+        baseUrl: cleanBaseUrl || getEnvironmentBaseUrl({ values, isBaseUrl } as any),
+        status: rawEnv.status !== false,
+      });
+    }
+  } else if (Array.isArray(rawSpec.servers) && rawSpec.servers.length > 0) {
     const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
     const values: Partial<Record<EnvironmentType, string | null>> = {
       LOCAL: null,
@@ -465,6 +534,8 @@ export function parseOpenApiSpecToProjectData(
     };
 
     let firstUrl = '';
+    const serverCustomVars: EnvironmentVariable[] = [...topLevelCustomVars];
+
     for (let i = 0; i < rawSpec.servers.length; i++) {
       const serverObj = rawSpec.servers[i];
       if (serverObj && typeof serverObj.url === 'string' && serverObj.url.trim()) {
@@ -475,11 +546,37 @@ export function parseOpenApiSpecToProjectData(
         if (envType !== 'LOCAL') {
           values[envType] = url;
         }
+
+        // OpenAPI 3 Server Variables support: servers[i].variables
+        if (serverObj.variables && typeof serverObj.variables === 'object') {
+          for (const [varKey, varData] of Object.entries(serverObj.variables as Record<string, any>)) {
+            if (!serverCustomVars.some((v) => v.key === varKey)) {
+              serverCustomVars.push({
+                id: generateId(),
+                key: varKey,
+                value: varData?.default !== undefined ? String(varData.default) : (varData?.enum?.[0] !== undefined ? String(varData.enum[0]) : ''),
+                type: 'plain',
+                enabled: true,
+                description: varData?.description ? String(varData.description) : undefined,
+              });
+            }
+          }
+        }
       }
     }
 
     if (firstUrl && !values.DEVELOPMENT && !values.STAGING && !values.PRODUCTION && !values.TESTING) {
       values.DEVELOPMENT = firstUrl;
+    }
+
+    const envVars: EnvironmentVariable[] = firstUrl
+      ? [{ id: generateId(), key: 'baseUrl', value: firstUrl, type: 'plain', enabled: true }]
+      : [];
+
+    for (const scv of serverCustomVars) {
+      if (!envVars.some((v) => v.key === scv.key)) {
+        envVars.push(scv);
+      }
     }
 
     const envId = generateId();
@@ -490,9 +587,7 @@ export function parseOpenApiSpecToProjectData(
       isBaseUrl: true,
       values,
       environmentType: 'DEVELOPMENT',
-      variables: firstUrl
-        ? [{ id: generateId(), key: 'baseUrl', value: firstUrl, type: 'plain', enabled: true }]
-        : [],
+      variables: envVars,
       baseUrl: firstUrl,
       status: true,
     });
@@ -517,6 +612,11 @@ export function parseOpenApiSpecToProjectData(
       values.DEVELOPMENT = fullUrl;
     }
 
+    const envVars: EnvironmentVariable[] = [
+      { id: generateId(), key: 'baseUrl', value: fullUrl, type: 'plain', enabled: true },
+      ...topLevelCustomVars.filter((v) => v.key !== 'baseUrl'),
+    ];
+
     environmentsToCreate.push({
       id: envId,
       projectId,
@@ -524,7 +624,7 @@ export function parseOpenApiSpecToProjectData(
       isBaseUrl: true,
       values,
       environmentType: envType,
-      variables: [{ id: generateId(), key: 'baseUrl', value: fullUrl, type: 'plain', enabled: true }],
+      variables: envVars,
       baseUrl: fullUrl,
       status: true,
     });

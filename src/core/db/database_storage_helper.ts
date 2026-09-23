@@ -1,7 +1,7 @@
 import prisma from '@/src/core/db/prisma-client';
 import { MockApiDatabase } from '@/src/client/domain/database/entity/mock_api_database';
 import { Prisma } from '@prisma/client';
-import { getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
+import { getEnvironmentBaseUrl, parseRawVariables, normalizeEnvironmentValues } from '@/src/client/domain/environment/entity/environment';
 import { generateId } from '@/src/core/utils/uuid';
 
 export async function readDatabase(): Promise<MockApiDatabase> {
@@ -47,6 +47,8 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       id: e.id,
       projectId: e.projectId,
       name: e.name,
+      isBaseUrl: e.isBaseUrl !== false,
+      values: (e.values as any) || {},
       environmentType: e.environmentType as any,
       variables: (e.variables as any) ?? [],
       baseUrl: getEnvironmentBaseUrl(e as any) || undefined,
@@ -184,19 +186,22 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
         for (const chunk of chunkArray(data.environments, CHUNK_SIZE)) {
           await tx.environment.createMany({
             data: chunk.map((item: any) => {
+              const isBaseUrl = item.isBaseUrl !== false;
               const cleanBaseUrl = item.baseUrl ? String(item.baseUrl).trim() : '';
-              const vars = Array.isArray(item.variables)
-                ? item.variables
-                : cleanBaseUrl
-                ? [{ id: generateId(), key: 'baseUrl', value: cleanBaseUrl, type: 'plain', enabled: true }]
-                : [];
+              const values = normalizeEnvironmentValues(item.values, isBaseUrl);
+              const vars = parseRawVariables(item.variables);
+              if (cleanBaseUrl && !vars.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
+                vars.push({ id: generateId(), key: 'baseUrl', value: cleanBaseUrl, type: 'plain', enabled: true });
+              }
               return {
                 id: item.id,
                 projectId: item.projectId,
                 name: item.name,
+                isBaseUrl,
+                values: values as any,
                 environmentType: item.environmentType,
                 variables: vars as any,
-                status: item.status,
+                status: item.status !== false,
                 createdAt: new Date(item.createdAt),
                 updatedAt: new Date(item.updatedAt),
                 deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,

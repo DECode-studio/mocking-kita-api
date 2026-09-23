@@ -77,4 +77,32 @@ describe('parseOpenApiSpecToProjectData', () => {
       expect.objectContaining({ key: 'baseUrl', value: 'https://dev-api.example.com/v1' }),
     ]);
   });
+
+  it('should parse x-environments with custom non-baseUrl variables from OpenAPI spec', () => {
+    const specWithCustomEnv = {
+      openapi: '3.0.0',
+      info: { title: 'Custom Env API', version: '1.0.0' },
+      'x-environments': [
+        {
+          name: 'Payment Service',
+          isBaseUrl: true,
+          baseUrl: 'https://payment.dev.com',
+          values: { DEVELOPMENT: 'https://payment.dev.com' },
+          variables: [
+            { key: 'apiKey', value: 'secret-pay-99', type: 'secret' },
+            { key: 'merchantId', value: 'm-100', type: 'plain' },
+          ],
+        },
+      ],
+      paths: {},
+    };
+
+    const result = parseOpenApiSpecToProjectData('test-project-id', specWithCustomEnv);
+    expect(result.environments).toHaveLength(1);
+    const env = result.environments[0];
+    expect(env.name).toBe('Payment Service');
+    expect(env.variables?.some((v) => v.key === 'apiKey' && v.value === 'secret-pay-99')).toBe(true);
+    expect(env.variables?.some((v) => v.key === 'merchantId' && v.value === 'm-100')).toBe(true);
+    expect(env.variables?.some((v) => v.key === 'baseUrl')).toBe(true);
+  });
 });
