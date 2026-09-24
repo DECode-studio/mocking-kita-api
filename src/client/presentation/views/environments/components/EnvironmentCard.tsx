@@ -21,7 +21,7 @@ import { Project } from '@/src/client/domain/project/entity/project';
 import { EnvironmentType } from '@/src/core/utils/types';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
-import { ENVIRONMENTS_SEMANTIC_ID } from '../constant';
+import { ENVIRONMENTS_SEMANTIC_ID, ENVIRONMENTS_TEXT } from '../constant';
 
 interface EnvironmentCardProps {
   environment: Environment;
@@ -90,7 +90,7 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
     if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedKey(label);
-    addToast({ title: `${label} copied to clipboard`, type: 'success' });
+    addToast({ title: ENVIRONMENTS_TEXT.COPIED_TO_CLIPBOARD(label), type: 'success' });
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
@@ -127,12 +127,12 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
               {isBaseUrl ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-md">
                   <Globe className="w-3 h-3" />
-                  Base URL
+                  {ENVIRONMENTS_TEXT.CARD_BASE_URL}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-md">
                   <KeyRound className="w-3 h-3" />
-                  Variables
+                  {ENVIRONMENTS_TEXT.CARD_VARIABLES}
                 </span>
               )}
             </div>
@@ -155,11 +155,11 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
         {/* Stage Status Matrix Bar */}
         <div className="mt-3 p-2 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl">
           <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-            <span>Environment Stages</span>
+            <span>{ENVIRONMENTS_TEXT.CARD_ENV_STAGES}</span>
             <span className="text-[9px] font-normal lowercase">
               {isBaseUrl
-                ? `${filledStages.length} configured + local mock`
-                : `${filledStages.length + (values.LOCAL ? 1 : 0)} configured`}
+                ? `${filledStages.length} ${ENVIRONMENTS_TEXT.CARD_CONFIGURED} + ${ENVIRONMENTS_TEXT.CARD_LOCAL_MOCK}`
+                : `${filledStages.length + (values.LOCAL ? 1 : 0)} ${ENVIRONMENTS_TEXT.CARD_CONFIGURED}`}
             </span>
           </div>
 
@@ -183,8 +183,8 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
                   }`}
                   title={
                     isLocalBase
-                      ? 'LOCAL: Auto handled by Mock Engine'
-                      : String(values[stage] || (hasLegacyOnly && environment.environmentType === stage ? getEnvironmentBaseUrl(environment) : 'Not configured'))
+                      ? ENVIRONMENTS_TEXT.CARD_LOCAL_MOCK_TITLE
+                      : String(values[stage] || (hasLegacyOnly && environment.environmentType === stage ? getEnvironmentBaseUrl(environment) : ENVIRONMENTS_TEXT.CARD_NOT_CONFIGURED))
                   }
                 >
                   <div className="truncate">{STAGE_SHORT_LABELS[stage]}</div>
@@ -208,7 +208,7 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
                 </span>
                 <span className="text-emerald-700 dark:text-emerald-400 truncate flex items-center gap-1 text-[11px]">
                   <Sparkles className="w-3 h-3 shrink-0" />
-                  Mock Server Proxy (Internal)
+                  {ENVIRONMENTS_TEXT.CARD_INTERNAL_PROXY_LABEL}
                 </span>
               </div>
             </div>
@@ -258,6 +258,7 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
 
               {filledStages.length > 2 && (
                 <button
+                  id={ENVIRONMENTS_SEMANTIC_ID.CARD_TOGGLE_STAGES_BTN(environment.id)}
                   type="button"
                   onClick={() => setShowAllStages(!showAllStages)}
                   className="w-full text-center py-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1 cursor-pointer"
@@ -265,12 +266,12 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
                   {showAllStages ? (
                     <>
                       <ChevronUp className="w-3 h-3" />
-                      Tampilkan lebih sedikit
+                      {ENVIRONMENTS_TEXT.CARD_SHOW_LESS_STAGES}
                     </>
                   ) : (
                     <>
                       <ChevronDown className="w-3 h-3" />
-                      Lihat {filledStages.length - 2} stage lainnya
+                      {ENVIRONMENTS_TEXT.CARD_SHOW_MORE_STAGES(filledStages.length - 2)}
                     </>
                   )}
                 </button>
@@ -287,11 +288,12 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
                 </span>
               </div>
               <button
+                id={ENVIRONMENTS_SEMANTIC_ID.CARD_COPY_URL_BTN(environment.id)}
                 type="button"
-                onClick={() => handleCopy(getEnvironmentBaseUrl(environment), 'Base URL')}
+                onClick={() => handleCopy(getEnvironmentBaseUrl(environment), ENVIRONMENTS_TEXT.CARD_BASE_URL)}
                 className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer shrink-0"
               >
-                {copiedKey === 'Base URL' ? (
+                {copiedKey === ENVIRONMENTS_TEXT.CARD_BASE_URL ? (
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
                 ) : (
                   <Copy className="w-3.5 h-3.5" />
@@ -300,7 +302,7 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
             </div>
           ) : !isBaseUrl ? (
             <div className="p-2 bg-slate-50 dark:bg-slate-950/30 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg text-center text-slate-400 text-xs">
-              Belum ada nilai stage yang dikonfigurasi
+              {ENVIRONMENTS_TEXT.CARD_NO_STAGES_CONFIGURED}
             </div>
           ) : null}
         </div>
@@ -311,14 +313,15 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                 <KeyRound className="w-3 h-3 text-amber-500" />
-                <span>Custom Variables ({variables.length})</span>
+                <span>{ENVIRONMENTS_TEXT.CARD_CUSTOM_VARIABLES(variables.length)}</span>
               </div>
               <button
+                id={ENVIRONMENTS_SEMANTIC_ID.CARD_TOGGLE_VARS_BTN(environment.id)}
                 type="button"
                 onClick={() => setShowVariables(!showVariables)}
                 className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
               >
-                {showVariables ? 'Sembunyikan' : 'Lihat'}
+                {showVariables ? ENVIRONMENTS_TEXT.CARD_COLLAPSE_VARS : ENVIRONMENTS_TEXT.CARD_EXPAND_VARS}
               </button>
             </div>
 
@@ -363,7 +366,7 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors cursor-pointer"
         >
           <Edit2 className="w-3.5 h-3.5" />
-          <span>Edit Matrix</span>
+          <span>{ENVIRONMENTS_TEXT.CARD_EDIT_MATRIX}</span>
         </button>
 
         <button
@@ -372,7 +375,7 @@ export const EnvironmentCard: React.FC<EnvironmentCardProps> = ({
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-lg transition-colors cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Delete</span>
+          <span>{ENVIRONMENTS_TEXT.CARD_DELETE_BTN}</span>
         </button>
       </div>
     </div>

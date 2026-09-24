@@ -21,7 +21,7 @@ export const EnvironmentHeader: React.FC<EnvironmentHeaderProps> = ({
   onCreateClick,
 }) => {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <div className="flex items-center gap-2">
           <Server className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
