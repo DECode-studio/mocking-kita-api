@@ -31,6 +31,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   const [elapsedMs, setElapsedMs] = useState(0);
   const [runningProgress, setRunningProgress] = useState<{ current: number; total: number } | null>(null);
   const [latestExecution, setLatestExecution] = useState<ScenarioFlowExecution | null>(null);
+  const [batchExecutions, setBatchExecutions] = useState<ScenarioFlowExecution[]>([]);
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
 
   // Runner live timer
@@ -86,9 +87,12 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     async (exec: ScenarioFlowExecution) => {
       try {
         const full = await flowUseCase.getExecutionDetail(exec.id);
-        setLatestExecution(full || exec);
+        const resolved = full || exec;
+        setLatestExecution(resolved);
+        setBatchExecutions([resolved]);
       } catch {
         setLatestExecution(exec);
+        setBatchExecutions([exec]);
       }
       setSelectedStepIndex(0);
     },
@@ -180,6 +184,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
         const fullExec = await flowUseCase.getExecutionDetail(latestId);
         if (fullExec) {
           setLatestExecution(fullExec);
+          setBatchExecutions([fullExec]);
         }
       }
     } catch (err) {
@@ -349,12 +354,15 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     setIsRunning(true);
     setIsInspectorOpen(true);
     setRunningProgress({ current: 1, total: totalRuns });
+    // Reset batch executions for the new run session
+    setBatchExecutions([]);
 
     try {
       const matchedEnv = environments.find((e) => e.environmentType === selectedEnvironmentType);
       let passedRuns = 0;
       let failedRuns = 0;
       let lastExecution: ScenarioFlowExecution | null = null;
+      const accumulatedRuns: ScenarioFlowExecution[] = [];
 
       for (let runIdx = 1; runIdx <= totalRuns; runIdx++) {
         setRunningProgress({ current: runIdx, total: totalRuns });
@@ -367,22 +375,16 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
 
         // Load full execution detail
         const fullExec = await flowUseCase.getExecutionDetail(result.execution.id);
-        if (fullExec) {
-          lastExecution = fullExec;
-          setLatestExecution(fullExec);
-        }
+        const resolvedExec = fullExec || result.execution;
+        lastExecution = resolvedExec;
+        setLatestExecution(resolvedExec);
+        accumulatedRuns.push(resolvedExec);
+        setBatchExecutions([...accumulatedRuns]);
 
         if (result.execution.status === 'SUCCESS') {
           passedRuns++;
         } else {
           failedRuns++;
-          if (flow.stopOnFailure && totalRuns > 1) {
-            addToast({
-              title: `Multi-run stopped at run #${runIdx} due to failure (stopOnFailure = true)`,
-              type: 'warning',
-            });
-            break;
-          }
         }
       }
 
@@ -477,6 +479,8 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     elapsedMs,
     runningProgress,
     latestExecution,
+    batchExecutions,
+    setBatchExecutions,
     selectedStepIndex,
     setSelectedStepIndex,
     viewMode,

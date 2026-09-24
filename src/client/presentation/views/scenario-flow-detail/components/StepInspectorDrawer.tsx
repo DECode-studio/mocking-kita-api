@@ -25,6 +25,7 @@ interface StepInspectorDrawerProps {
   onClose: () => void;
   flow: ScenarioFlow;
   latestExecution: ScenarioFlowExecution | null;
+  batchExecutions?: ScenarioFlowExecution[];
   selectedStepIndex: number;
   isRunning?: boolean;
   elapsedMs?: number;
@@ -38,6 +39,7 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
   onClose,
   flow,
   latestExecution,
+  batchExecutions,
   selectedStepIndex,
   isRunning,
   elapsedMs,
@@ -134,6 +136,7 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
         {/* Flow Execution Progress Overview */}
         <FlowExecutionPanel
           execution={latestExecution}
+          executions={batchExecutions}
           flowName={flow.name}
           selectedStepIndex={selectedStepIndex}
           isRunning={isRunning}

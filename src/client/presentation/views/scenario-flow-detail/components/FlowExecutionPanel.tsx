@@ -17,6 +17,7 @@ import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID, SCENARIO_FLOW_DETAIL_TEXT } from '../
 
 interface FlowExecutionPanelProps {
   execution: ScenarioFlowExecution | null;
+  executions?: ScenarioFlowExecution[];
   flowName?: string;
   selectedStepIndex: number;
   isRunning?: boolean;
@@ -26,12 +27,14 @@ interface FlowExecutionPanelProps {
 
 export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
   execution,
+  executions,
   flowName,
   selectedStepIndex,
   isRunning,
   elapsedMs,
   onSelectStep,
 }) => {
+  const currentExecutions = executions && executions.length > 0 ? executions : execution ? [execution] : [];
   if (!execution && !isRunning) {
     return (
       <div
@@ -126,7 +129,7 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
             <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-800">
               <button
                 id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_EXPORT_MD}
-                onClick={() => exportExecutionToMarkdown(execution, flowName)}
+                onClick={() => exportExecutionToMarkdown(currentExecutions, flowName)}
                 title="Download test execution log as Markdown (.md)"
                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
               >
@@ -135,7 +138,7 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
               </button>
               <button
                 id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_EXPORT_CSV}
-                onClick={() => exportExecutionToCsv(execution, flowName)}
+                onClick={() => exportExecutionToCsv(currentExecutions, flowName)}
                 title="Download test execution log as CSV (.csv)"
                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
               >
