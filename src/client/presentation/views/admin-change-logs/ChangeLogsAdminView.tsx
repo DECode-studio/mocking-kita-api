@@ -8,6 +8,7 @@ import { ChangeLogsSearchFilterBar } from './components/ChangeLogsSearchFilterBa
 import { ChangeLogsTable } from './components/ChangeLogsTable';
 import { ChangeLogDetailModal } from './components/ChangeLogDetailModal';
 import { CHANGE_LOGS_ADMIN_SEMANTIC_ID } from './constant';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 export const ChangeLogsAdminView: React.FC = () => {
   const {
@@ -67,6 +68,9 @@ export const ChangeLogsAdminView: React.FC = () => {
         log={activeLogDetails}
         onClose={closeLogDetails}
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

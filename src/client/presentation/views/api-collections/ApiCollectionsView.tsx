@@ -4,6 +4,7 @@ import React from 'react';
 import { Layers, Folder, Edit3, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { ScrollToTopButton } from '../../components/shared/ScrollToTopButton';
 import { Collection } from '@/src/client/domain/collection/entity/collection';
 import { useApiCollections } from './hook/useApiCollections';
 import { ROUTES } from '@/src/core/constants/routes';
@@ -282,6 +283,9 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
         confirmLabel={API_COLLECTIONS_TEXT.DELETE_FOLDER_DIALOG_TITLE}
         variant="danger"
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

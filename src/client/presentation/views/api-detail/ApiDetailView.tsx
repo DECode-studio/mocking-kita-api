@@ -5,6 +5,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { ArrowLeft, FileCode } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { ScrollToTopButton } from '../../components/shared/ScrollToTopButton';
 import { useApiDetail } from './hook/useApiDetail';
 import { ApiDetailSnapshot } from '@/src/client/domain/api/usecase/api_detail_usecase';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from './constant';
@@ -207,6 +208,9 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
         description={API_DETAIL_TEXT.DELETE_RESP_DIALOG_DESC}
         variant="danger"
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

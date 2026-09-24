@@ -14,6 +14,7 @@ import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { useDataSheets } from './hook/useDataSheets';
 import { DataSheetCard, DataSheetModal, DataSheetPreviewModal } from './components';
 import { DATA_SHEET_TEXT, DATA_SHEET_CATEGORIES, DATA_SHEET_SEMANTIC_ID } from './constant';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 interface DataSheetsListViewProps {
   projectId?: string;
@@ -192,6 +193,9 @@ export const DataSheetsListView: React.FC<DataSheetsListViewProps> = ({ projectI
         onClose={() => setPreviewingSheet(null)}
         onEdit={openEditModal}
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

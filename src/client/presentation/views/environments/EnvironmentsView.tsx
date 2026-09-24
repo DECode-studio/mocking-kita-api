@@ -6,6 +6,7 @@ import { useEnvironments } from './hook/useEnvironments';
 import { EnvironmentHeader, EnvironmentCard, EnvironmentFormModal } from './components';
 import { ConfirmDialog } from '@/src/client/presentation/components/shared/ConfirmDialog';
 import { EmptyState } from '@/src/client/presentation/components/shared/EmptyState';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 import { ENVIRONMENTS_TEXT, ENVIRONMENTS_SEMANTIC_ID } from './constant';
 
 export const EnvironmentsView: React.FC = () => {
@@ -96,6 +97,9 @@ export const EnvironmentsView: React.FC = () => {
         confirmLabel={ENVIRONMENTS_TEXT.DELETE_CONFIRM_BTN}
         variant="danger"
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };
