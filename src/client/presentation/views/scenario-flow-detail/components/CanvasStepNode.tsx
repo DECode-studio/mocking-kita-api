@@ -17,6 +17,10 @@ import {
   ScenarioFlowStep,
   ScenarioFlowExecutionStep,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import {
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+  SCENARIO_FLOW_DETAIL_TEXT,
+} from '../constant';
 
 interface CanvasStepNodeProps {
   step: ScenarioFlowStep;
@@ -141,6 +145,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
 
   return (
     <div
+      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_NODE_PREFIX(step.id)}
       style={{
         transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
         position: 'absolute',
@@ -169,7 +174,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
         e.stopPropagation();
         onDoubleClick?.();
       }}
-      title="Double-click to open step inspector"
+      title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DOUBLE_CLICK_TOOLTIP}
       className={`group select-none rounded-2xl border transition-shadow cursor-grab active:cursor-grabbing ${borderStyle} ${glowShadow} ${
         step.enabled
           ? 'bg-white/95 dark:bg-slate-900/95 backdrop-blur-md'
@@ -180,7 +185,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
       {index > 0 && (
         <div
           className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-800 border-2 border-purple-500 flex items-center justify-center shadow-md shadow-purple-500/30 group-hover:scale-110 transition-transform"
-          title="Input Connector"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_PORT_INPUT_TOOLTIP}
         >
           <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
         </div>
@@ -190,7 +195,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
       {index < totalSteps - 1 && (
         <div
           className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-800 border-2 border-indigo-500 flex items-center justify-center shadow-md shadow-indigo-500/30 group-hover:scale-110 transition-transform"
-          title="Output Connector"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_PORT_OUTPUT_TOOLTIP}
         >
           <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
         </div>
@@ -204,7 +209,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
             {index + 1}
           </span>
           <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 font-mono">
-            STEP {index + 1} OF {totalSteps}
+            {SCENARIO_FLOW_DETAIL_TEXT.CANVAS_STEP_INDEX_LABEL(index + 1, totalSteps)}
           </span>
         </div>
 
@@ -213,7 +218,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
           {isStepRunning && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 animate-pulse border border-purple-500/40 shadow-xs shadow-purple-500/20">
               <Loader2 className="w-3 h-3 animate-spin text-purple-500" />
-              RUNNING
+              {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUNNING}
             </span>
           )}
           {isStepSuccess && (
@@ -231,6 +236,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
 
           {/* Toggle Enable Button */}
           <button
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_TOGGLE_PREFIX(step.id)}
             onClick={() => onToggleEnabled(step)}
             className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors ${
               step.enabled
@@ -238,7 +244,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
                 : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
             }`}
           >
-            {step.enabled ? 'Enabled' : 'Disabled'}
+            {step.enabled ? SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_ENABLED : SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DISABLED}
           </button>
         </div>
       </div>
@@ -261,7 +267,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
               </span>
               {step.targetEnvironmentType === 'LOCAL' && (
                 <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  LOCAL ONLY
+                  {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_LOCAL_ONLY}
                 </span>
               )}
               {step.targetEnvironment && step.targetEnvironmentType !== 'LOCAL' && (
@@ -279,7 +285,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
 
             {step.requestScenario && (
               <p className="text-[11px] text-slate-400">
-                Scenario:{' '}
+                {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_SCENARIO_LABEL}{' '}
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   {step.requestScenario.name}
                 </span>
@@ -290,16 +296,18 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
           {/* Card Actions */}
           <div className="flex items-center gap-1 shrink-0">
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_EDIT_PREFIX(step.id)}
               onClick={() => onEdit(step)}
               className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              title="Edit Step"
+              title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_EDIT_TOOLTIP}
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_DELETE_PREFIX(step.id)}
               onClick={() => onDelete(step.id, step.name)}
               className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              title="Delete Step"
+              title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DELETE_TOOLTIP}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -312,14 +320,14 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
             {step.delayMs > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[10px]">
                 <Clock className="w-2.5 h-2.5" />
-                {step.delayMs}ms delay
+                {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DELAY_LABEL(step.delayMs)}
               </span>
             )}
 
             {step.continueOnError && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px]">
                 <AlertTriangle className="w-2.5 h-2.5" />
-                continue on error
+                {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_CONTINUE_ON_ERROR}
               </span>
             )}
 

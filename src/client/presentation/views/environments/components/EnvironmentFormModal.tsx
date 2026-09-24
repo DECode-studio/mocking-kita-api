@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   X,
   Server,
@@ -19,18 +19,13 @@ import {
 } from 'lucide-react';
 import {
   Environment,
-  EnvironmentVariable,
-  EnvironmentValuesMap,
   ALL_ENVIRONMENT_TYPES,
-  normalizeEnvironmentValues,
-  getEnvironmentBaseUrl,
 } from '@/src/client/domain/environment/entity/environment';
 import { Project } from '@/src/client/domain/project/entity/project';
-import { EnvironmentType } from '@/src/core/utils/types';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { EnvironmentFormData } from '../hook/useEnvironments';
 import { ENVIRONMENTS_SEMANTIC_ID, ENVIRONMENTS_TEXT } from '../constant';
-import { generateId } from '@/src/core/utils/uuid';
+import { useEnvironmentFormModal } from '../hook/useEnvironmentFormModal';
 
 interface EnvironmentFormModalProps {
   isOpen: boolean;
@@ -41,52 +36,6 @@ interface EnvironmentFormModalProps {
   defaultProjectId?: string;
 }
 
-interface VariableDraftItem {
-  id: string;
-  key: string;
-  value: string;
-  type: 'plain' | 'secret';
-  enabled: boolean;
-  description?: string;
-  showValue?: boolean;
-}
-
-const STAGE_CONFIG: Record<
-  EnvironmentType,
-  { label: string; badgeColor: string; placeholder: string; helper: string }
-> = {
-  LOCAL: {
-    label: 'LOCAL',
-    badgeColor: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-    placeholder: 'Otomatis dihandle Mock Engine (http://localhost:PORT)',
-    helper: 'Dikelola otomatis oleh internal mock engine',
-  },
-  DEVELOPMENT: {
-    label: 'DEVELOPMENT',
-    badgeColor: 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-    placeholder: 'https://dev-api.example.com',
-    helper: 'Endpoint untuk pengembangan & dev integration',
-  },
-  TESTING: {
-    label: 'TESTING',
-    badgeColor: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-    placeholder: 'https://test-api.example.com',
-    helper: 'Endpoint untuk QA / automated test server',
-  },
-  STAGING: {
-    label: 'STAGING',
-    badgeColor: 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border-purple-200 dark:border-purple-800',
-    placeholder: 'https://staging-api.example.com',
-    helper: 'Endpoint pre-production mirip production',
-  },
-  PRODUCTION: {
-    label: 'PRODUCTION',
-    badgeColor: 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border-rose-200 dark:border-rose-800',
-    placeholder: 'https://api.example.com',
-    helper: 'Live production API endpoint',
-  },
-};
-
 export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
   isOpen,
   onClose,
@@ -95,192 +44,36 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
   projects,
   defaultProjectId,
 }) => {
-  const [name, setName] = useState('');
-  const [projectId, setProjectId] = useState('');
-  const [isBaseUrl, setIsBaseUrl] = useState(true);
-  const [stageValues, setStageValues] = useState<EnvironmentValuesMap>({
-    LOCAL: null,
-    DEVELOPMENT: '',
-    TESTING: '',
-    STAGING: '',
-    PRODUCTION: '',
+  const {
+    name,
+    setName,
+    projectId,
+    setProjectId,
+    isBaseUrl,
+    stageValues,
+    status,
+    setStatus,
+    variables,
+    showVariablesSection,
+    setShowVariablesSection,
+    isSubmitting,
+    handleStageValueChange,
+    handleToggleIsBaseUrl,
+    handleAddVariable,
+    handleUpdateVariable,
+    handleRemoveVariable,
+    handleToggleShowValue,
+    handleSubmit,
+  } = useEnvironmentFormModal({
+    isOpen,
+    editingEnvironment,
+    projects,
+    defaultProjectId,
+    onSave,
+    onClose,
   });
-  const [status, setStatus] = useState(true);
-  const [variables, setVariables] = useState<VariableDraftItem[]>([]);
-  const [showVariablesSection, setShowVariablesSection] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (editingEnvironment) {
-      setName(editingEnvironment.name);
-      setProjectId(editingEnvironment.projectId);
-      const isBase = editingEnvironment.isBaseUrl !== false;
-      setIsBaseUrl(isBase);
-      setStatus(editingEnvironment.status);
-
-      // Populate stage values
-      const initialValues: EnvironmentValuesMap = {
-        LOCAL: null,
-        DEVELOPMENT: '',
-        TESTING: '',
-        STAGING: '',
-        PRODUCTION: '',
-      };
-
-      if (editingEnvironment.values && Object.keys(editingEnvironment.values).length > 0) {
-        for (const stage of ALL_ENVIRONMENT_TYPES) {
-          const val = editingEnvironment.values[stage];
-          if (val !== undefined && val !== null) {
-            initialValues[stage] = String(val);
-          }
-        }
-      } else {
-        // Fallback for legacy environment records with single baseUrl + environmentType
-        const legacyBaseUrl = getEnvironmentBaseUrl(editingEnvironment);
-        if (legacyBaseUrl && editingEnvironment.environmentType) {
-          initialValues[editingEnvironment.environmentType] = legacyBaseUrl;
-        }
-      }
-
-      if (isBase) {
-        initialValues.LOCAL = null;
-      }
-      setStageValues(initialValues);
-
-      // Custom variables
-      let initialVars: VariableDraftItem[] = [];
-      if (Array.isArray(editingEnvironment.variables) && editingEnvironment.variables.length > 0) {
-        initialVars = editingEnvironment.variables
-          .filter((v) => v.key.toLowerCase() !== 'baseurl' && v.key.toLowerCase() !== 'base_url')
-          .map((v) => ({
-            id: v.id || generateId(),
-            key: v.key || '',
-            value: v.value || '',
-            type: v.type || 'plain',
-            enabled: v.enabled !== false,
-            description: v.description || '',
-            showValue: false,
-          }));
-      }
-      setVariables(initialVars);
-      if (initialVars.length > 0) {
-        setShowVariablesSection(true);
-      }
-    } else {
-      setName('');
-      setProjectId(defaultProjectId || (projects.length > 0 ? projects[0].id : ''));
-      setIsBaseUrl(true);
-      setStageValues({
-        LOCAL: null,
-        DEVELOPMENT: '',
-        TESTING: '',
-        STAGING: '',
-        PRODUCTION: '',
-      });
-      setStatus(true);
-      setVariables([]);
-      setShowVariablesSection(false);
-    }
-  }, [editingEnvironment, projects, defaultProjectId, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleStageValueChange = (stage: EnvironmentType, val: string) => {
-    setStageValues((prev) => ({
-      ...prev,
-      [stage]: val,
-    }));
-  };
-
-  const handleToggleIsBaseUrl = (val: boolean) => {
-    setIsBaseUrl(val);
-    setStageValues((prev) => {
-      if (val) {
-        return { ...prev, LOCAL: null };
-      }
-      return { ...prev, LOCAL: prev.LOCAL || '' };
-    });
-  };
-
-  const handleAddVariable = (
-    key = '',
-    value = '',
-    type: 'plain' | 'secret' = 'plain',
-    description = ''
-  ) => {
-    setVariables((prev) => [
-      ...prev,
-      {
-        id: generateId(),
-        key,
-        value,
-        type,
-        enabled: true,
-        description,
-        showValue: type === 'plain',
-      },
-    ]);
-    setShowVariablesSection(true);
-  };
-
-  const handleUpdateVariable = (id: string, updates: Partial<VariableDraftItem>) => {
-    setVariables((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
-  };
-
-  const handleRemoveVariable = (id: string) => {
-    setVariables((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleToggleShowValue = (id: string) => {
-    setVariables((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, showValue: !item.showValue } : item
-      )
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !projectId) return;
-
-    // Filter out rows where key is completely empty
-    const cleanVariables: EnvironmentVariable[] = variables
-      .filter((v) => v.key.trim().length > 0)
-      .map((v) => ({
-        id: v.id,
-        key: v.key.trim(),
-        value: v.value,
-        type: v.type,
-        enabled: v.enabled,
-        description: v.description?.trim() || undefined,
-      }));
-
-    // Normalize matrix values using domain helper
-    const normalizedMatrix = normalizeEnvironmentValues(stageValues, isBaseUrl);
-
-    // Provide legacy fallbacks for maximum safety
-    const firstFilledStage =
-      ALL_ENVIRONMENT_TYPES.find((s) => s !== 'LOCAL' && normalizedMatrix[s]) || 'DEVELOPMENT';
-    const legacyBaseUrl = normalizedMatrix[firstFilledStage] || '';
-
-    setIsSubmitting(true);
-    try {
-      await onSave({
-        name: name.trim(),
-        projectId,
-        isBaseUrl,
-        values: normalizedMatrix,
-        environmentType: firstFilledStage,
-        variables: cleanVariables,
-        baseUrl: legacyBaseUrl,
-        status,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs overflow-y-auto">
@@ -299,11 +92,12 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                 {editingEnvironment ? ENVIRONMENTS_TEXT.EDIT_BUTTON : ENVIRONMENTS_TEXT.CREATE_BUTTON}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Multi-environment matrix configuration (Local, Dev, Test, Staging, Prod)
+                {ENVIRONMENTS_TEXT.MODAL_SUBTITLE}
               </p>
             </div>
           </div>
           <button
+            id={ENVIRONMENTS_SEMANTIC_ID.FORM_CLOSE_BTN}
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors cursor-pointer"
           >
@@ -326,7 +120,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Platform AUTH, KPM Gateway, Payment API"
+                placeholder={ENVIRONMENTS_TEXT.FORM.NAME_PLACEHOLDER}
                 className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
@@ -361,9 +155,13 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
             <div className="sm:col-span-2 flex flex-col justify-end">
               <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg h-9.5">
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Active
+                  {ENVIRONMENTS_TEXT.FORM.STATUS_LABEL}
                 </span>
-                <StatusSwitch checked={status} onCheckedChange={setStatus} />
+                <StatusSwitch
+                  id={ENVIRONMENTS_SEMANTIC_ID.FORM_SWITCH_STATUS}
+                  checked={status}
+                  onCheckedChange={setStatus}
+                />
               </div>
             </div>
           </div>
@@ -372,10 +170,11 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
           <div className="p-3 bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl space-y-2">
             <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Klasifikasi Environment</span>
+              <span>{ENVIRONMENTS_TEXT.MULTI_STAGE_SECTION_TITLE}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
+                id={ENVIRONMENTS_SEMANTIC_ID.FORM_BASEURL_MODE_BTN}
                 type="button"
                 onClick={() => handleToggleIsBaseUrl(true)}
                 className={`p-3 text-left rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 ${
@@ -389,16 +188,17 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                    <span>Base URL Service Endpoint</span>
+                    <span>{ENVIRONMENTS_TEXT.FORM_BASE_URL_ENDPOINT_TITLE}</span>
                     {isBaseUrl && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />}
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                    Base URL untuk routing API ke server target (Dev, Testing, Staging, Prod). LOCAL dikelola otomatis oleh Mock API Studio.
+                    {ENVIRONMENTS_TEXT.FORM_BASE_URL_ENDPOINT_DESC}
                   </p>
                 </div>
               </button>
 
               <button
+                id={ENVIRONMENTS_SEMANTIC_ID.FORM_VARS_MODE_BTN}
                 type="button"
                 onClick={() => handleToggleIsBaseUrl(false)}
                 className={`p-3 text-left rounded-lg border transition-all cursor-pointer flex items-start gap-2.5 ${
@@ -412,11 +212,11 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                 </div>
                 <div>
                   <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                    <span>General Variables & Config</span>
+                    <span>{ENVIRONMENTS_TEXT.FORM_GENERAL_CONFIG_TITLE}</span>
                     {!isBaseUrl && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />}
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                    Variabel konfigurasi, secret key, atau token per stage (semua 5 stage termasuk LOCAL dapat diisi).
+                    {ENVIRONMENTS_TEXT.FORM_GENERAL_CONFIG_DESC}
                   </p>
                 </div>
               </button>
@@ -429,19 +229,19 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
               <div>
                 <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Globe className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span>Nilai Multi-Environment Matrix (5 Stages)</span>
+                  <span>{ENVIRONMENTS_TEXT.FORM_MULTI_STAGE_MATRIX_TITLE}</span>
                 </label>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   {isBaseUrl
-                    ? 'Tentukan target Base URL server untuk setiap stage testing dan deployment.'
-                    : 'Tentukan nilai variabel/konfigurasi untuk setiap stage.'}
+                    ? ENVIRONMENTS_TEXT.FORM_MULTI_STAGE_MATRIX_DESC_BASE
+                    : ENVIRONMENTS_TEXT.FORM_MULTI_STAGE_MATRIX_DESC_VARS}
                 </p>
               </div>
             </div>
 
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900/60">
               {ALL_ENVIRONMENT_TYPES.map((stage) => {
-                const config = STAGE_CONFIG[stage];
+                const config = ENVIRONMENTS_TEXT.STAGE_CONFIG[stage];
                 const isLocalBase = isBaseUrl && stage === 'LOCAL';
 
                 return (
@@ -462,7 +262,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                         </span>
                         {isLocalBase && (
                           <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                            Auto Mock
+                            {ENVIRONMENTS_TEXT.FORM_LOCAL_MOCK_AUTO_LABEL}
                           </span>
                         )}
                       </div>
@@ -474,17 +274,20 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                               type="text"
                               disabled
                               value=""
-                              placeholder="Dikelola otomatis oleh Mock API Studio lokal (http://localhost:PORT)"
+                              placeholder={ENVIRONMENTS_TEXT.FORM_LOCAL_MOCK_PLACEHOLDER}
                               className="w-full px-3 py-1.5 text-xs font-mono bg-slate-100 dark:bg-slate-950/80 border border-dashed border-slate-300 dark:border-slate-800 rounded-lg text-slate-500 dark:text-slate-400 placeholder:text-slate-400 dark:placeholder:text-slate-600 cursor-not-allowed select-none"
                             />
                             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[11px]">
                               <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="text-[10px] hidden sm:inline text-emerald-600 dark:text-emerald-400 font-medium">Internal Proxy</span>
+                              <span className="text-[10px] hidden sm:inline text-emerald-600 dark:text-emerald-400 font-medium">
+                                {ENVIRONMENTS_TEXT.FORM_INTERNAL_PROXY_BADGE}
+                              </span>
                             </div>
                           </div>
                         ) : (
                           <div className="relative">
                             <input
+                              id={ENVIRONMENTS_SEMANTIC_ID.FORM_STAGE_INPUT(stage)}
                               type="text"
                               value={stageValues[stage] ?? ''}
                               onChange={(e) => handleStageValueChange(stage, e.target.value)}
@@ -493,10 +296,11 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                             />
                             {stageValues[stage] && (
                               <button
+                                id={ENVIRONMENTS_SEMANTIC_ID.FORM_STAGE_CLEAR_BTN(stage)}
                                 type="button"
                                 onClick={() => handleStageValueChange(stage, '')}
                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded cursor-pointer"
-                                title="Clear"
+                                title={ENVIRONMENTS_TEXT.FORM_TOOLTIP_CLEAR}
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -514,7 +318,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
               <div className="flex items-start gap-2 p-2.5 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/50 rounded-lg text-xs text-blue-800 dark:text-blue-300">
                 <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-[11px] leading-relaxed">
-                  <strong>Pola Desain Base URL:</strong> Panggilan skenario flow pada stage <code>LOCAL</code> selalu diarahkan langsung ke internal Mock Engine Mock API Studio. Jika skenario dijalankan pada stage <code>DEVELOPMENT</code>, <code>STAGING</code>, atau <code>PRODUCTION</code>, runner otomatis mengambil base URL yang diisi di atas.
+                  <strong>{ENVIRONMENTS_TEXT.FORM_BASE_URL_PATTERN_STRONG}</strong> {ENVIRONMENTS_TEXT.FORM_BASE_URL_PATTERN_DESC}
                 </p>
               </div>
             )}
@@ -524,36 +328,40 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between mb-2">
               <button
+                id={ENVIRONMENTS_SEMANTIC_ID.FORM_TOGGLE_VARS_SECTION_BTN}
                 type="button"
                 onClick={() => setShowVariablesSection(!showVariablesSection)}
                 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
               >
                 <KeyRound className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Custom Variables & Secrets (Opsional: {variables.length})</span>
+                <span>{ENVIRONMENTS_TEXT.FORM_CUSTOM_VARS_TITLE(variables.length)}</span>
                 <span className="text-[10px] text-slate-400 font-normal">
-                  {showVariablesSection ? '(Klik untuk sembunyikan)' : '(Klik untuk tampilkan)'}
+                  {showVariablesSection ? ENVIRONMENTS_TEXT.FORM_CLICK_TO_HIDE : ENVIRONMENTS_TEXT.FORM_CLICK_TO_SHOW}
                 </span>
               </button>
 
               {showVariablesSection && (
                 <div className="flex items-center flex-wrap gap-1.5">
                   <button
+                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_PRESET_APIKEY_BTN}
                     type="button"
                     onClick={() => handleAddVariable('apiKey', '', 'secret', 'API key credential')}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 rounded border border-amber-200 dark:border-amber-800 cursor-pointer"
                   >
                     <KeyRound className="w-2.5 h-2.5" />
-                    <span>+ API Key</span>
+                    <span>{ENVIRONMENTS_TEXT.FORM_PRESET_API_KEY}</span>
                   </button>
                   <button
+                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_PRESET_BEARER_BTN}
                     type="button"
                     onClick={() => handleAddVariable('bearerToken', '', 'secret', 'Bearer token')}
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 rounded border border-emerald-200 dark:border-emerald-800 cursor-pointer"
                   >
                     <Shield className="w-2.5 h-2.5" />
-                    <span>+ Bearer</span>
+                    <span>{ENVIRONMENTS_TEXT.FORM_PRESET_BEARER}</span>
                   </button>
                   <button
+                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_PRESET_BASICAUTH_BTN}
                     type="button"
                     onClick={() => {
                       handleAddVariable('username', '', 'plain', 'Auth username');
@@ -562,7 +370,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                     className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 rounded border border-purple-200 dark:border-purple-800 cursor-pointer"
                   >
                     <User className="w-2.5 h-2.5" />
-                    <span>+ Basic Auth</span>
+                    <span>{ENVIRONMENTS_TEXT.FORM_PRESET_BASIC_AUTH}</span>
                   </button>
                 </div>
               )}
@@ -571,16 +379,16 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
             {showVariablesSection && (
               <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/40 dark:bg-slate-950/40">
                 <div className="grid grid-cols-12 gap-2 px-3 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 text-[11px] font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <div className="col-span-1 text-center">Use</div>
-                  <div className="col-span-4">Variable Key</div>
-                  <div className="col-span-5">Value</div>
-                  <div className="col-span-2 text-right pr-2">Action</div>
+                  <div className="col-span-1 text-center">{ENVIRONMENTS_TEXT.FORM_COL_USE}</div>
+                  <div className="col-span-4">{ENVIRONMENTS_TEXT.TABLE_COL_KEY}</div>
+                  <div className="col-span-5">{ENVIRONMENTS_TEXT.TABLE_COL_VALUE}</div>
+                  <div className="col-span-2 text-right pr-2">{ENVIRONMENTS_TEXT.TABLE_COL_ACTIONS}</div>
                 </div>
 
                 <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
                   {variables.length === 0 ? (
                     <div className="py-5 text-center text-xs text-slate-500 dark:text-slate-400">
-                      <p>Belum ada variabel kustom tambahan.</p>
+                      <p>{ENVIRONMENTS_TEXT.FORM.NO_VARIABLES}</p>
                     </div>
                   ) : (
                     variables.map((item) => (
@@ -592,6 +400,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                       >
                         <div className="col-span-1 flex justify-center">
                           <input
+                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_TOGGLE_BTN(item.id)}
                             type="checkbox"
                             checked={item.enabled}
                             onChange={(e) => handleUpdateVariable(item.id, { enabled: e.target.checked })}
@@ -601,6 +410,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
 
                         <div className="col-span-4">
                           <input
+                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_KEY_INPUT(item.id)}
                             type="text"
                             value={item.key}
                             onChange={(e) => handleUpdateVariable(item.id, { key: e.target.value })}
@@ -611,6 +421,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
 
                         <div className="col-span-5 relative flex items-center">
                           <input
+                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_VALUE_INPUT(item.id)}
                             type={item.type === 'secret' && !item.showValue ? 'password' : 'text'}
                             value={item.value}
                             onChange={(e) => handleUpdateVariable(item.id, { value: e.target.value })}
@@ -620,15 +431,17 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                           <div className="absolute right-1 flex items-center gap-0.5">
                             {item.type === 'secret' && (
                               <button
+                                id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_SHOW_VALUE_BTN(item.id)}
                                 type="button"
                                 onClick={() => handleToggleShowValue(item.id)}
                                 className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                                title={item.showValue ? 'Hide value' : 'Show value'}
+                                title={item.showValue ? ENVIRONMENTS_TEXT.FORM_TOOLTIP_HIDE_VALUE : ENVIRONMENTS_TEXT.FORM_TOOLTIP_SHOW_VALUE}
                               >
                                 {item.showValue ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                               </button>
                             )}
                             <button
+                              id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_TYPE_SELECT(item.id)}
                               type="button"
                               onClick={() =>
                                 handleUpdateVariable(item.id, {
@@ -641,7 +454,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                                   ? 'text-amber-600 dark:text-amber-400 font-bold'
                                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                               }`}
-                              title={item.type === 'secret' ? 'Masked Secret' : 'Plain Text'}
+                              title={item.type === 'secret' ? ENVIRONMENTS_TEXT.FORM_TOOLTIP_MASKED_SECRET : ENVIRONMENTS_TEXT.FORM_TOOLTIP_PLAIN_TEXT}
                             >
                               {item.type === 'secret' ? <Lock className="w-3 h-3" /> : <span className="text-[10px]">T</span>}
                             </button>
@@ -650,10 +463,11 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
 
                         <div className="col-span-2 flex items-center justify-end pr-1">
                           <button
+                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_DELETE_BTN(item.id)}
                             type="button"
                             onClick={() => handleRemoveVariable(item.id)}
                             className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors cursor-pointer"
-                            title="Remove variable"
+                            title={ENVIRONMENTS_TEXT.FORM_TOOLTIP_REMOVE_VAR}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -665,6 +479,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
 
                 <div className="p-2 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
                   <button
+                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_ADD_VAR_BTN}
                     type="button"
                     onClick={() => handleAddVariable()}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg shadow-2xs hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
@@ -673,7 +488,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                     <span>{ENVIRONMENTS_TEXT.FORM.ADD_VARIABLE}</span>
                   </button>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {variables.length} variabel
+                    {ENVIRONMENTS_TEXT.FORM_VARS_COUNT_LABEL(variables.length)}
                   </span>
                 </div>
               </div>
@@ -683,6 +498,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/90 -mx-6 -mb-6 px-6 py-4">
             <button
+              id={ENVIRONMENTS_SEMANTIC_ID.FORM_CANCEL_BTN}
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
@@ -695,7 +511,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
               disabled={isSubmitting}
               className="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
             >
-              {isSubmitting ? 'Saving...' : ENVIRONMENTS_TEXT.FORM.SAVE}
+              {isSubmitting ? ENVIRONMENTS_TEXT.BTN_SAVING : ENVIRONMENTS_TEXT.FORM.SAVE}
             </button>
           </div>
         </form>

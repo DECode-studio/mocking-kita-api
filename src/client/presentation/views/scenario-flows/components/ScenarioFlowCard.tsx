@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { ROUTES } from '@/src/core/constants/routes';
-import { SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOWS_SEMANTIC_ID, SCENARIO_FLOWS_TEXT } from '../constant';
 
 interface ScenarioFlowCardProps {
   flow: ScenarioFlow;
@@ -29,7 +29,6 @@ interface ScenarioFlowCardProps {
 
 export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
   flow,
-  projectId,
   isRunning,
   onQuickRun,
   onExport,
@@ -69,7 +68,7 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
                       : 'bg-slate-500/10 text-slate-500'
                   }`}
                 >
-                  {flow.status ? 'Active' : 'Draft'}
+                  {flow.status ? SCENARIO_FLOWS_TEXT.STATUS_ACTIVE : SCENARIO_FLOWS_TEXT.STATUS_INACTIVE}
                 </span>
                 {flow.project ? (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400">
@@ -77,7 +76,7 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                    🌐 Cross-Project
+                    🌐 {SCENARIO_FLOWS_TEXT.CROSS_PROJECT_BADGE}
                   </span>
                 )}
                 {flow.defaultEnvironment && (
@@ -92,16 +91,18 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
 
           <div className="flex items-center gap-1 shrink-0">
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.FLOW_EXPORT_BTN_PREFIX(flow.id)}
               onClick={() => onExport(flow.id, flow.name)}
-              title="Export Scenario Flow JSON"
-              className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              title={SCENARIO_FLOWS_TEXT.EXPORT_JSON}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <Download className="w-4 h-4" />
             </button>
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.FLOW_DELETE_BTN_PREFIX(flow.id)}
               onClick={() => onDelete(flow.id, flow.name)}
-              title="Delete Flow"
-              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              title={SCENARIO_FLOWS_TEXT.DELETE}
+              className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -114,14 +115,14 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
             {flow.description}
           </p>
         ) : (
-          <p className="text-xs text-slate-400 italic">No description provided.</p>
+          <p className="text-xs text-slate-400 italic">{SCENARIO_FLOWS_TEXT.CARD_NO_DESC}</p>
         )}
 
         {/* Metrics Bar */}
         <div className="flex flex-wrap items-center gap-3 pt-2 text-xs border-t border-slate-100 dark:border-slate-800/80">
           <div className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
             <span className="font-bold text-slate-900 dark:text-white font-mono">{stepsCount}</span>
-            <span className="text-slate-500 text-[11px]">steps</span>
+            <span className="text-slate-500 text-[11px]">{SCENARIO_FLOWS_TEXT.STEPS_COUNT}</span>
           </div>
 
           <span className="text-slate-300 dark:text-slate-700">•</span>
@@ -135,18 +136,18 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
                 </span>
               ) : latestExecution.status === 'RUNNING' ? (
                 <span className="inline-flex items-center gap-1 text-blue-500 font-semibold">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Running...
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> {SCENARIO_FLOWS_TEXT.RUNNING}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-rose-500 font-semibold">
-                  <XCircle className="w-3.5 h-3.5" /> Failed ({latestExecution.passedSteps}/{latestExecution.totalSteps})
+                  <XCircle className="w-3.5 h-3.5" /> {SCENARIO_FLOWS_TEXT.FAILED_BADGE} ({latestExecution.passedSteps}/{latestExecution.totalSteps})
                 </span>
               )}
             </div>
           ) : (
             <div className="flex items-center gap-1 text-[11px] text-slate-400">
               <Clock className="w-3 h-3" />
-              <span>Never run</span>
+              <span>{SCENARIO_FLOWS_TEXT.NO_RUNS_YET}</span>
             </div>
           )}
         </div>
@@ -163,21 +164,22 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
           {isRunning ? (
             <>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Running...
+              {SCENARIO_FLOWS_TEXT.RUNNING}
             </>
           ) : (
             <>
               <Play className="w-3.5 h-3.5 fill-current" />
-              Run Test
+              {SCENARIO_FLOWS_TEXT.CARD_RUN_TEST}
             </>
           )}
         </button>
 
         <Link
+          id={SCENARIO_FLOWS_SEMANTIC_ID.FLOW_BUILDER_LINK_PREFIX(flow.id)}
           href={targetDetailUrl}
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
         >
-          <span>Open Builder</span>
+          <span>{SCENARIO_FLOWS_TEXT.CARD_OPEN_BUILDER}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>

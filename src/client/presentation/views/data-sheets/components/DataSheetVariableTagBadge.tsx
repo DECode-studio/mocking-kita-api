@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
+import { DATA_SHEET_TEXT } from '../constant';
+
 interface DataSheetVariableTagBadgeProps {
   code: string;
   mode?: 'random' | 'index' | 'next' | 'asc' | 'desc' | 'dsc';
@@ -38,8 +40,8 @@ export const DataSheetVariableTagBadge: React.FC<DataSheetVariableTagBadgeProps>
     <button
       type="button"
       onClick={handleCopy}
-      title="Click to copy variable token"
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-xs transition-colors bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 ${className}`}
+      title={DATA_SHEET_TEXT.CLICK_TO_COPY_TOKEN}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-xs transition-colors cursor-pointer bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 ${className}`}
     >
       <span>{tag}</span>
       {copied ? (

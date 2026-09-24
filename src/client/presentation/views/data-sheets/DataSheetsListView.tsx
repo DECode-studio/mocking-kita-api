@@ -43,7 +43,7 @@ export const DataSheetsListView: React.FC<DataSheetsListViewProps> = ({ projectI
   } = useDataSheets(projectId);
 
   return (
-    <div id={DATA_SHEET_SEMANTIC_ID.CONTAINER} className="space-y-6 max-w-7xl mx-auto pb-12">
+    <div id={DATA_SHEET_SEMANTIC_ID.CONTAINER} className="w-full space-y-6 pb-12">
       {/* 1. Header Bar */}
       <div id={DATA_SHEET_SEMANTIC_ID.HEADER} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs">
         <div className="flex items-center gap-3.5">
@@ -135,10 +135,10 @@ export const DataSheetsListView: React.FC<DataSheetsListViewProps> = ({ projectI
       {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
           <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
-          <p className="text-xs text-slate-500 font-medium">Loading data sheets...</p>
+          <p className="text-xs text-slate-500 font-medium">{DATA_SHEET_TEXT.LOADING_DATA_SHEETS}</p>
         </div>
       ) : dataSheets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl text-center space-y-4 shadow-xs">
+        <div id={DATA_SHEET_SEMANTIC_ID.EMPTY_STATE} className="flex flex-col items-center justify-center py-16 px-4 bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl text-center space-y-4 shadow-xs">
           <div className="w-14 h-14 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
             <Layers className="w-7 h-7" />
           </div>
@@ -151,12 +151,13 @@ export const DataSheetsListView: React.FC<DataSheetsListViewProps> = ({ projectI
             </p>
           </div>
           <button
+            id={DATA_SHEET_SEMANTIC_ID.EMPTY_STATE_CREATE_BTN}
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Data Sheet</span>
+            <span>{DATA_SHEET_TEXT.EMPTY_STATE_CREATE_BTN}</span>
           </button>
         </div>
       ) : (

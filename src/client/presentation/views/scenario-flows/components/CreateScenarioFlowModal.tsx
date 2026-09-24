@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Switch from '@radix-ui/react-switch';
 import { X, Sparkles, Layers } from 'lucide-react';
@@ -8,7 +8,8 @@ import { Environment } from '@/src/client/domain/environment/entity/environment'
 import { Project } from '@/src/client/domain/project/entity/project';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
-import { SCENARIO_FLOWS_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOWS_SEMANTIC_ID, SCENARIO_FLOWS_TEXT } from '../constant';
+import { useCreateScenarioFlowModal } from '../hook';
 
 interface CreateScenarioFlowModalProps {
   isOpen: boolean;
@@ -34,72 +35,29 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
   initialProjectId,
   onSubmit,
 }) => {
-  const [name, setName] = useState('');
-  const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId || '');
-  const [description, setDescription] = useState('');
-  const [defaultEnvironmentId, setDefaultEnvironmentId] = useState('');
-  const [stopOnFailure, setStopOnFailure] = useState(true);
-  const [variablesJson, setVariablesJson] = useState('{\n  \n}');
-  const [jsonError, setJsonError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  React.useEffect(() => {
-    if (initialProjectId) {
-      setSelectedProjectId(initialProjectId);
-    }
-  }, [initialProjectId]);
-
-  const handleInsertVariableToken = (token: string) => {
-    try {
-      const parsed = JSON.parse(variablesJson.trim() || '{}');
-      const cleanKey =
-        token
-          .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
-          .replace(/\}\}.*$/, '')
-          .replace(/[^a-zA-Z0-9_]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '') || 'variable';
-      parsed[cleanKey] = token;
-      setVariablesJson(JSON.stringify(parsed, null, 2));
-      setJsonError(null);
-    } catch {
-      setVariablesJson((prev) => (prev ? `${prev}\n"${token}"` : token));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-
-    let parsedVars = {};
-    if (variablesJson.trim()) {
-      try {
-        parsedVars = JSON.parse(variablesJson);
-        setJsonError(null);
-      } catch (err: any) {
-        setJsonError('Invalid JSON format for variables');
-        return;
-      }
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onSubmit({
-        projectId: selectedProjectId || undefined,
-        name: name.trim(),
-        description: description.trim() || undefined,
-        defaultEnvironmentId: defaultEnvironmentId || undefined,
-        stopOnFailure,
-        variables: parsedVars,
-      });
-      setName('');
-      setDescription('');
-      setDefaultEnvironmentId('');
-      setVariablesJson('{\n  \n}');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    name,
+    setName,
+    selectedProjectId,
+    setSelectedProjectId,
+    description,
+    setDescription,
+    defaultEnvironmentId,
+    setDefaultEnvironmentId,
+    stopOnFailure,
+    setStopOnFailure,
+    variablesJson,
+    setVariablesJson,
+    jsonError,
+    isSubmitting,
+    handleInsertVariableToken,
+    handleSubmit,
+  } = useCreateScenarioFlowModal({
+    isOpen,
+    initialProjectId,
+    onSubmit,
+    onClose,
+  });
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -116,10 +74,10 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
               </div>
               <div>
                 <Dialog.Title className="text-base font-bold text-slate-900 dark:text-white">
-                  Create Scenario Flow
+                  {SCENARIO_FLOWS_TEXT.CREATE_MODAL_TITLE}
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400">
-                  Manually configure an automated API chaining sequence
+                  {SCENARIO_FLOWS_TEXT.CREATE_MODAL_SUBTITLE}
                 </Dialog.Description>
               </div>
             </div>
@@ -134,28 +92,31 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Flow Name <span className="text-rose-500">*</span>
+                {SCENARIO_FLOWS_TEXT.MODAL_CREATE_NAME_LABEL} <span className="text-rose-500">*</span>
               </label>
               <input
+                id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_INPUT_NAME}
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. User Registration & Checkout Flow"
+                placeholder={SCENARIO_FLOWS_TEXT.MODAL_CREATE_NAME_PLACEHOLDER}
                 className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Primary Project <span className="text-slate-400 font-normal">(Optional)</span>
+                {SCENARIO_FLOWS_TEXT.MODAL_CREATE_PROJECT_LABEL}{' '}
+                <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <select
+                id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_SELECT_PROJECT}
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
                 className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
               >
-                <option value="">-- Cross-Project / Global Flow (None) --</option>
+                <option value="">-- {SCENARIO_FLOWS_TEXT.MODAL_CREATE_PROJECT_GLOBAL} --</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -166,13 +127,14 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Description
+                {SCENARIO_FLOWS_TEXT.MODAL_CREATE_DESC_LABEL}
               </label>
               <textarea
+                id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_INPUT_DESC}
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description of this test journey..."
+                placeholder={SCENARIO_FLOWS_TEXT.MODAL_CREATE_DESC_PLACEHOLDER}
                 className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
               />
             </div>
@@ -180,14 +142,15 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Default Target Environment
+                  {SCENARIO_FLOWS_TEXT.MODAL_CREATE_ENV_LABEL}
                 </label>
                 <select
+                  id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_SELECT_ENV}
                   value={defaultEnvironmentId}
                   onChange={(e) => setDefaultEnvironmentId(e.target.value)}
                   className="w-full px-3.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
                 >
-                  <option value="">-- None (Prompt on Run) --</option>
+                  <option value="">-- {SCENARIO_FLOWS_TEXT.MODAL_CREATE_ENV_NONE} --</option>
                   {environments.map((env) => (
                     <option key={env.id} value={env.id}>
                       {env.name} ({env.environmentType})
@@ -200,13 +163,14 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
                 <div className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
                   <div>
                     <span className="text-xs font-semibold text-slate-900 dark:text-white block">
-                      Stop on Failure
+                      {SCENARIO_FLOWS_TEXT.MODAL_CREATE_STOP_ON_FAILURE_LABEL}
                     </span>
                     <span className="text-[11px] text-slate-500">
-                      Halt remaining steps if a step fails
+                      {SCENARIO_FLOWS_TEXT.MODAL_CREATE_STOP_ON_FAILURE_DESC}
                     </span>
                   </div>
                   <Switch.Root
+                    id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_SWITCH_STOP}
                     checked={stopOnFailure}
                     onCheckedChange={setStopOnFailure}
                     className="w-9 h-5 bg-slate-300 dark:bg-slate-700 rounded-full relative data-[state=checked]:bg-purple-600 outline-hidden transition-colors"
@@ -220,7 +184,7 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Initial Variables (JSON)
+                  {SCENARIO_FLOWS_TEXT.MODAL_CREATE_VARS_LABEL}
                 </label>
                 <div className="flex items-center gap-2">
                   <EnvironmentVariablePicker
@@ -238,11 +202,11 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
                 </div>
               </div>
               <textarea
+                id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_TEXTAREA_VARS}
                 rows={4}
                 value={variablesJson}
                 onChange={(e) => {
                   setVariablesJson(e.target.value);
-                  setJsonError(null);
                 }}
                 className="w-full px-3.5 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-950 text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500"
               />
@@ -251,20 +215,24 @@ export const CreateScenarioFlowModal: React.FC<CreateScenarioFlowModalProps> = (
 
             <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
+                id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_BTN_CANCEL}
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               >
-                Cancel
+                {SCENARIO_FLOWS_TEXT.CANCEL_BTN}
               </button>
               <button
+                id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_CREATE_BTN_SUBMIT}
                 type="submit"
                 disabled={isSubmitting || !name.trim()}
-                className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded-lg shadow-sm shadow-purple-500/20 disabled:opacity-50 transition-all flex items-center gap-1.5"
+                className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded-lg shadow-sm shadow-purple-500/20 disabled:opacity-50 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                {isSubmitting ? 'Creating...' : 'Create Flow'}
+                {isSubmitting
+                  ? SCENARIO_FLOWS_TEXT.MODAL_CREATE_SUBMITTING_BTN
+                  : SCENARIO_FLOWS_TEXT.MODAL_CREATE_SUBMIT_BTN}
               </button>
             </div>
           </form>

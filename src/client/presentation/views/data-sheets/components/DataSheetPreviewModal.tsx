@@ -97,18 +97,20 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
 
             <div className="flex items-center gap-1.5">
               <button
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_EDIT_BTN}
                 type="button"
                 onClick={() => {
                   onClose();
                   onEdit(sheet);
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
                 <Edit2 className="w-3.5 h-3.5" /> Edit
               </button>
               <button
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_CLOSE_BTN}
                 onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -133,6 +135,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
             <div className="relative flex-1">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_SEARCH_INPUT}
                 type="text"
                 placeholder={`Search among ${items.length} items...`}
                 value={search}
@@ -142,9 +145,10 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_COPY_BTN}
                 type="button"
                 onClick={handleCopyAll}
-                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
+                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 title="Copy all data as JSON"
               >
                 {copiedAll ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}

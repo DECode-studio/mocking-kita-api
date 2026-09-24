@@ -18,7 +18,7 @@ import {
   exportExecutionToMarkdown,
   exportExecutionToCsv,
 } from '../utils/scenarioFlowLogExport';
-import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID, SCENARIO_FLOW_DETAIL_TEXT } from '../constant';
 
 interface ExecutionHistoryModalProps {
   isOpen: boolean;
@@ -57,16 +57,17 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
               </div>
               <div>
                 <Dialog.Title className="text-base font-bold text-slate-900 dark:text-white">
-                  Execution Run History
+                  {SCENARIO_FLOW_DETAIL_TEXT.HISTORY_MODAL_TITLE}
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400">
-                  Past test executions saved in database
+                  {SCENARIO_FLOW_DETAIL_TEXT.HISTORY_MODAL_SUBTITLE}
                 </Dialog.Description>
               </div>
             </div>
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_HISTORY_BTN_CLOSE}
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -75,7 +76,7 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
           {executions.length === 0 ? (
             <div className="py-12 text-center text-slate-500 text-xs space-y-2">
               <Clock className="w-8 h-8 mx-auto text-slate-400" />
-              <p>No executions recorded yet.</p>
+              <p>{SCENARIO_FLOW_DETAIL_TEXT.NO_EXECUTIONS}</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -84,6 +85,7 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                 return (
                   <div
                     key={exec.id}
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_HISTORY_ITEM_PREFIX(exec.id)}
                     onClick={() => handlePickExecution(exec)}
                     className="py-3 px-3.5 -mx-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between gap-4 transition-colors cursor-pointer group"
                   >
@@ -98,7 +100,9 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-slate-900 dark:text-white">
-                            {passed ? 'Passed All Steps' : `Failed (${exec.passedSteps}/${exec.totalSteps})`}
+                            {passed
+                              ? SCENARIO_FLOW_DETAIL_TEXT.ALL_STEPS_PASSED
+                              : `${SCENARIO_FLOW_DETAIL_TEXT.EXECUTION_FAILED_PREFIX} (${exec.passedSteps}/${exec.totalSteps})`}
                           </span>
                           {exec.environment && (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
@@ -116,6 +120,7 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                       {/* Export Action Buttons */}
                       <div className="flex items-center gap-1">
                         <button
+                          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_HISTORY_EXPORT_MD_PREFIX(exec.id)}
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -125,13 +130,14 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                               exportExecutionToMarkdown(exec, flowName);
                             }
                           }}
-                          title="Download report as Markdown (.md)"
+                          title={SCENARIO_FLOW_DETAIL_TEXT.HISTORY_EXPORT_MD_TITLE}
                           className="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <FileDown className="w-3 h-3 text-indigo-500" />
-                          <span>MD</span>
+                          <span>{SCENARIO_FLOW_DETAIL_TEXT.EXPORT_MD}</span>
                         </button>
                         <button
+                          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_HISTORY_EXPORT_CSV_PREFIX(exec.id)}
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -141,11 +147,11 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                               exportExecutionToCsv(exec, flowName);
                             }
                           }}
-                          title="Download results as CSV (.csv)"
+                          title={SCENARIO_FLOW_DETAIL_TEXT.HISTORY_EXPORT_CSV_TITLE}
                           className="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <FileSpreadsheet className="w-3 h-3 text-emerald-500" />
-                          <span>CSV</span>
+                          <span>{SCENARIO_FLOW_DETAIL_TEXT.EXPORT_CSV}</span>
                         </button>
                       </div>
 

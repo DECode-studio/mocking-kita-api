@@ -6,7 +6,7 @@ import { useEnvironments } from './hook/useEnvironments';
 import { EnvironmentHeader, EnvironmentCard, EnvironmentFormModal } from './components';
 import { ConfirmDialog } from '@/src/client/presentation/components/shared/ConfirmDialog';
 import { EmptyState } from '@/src/client/presentation/components/shared/EmptyState';
-import { ENVIRONMENTS_TEXT } from './constant';
+import { ENVIRONMENTS_TEXT, ENVIRONMENTS_SEMANTIC_ID } from './constant';
 
 export const EnvironmentsView: React.FC = () => {
   const {
@@ -31,7 +31,7 @@ export const EnvironmentsView: React.FC = () => {
   } = useEnvironments();
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div id={ENVIRONMENTS_SEMANTIC_ID.CONTAINER} className="w-full space-y-6">
       {/* Header */}
       <EnvironmentHeader
         searchQuery={searchQuery}
@@ -53,7 +53,7 @@ export const EnvironmentsView: React.FC = () => {
           ))}
         </div>
       ) : environments.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/60 rounded-2xl p-12 text-center">
+        <div id={ENVIRONMENTS_SEMANTIC_ID.EMPTY_STATE} className="bg-white dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/60 rounded-2xl p-12 text-center">
           <EmptyState
             icon={Server}
             title={ENVIRONMENTS_TEXT.NO_ENVIRONMENTS}
@@ -63,7 +63,7 @@ export const EnvironmentsView: React.FC = () => {
           />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id={ENVIRONMENTS_SEMANTIC_ID.GRID} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {environments.map((env) => (
             <EnvironmentCard
               key={env.id}
@@ -93,7 +93,7 @@ export const EnvironmentsView: React.FC = () => {
         onConfirm={handleConfirmDelete}
         title={ENVIRONMENTS_TEXT.DELETE_CONFIRM_TITLE}
         description={ENVIRONMENTS_TEXT.DELETE_CONFIRM_MESSAGE}
-        confirmLabel="Delete"
+        confirmLabel={ENVIRONMENTS_TEXT.DELETE_CONFIRM_BTN}
         variant="danger"
       />
     </div>

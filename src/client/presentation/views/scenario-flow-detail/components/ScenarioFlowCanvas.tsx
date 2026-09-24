@@ -18,7 +18,10 @@ import {
   ScenarioFlowExecution,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { CanvasStepNode } from './CanvasStepNode';
-import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import {
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+  SCENARIO_FLOW_DETAIL_TEXT,
+} from '../constant';
 
 interface ScenarioFlowCanvasProps {
   flow: ScenarioFlow;
@@ -326,17 +329,17 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
           <div className="p-8 text-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl pointer-events-auto space-y-3 max-w-sm">
             <GitFork className="w-10 h-10 mx-auto text-purple-500" />
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              Flow Diagram is Empty
+              {SCENARIO_FLOW_DETAIL_TEXT.CANVAS_EMPTY_TITLE}
             </h3>
             <p className="text-xs text-slate-500">
-              Start building your chained API flow by adding your first step.
+              {SCENARIO_FLOW_DETAIL_TEXT.CANVAS_EMPTY_DESC}
             </p>
             <button
               onClick={onOpenAddStep}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-500 transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Add First Step
+              {SCENARIO_FLOW_DETAIL_TEXT.CANVAS_EMPTY_ADD_FIRST_STEP}
             </button>
           </div>
         </div>
@@ -348,10 +351,10 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
           id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_TOOLBAR_ARRANGE}
           onClick={onAutoArrange}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60 transition-colors cursor-pointer"
-          title="Auto-Arrange Layout (Align Left-to-Right)"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_AUTO_ARRANGE_TOOLTIP}
         >
           <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-          <span>Auto-Arrange</span>
+          <span>{SCENARIO_FLOW_DETAIL_TEXT.CANVAS_AUTO_ARRANGE}</span>
         </button>
 
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800" />
@@ -360,10 +363,10 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
           id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_TOOLBAR_ADD}
           onClick={onOpenAddStep}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title="Add New Step"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_ADD_STEP_TOOLTIP}
         >
           <Plus className="w-3.5 h-3.5 text-slate-500" />
-          <span>Add Step</span>
+          <span>{SCENARIO_FLOW_DETAIL_TEXT.CANVAS_ADD_STEP}</span>
         </button>
       </div>
 
@@ -383,7 +386,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
           ) : (
             <PanelRightOpen className="w-4 h-4" />
           )}
-          <span>{isInspectorOpen ? 'Hide Inspector' : 'Live Inspector'}</span>
+          <span>{isInspectorOpen ? SCENARIO_FLOW_DETAIL_TEXT.CANVAS_HIDE_INSPECTOR : SCENARIO_FLOW_DETAIL_TEXT.CANVAS_LIVE_INSPECTOR}</span>
           {latestExecution && (
             <span
               className={`w-2 h-2 rounded-full ${
@@ -401,9 +404,10 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
       {/* Bottom Floating Navigation Toolbar */}
       <div className="absolute bottom-4 left-4 z-40 flex items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-lg text-slate-600 dark:text-slate-300">
         <button
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_ZOOM_OUT_BTN}
           onClick={handleZoomOut}
           className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Zoom Out"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_ZOOM_OUT_TOOLTIP}
         >
           <ZoomOut className="w-4 h-4" />
         </button>
@@ -413,9 +417,10 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
         </span>
 
         <button
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_ZOOM_IN_BTN}
           onClick={handleZoomIn}
           className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Zoom In"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_ZOOM_IN_TOOLTIP}
         >
           <ZoomIn className="w-4 h-4" />
         </button>
@@ -423,9 +428,10 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800" />
 
         <button
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_RESET_ZOOM_BTN}
           onClick={handleResetZoom}
           className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-          title="Reset View (100%)"
+          title={SCENARIO_FLOW_DETAIL_TEXT.CANVAS_RESET_ZOOM_TOOLTIP}
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
@@ -435,12 +441,12 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
       <div className="absolute bottom-4 right-4 z-30 hidden sm:flex items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800/60 pointer-events-none">
         <span className="flex items-center gap-1">
           <Move className="w-3 h-3 text-purple-400" />
-          Drag canvas to pan
+          {SCENARIO_FLOW_DETAIL_TEXT.CANVAS_HINT_PAN}
         </span>
         <span>•</span>
-        <span>Wheel to zoom</span>
+        <span>{SCENARIO_FLOW_DETAIL_TEXT.CANVAS_HINT_ZOOM}</span>
         <span>•</span>
-        <span>Drag cards to reposition</span>
+        <span>{SCENARIO_FLOW_DETAIL_TEXT.CANVAS_HINT_REPOSITION}</span>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ import {
   exportExecutionToMarkdown,
   exportExecutionToCsv,
 } from '../utils/scenarioFlowLogExport';
-import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID, SCENARIO_FLOW_DETAIL_TEXT } from '../constant';
 
 interface FlowExecutionPanelProps {
   execution: ScenarioFlowExecution | null;
@@ -40,10 +40,10 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
       >
         <Activity className="w-8 h-8 mx-auto text-purple-500 opacity-60" />
         <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-          Ready for Real Testing
+          {SCENARIO_FLOW_DETAIL_TEXT.READY_FOR_TESTING_TITLE}
         </h3>
         <p className="text-[11px] text-slate-500">
-          Click "Run Real Testing" to execute all steps sequentially on the server.
+          {SCENARIO_FLOW_DETAIL_TEXT.READY_FOR_TESTING_DESC}
         </p>
       </div>
     );
@@ -71,11 +71,11 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Executing Scenario Flow...</span>
+                  <span>{SCENARIO_FLOW_DETAIL_TEXT.EXECUTING_FLOW_TITLE}</span>
                   <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
                 </h4>
                 <p className="text-[11px] text-slate-500">
-                  Sending chained HTTP requests sequentially & validating assertions
+                  {SCENARIO_FLOW_DETAIL_TEXT.EXECUTING_FLOW_DESC}
                 </p>
               </div>
             </div>
@@ -94,15 +94,15 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
           <div className="flex items-center gap-2">
             {isRunning ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 animate-pulse">
-                <Loader2 className="w-4 h-4 animate-spin text-purple-500" /> Running Live Execution...
+                <Loader2 className="w-4 h-4 animate-spin text-purple-500" /> {SCENARIO_FLOW_DETAIL_TEXT.RUNNING_BTN}
               </span>
             ) : isSuccess ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="w-4 h-4" /> All Steps Passed
+                <CheckCircle2 className="w-4 h-4" /> {SCENARIO_FLOW_DETAIL_TEXT.ALL_STEPS_PASSED}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                <XCircle className="w-4 h-4" /> Execution Failed ({execution.passedSteps}/{execution.totalSteps})
+                <XCircle className="w-4 h-4" /> {SCENARIO_FLOW_DETAIL_TEXT.EXECUTION_FAILED_PREFIX} ({execution.passedSteps}/{execution.totalSteps})
               </span>
             )}
             {!isRunning && (
@@ -113,44 +113,49 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
             )}
           </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-xs text-slate-500">
-            Target: <span className="font-semibold text-slate-700 dark:text-slate-300 font-mono">{execution.targetMode}</span>
-            {execution.environment && (
-              <span className="ml-1 text-purple-600 dark:text-purple-400 font-medium font-mono">
-                ({execution.environment.name})
-              </span>
-            )}
-          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-xs text-slate-500">
+              Target: <span className="font-semibold text-slate-700 dark:text-slate-300 font-mono">{execution.targetMode}</span>
+              {execution.environment && (
+                <span className="ml-1 text-purple-600 dark:text-purple-400 font-medium font-mono">
+                  ({execution.environment.name})
+                </span>
+              )}
+            </div>
 
-          <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-800">
-            <button
-              onClick={() => exportExecutionToMarkdown(execution, flowName)}
-              title="Download test execution log as Markdown (.md)"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
-            >
-              <FileDown className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Export MD</span>
-            </button>
-            <button
-              onClick={() => exportExecutionToCsv(execution, flowName)}
-              title="Download test execution log as CSV (.csv)"
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Export CSV</span>
-            </button>
+            <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-800">
+              <button
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_EXPORT_MD}
+                onClick={() => exportExecutionToMarkdown(execution, flowName)}
+                title="Download test execution log as Markdown (.md)"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
+              >
+                <FileDown className="w-3.5 h-3.5 text-indigo-500" />
+                <span>{SCENARIO_FLOW_DETAIL_TEXT.EXPORT_MD}</span>
+              </button>
+              <button
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_EXPORT_CSV}
+                onClick={() => exportExecutionToCsv(execution, flowName)}
+                title="Download test execution log as CSV (.csv)"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+                <span>{SCENARIO_FLOW_DETAIL_TEXT.EXPORT_CSV}</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Stepper Timeline */}
       <div className="space-y-2">
         <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
-          Execution Timeline
+          {SCENARIO_FLOW_DETAIL_TEXT.EXECUTION_TIMELINE_LABEL}
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <div
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_TIMELINE}
+          className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-0.5 px-0.5"
+        >
           {steps.map((step, idx) => {
             const stepPassed = step.status === 'SUCCESS';
             const stepSkipped = step.status === 'SKIPPED';
@@ -159,8 +164,9 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
             return (
               <button
                 key={step.id || idx}
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_STEP_PREFIX(idx)}
                 onClick={() => onSelectStep(idx)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`shrink-0 w-52 sm:w-56 p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   isRunning
                     ? 'border-purple-500/50 bg-purple-500/5 ring-1 ring-purple-500/30 animate-pulse'
                     : isSelected
@@ -169,7 +175,9 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
                 }`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1">
-                  <span className="text-[11px] font-mono text-slate-400">Step {step.stepOrder}</span>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {SCENARIO_FLOW_DETAIL_TEXT.STEP_ORDER_LABEL(step.stepOrder)}
+                  </span>
                   <div className="flex items-center gap-1">
                     {isRunning ? (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300">
