@@ -18,7 +18,10 @@ import {
   ScenarioFlowStep,
   ScenarioFlowExecutionStep,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
-import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import {
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+  SCENARIO_FLOW_DETAIL_TEXT,
+} from '../constant';
 
 interface StepCardProps {
   step: ScenarioFlowStep;
@@ -95,7 +98,7 @@ export const StepCard: React.FC<StepCardProps> = ({
         }
         onDoubleClick?.();
       }}
-      title="Double-click to open step inspector"
+      title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DOUBLE_CLICK_TOOLTIP}
       className={`p-4 rounded-2xl border transition-all cursor-pointer ${borderStyle} ${
         step.enabled
           ? 'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-purple-500/30'
@@ -107,10 +110,11 @@ export const StepCard: React.FC<StepCardProps> = ({
         <div className="flex items-center gap-2">
           <div className="flex flex-col items-center">
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_MOVE_UP_PREFIX(step.id)}
               onClick={onMoveUp}
               disabled={index === 0}
               className="text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 disabled:opacity-20 p-0.5"
-              title="Move Up"
+              title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_MOVE_UP}
             >
               <ChevronUp className="w-3.5 h-3.5" />
             </button>
@@ -118,10 +122,11 @@ export const StepCard: React.FC<StepCardProps> = ({
               {index + 1}
             </span>
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_MOVE_DOWN_PREFIX(step.id)}
               onClick={onMoveDown}
               disabled={index === totalSteps - 1}
               className="text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 disabled:opacity-20 p-0.5"
-              title="Move Down"
+              title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_MOVE_DOWN}
             >
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
@@ -143,7 +148,7 @@ export const StepCard: React.FC<StepCardProps> = ({
               </span>
               {step.targetEnvironmentType === 'LOCAL' && (
                 <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  LOCAL ONLY
+                  {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_LOCAL_ONLY}
                 </span>
               )}
               {step.targetEnvironment && step.targetEnvironmentType !== 'LOCAL' && (
@@ -159,7 +164,7 @@ export const StepCard: React.FC<StepCardProps> = ({
 
             {step.requestScenario && (
               <p className="text-[11px] text-slate-400">
-                Scenario:{' '}
+                {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_SCENARIO_LABEL}{' '}
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   {step.requestScenario.name}
                 </span>
@@ -173,7 +178,7 @@ export const StepCard: React.FC<StepCardProps> = ({
           {isRunning && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 animate-pulse shadow-xs shadow-purple-500/20">
               <Loader2 className="w-3 h-3 animate-spin text-purple-500" />
-              RUNNING
+              {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUNNING}
             </span>
           )}
           {!isRunning && executionStep?.status === 'SUCCESS' && (
@@ -197,13 +202,13 @@ export const StepCard: React.FC<StepCardProps> = ({
                 : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
             }`}
           >
-            {step.enabled ? 'Enabled' : 'Disabled'}
+            {step.enabled ? SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_ENABLED : SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DISABLED}
           </button>
           <button
             id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_EDIT_PREFIX(step.id)}
             onClick={() => onEdit(step)}
             className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            title="Edit Step"
+            title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_EDIT_TOOLTIP}
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
@@ -211,7 +216,7 @@ export const StepCard: React.FC<StepCardProps> = ({
             id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_DELETE_PREFIX(step.id)}
             onClick={() => onDelete(step.id, step.name)}
             className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            title="Delete Step"
+            title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DELETE_TOOLTIP}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -224,14 +229,14 @@ export const StepCard: React.FC<StepCardProps> = ({
           {step.delayMs > 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono">
               <Clock className="w-3 h-3" />
-              {step.delayMs}ms delay
+              {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DELAY_LABEL(step.delayMs)}
             </span>
           )}
 
           {step.continueOnError && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
               <AlertTriangle className="w-3 h-3" />
-              continue on error
+              {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_CONTINUE_ON_ERROR}
             </span>
           )}
 

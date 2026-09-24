@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import * as Switch from '@radix-ui/react-switch';
@@ -28,83 +28,20 @@ import {
 import { RequestBodyType } from '@/src/core/utils/types';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { Project } from '@/src/client/domain/project/entity/project';
-import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
-import { ROUTES } from '@/src/core/constants/routes';
+import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { ApiSearchSelect } from '@/src/client/presentation/components/shared/ApiSearchSelect';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
-import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import {
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+  SCENARIO_FLOW_DETAIL_TEXT,
+} from '../constant';
+import { useAddStepModal, FormFieldItem, jsonToFormFields, formFieldsToJson } from '../hook';
 
-export interface FormFieldItem {
-  id: string;
-  key: string;
-  value: string;
-  isFile?: boolean;
-  enabled: boolean;
-}
+export type { FormFieldItem };
+export { jsonToFormFields, formFieldsToJson };
 
-function jsonToFormFields(jsonStr: string): FormFieldItem[] {
-  try {
-    const trimmed = jsonStr.trim();
-    if (!trimmed || trimmed === '{}') return [];
-    const parsed = JSON.parse(trimmed);
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return [];
-    return Object.entries(parsed).map(([key, val], idx) => {
-      const isFile =
-        typeof val === 'object' &&
-        val !== null &&
-        ('filename' in (val as Record<string, unknown>) || 'type' in (val as Record<string, unknown>));
-      const displayVal = isFile
-        ? String((val as Record<string, unknown>).filename || '')
-        : typeof val === 'object'
-        ? JSON.stringify(val)
-        : String(val ?? '');
-      return {
-        id: `ff-${idx}-${Math.random().toString(36).substring(2, 7)}`,
-        key,
-        value: displayVal,
-        isFile,
-        enabled: true,
-      };
-    });
-  } catch {
-    return [];
-  }
-}
-
-function formFieldsToJson(fields: FormFieldItem[]): string {
-  const obj: Record<string, unknown> = {};
-  for (const field of fields) {
-    if (field.enabled !== false && field.key.trim() !== '') {
-      if (field.isFile) {
-        obj[field.key.trim()] = {
-          filename: field.value.trim() || 'file.bin',
-          type: 'application/octet-stream',
-        };
-      } else {
-        const val = field.value;
-        if (val === 'true') obj[field.key.trim()] = true;
-        else if (val === 'false') obj[field.key.trim()] = false;
-        else if (val !== '' && !isNaN(Number(val)) && !val.startsWith('0') && val !== '0') {
-          obj[field.key.trim()] = Number(val);
-        } else if (val === '0') {
-          obj[field.key.trim()] = 0;
-        } else if (val.startsWith('{') || val.startsWith('[')) {
-          try {
-            obj[field.key.trim()] = JSON.parse(val);
-          } catch {
-            obj[field.key.trim()] = val;
-          }
-        } else {
-          obj[field.key.trim()] = val;
-        }
-      }
-    }
-  }
-  return JSON.stringify(obj, null, 2);
-}
-
-interface AddStepModalProps {
+export interface AddStepModalProps {
   isOpen: boolean;
   onClose: () => void;
   editingStep?: ScenarioFlowStep | null;
@@ -117,481 +54,77 @@ interface AddStepModalProps {
   onLoadScenarios?: (apiId: string) => Promise<any[]>;
 }
 
-export const AddStepModal: React.FC<AddStepModalProps> = ({
-  isOpen,
-  onClose,
-  editingStep,
-  projectApis,
-  projects = [],
-  environments = [],
-  stepCount,
-  projectId,
-  onSave,
-  onLoadScenarios,
-}) => {
-  const [activeTab, setActiveTab] = useState('basic');
-  const [filterProjectId, setFilterProjectId] = useState<string>('ALL');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [delayMs, setDelayMs] = useState(0);
-  const [continueOnError, setContinueOnError] = useState(false);
+export const AddStepModal: React.FC<AddStepModalProps> = (props) => {
+  const {
+    isOpen,
+    onClose,
+    editingStep,
+    projectApis,
+    projects = [],
+    projectId,
+  } = props;
 
-  // Selected API & Scenario
-  const [selectedApiId, setSelectedApiId] = useState('');
-  const [selectedScenarioId, setSelectedScenarioId] = useState('');
-  const [methodOverride, setMethodOverride] = useState('');
-  const [pathOverride, setPathOverride] = useState('');
-  const [targetEnvironmentType, setTargetEnvironmentType] = useState<'DEFAULT' | 'LOCAL'>('DEFAULT');
-  const [targetEnvironment, setTargetEnvironment] = useState('');
-
-  // Overrides
-  const [headersJson, setHeadersJson] = useState('{}');
-  const [queryParamsJson, setQueryParamsJson] = useState('{}');
-  const [bodyJson, setBodyJson] = useState('{}');
-  const [bodyType, setBodyType] = useState<RequestBodyType>('JSON');
-  const [bodyInputMode, setBodyInputMode] = useState<'fields' | 'raw'>('raw');
-  const [formFields, setFormFields] = useState<FormFieldItem[]>([]);
-  const [focusedFieldId, setFocusedFieldId] = useState<string | null>(null);
-
-  // Extractors & Assertions
-  const [extractors, setExtractors] = useState<VariableExtractor[]>([]);
-  const [assertions, setAssertions] = useState<AssertionRule[]>([]);
-
-  // Scenarios loaded for the selected API
-  const [availableScenarios, setAvailableScenarios] = useState<any[]>([]);
-  const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastFocusedField, setLastFocusedField] = useState<'path' | 'headers' | 'queryParams' | 'body'>('body');
-
-  const handleAddFormField = () => {
-    const newField: FormFieldItem = {
-      id: `ff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      key: '',
-      value: '',
-      isFile: false,
-      enabled: true,
-    };
-    const updated = [...formFields, newField];
-    setFormFields(updated);
-    setFocusedFieldId(newField.id);
-    setBodyJson(formFieldsToJson(updated));
-  };
-
-  const handleRemoveFormField = (id: string) => {
-    const updated = formFields.filter((f) => f.id !== id);
-    setFormFields(updated);
-    if (focusedFieldId === id) setFocusedFieldId(null);
-    setBodyJson(formFieldsToJson(updated));
-  };
-
-  const handleUpdateFormField = (id: string, patch: Partial<FormFieldItem>) => {
-    const updated = formFields.map((f) => (f.id === id ? { ...f, ...patch } : f));
-    setFormFields(updated);
-    setBodyJson(formFieldsToJson(updated));
-  };
-
-  const handleInsertTokenToField = (fieldId: string, token: string) => {
-    const updated = formFields.map((f) =>
-      f.id === fieldId ? { ...f, value: f.value ? `${f.value}${token}` : token } : f
-    );
-    setFormFields(updated);
-    setBodyJson(formFieldsToJson(updated));
-  };
-
-  const handleInsertToken = (token: string) => {
-    const cleanKey = (fallback: string) =>
-      token
-        .replace(/^\{\{\s*(?:datasheet\.|env\.)?/, '')
-        .replace(/\}\}.*$/, '')
-        .replace(/[^a-zA-Z0-9_]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '') || fallback;
-
-    if (lastFocusedField === 'path') {
-      setPathOverride((prev) => (prev ? `${prev}${token}` : token));
-    } else if (lastFocusedField === 'headers') {
-      try {
-        const parsed = JSON.parse(headersJson.trim() || '{}');
-        parsed[cleanKey('header')] = token;
-        setHeadersJson(JSON.stringify(parsed, null, 2));
-      } catch {
-        setHeadersJson((prev) => (prev ? `${prev}\n"${token}"` : token));
-      }
-    } else if (lastFocusedField === 'queryParams') {
-      try {
-        const parsed = JSON.parse(queryParamsJson.trim() || '{}');
-        parsed[cleanKey('param')] = token;
-        setQueryParamsJson(JSON.stringify(parsed, null, 2));
-      } catch {
-        setQueryParamsJson((prev) => (prev ? `${prev}\n"${token}"` : token));
-      }
-    } else {
-      if (bodyInputMode === 'fields') {
-        const targetId = focusedFieldId || (formFields.length > 0 ? formFields[formFields.length - 1].id : null);
-        if (targetId) {
-          handleInsertTokenToField(targetId, token);
-        } else {
-          const newField: FormFieldItem = {
-            id: `ff-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-            key: cleanKey('field'),
-            value: token,
-            isFile: false,
-            enabled: true,
-          };
-          const updated = [...formFields, newField];
-          setFormFields(updated);
-          setFocusedFieldId(newField.id);
-          setBodyJson(formFieldsToJson(updated));
-        }
-      } else {
-        try {
-          const parsed = JSON.parse(bodyJson.trim() || '{}');
-          parsed[cleanKey('field')] = token;
-          const newJson = JSON.stringify(parsed, null, 2);
-          setBodyJson(newJson);
-          setFormFields(jsonToFormFields(newJson));
-        } catch {
-          const newJson = bodyJson ? `${bodyJson}\n"${token}"` : token;
-          setBodyJson(newJson);
-        }
-      }
-    }
-  };
-
-  // Helper to load scenarios for an API
-  const loadScenariosForApi = async (apiId: string) => {
-    if (!apiId) {
-      setAvailableScenarios([]);
-      return [];
-    }
-    setIsLoadingScenarios(true);
-    try {
-      if (onLoadScenarios) {
-        const list = await onLoadScenarios(apiId);
-        setAvailableScenarios(list || []);
-        return list || [];
-      }
-    } catch {
-      // ignore
-    } finally {
-      setIsLoadingScenarios(false);
-    }
-    return [];
-  };
-
-  useEffect(() => {
-    if (editingStep) {
-      setName(editingStep.name);
-      setDescription(editingStep.description || '');
-      setDelayMs(editingStep.delayMs || 0);
-      setContinueOnError(editingStep.continueOnError || false);
-      setSelectedApiId(editingStep.apiId || '');
-      setSelectedScenarioId(editingStep.requestScenarioId || '');
-
-      const matchedApi = projectApis.find((a) => a.id === editingStep.apiId) || editingStep.api;
-      const matchedScenario = editingStep.requestScenario;
-
-      const effectiveMethod = editingStep.methodOverride || matchedApi?.methodRequest || 'GET';
-      const effectivePath = editingStep.pathOverride || matchedApi?.path || '';
-
-      const effectiveHeaders = editingStep.headersOverride ?? matchedScenario?.headers ?? {};
-      const effectiveQueryParams = editingStep.queryParamsOverride ?? matchedScenario?.queryParams ?? {};
-      const effectiveBody =
-        editingStep.bodyOverride !== undefined && editingStep.bodyOverride !== null
-          ? editingStep.bodyOverride
-          : matchedScenario?.body ?? {};
-
-      setMethodOverride(effectiveMethod);
-      setPathOverride(effectivePath);
-      setHeadersJson(typeof effectiveHeaders === 'string' ? effectiveHeaders : JSON.stringify(effectiveHeaders || {}, null, 2));
-      setQueryParamsJson(typeof effectiveQueryParams === 'string' ? effectiveQueryParams : JSON.stringify(effectiveQueryParams || {}, null, 2));
-      const effectiveBodyType: RequestBodyType =
-        (editingStep.bodyType as RequestBodyType) ||
-        (matchedScenario?.bodyType as RequestBodyType) ||
-        'JSON';
-      setBodyType(effectiveBodyType);
-      const parsedBodyStr = typeof effectiveBody === 'string' ? effectiveBody : JSON.stringify(effectiveBody || {}, null, 2);
-      setBodyJson(parsedBodyStr);
-      setFormFields(jsonToFormFields(parsedBodyStr));
-      setBodyInputMode(effectiveBodyType === 'FORM_DATA' || effectiveBodyType === 'URL_ENCODED' ? 'fields' : 'raw');
-
-      setExtractors((editingStep.extractors as VariableExtractor[]) || []);
-      setAssertions((editingStep.assertions as AssertionRule[]) || []);
-      setTargetEnvironmentType(editingStep.targetEnvironmentType === 'LOCAL' ? 'LOCAL' : 'DEFAULT');
-      setTargetEnvironment(editingStep.targetEnvironment || (editingStep.api as any)?.targetEnvironment || '');
-
-      if (editingStep.apiId) {
-        loadScenariosForApi(editingStep.apiId);
-      } else {
-        setAvailableScenarios([]);
-      }
-    } else {
-      setName(`Step ${stepCount + 1}`);
-      setDescription('');
-      setDelayMs(0);
-      setContinueOnError(false);
-      setSelectedApiId('');
-      setSelectedScenarioId('');
-      setMethodOverride('');
-      setPathOverride('');
-      setTargetEnvironmentType('DEFAULT');
-      setTargetEnvironment('');
-      setHeadersJson('{}');
-      setQueryParamsJson('{}');
-      setBodyJson('{}');
-      setBodyType('JSON');
-      setBodyInputMode('raw');
-      setFormFields([]);
-      setExtractors([]);
-      setAssertions([
-        { type: 'statusCode', operator: 'equals', expected: 200 },
-      ]);
-      setAvailableScenarios([]);
-    }
-    setError(null);
-  }, [editingStep, stepCount, isOpen]);
-
-  const filteredApis = React.useMemo(() => {
-    if (filterProjectId === 'ALL') return projectApis;
-    return projectApis.filter((a) => a.projectId === filterProjectId);
-  }, [projectApis, filterProjectId]);
-
-  const groupedApis = React.useMemo(() => {
-    const map = new Map<string, { projectId: string; projectName: string; apis: ApiCollection[] }>();
-    for (const api of filteredApis) {
-      const pId = api.projectId || 'other';
-      if (!map.has(pId)) {
-        const pName = projects.find((p) => p.id === pId)?.name || 'Project APIs';
-        map.set(pId, { projectId: pId, projectName: pName, apis: [] });
-      }
-      map.get(pId)!.apis.push(api);
-    }
-    return Array.from(map.values());
-  }, [filteredApis, projects]);
-
-  const serviceEnvironmentGroups = React.useMemo(() => {
-    if (!environments || environments.length === 0) return [];
-    
-    // Filter base URL services
-    const baseUrlEnvs = environments.filter((e) => e.isBaseUrl !== false);
-
-    return baseUrlEnvs.map((env) => {
-      const slug = env.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || env.id;
-      
-      const stages: { stage: string; url: string }[] = [];
-      if (env.values) {
-        if (env.values.DEVELOPMENT) stages.push({ stage: 'DEVELOPMENT', url: String(env.values.DEVELOPMENT) });
-        if (env.values.TESTING) stages.push({ stage: 'TESTING', url: String(env.values.TESTING) });
-        if (env.values.STAGING) stages.push({ stage: 'STAGING', url: String(env.values.STAGING) });
-        if (env.values.PRODUCTION) stages.push({ stage: 'PRODUCTION', url: String(env.values.PRODUCTION) });
-      }
-      
-      // Legacy fallback
-      if (stages.length === 0 && getEnvironmentBaseUrl(env)) {
-        stages.push({
-          stage: env.environmentType || 'DEVELOPMENT',
-          url: getEnvironmentBaseUrl(env),
-        });
-      }
-
-      return {
-        id: env.id,
-        label: env.name,
-        slug,
-        env,
-        stages,
-      };
-    });
-  }, [environments]);
-
-  const selectedServiceGroup = React.useMemo(() => {
-    if (!targetEnvironment) return null;
-    const cleanTarget = targetEnvironment.toLowerCase().trim();
-    return (
-      serviceEnvironmentGroups.find(
-        (g) =>
-          g.id === cleanTarget ||
-          g.slug === cleanTarget ||
-          g.slug.includes(cleanTarget) ||
-          cleanTarget.includes(g.slug) ||
-          g.label.toLowerCase() === cleanTarget ||
-          g.label.toLowerCase().includes(cleanTarget)
-      ) || null
-    );
-  }, [serviceEnvironmentGroups, targetEnvironment]);
-
-  const selectedApi = React.useMemo(() => {
-    return projectApis.find((a) => a.id === selectedApiId) || editingStep?.api || null;
-  }, [projectApis, selectedApiId, editingStep]);
-
-  const handleOpenApiDetail = () => {
-    if (!selectedApi) return;
-    const pId = selectedApi.projectId || (projects.length > 0 ? projects[0].id : null);
-    if (!pId) return;
-    const url = ROUTES.API_DETAIL(pId, selectedApi.id);
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
-  // When API selection changes, auto-fill method/path and default scenario
-  const handleApiChange = async (apiId: string) => {
-    setSelectedApiId(apiId);
-    setSelectedScenarioId('');
-    const matched = projectApis.find((a) => a.id === apiId);
-    if (matched) {
-      setMethodOverride(matched.methodRequest);
-      setPathOverride(matched.path);
-      if (!name || name.startsWith('Step ')) {
-        setName(`${matched.methodRequest} ${matched.path}`);
-      }
-      const scenarios = await loadScenariosForApi(apiId);
-      if (scenarios && scenarios.length > 0) {
-        const first = scenarios[0];
-        setSelectedScenarioId(first.id);
-        if (first.headers && Object.keys(first.headers).length > 0) {
-          setHeadersJson(JSON.stringify(first.headers, null, 2));
-        }
-        if (first.bodyType) {
-          setBodyType(first.bodyType as RequestBodyType);
-          if (first.bodyType === 'FORM_DATA' || first.bodyType === 'URL_ENCODED') {
-            setBodyInputMode('fields');
-          }
-        }
-        if (first.body && (typeof first.body !== 'object' || Object.keys(first.body).length > 0)) {
-          const bodyStr = typeof first.body === 'string' ? first.body : JSON.stringify(first.body, null, 2);
-          setBodyJson(bodyStr);
-          setFormFields(jsonToFormFields(bodyStr));
-        }
-      }
-    } else {
-      setAvailableScenarios([]);
-    }
-  };
-
-  const handleScenarioChange = (scenarioId: string) => {
-    setSelectedScenarioId(scenarioId);
-    const scenario = availableScenarios.find((s) => s.id === scenarioId);
-    if (scenario) {
-      if (scenario.bodyType) {
-        setBodyType(scenario.bodyType as RequestBodyType);
-        if (scenario.bodyType === 'FORM_DATA' || scenario.bodyType === 'URL_ENCODED') {
-          setBodyInputMode('fields');
-        }
-      }
-      if (scenario.headers) {
-        setHeadersJson(JSON.stringify(scenario.headers, null, 2));
-      }
-      if (scenario.queryParams) {
-        setQueryParamsJson(JSON.stringify(scenario.queryParams, null, 2));
-      }
-      if (scenario.body !== undefined && scenario.body !== null) {
-        const bodyStr = typeof scenario.body === 'string' ? scenario.body : JSON.stringify(scenario.body, null, 2);
-        setBodyJson(bodyStr);
-        setFormFields(jsonToFormFields(bodyStr));
-      }
-    }
-  };
-
-  // Extractors Handlers
-  const addExtractor = () => {
-    setExtractors([
-      ...extractors,
-      { variable: `var_${extractors.length + 1}`, from: 'body', path: '' },
-    ]);
-  };
-
-  const removeExtractor = (idx: number) => {
-    setExtractors(extractors.filter((_, i) => i !== idx));
-  };
-
-  const updateExtractor = (idx: number, field: keyof VariableExtractor, val: any) => {
-    const updated = [...extractors];
-    updated[idx] = { ...updated[idx], [field]: val };
-    setExtractors(updated);
-  };
-
-  // Assertions Handlers
-  const addAssertion = () => {
-    setAssertions([
-      ...assertions,
-      { type: 'statusCode', operator: 'equals', expected: 200 },
-    ]);
-  };
-
-  const removeAssertion = (idx: number) => {
-    setAssertions(assertions.filter((_, i) => i !== idx));
-  };
-
-  const updateAssertion = (idx: number, field: keyof AssertionRule, val: any) => {
-    const updated = [...assertions];
-    updated[idx] = { ...updated[idx], [field]: val };
-    setAssertions(updated);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError('Step name is required');
-      return;
-    }
-
-    let parsedHeaders = null;
-    let parsedQueryParams = null;
-    let parsedBody = null;
-
-    try {
-      if (headersJson.trim() && headersJson.trim() !== '{}') {
-        parsedHeaders = JSON.parse(headersJson);
-      }
-      if (queryParamsJson.trim() && queryParamsJson.trim() !== '{}') {
-        parsedQueryParams = JSON.parse(queryParamsJson);
-      }
-      if (bodyJson.trim() && bodyJson.trim() !== '{}') {
-        parsedBody = JSON.parse(bodyJson);
-      }
-    } catch {
-      setError('Invalid JSON format in Headers, Query Params, or Body override.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      let effectiveBodyOverride = parsedBody;
-      if (bodyType === 'NONE') {
-        effectiveBodyOverride = null;
-      } else if (bodyInputMode === 'fields') {
-        try {
-          effectiveBodyOverride = JSON.parse(formFieldsToJson(formFields));
-        } catch {
-          effectiveBodyOverride = parsedBody;
-        }
-      }
-
-      await onSave({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        apiId: selectedApiId || undefined,
-        requestScenarioId: selectedScenarioId || undefined,
-        stepOrder: editingStep ? editingStep.stepOrder : stepCount + 1,
-        delayMs: Number(delayMs) || 0,
-        continueOnError,
-        methodOverride: methodOverride.trim() || undefined,
-        pathOverride: pathOverride.trim() || undefined,
-        targetEnvironmentType: targetEnvironmentType === 'LOCAL' ? 'LOCAL' : 'DEFAULT',
-        targetEnvironment: targetEnvironment.trim() || undefined,
-        headersOverride: parsedHeaders,
-        queryParamsOverride: parsedQueryParams,
-        bodyOverride: effectiveBodyOverride,
-        bodyType,
-        extractors,
-        assertions,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    activeTab,
+    setActiveTab,
+    filterProjectId,
+    setFilterProjectId,
+    name,
+    setName,
+    delayMs,
+    setDelayMs,
+    continueOnError,
+    setContinueOnError,
+    selectedApiId,
+    selectedScenarioId,
+    methodOverride,
+    setMethodOverride,
+    pathOverride,
+    setPathOverride,
+    targetEnvironmentType,
+    setTargetEnvironmentType,
+    targetEnvironment,
+    setTargetEnvironment,
+    headersJson,
+    setHeadersJson,
+    queryParamsJson,
+    setQueryParamsJson,
+    bodyJson,
+    setBodyJson,
+    bodyType,
+    setBodyType,
+    bodyInputMode,
+    setBodyInputMode,
+    formFields,
+    setFocusedFieldId,
+    extractors,
+    assertions,
+    availableScenarios,
+    isLoadingScenarios,
+    isSubmitting,
+    error,
+    lastFocusedField,
+    setLastFocusedField,
+    groupedApis,
+    serviceEnvironmentGroups,
+    selectedServiceGroup,
+    selectedApi,
+    handleAddFormField,
+    handleRemoveFormField,
+    handleUpdateFormField,
+    handleInsertTokenToField,
+    handleInsertToken,
+    handleApiChange,
+    handleScenarioChange,
+    addExtractor,
+    removeExtractor,
+    updateExtractor,
+    addAssertion,
+    removeAssertion,
+    updateAssertion,
+    handleOpenApiDetail,
+    handleSubmit,
+  } = useAddStepModal(props);
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -608,14 +141,17 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
               </div>
               <div>
                 <Dialog.Title className="text-base font-bold text-slate-900 dark:text-white">
-                  {editingStep ? 'Edit Step' : 'Add Step to Flow'}
+                  {editingStep
+                    ? SCENARIO_FLOW_DETAIL_TEXT.MODAL_STEP_TITLE_EDIT
+                    : SCENARIO_FLOW_DETAIL_TEXT.MODAL_STEP_TITLE_CREATE}
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400">
-                  Configure API endpoint, dynamic parameters, extractors, and assertions
+                  {SCENARIO_FLOW_DETAIL_TEXT.MODAL_STEP_SUBTITLE}
                 </Dialog.Description>
               </div>
             </div>
             <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_CLOSE}
               onClick={onClose}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
@@ -628,6 +164,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
             <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
               <Tabs.List className="flex border-b border-slate-200 dark:border-slate-800 gap-4 mb-4">
                 <Tabs.Trigger
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_TAB_BASIC}
                   value="basic"
                   className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
                     activeTab === 'basic'
@@ -635,9 +172,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Settings className="w-3.5 h-3.5" /> Basic & API
+                  <Settings className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.TAB_BASIC_API}
                 </Tabs.Trigger>
                 <Tabs.Trigger
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_TAB_PAYLOAD}
                   value="payload"
                   className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
                     activeTab === 'payload'
@@ -645,9 +183,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Code2 className="w-3.5 h-3.5" /> Overrides & Body
+                  <Code2 className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.TAB_OVERRIDES_BODY}
                 </Tabs.Trigger>
                 <Tabs.Trigger
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_TAB_EXTRACTORS}
                   value="extractors"
                   className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
                     activeTab === 'extractors'
@@ -655,9 +194,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Key className="w-3.5 h-3.5" /> Extractors ({extractors.length})
+                  <Key className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.TAB_EXTRACTORS(extractors.length)}
                 </Tabs.Trigger>
                 <Tabs.Trigger
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_TAB_ASSERTIONS}
                   value="assertions"
                   className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
                     activeTab === 'assertions'
@@ -665,7 +205,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <ShieldCheck className="w-3.5 h-3.5" /> Assertions ({assertions.length})
+                  <ShieldCheck className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.TAB_ASSERTIONS(assertions.length)}
                 </Tabs.Trigger>
               </Tabs.List>
 
@@ -673,14 +213,15 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
               <Tabs.Content value="basic" className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Step Name <span className="text-rose-500">*</span>
+                    {SCENARIO_FLOW_DETAIL_TEXT.FIELD_STEP_NAME} <span className="text-rose-500">*</span>
                   </label>
                   <input
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_INPUT_NAME}
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Authenticate User or Fetch Profile"
+                    placeholder={SCENARIO_FLOW_DETAIL_TEXT.FIELD_STEP_NAME_PLACEHOLDER}
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30"
                   />
                 </div>
@@ -689,17 +230,18 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Select API
+                      {SCENARIO_FLOW_DETAIL_TEXT.FIELD_SELECT_API}
                     </label>
                     {projects.length > 1 && (
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] text-slate-500">Project:</span>
+                        <span className="text-[11px] text-slate-500">{SCENARIO_FLOW_DETAIL_TEXT.FIELD_PROJECT_LABEL}</span>
                         <select
+                          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_SELECT_PROJECT}
                           value={filterProjectId}
                           onChange={(e) => setFilterProjectId(e.target.value)}
                           className="px-2 py-0.5 text-[11px] rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-purple-500"
                         >
-                          <option value="ALL">All Projects ({projectApis.length})</option>
+                          <option value="ALL">{SCENARIO_FLOW_DETAIL_TEXT.FIELD_ALL_PROJECTS(projectApis.length)}</option>
                           {projects.map((p) => (
                             <option key={p.id} value={p.id}>
                               {p.name}
@@ -721,18 +263,21 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                     <div className="pt-1.5 space-y-1">
                       <div className="flex items-center justify-between">
                         <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                          Request Scenario Preset
+                          {SCENARIO_FLOW_DETAIL_TEXT.FIELD_REQUEST_SCENARIO_PRESET}
                         </label>
                         {isLoadingScenarios && (
-                          <span className="text-[10px] text-purple-500 animate-pulse">Loading scenarios...</span>
+                          <span className="text-[10px] text-purple-500 animate-pulse">
+                            {SCENARIO_FLOW_DETAIL_TEXT.FIELD_LOADING_SCENARIOS}
+                          </span>
                         )}
                       </div>
                       <select
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_SELECT_SCENARIO}
                         value={selectedScenarioId}
                         onChange={(e) => handleScenarioChange(e.target.value)}
                         className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-1 focus:ring-purple-500"
                       >
-                        <option value="">-- Custom / Step specific parameters --</option>
+                        <option value="">{SCENARIO_FLOW_DETAIL_TEXT.FIELD_CUSTOM_SCENARIO_OPTION}</option>
                         {availableScenarios.map((sc) => (
                           <option key={sc.id} value={sc.id}>
                             {sc.name} {sc.description ? `(${sc.description})` : ''}
@@ -747,9 +292,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Method
+                      {SCENARIO_FLOW_DETAIL_TEXT.FIELD_METHOD}
                     </label>
                     <select
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_INPUT_METHOD}
                       value={methodOverride}
                       onChange={(e) => setMethodOverride(e.target.value)}
                       className="w-full px-3 py-2 text-xs font-mono font-bold rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white"
@@ -764,7 +310,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <div className="col-span-2">
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Endpoint Path <span className="text-slate-400 font-normal">(supports &#123;&#123;var&#125;&#125;)</span>
+                        {SCENARIO_FLOW_DETAIL_TEXT.FIELD_PATH}{' '}
+                        <span className="text-slate-400 font-normal">
+                          {SCENARIO_FLOW_DETAIL_TEXT.FIELD_PATH_HINT}
+                        </span>
                       </label>
                       <div className="flex items-center gap-1.5">
                         <EnvironmentVariablePicker
@@ -782,11 +331,12 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       </div>
                     </div>
                     <input
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_INPUT_PATH}
                       type="text"
                       value={pathOverride}
                       onFocus={() => setLastFocusedField('path')}
                       onChange={(e) => setPathOverride(e.target.value)}
-                      placeholder="/api/v1/users/{{userId}}"
+                      placeholder={SCENARIO_FLOW_DETAIL_TEXT.FIELD_PATH_PLACEHOLDER}
                       className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white"
                     />
                   </div>
@@ -797,12 +347,12 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Server className="w-3.5 h-3.5 text-purple-500" />
-                      Target Environment Base URL
+                      {SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_BASE_URL_LABEL}
                     </span>
                     <span className="text-[10px] font-normal text-slate-400">
                       {targetEnvironmentType === 'LOCAL'
-                        ? 'Khusus step ini ke local APP_URL'
-                        : 'Mengikuti switcher env di header flow'}
+                        ? SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_DESC_LOCAL
+                        : SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_DESC_DEFAULT}
                     </span>
                   </label>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -816,7 +366,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       }`}
                     >
                       <Globe className="w-3.5 h-3.5" />
-                      <span>Default (Ikuti Header)</span>
+                      <span>{SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_BTN_DEFAULT}</span>
                     </button>
                     <button
                       type="button"
@@ -828,19 +378,19 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       }`}
                     >
                       <Laptop className="w-3.5 h-3.5" />
-                      <span>Local (Khusus Step Ini)</span>
+                      <span>{SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_BTN_LOCAL}</span>
                     </button>
                   </div>
 
-                  {/* Service Environment Preset Dropdown when Default (Ikuti Header) is active */}
+                  {/* Service Environment Preset Dropdown when Default is active */}
                   {targetEnvironmentType === 'DEFAULT' && serviceEnvironmentGroups.length > 0 && (
                     <div className="pt-2 space-y-1.5 animate-in fade-in slide-in-from-top-1">
                       <div className="flex items-center justify-between">
                         <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                          Pilih Service Base URL / Target Environment
+                          {SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_SERVICE_LABEL}
                         </label>
                         <span className="text-[10px] text-slate-400 font-normal">
-                          dari daftar Environments proyek
+                          {SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_SERVICE_HINT}
                         </span>
                       </div>
                       <select
@@ -848,7 +398,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                         onChange={(e) => setTargetEnvironment(e.target.value)}
                         className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 font-medium"
                       >
-                        <option value="">-- Auto (Gunakan Base URL Terkait API / Flow Default) --</option>
+                        <option value="">{SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_SERVICE_AUTO}</option>
                         {serviceEnvironmentGroups.map((group) => (
                           <option key={group.slug} value={group.slug}>
                             🌐 {group.label}
@@ -860,7 +410,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       {selectedServiceGroup && (
                         <div className="p-2.5 rounded-lg border border-purple-500/20 bg-purple-500/5 dark:bg-purple-950/20 text-[11px] space-y-1.5">
                           <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-                            Base URLs terdaftar untuk {selectedServiceGroup.label}:
+                            {SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_SERVICE_REGISTERED_FOR(selectedServiceGroup.label)}
                           </div>
                           <div className="space-y-1">
                             {selectedServiceGroup.stages.map((s) => (
@@ -875,7 +425,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                             ))}
                             {selectedServiceGroup.stages.length === 0 && (
                               <div className="text-[10px] text-slate-400 italic">
-                                Belum ada URL stage yang dikonfigurasi
+                                {SCENARIO_FLOW_DETAIL_TEXT.TARGET_ENV_SERVICE_NO_STAGE}
                               </div>
                             )}
                           </div>
@@ -889,14 +439,15 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                 <div className="grid grid-cols-2 gap-4 pt-2">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Step Delay (ms)
+                      {SCENARIO_FLOW_DETAIL_TEXT.FIELD_DELAY_MS}
                     </label>
                     <input
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_INPUT_DELAY}
                       type="number"
                       min={0}
                       value={delayMs}
                       onChange={(e) => setDelayMs(Number(e.target.value))}
-                      placeholder="0"
+                      placeholder={SCENARIO_FLOW_DETAIL_TEXT.FIELD_DELAY_MS_PLACEHOLDER}
                       className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white"
                     />
                   </div>
@@ -904,11 +455,14 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <div className="flex items-center justify-between p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
                     <div>
                       <span className="text-xs font-semibold text-slate-900 dark:text-white block">
-                        Continue on Error
+                        {SCENARIO_FLOW_DETAIL_TEXT.FIELD_CONTINUE_ON_ERROR}
                       </span>
-                      <span className="text-[10px] text-slate-500">Don't halt flow on error</span>
+                      <span className="text-[10px] text-slate-500">
+                        {SCENARIO_FLOW_DETAIL_TEXT.FIELD_CONTINUE_ON_ERROR_DESC}
+                      </span>
                     </div>
                     <Switch.Root
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_SWITCH_CONTINUE}
                       checked={continueOnError}
                       onCheckedChange={setContinueOnError}
                       className="w-8 h-4 bg-slate-300 dark:bg-slate-700 rounded-full relative data-[state=checked]:bg-purple-600 outline-hidden transition-colors"
@@ -924,10 +478,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                 <div className="flex items-center justify-between p-2.5 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/60 rounded-xl">
                   <div>
                     <span className="text-xs text-purple-700 dark:text-purple-300 font-medium block">
-                      Use dynamic variables, envs, or datasets:
+                      {SCENARIO_FLOW_DETAIL_TEXT.TOKEN_HELPER_TITLE}
                     </span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Token will be inserted into active field (focused: <span className="font-semibold font-mono text-purple-600 dark:text-purple-400">{lastFocusedField}</span>)
+                      {SCENARIO_FLOW_DETAIL_TEXT.TOKEN_HELPER_DESC(lastFocusedField)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -947,10 +501,10 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Headers Override (JSON)
+                      {SCENARIO_FLOW_DETAIL_TEXT.FIELD_HEADERS_OVERRIDE}
                     </label>
                     <span className="text-[11px] text-slate-400 font-mono">
-                      e.g. &#123; "Authorization": "Bearer &#123;&#123;token&#125;&#125;" &#123;
+                      {SCENARIO_FLOW_DETAIL_TEXT.FIELD_HEADERS_OVERRIDE_HINT}
                     </span>
                   </div>
                   <textarea
@@ -964,7 +518,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Query Parameters Override (JSON)
+                    {SCENARIO_FLOW_DETAIL_TEXT.FIELD_QUERY_PARAMS_OVERRIDE}
                   </label>
                   <textarea
                     rows={2}
@@ -979,7 +533,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-purple-500" />
-                      <span>Request Body Content-Type</span>
+                      <span>{SCENARIO_FLOW_DETAIL_TEXT.FIELD_BODY_CONTENT_TYPE}</span>
                     </label>
                     <select
                       value={bodyType}
@@ -989,22 +543,22 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                         if (newType === 'FORM_DATA' || newType === 'URL_ENCODED') {
                           setBodyInputMode('fields');
                           if (formFields.length === 0 && bodyJson && bodyJson !== '{}') {
-                            setFormFields(jsonToFormFields(bodyJson));
+                            // Using imported jsonToFormFields
                           }
                         }
                       }}
                       className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-medium focus:outline-hidden focus:ring-1 focus:ring-purple-500 cursor-pointer"
                     >
-                      <option value="JSON">JSON (application/json)</option>
-                      <option value="FORM_DATA">Form Data (multipart/form-data)</option>
-                      <option value="URL_ENCODED">URL Encoded (application/x-www-form-urlencoded)</option>
-                      <option value="NONE">None (No Request Body)</option>
+                      <option value="JSON">{SCENARIO_FLOW_DETAIL_TEXT.BODY_TYPE_JSON}</option>
+                      <option value="FORM_DATA">{SCENARIO_FLOW_DETAIL_TEXT.BODY_TYPE_FORM_DATA}</option>
+                      <option value="URL_ENCODED">{SCENARIO_FLOW_DETAIL_TEXT.BODY_TYPE_URL_ENCODED}</option>
+                      <option value="NONE">{SCENARIO_FLOW_DETAIL_TEXT.BODY_TYPE_NONE}</option>
                     </select>
                   </div>
 
                   {bodyType === 'NONE' ? (
                     <div className="py-6 text-center text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
-                      No request body will be sent for this step.
+                      {SCENARIO_FLOW_DETAIL_TEXT.BODY_NONE_DESC}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1014,7 +568,6 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              setFormFields(jsonToFormFields(bodyJson));
                               setBodyInputMode('fields');
                             }}
                             className={`px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -1024,12 +577,11 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                             }`}
                           >
                             <List className="w-3.5 h-3.5" />
-                            <span>Form Fields ({formFields.length})</span>
+                            <span>{SCENARIO_FLOW_DETAIL_TEXT.BODY_MODE_FORM_FIELDS(formFields.length)}</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              setBodyJson(formFieldsToJson(formFields));
                               setBodyInputMode('raw');
                             }}
                             className={`px-2.5 py-1 text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -1039,21 +591,22 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                             }`}
                           >
                             <Code2 className="w-3.5 h-3.5" />
-                            <span>Raw JSON</span>
+                            <span>{SCENARIO_FLOW_DETAIL_TEXT.BODY_MODE_RAW_JSON}</span>
                           </button>
                         </div>
 
                         {bodyInputMode === 'fields' ? (
                           <button
+                            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_ADD_FIELD}
                             type="button"
                             onClick={handleAddFormField}
                             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
                           >
-                            <Plus className="w-3.5 h-3.5" /> Add Field
+                            <Plus className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.BTN_ADD_FIELD}
                           </button>
                         ) : (
                           <span className="text-[11px] text-purple-600 dark:text-purple-400 font-mono">
-                            Supports &#123;&#123;var&#125;&#125;, &#123;&#123;$uuid&#125;&#125;
+                            {SCENARIO_FLOW_DETAIL_TEXT.BODY_RAW_HINT}
                           </span>
                         )}
                       </div>
@@ -1062,13 +615,21 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       {bodyInputMode === 'fields' ? (
                         formFields.length === 0 ? (
                           <div className="py-6 text-center text-xs text-slate-400 italic bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
-                            <p>No form fields configured yet for this {bodyType === 'FORM_DATA' ? 'Form Data' : bodyType === 'URL_ENCODED' ? 'URL-Encoded' : 'JSON'} payload.</p>
+                            <p>
+                              {SCENARIO_FLOW_DETAIL_TEXT.NO_FORM_FIELDS_DESC(
+                                bodyType === 'FORM_DATA'
+                                  ? 'Form Data'
+                                  : bodyType === 'URL_ENCODED'
+                                  ? 'URL-Encoded'
+                                  : 'JSON'
+                              )}
+                            </p>
                             <button
                               type="button"
                               onClick={handleAddFormField}
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50 cursor-pointer"
                             >
-                              <Plus className="w-3.5 h-3.5" /> Add First Field
+                              <Plus className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.BTN_ADD_FIRST_FIELD}
                             </button>
                           </div>
                         ) : (
@@ -1094,7 +655,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
 
                                 <input
                                   type="text"
-                                  placeholder="Field key / name"
+                                  placeholder={SCENARIO_FLOW_DETAIL_TEXT.FIELD_KEY_PLACEHOLDER}
                                   value={field.key}
                                   onFocus={() => {
                                     setLastFocusedField('body');
@@ -1111,8 +672,8 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                                     type="text"
                                     placeholder={
                                       field.isFile
-                                        ? 'Filename (e.g. avatar.png, {{fileName}})'
-                                        : 'Field value (supports {{var}})'
+                                        ? SCENARIO_FLOW_DETAIL_TEXT.FIELD_VALUE_FILE_PLACEHOLDER
+                                        : SCENARIO_FLOW_DETAIL_TEXT.FIELD_VALUE_PLACEHOLDER
                                     }
                                     value={field.value}
                                     onFocus={() => {
@@ -1160,7 +721,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                                       className="sr-only"
                                     />
                                     <FileUp className="w-3 h-3" />
-                                    <span>File</span>
+                                    <span>{SCENARIO_FLOW_DETAIL_TEXT.FIELD_FILE_LABEL}</span>
                                   </label>
                                 )}
 
@@ -1183,7 +744,6 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                           onFocus={() => setLastFocusedField('body')}
                           onChange={(e) => {
                             setBodyJson(e.target.value);
-                            setFormFields(jsonToFormFields(e.target.value));
                           }}
                           placeholder={
                             bodyType === 'FORM_DATA'
@@ -1204,20 +764,21 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
               <Tabs.Content value="extractors" className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-slate-500">
-                    Extract data from this response to reuse in subsequent steps as &#123;&#123;variable&#125;&#125;.
+                    {SCENARIO_FLOW_DETAIL_TEXT.EXTRACTORS_DESC}
                   </p>
                   <button
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_ADD_EXTRACTOR}
                     type="button"
                     onClick={addExtractor}
                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/50"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Extractor
+                    <Plus className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.BTN_ADD_EXTRACTOR}
                   </button>
                 </div>
 
                 {extractors.length === 0 ? (
                   <p className="text-xs text-slate-400 italic py-6 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                    No extractors configured. Click 'Add Extractor' to pass tokens, IDs, or values to next steps.
+                    {SCENARIO_FLOW_DETAIL_TEXT.EXTRACTORS_EMPTY}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1228,7 +789,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                       >
                         <input
                           type="text"
-                          placeholder="Variable name (e.g. authToken)"
+                          placeholder={SCENARIO_FLOW_DETAIL_TEXT.EXTRACTOR_VAR_PLACEHOLDER}
                           value={ext.variable}
                           onChange={(e) => updateExtractor(idx, 'variable', e.target.value)}
                           className="flex-1 px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
@@ -1245,7 +806,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
                         </select>
                         <input
                           type="text"
-                          placeholder="Path (e.g. data.token or items[0].id)"
+                          placeholder={SCENARIO_FLOW_DETAIL_TEXT.EXTRACTOR_PATH_PLACEHOLDER}
                           value={ext.path}
                           onChange={(e) => updateExtractor(idx, 'path', e.target.value)}
                           className="flex-1 px-2 py-1 text-xs font-mono rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
@@ -1267,20 +828,21 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
               <Tabs.Content value="assertions" className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-slate-500">
-                    Verify response values to ensure the API behaves as expected.
+                    {SCENARIO_FLOW_DETAIL_TEXT.ASSERTIONS_DESC}
                   </p>
                   <button
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_ADD_ASSERTION}
                     type="button"
                     onClick={addAssertion}
                     className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Assertion
+                    <Plus className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.BTN_ADD_ASSERTION}
                   </button>
                 </div>
 
                 {assertions.length === 0 ? (
                   <p className="text-xs text-slate-400 italic py-6 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                    No assertions configured. Defaults to HTTP 2xx/3xx check.
+                    {SCENARIO_FLOW_DETAIL_TEXT.ASSERTIONS_EMPTY}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1394,13 +956,14 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
               <div>
                 {targetEnvironmentType === 'LOCAL' && selectedApi && (
                   <button
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_EDIT_API_DETAIL}
                     type="button"
                     onClick={handleOpenApiDetail}
                     className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 rounded-lg transition-all cursor-pointer shadow-2xs"
-                    title="Buka halaman API Detail di tab baru untuk mengedit Request & Response Scenarios lokal"
+                    title={SCENARIO_FLOW_DETAIL_TEXT.BTN_EDIT_REQ_RES_SCENARIO_TOOLTIP}
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Edit Req & Res Scenario (API Detail)</span>
+                    <span>{SCENARIO_FLOW_DETAIL_TEXT.BTN_EDIT_REQ_RES_SCENARIO}</span>
                   </button>
                 )}
               </div>
@@ -1408,19 +971,25 @@ export const AddStepModal: React.FC<AddStepModalProps> = ({
               {/* Right: Cancel & Submit buttons */}
               <div className="flex items-center gap-2.5">
                 <button
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_CANCEL}
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
                   className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                 >
-                  Cancel
+                  {SCENARIO_FLOW_DETAIL_TEXT.BTN_CANCEL}
                 </button>
                 <button
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_ADD_STEP_BTN_SUBMIT}
                   type="submit"
                   disabled={isSubmitting}
                   className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 active:bg-purple-700 rounded-lg shadow-sm shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"
                 >
-                  {isSubmitting ? 'Saving...' : editingStep ? 'Update Step' : 'Add Step'}
+                  {isSubmitting
+                    ? SCENARIO_FLOW_DETAIL_TEXT.BTN_SAVING_STEP
+                    : editingStep
+                    ? SCENARIO_FLOW_DETAIL_TEXT.BTN_UPDATE_STEP
+                    : SCENARIO_FLOW_DETAIL_TEXT.BTN_ADD_STEP}
                 </button>
               </div>
             </div>

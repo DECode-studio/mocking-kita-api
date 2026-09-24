@@ -14,7 +14,10 @@ import {
   Loader2,
 } from 'lucide-react';
 import { ScenarioFlowExecutionStep } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
-import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID } from '../constant';
+import {
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+  SCENARIO_FLOW_DETAIL_TEXT,
+} from '../constant';
 
 interface StepExecutionInspectorProps {
   step: ScenarioFlowExecutionStep | null;
@@ -35,11 +38,11 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
         </div>
         <div className="space-y-1">
           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1.5">
-            <span>Dispatching API Request...</span>
+            <span>{SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_DISPATCHING_TITLE}</span>
             <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
           </h4>
           <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-            Executing HTTP request, calculating duration, and running assertions...
+            {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_DISPATCHING_DESC}
           </p>
         </div>
       </div>
@@ -53,8 +56,12 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
         className="p-8 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/40 dark:bg-slate-900/40 space-y-2"
       >
         <Code2 className="w-8 h-8 mx-auto text-slate-400" />
-        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">No Step Selected</h3>
-        <p className="text-[11px] text-slate-500">View sent headers, payload, response body, and assertions</p>
+        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+          {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_NO_STEP_SELECTED}
+        </h3>
+        <p className="text-[11px] text-slate-500">
+          {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_NO_STEP_DESC}
+        </p>
       </div>
     );
   }
@@ -119,6 +126,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
       <Tabs.Root value={activeTab} onValueChange={setActiveTab}>
         <Tabs.List className="flex border-b border-slate-200 dark:border-slate-800 gap-4 mb-3">
           <Tabs.Trigger
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.INSPECTOR_TAB_PREFIX('response')}
             value="response"
             className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'response'
@@ -126,9 +134,10 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <DownloadCloud className="w-3.5 h-3.5" /> Response Body
+            <DownloadCloud className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_TAB_RESPONSE}
           </Tabs.Trigger>
           <Tabs.Trigger
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.INSPECTOR_TAB_PREFIX('request')}
             value="request"
             className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'request'
@@ -136,9 +145,10 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <Send className="w-3.5 h-3.5" /> Request Sent
+            <Send className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_TAB_REQUEST}
           </Tabs.Trigger>
           <Tabs.Trigger
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.INSPECTOR_TAB_PREFIX('assertions')}
             value="assertions"
             className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'assertions'
@@ -146,9 +156,10 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5" /> Assertions ({assertionResults.length})
+            <ShieldCheck className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_TAB_ASSERTIONS(assertionResults.length)}
           </Tabs.Trigger>
           <Tabs.Trigger
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.INSPECTOR_TAB_PREFIX('variables')}
             value="variables"
             className={`pb-2 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-colors ${
               activeTab === 'variables'
@@ -156,7 +167,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            <Key className="w-3.5 h-3.5" /> Extracted Variables
+            <Key className="w-3.5 h-3.5" /> {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_TAB_VARIABLES}
           </Tabs.Trigger>
         </Tabs.List>
 
@@ -182,7 +193,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
         <Tabs.Content value="request" className="space-y-3">
           <div>
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Full Request URL
+              {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_FULL_URL_LABEL}
             </span>
             <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-xs text-purple-300 word-break">
               {step.requestSnapshot?.url || step.url}
@@ -191,7 +202,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
 
           <div>
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Request Headers
+              {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_REQUEST_HEADERS_LABEL}
             </span>
             <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-xs text-slate-300 max-h-36 overflow-y-auto">
               <pre>{JSON.stringify(step.requestSnapshot?.headers ?? {}, null, 2)}</pre>
@@ -201,7 +212,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
           {step.requestSnapshot?.body !== undefined && (
             <div>
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Request Body
+                {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_REQUEST_BODY_LABEL}
               </span>
               <div className="bg-slate-950 p-2.5 rounded-lg font-mono text-xs text-slate-300 max-h-48 overflow-y-auto">
                 <pre className="whitespace-pre-wrap word-break">
@@ -218,7 +229,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
         <Tabs.Content value="assertions" className="space-y-2">
           {assertionResults.length === 0 ? (
             <p className="text-xs text-slate-400 italic py-4 text-center">
-              No explicit assertions evaluated (verified HTTP 2xx/3xx).
+              {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_NO_ASSERTIONS_EVALUATED}
             </p>
           ) : (
             <div className="space-y-2">
@@ -242,7 +253,7 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
                     </span>
                   </div>
                   <div className="text-right font-mono text-[11px]">
-                    <span className="text-slate-400">Actual: </span>
+                    <span className="text-slate-400">{SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_ACTUAL_LABEL} </span>
                     <span className="font-bold">{JSON.stringify(ast.actual)}</span>
                   </div>
                 </div>
@@ -255,15 +266,15 @@ export const StepExecutionInspector: React.FC<StepExecutionInspectorProps> = ({ 
         <Tabs.Content value="variables" className="space-y-2">
           {Object.keys(extractedVars).length === 0 ? (
             <p className="text-xs text-slate-400 italic py-4 text-center">
-              No variables were extracted by this step.
+              {SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_NO_VARIABLES_EXTRACTED}
             </p>
           ) : (
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden text-xs">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 font-semibold">Variable</th>
-                    <th className="px-3 py-2 font-semibold">Value Saved to Context</th>
+                    <th className="px-3 py-2 font-semibold">{SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_COL_VARIABLE}</th>
+                    <th className="px-3 py-2 font-semibold">{SCENARIO_FLOW_DETAIL_TEXT.INSPECTOR_COL_VALUE_SAVED}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">

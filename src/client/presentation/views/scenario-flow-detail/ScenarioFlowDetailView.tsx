@@ -191,6 +191,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
               </h2>
 
               <button
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.ADD_STEP_BTN}
                 onClick={() => {
                   setEditingStep(null);
                   setIsAddStepModalOpen(true);
@@ -198,7 +199,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
                 className="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-500 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Step</span>
+                <span>{SCENARIO_FLOW_DETAIL_TEXT.ADD_STEP_BTN}</span>
               </button>
             </div>
 
@@ -221,7 +222,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
                   className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-500"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Add First Step
+                  {SCENARIO_FLOW_DETAIL_TEXT.ADD_FIRST_STEP}
                 </button>
               </div>
             ) : (
