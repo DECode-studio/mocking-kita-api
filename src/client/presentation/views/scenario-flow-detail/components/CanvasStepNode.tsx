@@ -12,6 +12,7 @@ import {
   XCircle,
   Loader2,
   GripHorizontal,
+  Play,
 } from 'lucide-react';
 import {
   ScenarioFlowStep,
@@ -30,6 +31,7 @@ interface CanvasStepNodeProps {
   isSelected: boolean;
   executionStep?: ScenarioFlowExecutionStep | null;
   isRunning?: boolean;
+  isRunningStep?: boolean;
   zoom: number;
   onPositionChange: (stepId: string, x: number, y: number) => void;
   onSelect: () => void;
@@ -37,6 +39,7 @@ interface CanvasStepNodeProps {
   onEdit: (step: ScenarioFlowStep) => void;
   onDelete: (stepId: string, stepName: string) => void;
   onToggleEnabled: (step: ScenarioFlowStep) => void;
+  onRunStep?: (step: ScenarioFlowStep) => void;
 }
 
 const METHOD_COLORS: Record<string, string> = {
@@ -55,6 +58,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
   isSelected,
   executionStep,
   isRunning,
+  isRunningStep,
   zoom,
   onPositionChange,
   onSelect,
@@ -62,6 +66,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
   onEdit,
   onDelete,
   onToggleEnabled,
+  onRunStep,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
@@ -123,7 +128,7 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
   };
 
   // Execution badge & border state
-  const isStepRunning = isRunning;
+  const isStepRunning = isRunningStep || (isRunning && isRunningStep === undefined);
   const isStepSuccess = !isRunning && executionStep?.status === 'SUCCESS';
   const isStepFailed = !isRunning && executionStep?.status === 'FAILED';
 
@@ -232,6 +237,27 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
               <XCircle className="w-2.5 h-2.5" />
               {executionStep.httpStatusCode || 'ERR'} ({executionStep.durationMs}ms)
             </span>
+          )}
+
+          {/* Run Single Step Button */}
+          {onRunStep && (
+            <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CANVAS_NODE_RUN_PREFIX(step.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRunStep(step);
+              }}
+              disabled={isRunning}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUN_TOOLTIP}
+            >
+              {isRunningStep ? (
+                <Loader2 className="w-2.5 h-2.5 animate-spin text-purple-600 dark:text-purple-400" />
+              ) : (
+                <Play className="w-2.5 h-2.5 fill-purple-600 dark:fill-purple-400 text-purple-600 dark:text-purple-400" />
+              )}
+              <span>{isRunningStep ? SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUNNING : SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUN_BTN}</span>
+            </button>
           )}
 
           {/* Toggle Enable Button */}

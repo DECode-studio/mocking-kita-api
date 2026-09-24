@@ -29,6 +29,7 @@ interface ScenarioFlowCanvasProps {
   selectedStepIndex: number;
   latestExecution: ScenarioFlowExecution | null;
   isRunning: boolean;
+  runningStepId?: string | null;
   isInspectorOpen: boolean;
   onPositionChange: (stepId: string, x: number, y: number) => void;
   onSelectStep: (index: number) => void;
@@ -38,6 +39,7 @@ interface ScenarioFlowCanvasProps {
   onEditStep: (step: ScenarioFlowStep) => void;
   onDeleteStep: (stepId: string, stepName: string) => void;
   onToggleStepEnabled: (step: ScenarioFlowStep) => void;
+  onRunStep?: (step: ScenarioFlowStep) => void;
 }
 
 const NODE_WIDTH = 380;
@@ -49,6 +51,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
   selectedStepIndex,
   latestExecution,
   isRunning,
+  runningStepId,
   isInspectorOpen,
   onPositionChange,
   onSelectStep,
@@ -58,6 +61,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
   onEditStep,
   onDeleteStep,
   onToggleStepEnabled,
+  onRunStep,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -291,7 +295,10 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
         <div className="absolute top-0 left-0 w-full h-full pointer-events-auto">
           {steps.map((step, idx) => {
             const pos = stepPositions[step.id] || { x: 80 + idx * 440, y: 120 };
-            const execStep = latestExecution?.steps?.[idx] || null;
+            const execStep =
+              latestExecution?.steps?.find((s) => s.flowStepId === step.id) ||
+              (latestExecution?.steps?.length === steps.length ? latestExecution?.steps?.[idx] : null) ||
+              null;
 
             return (
               <CanvasStepNode
@@ -303,6 +310,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
                 isSelected={selectedStepIndex === idx}
                 executionStep={execStep}
                 isRunning={isRunning}
+                isRunningStep={runningStepId === step.id}
                 zoom={zoom}
                 onPositionChange={onPositionChange}
                 onSelect={() => {
@@ -317,6 +325,7 @@ export const ScenarioFlowCanvas: React.FC<ScenarioFlowCanvasProps> = ({
                 onEdit={onEditStep}
                 onDelete={onDeleteStep}
                 onToggleEnabled={onToggleStepEnabled}
+                onRunStep={onRunStep}
               />
             );
           })}

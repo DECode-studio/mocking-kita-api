@@ -50,8 +50,11 @@ export const StepInspectorDrawer: React.FC<StepInspectorDrawerProps> = ({
   if (!isOpen) return null;
 
   const steps = flow.steps || [];
-  const activeExecutionStep = latestExecution?.steps?.[selectedStepIndex] || null;
   const currentStep = steps[selectedStepIndex] || null;
+  const activeExecutionStep =
+    (currentStep && latestExecution?.steps?.find((s) => s.flowStepId === currentStep.id)) ||
+    latestExecution?.steps?.[selectedStepIndex] ||
+    (latestExecution?.steps?.length === 1 ? latestExecution.steps[0] : null);
 
   return (
     <div
