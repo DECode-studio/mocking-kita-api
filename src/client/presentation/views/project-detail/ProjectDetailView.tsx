@@ -17,6 +17,7 @@ import {
   OpenApiModal,
   ProjectEnvironmentsTab,
 } from './components';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 import { Collection } from '@/src/client/domain/collection/entity/collection';
 
@@ -171,6 +172,9 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           <ProjectMetadataCard project={project} />
         </Tabs.Content>
       </Tabs.Root>
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

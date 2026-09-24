@@ -15,6 +15,7 @@ import {
   CreateScenarioFlowModal,
   ImportScenarioFlowModal,
 } from './components';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 interface ScenarioFlowsListViewProps {
   projectId?: string;
@@ -188,6 +189,9 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
         onSuccess={handleImportSuccess}
         onImportFlow={handleImportFlow}
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

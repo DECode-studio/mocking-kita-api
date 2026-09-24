@@ -4,6 +4,7 @@ import React from 'react';
 import { FolderGit2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
 import { EmptyState } from '../../components/shared/EmptyState';
+import { ScrollToTopButton } from '../../components/shared/ScrollToTopButton';
 import { useProjects } from './hook/useProjects';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { ROUTES } from '@/src/core/constants/routes';
@@ -119,6 +120,9 @@ export const ProjectsView: React.FC<{ initialProjects?: Project[] }> = ({ initia
         confirmLabel={PROJECTS_TEXT.DELETE_DIALOG_CONFIRM}
         variant="danger"
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

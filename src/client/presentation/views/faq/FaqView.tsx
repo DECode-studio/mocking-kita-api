@@ -5,6 +5,7 @@ import { useFaq } from './hook/useFaq';
 import { Faq } from '@/src/client/domain/faq/entity/faq';
 import { HelpCircle } from 'lucide-react';
 import { FAQ_SEMANTIC_ID, FAQ_TEXT } from './constant';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 import {
   FaqHero,
   FaqSearchBar,
@@ -76,6 +77,9 @@ export const FaqView: React.FC<FaqViewProps> = ({ initialFaqs }) => {
           </p>
         </div>
       )}
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

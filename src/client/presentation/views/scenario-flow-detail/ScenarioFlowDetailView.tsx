@@ -27,6 +27,7 @@ import {
 } from './components';
 import { ROUTES } from '@/src/core/constants/routes';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 interface ScenarioFlowDetailViewProps {
   projectId?: string;
@@ -343,6 +344,9 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         environments={environments}
         onSave={handleUpdateFlow}
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
   RequestScenarioBodyCard,
   RequestScenarioEditorFooter,
 } from './components';
+import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 interface RequestScenarioEditorViewProps {
   projectId: string;
@@ -139,6 +140,9 @@ export const RequestScenarioEditorView: React.FC<RequestScenarioEditorViewProps>
         isSaving={isSaving}
         onCancel={handleCancel}
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </form>
   );
 };

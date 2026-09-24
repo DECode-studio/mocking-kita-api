@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAdminAccounts } from './hook/useAdminAccounts';
 import { ConfirmDialog } from '../../components/shared/ConfirmDialog';
+import { ScrollToTopButton } from '../../components/shared/ScrollToTopButton';
 import { Plus, Shield, User, RefreshCw, AlertCircle, Search } from 'lucide-react';
 import { ROLES_LIST } from '@/src/core/constants/roles';
 import { AccountsSearchFilter, AccountFormModal, AccountListItem } from './components';
@@ -183,6 +184,9 @@ export const AccountsAdminView: React.FC = () => {
         cancelLabel={ADMIN_ACCOUNTS_TEXT.CANCEL}
         variant="danger"
       />
+
+      {/* Scroll to Top */}
+      <ScrollToTopButton />
     </div>
   );
 };
