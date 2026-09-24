@@ -78,6 +78,8 @@ export const SCENARIO_FLOW_DETAIL_TEXT = {
 
   // Step Card
   STEP_CARD_RUNNING: 'RUNNING',
+  STEP_CARD_RUN_BTN: 'Run Step',
+  STEP_CARD_RUN_TOOLTIP: 'Run this step only and inspect isolated execution result',
   STEP_CARD_ENABLED: 'Enabled',
   STEP_CARD_DISABLED: 'Disabled',
   STEP_CARD_LOCAL_ONLY: 'LOCAL ONLY',

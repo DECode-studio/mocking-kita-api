@@ -13,6 +13,7 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  Play,
 } from 'lucide-react';
 import {
   ScenarioFlowStep,
@@ -29,6 +30,7 @@ interface StepCardProps {
   totalSteps: number;
   isSelected?: boolean;
   isRunning?: boolean;
+  isRunningStep?: boolean;
   executionStep?: ScenarioFlowExecutionStep | null;
   onSelect?: () => void;
   onDoubleClick?: () => void;
@@ -37,6 +39,7 @@ interface StepCardProps {
   onToggleEnabled: (step: ScenarioFlowStep) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onRunStep?: (step: ScenarioFlowStep) => void;
 }
 
 const METHOD_COLORS: Record<string, string> = {
@@ -53,6 +56,7 @@ export const StepCard: React.FC<StepCardProps> = ({
   totalSteps,
   isSelected,
   isRunning,
+  isRunningStep,
   executionStep,
   onSelect,
   onDoubleClick,
@@ -61,6 +65,7 @@ export const StepCard: React.FC<StepCardProps> = ({
   onToggleEnabled,
   onMoveUp,
   onMoveDown,
+  onRunStep,
 }) => {
   const method = (step.methodOverride || step.api?.methodRequest || 'GET').toUpperCase();
   const path = step.pathOverride || step.api?.path || '';
@@ -69,11 +74,13 @@ export const StepCard: React.FC<StepCardProps> = ({
   const extractors = step.extractors || [];
   const assertions = step.assertions || [];
 
+  const isCardRunning = isRunningStep || (isRunning && isRunningStep === undefined);
+
   let borderStyle = isSelected
     ? 'ring-2 ring-purple-500/50 border-purple-500 shadow-md shadow-purple-500/10'
     : '';
 
-  if (isRunning) {
+  if (isCardRunning) {
     borderStyle = 'ring-2 ring-purple-500/60 border-purple-500 shadow-lg shadow-purple-500/20 animate-pulse';
   } else if (!isRunning && executionStep?.status === 'SUCCESS') {
     borderStyle = 'border-emerald-500/60 ring-1 ring-emerald-500/20';
@@ -175,23 +182,46 @@ export const StepCard: React.FC<StepCardProps> = ({
 
         {/* Right action buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {isRunning && (
+          {isCardRunning && !isRunningStep && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-purple-500/20 text-purple-600 dark:text-purple-300 border border-purple-500/40 animate-pulse shadow-xs shadow-purple-500/20">
               <Loader2 className="w-3 h-3 animate-spin text-purple-500" />
               {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUNNING}
             </span>
           )}
-          {!isRunning && executionStep?.status === 'SUCCESS' && (
+          {!isCardRunning && executionStep?.status === 'SUCCESS' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <CheckCircle2 className="w-3 h-3 text-emerald-500" />
               {executionStep.httpStatusCode || 200} OK
             </span>
           )}
-          {!isRunning && executionStep?.status === 'FAILED' && (
+          {!isCardRunning && executionStep?.status === 'FAILED' && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
               <XCircle className="w-3 h-3 text-rose-500" />
               {executionStep.httpStatusCode || 'ERR'}
             </span>
+          )}
+          {onRunStep && (
+            <button
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_RUN_PREFIX(step.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRunStep(step);
+              }}
+              disabled={isRunning}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-all hover:scale-102 active:scale-98 disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-2xs"
+              title={SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUN_TOOLTIP}
+            >
+              {isRunningStep ? (
+                <Loader2 className="w-3 h-3 animate-spin text-purple-600 dark:text-purple-400" />
+              ) : (
+                <Play className="w-3 h-3 fill-purple-600 dark:fill-purple-400 text-purple-600 dark:text-purple-400" />
+              )}
+              <span>
+                {isRunningStep
+                  ? SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUNNING
+                  : SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_RUN_BTN}
+              </span>
+            </button>
           )}
           <button
             id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEP_CARD_TOGGLE_PREFIX(step.id)}

@@ -76,6 +76,8 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     handleToggleStepEnabled,
     handleMoveStep,
     handleRunFlow,
+    handleRunStep,
+    runningStepId,
     handleExport,
     loadScenariosForApi,
     handleSelectExecution,
@@ -122,7 +124,11 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   }
 
   const steps = flow.steps || [];
-  const activeExecutionStep = latestExecution?.steps?.[selectedStepIndex] || null;
+  const currentStep = steps[selectedStepIndex] || null;
+  const activeExecutionStep =
+    (currentStep && latestExecution?.steps?.find((s) => s.flowStepId === currentStep.id)) ||
+    latestExecution?.steps?.[selectedStepIndex] ||
+    (latestExecution?.steps?.length === 1 ? latestExecution.steps[0] : null);
 
   return (
     <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CONTAINER} className="space-y-6">
@@ -160,6 +166,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
             selectedStepIndex={selectedStepIndex}
             latestExecution={latestExecution}
             isRunning={isRunning}
+            runningStepId={runningStepId}
             isInspectorOpen={isInspectorOpen}
             onPositionChange={updateStepPosition}
             onSelectStep={setSelectedStepIndex}
@@ -175,6 +182,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
             }}
             onDeleteStep={handleDeleteStep}
             onToggleStepEnabled={handleToggleStepEnabled}
+            onRunStep={(step) => handleRunStep(step)}
           />
         </div>
       ) : (
@@ -228,30 +236,39 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
               </div>
             ) : (
               <div className="space-y-3">
-                {steps.map((step, idx) => (
-                  <StepCard
-                    key={step.id}
-                    step={step}
-                    index={idx}
-                    totalSteps={steps.length}
-                    isSelected={selectedStepIndex === idx}
-                    isRunning={isRunning}
-                    executionStep={latestExecution?.steps?.[idx] || null}
-                    onSelect={() => setSelectedStepIndex(idx)}
-                    onDoubleClick={() => {
-                      setSelectedStepIndex(idx);
-                      setIsInspectorOpen(true);
-                    }}
-                    onEdit={(s) => {
-                      setEditingStep(s);
-                      setIsAddStepModalOpen(true);
-                    }}
-                    onDelete={handleDeleteStep}
-                    onToggleEnabled={handleToggleStepEnabled}
-                    onMoveUp={() => handleMoveStep(idx, 'up')}
-                    onMoveDown={() => handleMoveStep(idx, 'down')}
-                  />
-                ))}
+                {steps.map((step, idx) => {
+                  const execStep =
+                    latestExecution?.steps?.find((s) => s.flowStepId === step.id) ||
+                    (latestExecution?.steps?.length === steps.length ? latestExecution?.steps?.[idx] : null) ||
+                    null;
+
+                  return (
+                    <StepCard
+                      key={step.id}
+                      step={step}
+                      index={idx}
+                      totalSteps={steps.length}
+                      isSelected={selectedStepIndex === idx}
+                      isRunning={isRunning}
+                      isRunningStep={runningStepId === step.id}
+                      executionStep={execStep}
+                      onSelect={() => setSelectedStepIndex(idx)}
+                      onDoubleClick={() => {
+                        setSelectedStepIndex(idx);
+                        setIsInspectorOpen(true);
+                      }}
+                      onEdit={(s) => {
+                        setEditingStep(s);
+                        setIsAddStepModalOpen(true);
+                      }}
+                      onDelete={handleDeleteStep}
+                      onToggleEnabled={handleToggleStepEnabled}
+                      onMoveUp={() => handleMoveStep(idx, 'up')}
+                      onMoveDown={() => handleMoveStep(idx, 'down')}
+                      onRunStep={(s) => handleRunStep(s, idx)}
+                    />
+                  );
+                })}
               </div>
             )}
           </div>

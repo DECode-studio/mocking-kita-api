@@ -651,7 +651,14 @@ export async function executeScenarioFlow(
     recordedEnvId = firstBaseUrlEnv ? firstBaseUrlEnv.id : projectEnvironments[0]?.id || null;
   }
 
-  const enabledSteps = flow.steps.filter((s) => s.enabled);
+  let stepsToRun = flow.steps.filter((s) => s.enabled);
+  if (options.stepId) {
+    const singleStep = flow.steps.find((s) => s.id === options.stepId);
+    if (!singleStep) {
+      throw new Error(`Step with ID '${options.stepId}' not found in scenario flow.`);
+    }
+    stepsToRun = [singleStep];
+  }
 
   // Extract variables from all active project environments for the target stage
   let activeEnvVars: Record<string, string> = {};
@@ -742,7 +749,7 @@ export async function executeScenarioFlow(
     flowId: flow.id,
     environmentId: recordedEnvId || null,
     targetMode: options.targetMode || 'LIVE',
-    totalSteps: enabledSteps.length,
+    totalSteps: stepsToRun.length,
     initialVariables: currentVariables,
     executedBy: options.executedBy || 'User',
   });
@@ -754,8 +761,8 @@ export async function executeScenarioFlow(
   let errorSummary: string | null = null;
   const executionStartTime = Date.now();
 
-  for (let i = 0; i < enabledSteps.length; i++) {
-    const step = enabledSteps[i];
+  for (let i = 0; i < stepsToRun.length; i++) {
+    const step = stepsToRun[i];
 
     // If flow stopped due to previous failure
     if (hasFailed && flow.stopOnFailure && !step.continueOnError) {
