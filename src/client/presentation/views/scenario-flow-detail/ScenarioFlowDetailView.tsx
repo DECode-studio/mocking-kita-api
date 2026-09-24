@@ -52,6 +52,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     elapsedMs,
     runningProgress,
     latestExecution,
+    batchExecutions,
     selectedStepIndex,
     setSelectedStepIndex,
     viewMode,
@@ -264,6 +265,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
 
             <FlowExecutionPanel
               execution={latestExecution}
+              executions={batchExecutions}
               flowName={flow.name}
               selectedStepIndex={selectedStepIndex}
               isRunning={isRunning}
@@ -282,6 +284,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         onClose={() => setIsInspectorOpen(false)}
         flow={flow}
         latestExecution={latestExecution}
+        batchExecutions={batchExecutions}
         selectedStepIndex={selectedStepIndex}
         isRunning={isRunning}
         elapsedMs={elapsedMs}

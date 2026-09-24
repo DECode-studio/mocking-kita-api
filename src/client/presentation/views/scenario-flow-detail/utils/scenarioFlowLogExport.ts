@@ -2,9 +2,9 @@ import { ScenarioFlowExecution } from '@/src/client/domain/scenario-flow/entity/
 import { formatDate } from '@/src/core/utils/date';
 
 /**
- * Generates a clean Markdown (.md) report of a Scenario Flow Execution
+ * Generates a clean Markdown (.md) report of a single Scenario Flow Execution
  */
-export function generateExecutionLogMarkdown(
+function generateSingleExecutionLogMarkdown(
   execution: ScenarioFlowExecution,
   flowName?: string
 ): string {
@@ -110,9 +110,161 @@ export function generateExecutionLogMarkdown(
 }
 
 /**
- * Generates a clean CSV (.csv) report of a Scenario Flow Execution
+ * Generates a comprehensive Multi-Run Markdown (.md) report
  */
-export function generateExecutionLogCsv(
+function generateMultiRunLogMarkdown(
+  executions: ScenarioFlowExecution[],
+  flowName?: string
+): string {
+  const totalRuns = executions.length;
+  const title = flowName || 'Scenario Flow';
+  const passedRuns = executions.filter((e) => e.status === 'SUCCESS').length;
+  const failedRuns = totalRuns - passedRuns;
+  const passRate = Math.round((passedRuns / totalRuns) * 100);
+  const totalDurationMs = executions.reduce((sum, e) => sum + (e.durationMs || 0), 0);
+  const firstExec = executions[0];
+  const envName = firstExec?.environment?.name || 'Default';
+  const targetMode = firstExec?.targetMode || 'LIVE';
+
+  let md = `# 🧪 Multi-Run Test Execution Report: ${title} (${totalRuns} Iterations)\n\n`;
+
+  // Summary Metadata Table
+  md += `## 📊 Multi-Run Executive Summary\n\n`;
+  md += `| Attribute | Details |\n`;
+  md += `| :--- | :--- |\n`;
+  md += `| **Overall Result** | ${failedRuns === 0 ? '✅ **ALL RUNS PASSED**' : `⚠️ **${passedRuns}/${totalRuns} PASSED** (${failedRuns} failed)`} |\n`;
+  md += `| **Total Iterations** | **${totalRuns} runs** |\n`;
+  md += `| **Pass Rate** | **${passRate}%** (${passedRuns} passed, ${failedRuns} failed) |\n`;
+  md += `| **Date** | ${formatDate(firstExec?.createdAt || new Date().toISOString())} |\n`;
+  md += `| **Environment** | ${envName} (${targetMode}) |\n`;
+  md += `| **Executed By** | ${firstExec?.executedBy || 'User'} |\n`;
+  md += `| **Total Duration** | ${totalDurationMs} ms (avg ~${Math.round(totalDurationMs / totalRuns)} ms/run) |\n\n`;
+
+  // Multi-Run Comparison Table
+  md += `### 📈 Iteration Runs Summary Table\n\n`;
+  md += `| Run # | Status | Steps Passed / Total | Duration | Execution ID |\n`;
+  md += `| :-: | :--- | :-: | :-: | :--- |\n`;
+  executions.forEach((exec, idx) => {
+    const isSuccess = exec.status === 'SUCCESS';
+    const statusIcon = isSuccess ? '✅ PASSED' : '❌ FAILED';
+    md += `| **Run #${idx + 1}** | ${statusIcon} | **${exec.passedSteps || 0}** / ${exec.totalSteps || (exec.steps?.length ?? 0)} | ${exec.durationMs || 0}ms | \`${exec.id}\` |\n`;
+  });
+
+  md += `\n---\n\n`;
+
+  // Detailed Step Breakdown for Each Run
+  md += `## 🔍 Iteration Breakdown Details\n\n`;
+
+  executions.forEach((exec, idx) => {
+    const isSuccess = exec.status === 'SUCCESS';
+    const steps = exec.steps || [];
+
+    md += `### 🏃 Run #${idx + 1} of ${totalRuns} (${isSuccess ? '✅ PASSED' : '❌ FAILED'})\n\n`;
+    md += `- **Execution ID**: \`${exec.id}\`\n`;
+    md += `- **Status**: ${isSuccess ? '✅ PASSED' : '❌ FAILED'}\n`;
+    md += `- **Duration**: ${exec.durationMs || 0} ms\n`;
+    md += `- **Steps Passed**: **${exec.passedSteps || 0}** / ${exec.totalSteps || steps.length}\n`;
+
+    if (exec.errorSummary) {
+      md += `> ⚠️ **Error Summary:** ${exec.errorSummary}\n\n`;
+    }
+
+    // Steps Overview for this run
+    md += `\n#### 📋 Steps Overview (Run #${idx + 1})\n\n`;
+    md += `| # | Step Name | Method | Endpoint URL | Status | HTTP Code | Duration |\n`;
+    md += `| :-: | :--- | :--- | :--- | :-: | :-: | :-: |\n`;
+
+    for (const step of steps) {
+      const statusIcon = step.status === 'SUCCESS' ? '✅' : step.status === 'SKIPPED' ? '⏭️' : '❌';
+      const code = step.httpStatusCode ? `\`${step.httpStatusCode}\`` : '-';
+      md += `| ${step.stepOrder} | ${step.stepName} | \`${step.method}\` | \`${step.url}\` | ${statusIcon} ${step.status} | ${code} | ${step.durationMs}ms |\n`;
+    }
+
+    md += `\n#### 🔍 Step Details Breakdown (Run #${idx + 1})\n\n`;
+
+    for (const step of steps) {
+      const statusIcon = step.status === 'SUCCESS' ? '✅ SUCCESS' : step.status === 'SKIPPED' ? '⏭️ SKIPPED' : '❌ FAILED';
+      md += `##### Step ${step.stepOrder}: ${step.stepName}\n\n`;
+      md += `- **Endpoint**: \`${step.method} ${step.url}\`\n`;
+      md += `- **Result**: ${statusIcon} (HTTP ${step.httpStatusCode || 'N/A'})\n`;
+      md += `- **Execution Time**: ${step.durationMs}ms\n`;
+
+      if (step.errorMessage) {
+        md += `- **Error**: \`${step.errorMessage}\`\n`;
+      }
+
+      if (step.requestSnapshot) {
+        const req = step.requestSnapshot as any;
+        md += `\n###### 📤 Request Sent\n`;
+        if (req.headers && Object.keys(req.headers).length > 0) {
+          md += `**Headers:**\n\`\`\`json\n${JSON.stringify(req.headers, null, 2)}\n\`\`\`\n`;
+        }
+        if (req.body !== undefined && req.body !== null) {
+          md += `**Body:**\n\`\`\`json\n${typeof req.body === 'object' ? JSON.stringify(req.body, null, 2) : req.body}\n\`\`\`\n`;
+        }
+      }
+
+      if (step.responseSnapshot) {
+        const resp = step.responseSnapshot as any;
+        md += `\n###### 📥 Response Received\n`;
+        if (resp.body !== undefined && resp.body !== null) {
+          md += `\`\`\`json\n${typeof resp.body === 'object' ? JSON.stringify(resp.body, null, 2) : resp.body}\n\`\`\`\n`;
+        }
+      }
+
+      const assertions = (step.assertionResults as any[]) || [];
+      if (assertions.length > 0) {
+        md += `\n###### 🛡️ Assertions (${assertions.filter((a) => a.passed).length}/${assertions.length} passed)\n\n`;
+        md += `| Rule | Operator | Expected | Actual | Result |\n`;
+        md += `| :--- | :--- | :--- | :--- | :--- |\n`;
+        for (const a of assertions) {
+          const passIcon = a.passed ? '✅ Pass' : '❌ Fail';
+          const ruleName = a.rule?.type + (a.rule?.path ? ` (${a.rule.path})` : '');
+          md += `| \`${ruleName}\` | \`${a.rule?.operator}\` | \`${JSON.stringify(a.rule?.expected)}\` | \`${JSON.stringify(a.actual)}\` | ${passIcon} |\n`;
+        }
+      }
+
+      const extracted = (step.extractedVariables as Record<string, any>) || {};
+      if (Object.keys(extracted).length > 0) {
+        md += `\n###### 🔑 Extracted Variables\n\n`;
+        md += `| Variable | Extracted Value |\n`;
+        md += `| :--- | :--- |\n`;
+        for (const [k, v] of Object.entries(extracted)) {
+          md += `| \`${k}\` | \`${typeof v === 'object' ? JSON.stringify(v) : v}\` |\n`;
+        }
+      }
+
+      md += `\n`;
+    }
+
+    md += `---\n\n`;
+  });
+
+  md += `*Report automatically generated by Mock API Studio on ${new Date().toISOString()}*\n`;
+  return md;
+}
+
+/**
+ * Generates a clean Markdown (.md) report of a Scenario Flow Execution or Multi-Run Executions
+ */
+export function generateExecutionLogMarkdown(
+  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
+  flowName?: string
+): string {
+  if (Array.isArray(executionOrList)) {
+    if (executionOrList.length === 0) return '';
+    if (executionOrList.length === 1) {
+      return generateSingleExecutionLogMarkdown(executionOrList[0], flowName);
+    }
+    return generateMultiRunLogMarkdown(executionOrList, flowName);
+  }
+  return generateSingleExecutionLogMarkdown(executionOrList, flowName);
+}
+
+/**
+ * Generates a clean CSV (.csv) report of a single Scenario Flow Execution
+ */
+function generateSingleExecutionLogCsv(
   execution: ScenarioFlowExecution,
   _flowName?: string
 ): string {
@@ -170,6 +322,90 @@ export function generateExecutionLogCsv(
 }
 
 /**
+ * Generates a clean CSV (.csv) report for Multi-Run executions
+ */
+function generateMultiRunLogCsv(
+  executions: ScenarioFlowExecution[],
+  _flowName?: string
+): string {
+  const headers = [
+    'Run #',
+    'Execution ID',
+    'Step Order',
+    'Step Name',
+    'Method',
+    'Endpoint URL',
+    'Status',
+    'HTTP Status Code',
+    'Duration (ms)',
+    'Error Message',
+    'Assertions Total',
+    'Assertions Passed',
+    'Assertions Failed',
+    'Extracted Variables',
+  ];
+
+  const escapeCsv = (val: any): string => {
+    if (val === undefined || val === null) return '""';
+    const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
+  const rows: string[] = [];
+  rows.push(headers.map((h) => `"${h}"`).join(','));
+
+  executions.forEach((exec, execIdx) => {
+    const runLabel = `Run #${execIdx + 1}`;
+    const steps = exec.steps || [];
+
+    for (const step of steps) {
+      const assertions = (step.assertionResults as any[]) || [];
+      const passedAssertions = assertions.filter((a) => a.passed).length;
+      const failedAssertions = assertions.length - passedAssertions;
+      const extracted = step.extractedVariables ? JSON.stringify(step.extractedVariables) : '';
+
+      const row = [
+        escapeCsv(runLabel),
+        escapeCsv(exec.id),
+        escapeCsv(step.stepOrder),
+        escapeCsv(step.stepName),
+        escapeCsv(step.method),
+        escapeCsv(step.url),
+        escapeCsv(step.status),
+        escapeCsv(step.httpStatusCode || ''),
+        escapeCsv(step.durationMs || 0),
+        escapeCsv(step.errorMessage || ''),
+        escapeCsv(assertions.length),
+        escapeCsv(passedAssertions),
+        escapeCsv(failedAssertions),
+        escapeCsv(extracted),
+      ];
+
+      rows.push(row.join(','));
+    }
+  });
+
+  return rows.join('\r\n');
+}
+
+/**
+ * Generates a clean CSV (.csv) report of a Scenario Flow Execution or Multi-Run Executions
+ */
+export function generateExecutionLogCsv(
+  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
+  flowName?: string
+): string {
+  if (Array.isArray(executionOrList)) {
+    if (executionOrList.length === 0) return '';
+    if (executionOrList.length === 1) {
+      return generateSingleExecutionLogCsv(executionOrList[0], flowName);
+    }
+    return generateMultiRunLogCsv(executionOrList, flowName);
+  }
+  return generateSingleExecutionLogCsv(executionOrList, flowName);
+}
+
+/**
  * Client-side browser download helper
  */
 export function downloadFile(filename: string, content: string, mimeType: string) {
@@ -188,24 +424,40 @@ export function downloadFile(filename: string, content: string, mimeType: string
  * 1-Click Export to Markdown (.md)
  */
 export function exportExecutionToMarkdown(
-  execution: ScenarioFlowExecution,
+  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
   flowName?: string
 ) {
-  const content = generateExecutionLogMarkdown(execution, flowName);
+  const executions = Array.isArray(executionOrList) ? executionOrList : [executionOrList];
+  if (executions.length === 0) return;
+
+  const content = generateExecutionLogMarkdown(executionOrList, flowName);
   const safeName = (flowName || 'scenario-flow').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const timestamp = new Date(execution.createdAt).toISOString().replace(/[:.]/g, '-');
-  downloadFile(`${safeName}-execution-${timestamp}.md`, content, 'text/markdown');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename =
+    executions.length > 1
+      ? `${safeName}-${executions.length}-runs-execution-${timestamp}.md`
+      : `${safeName}-execution-${timestamp}.md`;
+
+  downloadFile(filename, content, 'text/markdown');
 }
 
 /**
  * 1-Click Export to CSV (.csv)
  */
 export function exportExecutionToCsv(
-  execution: ScenarioFlowExecution,
+  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
   flowName?: string
 ) {
-  const content = generateExecutionLogCsv(execution, flowName);
+  const executions = Array.isArray(executionOrList) ? executionOrList : [executionOrList];
+  if (executions.length === 0) return;
+
+  const content = generateExecutionLogCsv(executionOrList, flowName);
   const safeName = (flowName || 'scenario-flow').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const timestamp = new Date(execution.createdAt).toISOString().replace(/[:.]/g, '-');
-  downloadFile(`${safeName}-execution-${timestamp}.csv`, content, 'text/csv');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename =
+    executions.length > 1
+      ? `${safeName}-${executions.length}-runs-execution-${timestamp}.csv`
+      : `${safeName}-execution-${timestamp}.csv`;
+
+  downloadFile(filename, content, 'text/csv');
 }
