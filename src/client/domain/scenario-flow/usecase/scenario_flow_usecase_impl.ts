@@ -82,6 +82,7 @@ export class ScenarioFlowUseCaseImpl implements ScenarioFlowUseCase {
       targetMode?: 'LIVE' | 'MOCK';
       initialVariables?: Record<string, any>;
       executedBy?: string;
+      stepId?: string | null;
     }
   ): Promise<{
     execution: ScenarioFlowExecution;
