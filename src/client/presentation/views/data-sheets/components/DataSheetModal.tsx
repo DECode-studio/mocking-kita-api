@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Table2, X, List, Code2, AlertCircle, Sparkles, Upload, CopyCheck, Trash2 } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { Project } from '@/src/client/domain/project/entity/project';
-import { DATA_SHEET_CATEGORIES, DATA_SHEET_SEMANTIC_ID } from '../constant';
+import { DATA_SHEET_CATEGORIES, DATA_SHEET_SEMANTIC_ID, DATA_SHEET_TEXT } from '../constant';
+import { useDataSheetModal } from '../hook';
 
 interface DataSheetModalProps {
   isOpen: boolean;
@@ -34,238 +35,42 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
   defaultProjectId,
   onSave,
 }) => {
-  const [projectId, setProjectId] = useState<string>('');
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [category, setCategory] = useState('General');
-  const [description, setDescription] = useState('');
-  const [format, setFormat] = useState<'LIST' | 'TABLE'>('LIST');
-
-  // Input modes
-  const [inputMode, setInputMode] = useState<'lines' | 'json'>('lines');
-  const [linesText, setLinesText] = useState('');
-  const [jsonText, setJsonText] = useState('[]');
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (editingSheet) {
-      setProjectId(editingSheet.projectId || '');
-      setName(editingSheet.name);
-      setCode(editingSheet.code);
-      setCategory(editingSheet.category || 'General');
-      setDescription(editingSheet.description || '');
-      setFormat(editingSheet.format);
-
-      if (Array.isArray(editingSheet.data)) {
-        if (editingSheet.format === 'LIST') {
-          setLinesText(editingSheet.data.map((d) => (typeof d === 'string' ? d : JSON.stringify(d))).join('\n'));
-        }
-        setJsonText(JSON.stringify(editingSheet.data, null, 2));
-      } else {
-        setLinesText('');
-        setJsonText('[]');
-      }
-    } else {
-      setProjectId(defaultProjectId && defaultProjectId !== 'ALL' ? defaultProjectId : '');
-      setName('');
-      setCode('');
-      setCategory('General');
-      setDescription('');
-      setFormat('LIST');
-      setLinesText('');
-      setJsonText('[]');
-    }
-    setErrorMessage(null);
-  }, [editingSheet, defaultProjectId, isOpen]);
-
-  // Auto slugify name into code if code wasn't manually edited yet
-  const handleNameChange = (val: string) => {
-    setName(val);
-    if (!editingSheet && (!code || code === slugify(name))) {
-      setCode(slugify(val));
-    }
-  };
-
-  const slugify = (text: string) => {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9_]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-  };
-
-  const getParsedData = (): any[] => {
-    if (inputMode === 'lines' && format === 'LIST') {
-      return linesText
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-    } else {
-      const parsed = JSON.parse(jsonText.trim() || '[]');
-      if (!Array.isArray(parsed)) {
-        throw new Error('JSON data must be an array (e.g. ["a", "b"] or [{"id": 1}])');
-      }
-      return parsed;
-    }
-  };
-
-  const currentCount = (() => {
-    try {
-      return getParsedData().length;
-    } catch {
-      return 0;
-    }
-  })();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = (event.target?.result as string) || '';
-      try {
-        if (file.name.endsWith('.json') || content.trim().startsWith('[')) {
-          const parsed = JSON.parse(content.trim());
-          if (!Array.isArray(parsed)) {
-            throw new Error('JSON file must contain an array');
-          }
-          if (format === 'LIST') {
-            setLinesText(parsed.map((x) => (typeof x === 'object' ? JSON.stringify(x) : String(x))).join('\n'));
-          }
-          setJsonText(JSON.stringify(parsed, null, 2));
-        } else {
-          // CSV or TXT line-by-line
-          const rawLines = content.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-          if (format === 'TABLE' && rawLines.length > 0) {
-            const headers = rawLines[0].split(',').map((h) => h.trim().replace(/^["']|["']$/g, ''));
-            const records = rawLines.slice(1).map((line) => {
-              const vals = line.split(',').map((v) => v.trim().replace(/^["']|["']$/g, ''));
-              const row: Record<string, any> = {};
-              headers.forEach((h, i) => {
-                row[h] = vals[i] ?? '';
-              });
-              return row;
-            });
-            setJsonText(JSON.stringify(records, null, 2));
-          } else {
-            setLinesText(rawLines.join('\n'));
-            setJsonText(JSON.stringify(rawLines, null, 2));
-          }
-        }
-        setErrorMessage(null);
-      } catch (err: any) {
-        setErrorMessage(err.message || 'Failed to read file');
-      }
-      if (e.target) e.target.value = '';
-    };
-    reader.readAsText(file);
-  };
-
-  const handleDeduplicate = () => {
-    if (inputMode === 'lines' && format === 'LIST') {
-      const lines = linesText.split('\n').map((l) => l.trim()).filter(Boolean);
-      const unique = Array.from(new Set(lines));
-      const removed = lines.length - unique.length;
-      setLinesText(unique.join('\n'));
-      setJsonText(JSON.stringify(unique, null, 2));
-      if (removed > 0) {
-        setErrorMessage(`Removed ${removed} duplicate ${removed === 1 ? 'entry' : 'entries'}`);
-        setTimeout(() => setErrorMessage(null), 3000);
-      }
-    } else {
-      try {
-        const arr = JSON.parse(jsonText.trim() || '[]');
-        if (!Array.isArray(arr)) return;
-        const seen = new Set<string>();
-        const unique = arr.filter((item) => {
-          const key = typeof item === 'object' ? JSON.stringify(item) : String(item);
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        });
-        const removed = arr.length - unique.length;
-        setJsonText(JSON.stringify(unique, null, 2));
-        if (format === 'LIST') {
-          setLinesText(unique.map((x) => (typeof x === 'object' ? JSON.stringify(x) : String(x))).join('\n'));
-        }
-        if (removed > 0) {
-          setErrorMessage(`Removed ${removed} duplicate ${removed === 1 ? 'entry' : 'entries'}`);
-          setTimeout(() => setErrorMessage(null), 3000);
-        }
-      } catch (err: any) {
-        setErrorMessage(err.message || 'Invalid JSON syntax');
-      }
-    }
-  };
-
-  const handleFormatJson = () => {
-    try {
-      const parsed = JSON.parse(jsonText.trim() || '[]');
-      setJsonText(JSON.stringify(parsed, null, 2));
-      setErrorMessage(null);
-    } catch (err: any) {
-      setErrorMessage('Invalid JSON: ' + err.message);
-    }
-  };
-
-  const handleClearData = () => {
-    setLinesText('');
-    setJsonText('[]');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-
-    const trimmedName = name.trim();
-    const trimmedCode = code.trim().toLowerCase();
-
-    if (!trimmedName) {
-      setErrorMessage('Name is required');
-      return;
-    }
-    if (!trimmedCode) {
-      setErrorMessage('Code/Slug is required');
-      return;
-    }
-    if (!/^[a-z0-9_.-]+$/.test(trimmedCode)) {
-      setErrorMessage('Code can only contain lowercase alphanumeric characters, underscores, dashes, and dots');
-      return;
-    }
-
-    let parsedData: any[] = [];
-    try {
-      parsedData = getParsedData();
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Invalid data format');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onSave({
-        id: editingSheet?.id,
-        projectId: projectId ? projectId : null,
-        name: trimmedName,
-        code: trimmedCode,
-        category: category.trim() || null,
-        description: description.trim() || null,
-        format,
-        data: parsedData,
-        status: editingSheet?.status ?? true,
-      });
-      onClose();
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to save data sheet');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    projectId,
+    setProjectId,
+    name,
+    code,
+    setCode,
+    category,
+    setCategory,
+    description,
+    setDescription,
+    format,
+    inputMode,
+    linesText,
+    setLinesText,
+    jsonText,
+    setJsonText,
+    isSubmitting,
+    errorMessage,
+    fileInputRef,
+    currentCount,
+    handleNameChange,
+    handleFormatChange,
+    handleSwitchToJsonMode,
+    handleSwitchToLinesMode,
+    handleFileUpload,
+    handleDeduplicate,
+    handleFormatJson,
+    handleClearData,
+    handleSubmit,
+  } = useDataSheetModal({
+    isOpen,
+    editingSheet,
+    defaultProjectId,
+    onSave,
+    onClose,
+  });
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -283,16 +88,17 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
               </div>
               <div>
                 <Dialog.Title className="text-base font-bold text-slate-900 dark:text-white">
-                  {editingSheet ? 'Edit Data Sheet' : 'Create Data Sheet'}
+                  {editingSheet ? DATA_SHEET_TEXT.MODAL_TITLE_EDIT : DATA_SHEET_TEXT.MODAL_TITLE_CREATE}
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400">
-                  Store an array dataset to use as dynamic parameters in flows and scenarios
+                  {DATA_SHEET_TEXT.MODAL_SUBTITLE}
                 </Dialog.Description>
               </div>
             </div>
             <button
+              id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_CLOSE}
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -310,14 +116,15 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Project Scope
+                  {DATA_SHEET_TEXT.PROJECT_LABEL}
                 </label>
                 <select
+                  id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_SELECT_PROJECT}
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
-                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
                 >
-                  <option value="">Global (All Projects)</option>
+                  <option value="">{DATA_SHEET_TEXT.GLOBAL_SHEET}</option>
                   {projects.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
@@ -328,21 +135,16 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Dataset Format
+                  {DATA_SHEET_TEXT.FORMAT_LABEL}
                 </label>
                 <select
+                  id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_SELECT_FORMAT}
                   value={format}
-                  onChange={(e) => {
-                    const nextFormat = e.target.value as 'LIST' | 'TABLE';
-                    setFormat(nextFormat);
-                    if (nextFormat === 'TABLE') {
-                      setInputMode('json');
-                    }
-                  }}
-                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  onChange={(e) => handleFormatChange(e.target.value as 'LIST' | 'TABLE')}
+                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
                 >
-                  <option value="LIST">Simple List (1D Array of values)</option>
-                  <option value="TABLE">Table Records (Array of objects)</option>
+                  <option value="LIST">{DATA_SHEET_TEXT.FORMAT_LIST}</option>
+                  <option value="TABLE">{DATA_SHEET_TEXT.FORMAT_TABLE}</option>
                 </select>
               </div>
             </div>
@@ -351,12 +153,13 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Sheet Name <span className="text-rose-500">*</span>
+                  {DATA_SHEET_TEXT.NAME_LABEL} <span className="text-rose-500">*</span>
                 </label>
                 <input
+                  id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_INPUT_NAME}
                   type="text"
                   required
-                  placeholder="e.g. Customer Emails, Phone Numbers"
+                  placeholder={DATA_SHEET_TEXT.NAME_PLACEHOLDER}
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -365,13 +168,14 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Code / Slug <span className="text-rose-500">*</span>
+                  {DATA_SHEET_TEXT.CODE_LABEL} <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_INPUT_CODE}
                     type="text"
                     required
-                    placeholder="e.g. emails, phone_numbers"
+                    placeholder={DATA_SHEET_TEXT.CODE_PLACEHOLDER}
                     value={code}
                     onChange={(e) => setCode(e.target.value.toLowerCase().trim())}
                     className="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -384,12 +188,13 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Category
+                  {DATA_SHEET_TEXT.CATEGORY_LABEL}
                 </label>
                 <input
+                  id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_SELECT_CATEGORY}
                   type="text"
                   list="category-suggestions"
-                  placeholder="e.g. Contact, Authentication, Payment"
+                  placeholder={DATA_SHEET_TEXT.CATEGORY_PLACEHOLDER}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -403,11 +208,12 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Description
+                  {DATA_SHEET_TEXT.DESC_LABEL}
                 </label>
                 <input
+                  id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_INPUT_DESC}
                   type="text"
-                  placeholder="Brief context about this dataset..."
+                  placeholder={DATA_SHEET_TEXT.DESC_PLACEHOLDER}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -420,11 +226,11 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
               <div className="flex items-center gap-2 p-2.5 rounded-lg bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800 text-xs text-purple-700 dark:text-purple-300">
                 <Sparkles className="w-4 h-4 shrink-0 text-purple-500" />
                 <span>
-                  Variable Syntax:{' '}
+                  {DATA_SHEET_TEXT.VARIABLE_SYNTAX_LABEL}{' '}
                   <code className="font-bold font-mono">
                     {format === 'TABLE' ? `{{datasheet.${code}.random.<property>}}` : `{{datasheet.${code}.random}}`}
                   </code>{' '}
-                  or{' '}
+                  {DATA_SHEET_TEXT.OR_LABEL}{' '}
                   <code className="font-bold font-mono">{`{{datasheet.${code}[0]}}`}</code>
                 </span>
               </div>
@@ -433,6 +239,7 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
             {/* Data Editor Tabs */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <input
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_FILE_INPUT}
                 ref={fileInputRef}
                 type="file"
                 accept=".csv,.txt,.json"
@@ -442,7 +249,7 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Data Values <span className="text-slate-400 font-normal">({currentCount} items)</span>
+                  {DATA_SHEET_TEXT.DATA_VALUES_LABEL} <span className="text-slate-400 font-normal">({DATA_SHEET_TEXT.ELEMENTS_COUNT(currentCount)})</span>
                 </label>
 
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -450,75 +257,74 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
                   {format === 'LIST' && (
                     <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg">
                       <button
+                        id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_TAB_LINES}
                         type="button"
-                        onClick={() => setInputMode('lines')}
-                        className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1 ${
+                        onClick={handleSwitchToLinesMode}
+                        className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1 cursor-pointer ${
                           inputMode === 'lines'
                             ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-xs'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                         }`}
                       >
-                        <List className="w-3 h-3" /> One per Line
+                        <List className="w-3 h-3" /> {DATA_SHEET_TEXT.TAB_LINES}
                       </button>
                       <button
+                        id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_TAB_JSON}
                         type="button"
-                        onClick={() => {
-                          const lines = linesText
-                            .split('\n')
-                            .map((l) => l.trim())
-                            .filter(Boolean);
-                          setJsonText(JSON.stringify(lines, null, 2));
-                          setInputMode('json');
-                        }}
-                        className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1 ${
+                        onClick={handleSwitchToJsonMode}
+                        className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors flex items-center gap-1 cursor-pointer ${
                           inputMode === 'json'
                             ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-xs'
                             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                         }`}
                       >
-                        <Code2 className="w-3 h-3" /> JSON Array
+                        <Code2 className="w-3 h-3" /> {DATA_SHEET_TEXT.TAB_JSON}
                       </button>
                     </div>
                   )}
 
                   {/* Utility Actions */}
                   <button
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_UPLOAD}
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors"
-                    title="Import data from CSV, TXT, or JSON file"
+                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors cursor-pointer"
+                    title={DATA_SHEET_TEXT.FILE_UPLOAD_TOOLTIP}
                   >
                     <Upload className="w-3 h-3 text-purple-500" />
-                    <span>Import</span>
+                    <span>{DATA_SHEET_TEXT.BTN_UPLOAD_FILE}</span>
                   </button>
 
                   <button
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_DEDUPLICATE}
                     type="button"
                     onClick={handleDeduplicate}
-                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors"
-                    title="Remove duplicate values"
+                    className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors cursor-pointer"
+                    title={DATA_SHEET_TEXT.DEDUPLICATE_TOOLTIP}
                   >
                     <CopyCheck className="w-3 h-3 text-emerald-500" />
-                    <span>Deduplicate</span>
+                    <span>{DATA_SHEET_TEXT.DEDUPLICATE_BTN}</span>
                   </button>
 
                   {inputMode === 'json' && (
                     <button
+                      id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_FORMAT_JSON}
                       type="button"
                       onClick={handleFormatJson}
-                      className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors"
-                      title="Prettify JSON syntax"
+                      className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors cursor-pointer"
+                      title={DATA_SHEET_TEXT.FORMAT_JSON_TOOLTIP}
                     >
                       <Sparkles className="w-3 h-3 text-amber-500" />
-                      <span>Format</span>
+                      <span>{DATA_SHEET_TEXT.FORMAT_JSON_BTN}</span>
                     </button>
                   )}
 
                   <button
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_CLEAR}
                     type="button"
                     onClick={handleClearData}
-                    className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                    title="Clear all data"
+                    className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                    title={DATA_SHEET_TEXT.CLEAR_DATA_TOOLTIP}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -528,31 +334,29 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
               {inputMode === 'lines' && format === 'LIST' ? (
                 <div>
                   <textarea
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_TEXTAREA_LINES}
                     rows={7}
-                    placeholder={`Paste or enter items one per line, e.g.:\nasdas@asdas.com\ncsddvs@zdfa.com\ndaasda@zsdasf.vom`}
+                    placeholder={DATA_SHEET_TEXT.LINES_PLACEHOLDER_LIST}
                     value={linesText}
                     onChange={(e) => setLinesText(e.target.value)}
                     className="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 leading-relaxed"
                   />
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Enter one value per line. Empty lines are automatically ignored.
+                    {DATA_SHEET_TEXT.LINES_HINT}
                   </p>
                 </div>
               ) : (
                 <div>
                   <textarea
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_TEXTAREA_JSON}
                     rows={7}
-                    placeholder={
-                      format === 'TABLE'
-                        ? '[\n  { "phone": "08123456789", "name": "Budi" },\n  { "phone": "08987654321", "name": "Ani" }\n]'
-                        : '[\n  "asdas@asdas.com",\n  "csddvs@zdfa.com"\n]'
-                    }
+                    placeholder={format === 'TABLE' ? DATA_SHEET_TEXT.LINES_PLACEHOLDER_TABLE : DATA_SHEET_TEXT.JSON_PLACEHOLDER}
                     value={jsonText}
                     onChange={(e) => setJsonText(e.target.value)}
                     className="w-full text-xs font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 leading-relaxed"
                   />
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Must be a valid JSON array format.
+                    {DATA_SHEET_TEXT.JSON_HINT}
                   </p>
                 </div>
               )}
@@ -561,19 +365,21 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
             {/* Footer Buttons */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_CANCEL}
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="text-xs px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="text-xs px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                Cancel
+                {DATA_SHEET_TEXT.BTN_CANCEL}
               </button>
               <button
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_BTN_SUBMIT}
                 type="submit"
                 disabled={isSubmitting}
-                className="text-xs font-semibold px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                className="text-xs font-semibold px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white shadow-xs transition-colors flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
-                {isSubmitting ? 'Saving...' : editingSheet ? 'Update Sheet' : 'Create Sheet'}
+                {isSubmitting ? DATA_SHEET_TEXT.BTN_SAVING : DATA_SHEET_TEXT.BTN_SAVE}
               </button>
             </div>
           </form>

@@ -4,7 +4,7 @@ import React from 'react';
 import { Table2, Edit2, Trash2, FolderGit2, Hash, Layers, Eye } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { DataSheetVariableTagBadge } from './DataSheetVariableTagBadge';
-import { DATA_SHEET_SEMANTIC_ID } from '../constant';
+import { DATA_SHEET_SEMANTIC_ID, DATA_SHEET_TEXT } from '../constant';
 
 interface DataSheetCardProps {
   sheet: DataSheet;
@@ -47,7 +47,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-              {sheet.description || 'No description provided'}
+              {sheet.description || DATA_SHEET_TEXT.NO_DESCRIPTION}
             </p>
           </div>
         </div>
@@ -58,20 +58,20 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
             id={DATA_SHEET_SEMANTIC_ID.CARD_TOGGLE_PREFIX(sheet.id)}
             type="button"
             onClick={() => onToggleStatus(sheet.id)}
-            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
               sheet.status
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
                 : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
             }`}
           >
-            {sheet.status ? 'Active' : 'Inactive'}
+            {sheet.status ? DATA_SHEET_TEXT.STATUS_ACTIVE : DATA_SHEET_TEXT.STATUS_INACTIVE}
           </button>
           <button
             id={DATA_SHEET_SEMANTIC_ID.CARD_PREVIEW_BTN_PREFIX(sheet.id)}
             type="button"
             onClick={() => onPreview(sheet)}
-            className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors"
-            title="Inspect Data Sheet"
+            className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-950/40 transition-colors cursor-pointer"
+            title={DATA_SHEET_TEXT.INSPECT_TOOLTIP}
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
@@ -79,8 +79,8 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
             id={DATA_SHEET_SEMANTIC_ID.CARD_EDIT_BTN_PREFIX(sheet.id)}
             type="button"
             onClick={() => onEdit(sheet)}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Edit Data Sheet"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={DATA_SHEET_TEXT.EDIT_TOOLTIP}
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
@@ -88,8 +88,8 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
             id={DATA_SHEET_SEMANTIC_ID.CARD_DELETE_BTN_PREFIX(sheet.id)}
             type="button"
             onClick={() => onDelete(sheet.id, sheet.name)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-            title="Delete Data Sheet"
+            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+            title={DATA_SHEET_TEXT.DELETE_TOOLTIP}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -100,7 +100,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
       <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
         <div className="flex items-center gap-1">
           <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
-          <span>{sheet.project?.name || 'Global (All Projects)'}</span>
+          <span>{sheet.project?.name || DATA_SHEET_TEXT.GLOBAL_SHEET}</span>
         </div>
         <div className="flex items-center gap-1">
           <Hash className="w-3.5 h-3.5 text-slate-400" />
@@ -109,7 +109,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
         <div className="flex items-center gap-1">
           <Layers className="w-3.5 h-3.5 text-slate-400" />
           <span>
-            {itemCount} {itemCount === 1 ? 'item' : 'items'} ({sheet.format})
+            {DATA_SHEET_TEXT.ITEMS_COUNT(itemCount)} ({sheet.format})
           </span>
         </div>
       </div>
@@ -126,13 +126,13 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
       >
         <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
           <span className="group-hover/preview:text-purple-600 dark:group-hover/preview:text-purple-400 transition-colors flex items-center gap-1">
-            <Eye className="w-3 h-3" /> Data Preview
+            <Eye className="w-3 h-3" /> {DATA_SHEET_TEXT.DATA_PREVIEW}
           </span>
-          <span>{itemCount} items stored</span>
+          <span>{DATA_SHEET_TEXT.ITEMS_STORED(itemCount)}</span>
         </div>
         <div className="flex flex-wrap gap-1.5 max-h-16 overflow-hidden">
           {itemCount === 0 ? (
-            <span className="text-xs text-slate-400 italic">Empty dataset</span>
+            <span className="text-xs text-slate-400 italic">{DATA_SHEET_TEXT.EMPTY_DATASET}</span>
           ) : (
             sampleItems.map((item, idx) => (
               <span
@@ -145,7 +145,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
           )}
           {itemCount > 3 && (
             <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium self-center px-1">
-              +{itemCount - 3} more (click to view)
+              {DATA_SHEET_TEXT.MORE_ITEMS_CLICK(itemCount - 3)}
             </span>
           )}
         </div>
@@ -153,7 +153,7 @@ export const DataSheetCard: React.FC<DataSheetCardProps> = ({
 
       {/* Bottom: Quick Copy Variable Tags */}
       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-medium text-slate-400">Tokens:</span>
+        <span className="text-[11px] font-medium text-slate-400">{DATA_SHEET_TEXT.TOKENS_LABEL}</span>
         <div className="flex items-center gap-1.5 flex-wrap">
           <DataSheetVariableTagBadge code={sheet.code} mode="asc" />
           <DataSheetVariableTagBadge code={sheet.code} mode="desc" />
