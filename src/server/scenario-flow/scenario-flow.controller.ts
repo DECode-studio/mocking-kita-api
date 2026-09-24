@@ -404,6 +404,7 @@ export async function runScenarioFlowRoute(
       targetMode: body.targetMode || 'LIVE',
       initialVariables: body.initialVariables,
       executedBy: body.executedBy || 'User',
+      stepId: body.stepId || null,
     });
 
     return ok(result);

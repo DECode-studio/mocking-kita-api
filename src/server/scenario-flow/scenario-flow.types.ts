@@ -61,6 +61,7 @@ export interface FlowRunOptions {
   targetMode?: 'LIVE' | 'MOCK';
   initialVariables?: Record<string, any>;
   executedBy?: string;
+  stepId?: string | null;
 }
 
 export interface FlowExportTemplate {
