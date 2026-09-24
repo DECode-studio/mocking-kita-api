@@ -120,10 +120,10 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
       {isLoading ? (
         <div className="py-20 text-center space-y-3">
           <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs text-slate-500 font-medium">Loading scenario flows...</p>
+          <p className="text-xs text-slate-500 font-medium">{SCENARIO_FLOWS_TEXT.LOADING}</p>
         </div>
       ) : flows.length === 0 ? (
-        <div className="py-16 px-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/50 dark:bg-slate-900/30 space-y-4">
+        <div id={SCENARIO_FLOWS_SEMANTIC_ID.EMPTY_STATE} className="py-16 px-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/50 dark:bg-slate-900/30 space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-purple-500/10 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mx-auto">
             <GitFork className="w-6 h-6" />
           </div>
@@ -137,18 +137,20 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
           </div>
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.EMPTY_CREATE_BTN}
               onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-500 shadow-xs transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-500 shadow-xs transition-all cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              Create Manually
+              {SCENARIO_FLOWS_TEXT.CREATE_MANUALLY}
             </button>
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.EMPTY_IMPORT_BTN}
               onClick={() => setIsImportModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
             >
               <UploadCloud className="w-3.5 h-3.5 text-indigo-500" />
-              Import Template JSON
+              {SCENARIO_FLOWS_TEXT.IMPORT_TEMPLATE_JSON}
             </button>
           </div>
         </div>
