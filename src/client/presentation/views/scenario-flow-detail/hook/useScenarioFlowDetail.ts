@@ -28,6 +28,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const [targetMode, setTargetMode] = useState<'LIVE' | 'MOCK'>('LIVE');
   const [isRunning, setIsRunning] = useState(false);
+  const [runningStepId, setRunningStepId] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [runningProgress, setRunningProgress] = useState<{ current: number; total: number } | null>(null);
   const [latestExecution, setLatestExecution] = useState<ScenarioFlowExecution | null>(null);
@@ -416,6 +417,52 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     }
   };
 
+  // Run a single step in isolation and produce report only for that step
+  const handleRunStep = async (step: ScenarioFlowStep, stepIndex?: number) => {
+    if (!flow) return;
+    const targetIdx = stepIndex !== undefined ? stepIndex : (flow.steps?.findIndex((s) => s.id === step.id) ?? 0);
+    setIsRunning(true);
+    setRunningStepId(step.id);
+    setIsInspectorOpen(true);
+    setSelectedStepIndex(targetIdx >= 0 ? targetIdx : 0);
+    setBatchExecutions([]);
+
+    try {
+      const matchedEnv = environments.find((e) => e.environmentType === selectedEnvironmentType);
+      const result = await flowUseCase.runFlow(flow.id, {
+        environmentType: selectedEnvironmentType,
+        environmentId: matchedEnv?.id || selectedEnvironmentId || undefined,
+        targetMode,
+        stepId: step.id,
+        initialVariables: latestExecution?.finalVariables || undefined,
+      });
+
+      const fullExec = await flowUseCase.getExecutionDetail(result.execution.id);
+      const resolvedExec = fullExec || result.execution;
+      setLatestExecution(resolvedExec);
+      setBatchExecutions([resolvedExec]);
+
+      const passed = resolvedExec.status === 'SUCCESS';
+      const firstStepResult = resolvedExec.steps?.[0];
+      const statusCode = firstStepResult?.httpStatusCode ? `(HTTP ${firstStepResult.httpStatusCode})` : '';
+
+      addToast({
+        title: passed
+          ? `Step '${step.name}' PASSED ${statusCode} (${resolvedExec.durationMs ?? 0}ms)`
+          : `Step '${step.name}' FAILED: ${firstStepResult?.errorMessage || 'Execution failed'}`,
+        type: passed ? 'success' : 'error',
+      });
+    } catch (err) {
+      addToast({
+        title: getErrorMessage(err, `Failed to execute step '${step.name}'`),
+        type: 'error',
+      });
+    } finally {
+      setIsRunning(false);
+      setRunningStepId(null);
+    }
+  };
+
   const handleUpdateFlow = async (data: {
     name: string;
     description?: string;
@@ -504,6 +551,8 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     handleToggleStepEnabled,
     handleMoveStep,
     handleRunFlow,
+    handleRunStep,
+    runningStepId,
     handleExport,
     setLatestExecution,
     loadScenariosForApi,
