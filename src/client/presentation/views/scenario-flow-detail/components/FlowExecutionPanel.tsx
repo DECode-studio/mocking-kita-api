@@ -150,7 +150,7 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
         <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
           Execution Timeline
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <div className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-0.5 px-0.5">
           {steps.map((step, idx) => {
             const stepPassed = step.status === 'SUCCESS';
             const stepSkipped = step.status === 'SKIPPED';
@@ -160,7 +160,7 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
               <button
                 key={step.id || idx}
                 onClick={() => onSelectStep(idx)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`shrink-0 w-52 sm:w-56 p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   isRunning
                     ? 'border-purple-500/50 bg-purple-500/5 ring-1 ring-purple-500/30 animate-pulse'
                     : isSelected
