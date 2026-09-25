@@ -7,6 +7,8 @@ import {
   GitFork,
   ArrowLeft,
   Activity,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useScenarioFlowDetail } from './hook/useScenarioFlowDetail';
@@ -29,6 +31,8 @@ import { ROUTES } from '@/src/core/constants/routes';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
+const STEPS_PAGE_SIZE = 10;
+
 interface ScenarioFlowDetailViewProps {
   projectId?: string;
   flowId: string;
@@ -39,6 +43,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   flowId,
 }) => {
   const setBreadcrumbTitle = useUIStore((state) => state.setBreadcrumbTitle);
+  const [stepsPage, setStepsPage] = React.useState(1);
   const {
     flow,
     environments,
@@ -94,6 +99,24 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     };
   }, [flow?.name, setBreadcrumbTitle]);
 
+  const steps = flow?.steps || [];
+  const totalStepsPages = Math.max(1, Math.ceil(steps.length / STEPS_PAGE_SIZE));
+
+  React.useEffect(() => {
+    if (selectedStepIndex >= 0 && steps.length > 0) {
+      const pageForSelected = Math.floor(selectedStepIndex / STEPS_PAGE_SIZE) + 1;
+      if (pageForSelected <= totalStepsPages) {
+        setStepsPage(pageForSelected);
+      }
+    }
+  }, [selectedStepIndex, steps.length, totalStepsPages]);
+
+  React.useEffect(() => {
+    if (stepsPage > totalStepsPages) {
+      setStepsPage(totalStepsPages);
+    }
+  }, [stepsPage, totalStepsPages]);
+
   if (isLoading && !flow) {
     return (
       <div className="py-24 text-center space-y-3">
@@ -124,12 +147,14 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     );
   }
 
-  const steps = flow.steps || [];
   const currentStep = steps[selectedStepIndex] || null;
   const activeExecutionStep =
     (currentStep && latestExecution?.steps?.find((s) => s.flowStepId === currentStep.id)) ||
     latestExecution?.steps?.[selectedStepIndex] ||
     (latestExecution?.steps?.length === 1 ? latestExecution.steps[0] : null);
+
+  const startStepIndex = (stepsPage - 1) * STEPS_PAGE_SIZE;
+  const paginatedSteps = steps.slice(startStepIndex, startStepIndex + STEPS_PAGE_SIZE);
 
   return (
     <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CONTAINER} className="space-y-6">
@@ -190,7 +215,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         /* Mode 2: Classic 2-Column List Layout */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Chained Steps Sequence (col-span-5) */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="lg:col-span-5 space-y-4 min-w-0">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -236,46 +261,102 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {steps.map((step, idx) => {
-                  const execStep =
-                    latestExecution?.steps?.find((s) => s.flowStepId === step.id) ||
-                    (latestExecution?.steps?.length === steps.length ? latestExecution?.steps?.[idx] : null) ||
-                    null;
+              <>
+                <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEPS_LIST} className="space-y-3">
+                  {paginatedSteps.map((step, idx) => {
+                    const actualIndex = startStepIndex + idx;
+                    const execStep =
+                      latestExecution?.steps?.find((s) => s.flowStepId === step.id) ||
+                      (latestExecution?.steps?.length === steps.length ? latestExecution?.steps?.[actualIndex] : null) ||
+                      null;
 
-                  return (
-                    <StepCard
-                      key={step.id}
-                      step={step}
-                      index={idx}
-                      totalSteps={steps.length}
-                      isSelected={selectedStepIndex === idx}
-                      isRunning={isRunning}
-                      isRunningStep={runningStepId === step.id}
-                      executionStep={execStep}
-                      onSelect={() => setSelectedStepIndex(idx)}
-                      onDoubleClick={() => {
-                        setSelectedStepIndex(idx);
-                        setIsInspectorOpen(true);
-                      }}
-                      onEdit={(s) => {
-                        setEditingStep(s);
-                        setIsAddStepModalOpen(true);
-                      }}
-                      onDelete={handleDeleteStep}
-                      onToggleEnabled={handleToggleStepEnabled}
-                      onMoveUp={() => handleMoveStep(idx, 'up')}
-                      onMoveDown={() => handleMoveStep(idx, 'down')}
-                      onRunStep={(s) => handleRunStep(s, idx)}
-                    />
-                  );
-                })}
-              </div>
+                    return (
+                      <StepCard
+                        key={step.id}
+                        step={step}
+                        index={actualIndex}
+                        totalSteps={steps.length}
+                        isSelected={selectedStepIndex === actualIndex}
+                        isRunning={isRunning}
+                        isRunningStep={runningStepId === step.id}
+                        executionStep={execStep}
+                        onSelect={() => setSelectedStepIndex(actualIndex)}
+                        onDoubleClick={() => {
+                          setSelectedStepIndex(actualIndex);
+                          setIsInspectorOpen(true);
+                        }}
+                        onEdit={(s) => {
+                          setEditingStep(s);
+                          setIsAddStepModalOpen(true);
+                        }}
+                        onDelete={handleDeleteStep}
+                        onToggleEnabled={handleToggleStepEnabled}
+                        onMoveUp={() => {
+                          const targetIndex = actualIndex - 1;
+                          handleMoveStep(actualIndex, 'up');
+                          if (selectedStepIndex === actualIndex) {
+                            setSelectedStepIndex(targetIndex);
+                          }
+                        }}
+                        onMoveDown={() => {
+                          const targetIndex = actualIndex + 1;
+                          handleMoveStep(actualIndex, 'down');
+                          if (selectedStepIndex === actualIndex) {
+                            setSelectedStepIndex(targetIndex);
+                          }
+                        }}
+                        onRunStep={(s) => handleRunStep(s, actualIndex)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Steps Pagination Controls */}
+                {totalStepsPages > 1 && (
+                  <div
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEPS_PAGINATION}
+                    className="flex items-center justify-between border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2.5 bg-white/70 dark:bg-slate-900/60 shadow-2xs"
+                  >
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {SCENARIO_FLOW_DETAIL_TEXT.STEPS_PAGINATION_SHOWING(
+                        startStepIndex + 1,
+                        Math.min(startStepIndex + STEPS_PAGE_SIZE, steps.length),
+                        steps.length
+                      )}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEPS_PAGE_PREV}
+                        onClick={() => setStepsPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={stepsPage === 1}
+                        className="p-1 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                        title={SCENARIO_FLOW_DETAIL_TEXT.STEPS_PREV}
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 px-1.5">
+                        {SCENARIO_FLOW_DETAIL_TEXT.STEPS_PAGE_LABEL(stepsPage, totalStepsPages)}
+                      </span>
+                      <button
+                        type="button"
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.STEPS_PAGE_NEXT}
+                        onClick={() => setStepsPage((prev) => Math.min(prev + 1, totalStepsPages))}
+                        disabled={stepsPage === totalStepsPages}
+                        className="p-1 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                        title={SCENARIO_FLOW_DETAIL_TEXT.STEPS_NEXT}
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           {/* Right Column: Real-Time Runner & Inspector (col-span-7) */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="lg:col-span-7 space-y-5 min-w-0">
             <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <Activity className="w-4 h-4 text-indigo-500" />
               <span>{SCENARIO_FLOW_DETAIL_TEXT.RUNNER_HEADER}</span>

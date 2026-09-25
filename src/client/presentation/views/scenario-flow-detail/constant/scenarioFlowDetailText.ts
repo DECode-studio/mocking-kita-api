@@ -85,6 +85,10 @@ export const SCENARIO_FLOW_DETAIL_TEXT = {
   TABLE_PREV: 'Previous',
   TABLE_NEXT: 'Next',
   NO_STEPS_RECORDED: 'No step executions recorded',
+  STEPS_PAGINATION_SHOWING: (from: number, to: number, total: number) => `${from}-${to} of ${total} steps`,
+  STEPS_PAGE_LABEL: (page: number, totalPages: number) => `${page} / ${totalPages}`,
+  STEPS_PREV: 'Previous',
+  STEPS_NEXT: 'Next',
 
   // Step Card
   STEP_CARD_RUNNING: 'RUNNING',

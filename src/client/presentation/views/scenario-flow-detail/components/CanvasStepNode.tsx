@@ -276,43 +276,43 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
       </div>
 
       {/* Card Content Area */}
-      <div className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+      <div className="p-4 space-y-3 min-w-0">
+        <div className="flex items-start justify-between gap-2 min-w-0">
+          <div className="space-y-1 flex-1 min-w-0">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white leading-tight break-words [overflow-wrap:anywhere]">
               {step.name}
             </h3>
-            <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
               <span
-                className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-md border ${methodClass}`}
+                className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded-md border shrink-0 ${methodClass}`}
               >
                 {method}
               </span>
-              <span className="text-xs font-mono text-slate-600 dark:text-slate-300 break-all">
+              <span className="text-xs font-mono text-slate-600 dark:text-slate-300 break-all [overflow-wrap:anywhere]">
                 {path}
               </span>
               {step.targetEnvironmentType === 'LOCAL' && (
-                <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                   {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_LOCAL_ONLY}
                 </span>
               )}
               {step.targetEnvironment && step.targetEnvironmentType !== 'LOCAL' && (
-                <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase rounded-md border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                <span className="px-1.5 py-0.5 text-[9px] font-semibold uppercase rounded-md border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 break-all shrink-0">
                   {step.targetEnvironment}
                 </span>
               )}
             </div>
 
             {step.description && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 break-words [overflow-wrap:anywhere]">
                 {step.description}
               </p>
             )}
 
             {step.requestScenario && (
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-400 break-words [overflow-wrap:anywhere]">
                 {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_SCENARIO_LABEL}{' '}
-                <span className="text-slate-600 dark:text-slate-300 font-medium">
+                <span className="text-slate-600 dark:text-slate-300 font-medium break-words [overflow-wrap:anywhere]">
                   {step.requestScenario.name}
                 </span>
               </p>
@@ -342,16 +342,16 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
 
         {/* Feature Pills: Extractors, Assertions, Delays */}
         {(extractors.length > 0 || assertions.length > 0 || step.delayMs > 0 || step.continueOnError) && (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-1.5 text-[11px] min-w-0 w-full">
             {step.delayMs > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[10px]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[10px] shrink-0">
                 <Clock className="w-2.5 h-2.5" />
                 {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_DELAY_LABEL(step.delayMs)}
               </span>
             )}
 
             {step.continueOnError && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] shrink-0">
                 <AlertTriangle className="w-2.5 h-2.5" />
                 {SCENARIO_FLOW_DETAIL_TEXT.STEP_CARD_CONTINUE_ON_ERROR}
               </span>
@@ -360,20 +360,24 @@ export const CanvasStepNode: React.FC<CanvasStepNodeProps> = ({
             {extractors.map((ext, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 font-mono text-[10px]"
+                className="inline-flex items-start gap-1 px-2 py-1 rounded-md bg-purple-500/10 text-purple-700 dark:text-purple-300 font-mono text-[10px] max-w-full min-w-0"
               >
-                <Key className="w-2.5 h-2.5 text-purple-500" />
-                &#123;&#123;{ext.variable}&#125;&#125; ← {ext.from}.{ext.path}
+                <Key className="w-2.5 h-2.5 text-purple-500 shrink-0 mt-0.5" />
+                <span className="min-w-0 break-all [overflow-wrap:anywhere] leading-normal">
+                  &#123;&#123;{ext.variable}&#125;&#125; ← {ext.from}.{ext.path}
+                </span>
               </span>
             ))}
 
             {assertions.map((ast, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 font-mono text-[10px]"
+                className="inline-flex items-start gap-1 px-2 py-1 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-300 font-mono text-[10px] max-w-full min-w-0"
               >
-                <ShieldCheck className="w-2.5 h-2.5 text-blue-500" />
-                {ast.type} {ast.operator} {ast.expected !== undefined ? String(ast.expected) : ''}
+                <ShieldCheck className="w-2.5 h-2.5 text-blue-500 shrink-0 mt-0.5" />
+                <span className="min-w-0 break-all [overflow-wrap:anywhere] leading-normal">
+                  {ast.type} {ast.operator} {ast.expected !== undefined ? String(ast.expected) : ''}
+                </span>
               </span>
             ))}
           </div>
