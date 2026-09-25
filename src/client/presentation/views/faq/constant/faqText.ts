@@ -1,6 +1,6 @@
 export const FAQ_TEXT = {
   TITLE: 'FAQ & Panduan Mock API Studio',
-  SUBTITLE: 'Pelajari cara mengonfigurasi endpoint, mengelola skenario pencocokan request, mensimulasikan latensi, dan memahami struktur Clean Architecture aplikasi Anda.',
+  SUBTITLE: 'Pelajari cara mengonfigurasi endpoint, skenario pencocokan request, orkestrasi Scenario Flow (Request Flow), simulasi latensi berbobot, integrasi PostgreSQL & Prisma, serta memahami Clean Architecture aplikasi Anda.',
   TAG: 'Base Knowledge Center',
   SEARCH_PLACEHOLDER: 'Cari pertanyaan, fitur, atau arsitektur...',
   EMPTY_TITLE: 'Pertanyaan tidak ditemukan',

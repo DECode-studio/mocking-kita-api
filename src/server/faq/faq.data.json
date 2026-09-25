@@ -2,151 +2,217 @@
   {
     "id": "1",
     "question": "Apa itu Mock API Studio (Mocking Kita Studio)?",
-    "answer": "Mock API Studio adalah platform engine mock API modern berbasis Next.js (App Router), Clean Architecture, Server-Side Rendering (SSR), dan SQLite Native Database (node:sqlite). Aplikasi ini dirancang untuk memungkinkan pengembang frontend dan backend merancang endpoint REST, mengonfigurasi skenario request matching (Exact, Partial, Regex, JSON Schema), mensimulasikan skenario respons berbobot (weighted response scenarios) dengan latensi dinamis, serta melakukan proxying / mock testing API secara lokal.",
+    "answer": "Mock API Studio adalah platform engine mock API modern berbasis Next.js 16 (App Router), React 19, Clean Architecture, Server-Side Rendering (SSR), dan PostgreSQL Database yang dikelola melalui Prisma ORM. Aplikasi ini dirancang untuk memungkinkan pengembang frontend dan backend merancang endpoint REST, mengonfigurasi skenario request matching (Exact, Partial, Regex, JSON Schema) dengan strategi ALL/ANY, mensimulasikan respons berbobot (weighted response scenarios) dengan latensi dinamis, mengorkestrasi alur pengujian berantai (Scenario Flows / Request Flow) dengan visual canvas dan classic list, mengelola dataset pengujian (Data Sheets), serta melakukan proxying dan mock testing API secara komprehensif.",
     "category": "Overview"
   },
   {
     "id": "2",
     "question": "Bagaimana langkah teknis menjalankan project menggunakan pnpm?",
-    "answer": "Untuk menjalankan proyek menggunakan pnpm: 1) Pastikan Node.js versi >= 22.x telah terinstal (diperlukan untuk dukungan native node:sqlite). 2) Instal dependensi dengan perintah 'pnpm install'. 3) Salin berkas '.env.example' menjadi '.env' menggunakan perintah 'cp .env.example .env'. 4) Isi konfigurasi 'APP_USERNAME' dan 'APP_PASSWORD' di berkas '.env'. 5) Jalankan server pengembangan menggunakan perintah 'pnpm dev'. Aplikasi akan siap diakses di alamat http://localhost:3000.",
+    "answer": "Untuk menjalankan proyek menggunakan pnpm:\n1) Pastikan Node.js versi >= 22.x telah terinstal.\n2) Pasang dependensi proyek dengan perintah 'pnpm install'.\n3) Salin berkas template environment: 'cp .env.example .env'.\n4) Buka '.env' dan konfigurasikan 'DATABASE_URL' (koneksi PostgreSQL, contoh: 'postgresql://postgres:postgrespassword@localhost:5432/mock_api_studio?schema=public'), serta 'APP_USERNAME' dan 'APP_PASSWORD'.\n5) Sinkronkan skema database Prisma dengan menjalankan 'pnpm db:push' atau 'pnpm db:migrate'.\n6) Mulai server pengembangan dengan 'pnpm dev'. Aplikasi siap diakses di http://localhost:3000.",
     "category": "Overview"
   },
   {
     "id": "3",
     "question": "Bagaimana langkah teknis menjalankan project menggunakan npm?",
-    "answer": "Jika Anda memilih menggunakan npm sebagai package manager: 1) Pastikan Node.js versi >= 22.x telah terpasang. 2) Jalankan perintah 'npm install' untuk mengunduh seluruh modul dependensi. 3) Salin berkas konfigurasi env dengan perintah 'cp .env.example .env'. 4) Masukkan username dan password pilihan Anda pada variabel 'APP_USERNAME' dan 'APP_PASSWORD' di berkas '.env'. 5) Jalankan perintah 'npm run dev' untuk memulai server Next.js lokal. Buka peramban di http://localhost:3000.",
+    "answer": "Jika Anda memilih menggunakan npm sebagai package manager:\n1) Pastikan Node.js versi >= 22.x terpasang.\n2) Unduh modul dependensi dengan perintah 'npm install'.\n3) Salin berkas env: 'cp .env.example .env'.\n4) Isi konfigurasi 'DATABASE_URL' untuk koneksi PostgreSQL serta kredensial 'APP_USERNAME' dan 'APP_PASSWORD'.\n5) Terapkan skema database dengan menjalankan 'npm run db:push' atau 'npm run db:migrate'.\n6) Jalankan server lokal menggunakan 'npm run dev'. Buka peramban Anda di alamat http://localhost:3000.",
     "category": "Overview"
   },
   {
     "id": "4",
     "question": "Bagaimana cara menjalankan project menggunakan Docker dan Docker Compose?",
-    "answer": "Untuk menjalankan aplikasi di dalam kontainer terisolasi: 1) Pastikan Docker dan Docker Compose telah aktif di mesin Anda. 2) Salin berkas '.env.example' menjadi '.env' dan sesuaikan kredensial login. 3) Jalankan perintah 'docker compose up --build' di direktori root. Perintah ini akan mem-build image Node.js 22, memasang semua pustaka, dan mengekspos aplikasi di pelabuhan http://localhost:3000. Database SQLite secara otomatis disimpan persisten di komputer host Anda pada direktori '.data/' melalui volume mount Docker.",
+    "answer": "Untuk menjalankan aplikasi di dalam kontainer terisolasi:\n1) Pastikan Docker dan Docker Compose telah aktif di sistem operasi Anda.\n2) Salin berkas '.env.example' menjadi '.env' dan pastikan 'DATABASE_URL' mengarah ke host PostgreSQL yang dapat dijangkau oleh Docker.\n3) Jalankan perintah 'docker compose up --build' di direktori utama.\nPerintah ini mem-build image Node.js 22, menginstal seluruh pustaka, dan mengekspos aplikasi di pelabuhan http://localhost:3000.",
     "category": "Overview"
   },
   {
     "id": "5",
     "question": "Kredensial login bawaan apa yang digunakan setelah instalasi pertama kali?",
-    "answer": "Aplikasi tidak memiliki kredensial bawaan yang statis di dalam database demi keamanan. Kredensial dibaca langsung dari berkas konfigurasi '.env' lokal Anda pada variabel 'APP_USERNAME' dan 'APP_PASSWORD'. Sebagai contoh, jika Anda menggunakan nilai default dari '.env.example', Anda dapat login menggunakan Username: 'admin' dan Password: 'admin123'.",
+    "answer": "Aplikasi tidak menggunakan kredensial statis tertanam di database demi standar keamanan. Kredensial dibaca langsung dari variabel 'APP_USERNAME' dan 'APP_PASSWORD' pada berkas konfigurasi '.env' lokal Anda (default pada '.env.example': Username 'admin' dan Password 'admin123'). Selain itu, aplikasi juga mendukung Single Sign-On (SSO) Google Workspace jika variabel 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', dan 'SSO_DOMAINS' dikonfigurasi.",
     "category": "Overview"
   },
   {
     "id": "6",
     "question": "Bagaimana cara membuat, menyunting, dan menghapus Project?",
-    "answer": "Manajemen proyek dapat diakses melalui tab Projects. 1) Membuat Project: Klik tombol 'New Project' di halaman Projects atau tombol '+' di sidebar, lalu isi formulir nama & deskripsi. 2) Menyunting Project: Masuk ke halaman detail project, klik tombol edit (ikon pensil) pada kartu informasi proyek untuk mengubah nama atau deskripsi. 3) Menghapus Project (Soft Delete): Klik tombol hapus (ikon tong sampah) pada baris proyek. Proyek akan ditandai terhapus tanpa kehilangan data relasi di bawahnya.",
+    "answer": "Manajemen proyek dapat diakses melalui tab Projects:\n1) Membuat Project: Klik tombol 'New Project' di halaman Projects atau tombol '+' di sidebar, lalu isi nama, deskripsi, dan penugasan PIC (Person In Charge).\n2) Menyunting Project: Masuk ke halaman detail proyek, klik tombol edit (ikon pensil) pada kartu informasi proyek untuk memperbarui nama, deskripsi, atau status proyek.\n3) Menghapus Project (Soft Delete): Klik tombol hapus (ikon tempat sampah) pada baris proyek. Proyek akan ditandai terhapus (soft delete) tanpa kehilangan data relasi anak di bawahnya.",
     "category": "Projects & Environments"
   },
   {
     "id": "7",
     "question": "Bagaimana cara menduplikasi (Duplicate) sebuah Project?",
-    "answer": "Jika Anda ingin membuat salinan lengkap dari sebuah proyek untuk pengujian skenario berbeda: buka daftar proyek di halaman Projects, lalu klik tombol 'Duplicate' (ikon salin dokumen) pada kartu proyek yang ingin diduplikasi. Sistem akan menyalin seluruh struktur data proyek, environment, koleksi API, hingga aturan matching-nya ke dalam proyek baru berlabel tambahan '(Copy)'.",
+    "answer": "Untuk membuat salinan lengkap dari sebuah proyek untuk pengujian skenario lain: buka daftar proyek di halaman Projects, lalu klik tombol 'Duplicate' (ikon salin dokumen) pada kartu proyek yang diinginkan. Sistem akan menduplikasi seluruh struktur data proyek, environment, koleksi API, endpoint, aturan matching, hingga data sheet ke dalam proyek baru berlabel akhiran '(Copy)'.",
     "category": "Projects & Environments"
   },
   {
     "id": "8",
     "question": "Apa perbedaan antara Soft Delete, Restore, dan Hard Delete pada Project?",
-    "answer": "1) Soft Delete: Menyembunyikan proyek dari daftar aktif dengan mengisi kolom 'deleted_at' di database tanpa menghapus data fisik dari disk. 2) Restore: Mengembalikan proyek yang telah di-soft delete kembali ke daftar proyek aktif dengan menyetel kembali kolom 'deleted_at' menjadi NULL. 3) Hard Delete: Menghapus secara permanen record proyek tersebut dari SQLite menggunakan perintah SQL DELETE, termasuk seluruh data relasi seperti Environment, API, dan Scenario di bawahnya secara kaskade.",
+    "answer": "1) Soft Delete: Menyembunyikan proyek dari daftar aktif dengan mengisi kolom 'deleted_at' pada tabel PostgreSQL tanpa menghapus data secara fisik.\n2) Restore: Mengembalikan proyek yang telah di-soft delete ke daftar proyek aktif dengan menyetel kembali kolom 'deleted_at' menjadi NULL.\n3) Hard Delete: Menghapus permanen record proyek tersebut dari database PostgreSQL melalui Prisma Client, termasuk seluruh relasi turunan seperti Environment, API, Scenario, dan Scenario Flow secara kaskade.",
     "category": "Projects & Environments"
   },
   {
     "id": "9",
     "question": "Apa itu Environment dan bagaimana cara kerjanya di Mock API Studio?",
-    "answer": "Setiap proyek mendukung pembuatan beberapa lingkungan kerja (seperti LOCAL, DEVELOPMENT, STAGING, PRODUCTION). Masing-masing Environment memiliki konfigurasi 'Base URL' sendiri. Saat melakukan pengujian API, Anda dapat menukar environment aktif di dashboard. Hal ini akan mengubah arah pengiriman request matching serta base URL tujuan proxying secara dinamis tanpa perlu mengganti rute path API satu per satu.",
+    "answer": "Setiap proyek mendukung beberapa lingkungan kerja (seperti LOCAL, DEVELOPMENT, TESTING, STAGING, PRODUCTION). Masing-masing Environment memiliki konfigurasi 'Base URL' dan variabel lingkungan (Environment Variables). Pada editor skenario dan flow, Anda dapat memanfaatkan komponen Environment Variable Picker untuk memilih dan menyuntikkan variabel secara instan. Mengganti environment aktif di dashboard akan mengubah arah evaluasi matching dan proxying secara dinamis.",
     "category": "Projects & Environments"
   },
   {
     "id": "10",
     "question": "Apa yang dimaksud dengan API Collections?",
-    "answer": "API Collections berfungsi sebagai direktori atau folder untuk mengelompokkan rute-rute API yang berada dalam satu modul atau cakupan bisnis yang sama (misalnya, Koleksi 'Authentication', Koleksi 'User Management', dsb). Koleksi membantu Anda mengelola ratusan endpoint API dalam satu proyek agar lebih terstruktur dan mudah dinavigasi.",
+    "answer": "API Collections berfungsi sebagai modul atau folder virtual untuk mengelompokkan rute-rute API yang berada dalam satu cakupan bisnis yang sama (contohnya: Koleksi 'Authentication', Koleksi 'User Management', Koleksi 'Payment Gateway', dsb). Koleksi membantu Anda mengelola puluhan hingga ratusan endpoint API dalam satu proyek agar lebih terstruktur dan mudah diorganisir.",
     "category": "API Collections & Endpoints"
   },
   {
     "id": "11",
     "question": "Bagaimana cara mendefinisikan API Endpoint baru?",
-    "answer": "Untuk menambahkan endpoint: 1) Masuk ke dalam detail proyek Anda. 2) Pilih tab 'APIs' atau pilih salah satu Koleksi yang telah Anda buat, kemudian klik tombol 'Create API'. 3) Tentukan path rute endpoint (misal '/api/v1/auth/login') dan pilih Metode HTTP yang ingin digunakan (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD). 4) Klik simpan untuk mendaftarkan endpoint tersebut ke database.",
+    "answer": "Untuk menambahkan endpoint:\n1) Masuk ke halaman detail proyek Anda.\n2) Pilih tab 'APIs' atau pilih salah satu Koleksi yang telah dibuat, kemudian klik tombol 'Create API'.\n3) Tentukan path rute endpoint (misal '/api/v1/auth/login') dan pilih Metode HTTP yang diinginkan (GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD).\n4) Klik simpan untuk mendaftarkan endpoint tersebut ke database.",
     "category": "API Collections & Endpoints"
   },
   {
     "id": "12",
     "question": "Apakah saya bisa menonaktifkan endpoint API secara dinamis per environment?",
-    "answer": "Ya. Mock API Studio mendukung konfigurasi fleksibel per environment. Pada halaman detail API Endpoint, buka bagian pengaturan status aktif per lingkungan kerja. Anda dapat menyalakan rute API tersebut di environment 'LOCAL' namun mematikannya di environment 'PRODUCTION' sesuai dengan kebutuhan integrasi pengujian Anda.",
+    "answer": "Ya. Mock API Studio mendukung konfigurasi granular per environment melalui tabel 'tblApiEnvironment'. Pada halaman detail API Endpoint, Anda dapat mengatur toggle aktif/inaktif secara terpisah per lingkungan (misal aktif di environment 'LOCAL' namun dinonaktifkan di 'PRODUCTION') serta menentukan penimpaan jalur (path override) khusus untuk environment tertentu.",
     "category": "API Collections & Endpoints"
   },
   {
     "id": "13",
     "question": "Bagaimana cara kerja Request Matching Engine saat menerima request?",
-    "answer": "Saat request masuk ke rute dinamis '/api/[...path]', engine internal-proxy akan: 1) Mencocokkan path dan metode HTTP request masuk dengan daftar API aktif di database. 2) Mengambil seluruh Request Matching Scenarios terkait dan mengurutkannya berdasarkan prioritas (priority). 3) Mengevaluasi kriteria pencocokan header, query parameters, dan body payload. 4) Mengembalikan skenario respons terpilih yang paling cocok berdasarkan aturan evaluasi pertama yang terpenuhi.",
+    "answer": "Saat request masuk ke rute dinamis '/api/[...path]', engine internal proxy akan:\n1) Mencocokkan path dan metode HTTP request dengan daftar API aktif di database PostgreSQL.\n2) Mengambil seluruh Request Matching Scenarios terkait dan mengurutkannya berdasarkan nilai prioritas (priority).\n3) Mengevaluasi strategi pencocokan (Match Strategy ALL atau ANY) terhadap header, query parameters, path parameters, dan body payload.\n4) Mengembalikan skenario respons terpilih yang paling cocok berdasarkan aturan evaluasi pertama yang terpenuhi.",
     "category": "Request Matching Engine"
   },
   {
     "id": "14",
     "question": "Apa saja jenis Request Matching Scenarios yang didukung?",
-    "answer": "Mock API Studio mendukung 4 jenis matching: 1) EXACT: Request harus sama persis dengan parameter aturan yang ditentukan. 2) PARTIAL: Request dinyatakan cocok jika memuat minimal parameter yang didefinisikan aturan, meskipun memuat parameter tambahan lain. 3) REGEX: Menggunakan ekspresi reguler untuk menangkap pola path atau header dinamis. 4) JSON_SCHEMA: Memvalidasi keabsahan data body request masuk terhadap struktur JSON Schema yang didefinisikan.",
+    "answer": "Mock API Studio mendukung 4 jenis matching:\n1) EXACT: Request harus persis sama dengan parameter aturan yang ditentukan.\n2) PARTIAL: Request dinyatakan cocok jika memuat sekurang-kurangnya parameter yang didefinisikan, meskipun memuat parameter tambahan lain.\n3) REGEX: Menggunakan ekspresi reguler untuk mencocokkan pola path, query, atau header dinamis.\n4) JSON_SCHEMA: Memvalidasi keabsahan struktur data body request masuk terhadap definisi JSON Schema formal.",
     "category": "Request Matching Engine"
   },
   {
     "id": "15",
     "question": "Bagaimana cara mengonfigurasi matching berdasarkan Headers, Query Params, dan Body?",
-    "answer": "Saat membuat Request Scenario, Anda dapat menambahkan parameter verifikasi secara detail. Anda dapat memasukkan daftar key-value untuk header wajib (seperti 'Content-Type: application/json' atau 'Authorization'), query parameters tertentu (seperti 'page: 1'), serta mencantumkan skema JSON Schema atau raw JSON data pada form verifikasi Body. Skenario hanya akan terpilih jika klien mengirimkan request yang memenuhi semua kriteria pencocokan tersebut.",
+    "answer": "Pada form Request Scenario, Anda dapat menentukan kriteria pencocokan secara mendalam. Anda dapat memasukkan daftar key-value untuk header wajib (seperti 'Authorization' atau 'Content-Type'), query parameters tertentu, serta aturan body matching (mendukung tipe payload JSON, Form-Data, atau URL-Encoded). Anda juga dapat mengaktifkan opsi 'strict body structure' untuk memastikan tidak ada atribut body asing yang tidak diinginkan.",
     "category": "Request Matching Engine"
   },
   {
     "id": "16",
     "question": "Bagaimana cara membuat skenario respons (Response Scenario) untuk suatu API?",
-    "answer": "Di bawah tiap Request Scenario, Anda dapat mendefinisikan satu atau lebih skenario balasan (Response Scenario). Isi formulir skenario respons dengan menentukan HTTP Status Code yang diinginkan (seperti 200 OK untuk sukses, 400 Bad Request untuk validasi gagal, 401 untuk tidak memiliki otorisasi, atau 500 untuk kegagalan server), tentukan HTTP Headers balasan, serta tuliskan payload data keluaran dalam bentuk berkas JSON pada area teks Response Body.",
+    "answer": "Di bawah tiap Request Scenario, Anda dapat mendefinisikan satu atau lebih skenario respons (Response Scenario). Tentukan HTTP Status Code yang diinginkan (seperti 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, atau 500 Internal Server Error), tentukan HTTP Headers balasan, serta pilih tipe respons (JSON payload atau pengiriman Berkas/File download).",
     "category": "Response Scenarios & Simulator"
   },
   {
     "id": "17",
     "question": "Bagaimana cara mensimulasikan latensi jaringan (Network Latency)?",
-    "answer": "Untuk mensimulasikan waktu tunggu jaringan sesungguhnya (misalnya koneksi seluler lambat atau respons server lambat): buka form Response Scenario Anda dan isi nilai milidetik pada kolom 'Delay (ms)'. Jika Anda mengisi angka '2000', engine proxy secara otomatis menunda pengiriman respon selama 2 detik (2000 milidetik), memungkinkan frontend Anda menguji status pemuatan (loading indicators / spinners) dengan akurat.",
+    "answer": "Untuk mensimulasikan waktu tunggu jaringan sesungguhnya (seperti koneksi seluler lambat atau respons backend berbeban tinggi): buka form Response Scenario Anda dan isi nilai milidetik pada kolom 'Delay (ms)'. Jika Anda mengisi angka '2000', engine proxy secara otomatis menunda pengiriman respon selama 2 detik (2000 milidetik), memungkinkan frontend menguji indikator pemuatan (loading indicators / skeletons / spinners) secara realistis.",
     "category": "Response Scenarios & Simulator"
   },
   {
     "id": "18",
     "question": "Apa itu fitur Weighted Response dan bagaimana cara menggunakannya?",
-    "answer": "Weighted Response (Respon Berbobot) digunakan untuk mensimulasikan perilaku API dinamis seperti A/B Testing atau API yang tidak stabil (flaky API). Anda dapat mendaftarkan beberapa Response Scenario pada satu Request Scenario dengan memberikan 'weight' (bobot angka, misal 70 dan 30). Engine akan memilih respon tersebut secara acak probabilistik berdasarkan rasio bobot tersebut (70% peluang respon sukses, 30% peluang respon error).",
+    "answer": "Weighted Response (Respon Berbobot) digunakan untuk mensimulasikan perilaku API probabilistik seperti A/B Testing atau API yang tidak stabil (flaky API). Anda dapat mendaftarkan beberapa Response Scenario pada satu Request Scenario dengan menyetel persentase bobot 'weight' (misalnya 70 dan 30). Engine akan memilih respon secara acak probabilistik berdasarkan rasio bobot tersebut (70% peluang respon sukses, 30% peluang respon error).",
     "category": "Response Scenarios & Simulator"
   },
   {
     "id": "19",
-    "question": "Di mana file database SQLite aplikasi disimpan secara lokal?",
-    "answer": "Seluruh konfigurasi sistem, proyek, lingkungan kerja, koleksi rute, dan skenario respons disimpan secara lokal dalam database relasional SQLite. File database tersebut terletak pada direktori root proyek di jalur '.data/mock-api-studio.sqlite'. Direktori ini secara default masuk dalam berkas '.gitignore' untuk menghindari kebocoran data pengembang ke repositori kode git.",
-    "category": "Database & Import/Export"
+    "question": "Apa itu fitur Scenario Flows (Request Flow) dan apa kegunaannya?",
+    "answer": "Scenario Flows (Request Flow) adalah fitur orkestrasi request API berantai (multi-step workflow) untuk menguji skenario end-to-end (E2E) dan alur bisnis yang kompleks (misalnya: 1. Login -> 2. Ambil Profil User -> 3. Buat Order Baru -> 4. Bayar Transaksi). Fitur ini memungkinkan pengujian alur integrasi tanpa perlu bergantung pada tool eksternal seperti Postman Collection Runner, dengan dukungan penuh interpolasi variabel dinamis antar langkah.",
+    "category": "Scenario Flows (Request Flow)"
   },
   {
     "id": "20",
-    "question": "Bagaimana cara melakukan ekspor (Export) database sebagai backup?",
-    "answer": "Untuk membackup atau membagikan konfigurasi API Anda kepada anggota tim lain: buka halaman Settings atau klik tombol 'Import/Export' pada pojok kanan atas Dashboard. Pilih tab 'Export Data'. Klik tombol ekspor untuk mengunduh satu berkas snapshot JSON yang berisi seluruh data tabel relasional SQLite Anda secara aman.",
-    "category": "Database & Import/Export"
+    "question": "Apa perbedaan antara Classic List View dan Visual Canvas pada Scenario Flow?",
+    "answer": "Mock API Studio menyediakan dua mode tampilan alur:\n1) Classic List View (Default): Menampilkan daftar langkah terstruktur dan linear dengan sistem paginasi 10 step per halaman, kontrol reorder cepat, penanganan teks panjang agar tidak terpotong (overflow-safe), dan sinkronisasi seleksi langkah yang presisi.\n2) Visual Canvas View: Menampilkan diagram alur berbasis node visual interaktif untuk memetakan hubungan antar request step secara topologis dan intuitif.",
+    "category": "Scenario Flows (Request Flow)"
   },
   {
     "id": "21",
-    "question": "Bagaimana cara mengimpor (Import) data proyek dari berkas JSON?",
-    "answer": "Unggah berkas snapshot JSON cadangan melalui dialog 'Import Data'. Terdapat 2 opsi metode impor: 1) MERGE: Menggabungkan data cadangan ke dalam database aktif saat ini tanpa menghapus proyek lama yang sudah ada. Jika terjadi konflik ID, sistem akan membuat ID acak baru untuk proyek impor. 2) REPLACE: Menghapus seluruh isi database lokal aktif terlebih dahulu, kemudian mengisinya secara bersih menggunakan data cadangan dari berkas JSON yang diunggah.",
-    "category": "Database & Import/Export"
+    "question": "Bagaimana cara melakukan Run Step (eksekusi satu langkah terisolasi)?",
+    "answer": "Pada tampilan detail Scenario Flow (baik di Classic List View maupun Visual Canvas), setiap kartu langkah dilengkapi dengan tombol 'Run Step' (ikon play). Mengklik tombol ini akan mengeksekusi langkah API tersebut secara terisolasi menggunakan variabel yang tersedia saat itu. Fitur ini sangat bermanfaat untuk debugging cepat terhadap payload, header, atau respon dari langkah tertentu tanpa perlu menjalankan keseluruhan alur dari langkah pertama.",
+    "category": "Scenario Flows (Request Flow)"
   },
   {
     "id": "22",
-    "question": "Bagaimana cara melakukan Reset Database ke kondisi awal bawaan pabrik?",
-    "answer": "Jika database Anda mengalami kekacauan data atau konflik skema: masuk ke halaman Settings, arahkan ke bagian 'Database Engine', dan klik tombol 'Reset Database'. Setelah Anda memberikan konfirmasi, sistem akan menghapus database SQLite aktif, menjalankan ulang skrip migrasi tabel (schema.sql), dan memuat data seeder awal (Demo E-Commerce API) untuk membuat database kembali bersih.",
-    "category": "Database & Import/Export"
+    "question": "Bagaimana cara kerja ekstraksi variabel dinamis (Dynamic Variable Chaining) antar step?",
+    "answer": "Setiap langkah dalam Scenario Flow dapat mengekstrak nilai dari respon (Response Body atau Response Headers) dan menyimpannya ke dalam variabel flow. Variabel tersebut kemudian dapat disuntikkan ke langkah-langkah berikutnya menggunakan sintaks interpolasi, seperti '${step_1.response.body.data.token}' atau '${step_1.response.headers.authorization}'. Nilai variabel ini secara otomatis diteruskan ke URL, header, query parameter, maupun body request langkah selanjutnya.",
+    "category": "Scenario Flows (Request Flow)"
   },
   {
     "id": "23",
-    "question": "Mengapa aplikasi ini melarang penggunaan LocalStorage untuk persistence?",
-    "answer": "Mock API Studio mengadopsi prinsip arsitektur Server-Side Rendering (SSR). Jika konfigurasi atau data disimpan di dalam LocalStorage atau SessionStorage (yang merupakan penyimpanan khusus di peramban klien), server Next.js tidak akan dapat membaca data tersebut saat memproses halaman awal di server. Hal ini dapat menyebabkan masalah sinkronisasi (hydration mismatch) dan menghambat optimasi rendering di sisi server.",
-    "category": "System Architecture & Guidelines"
+    "question": "Tipe request body apa saja yang didukung pada langkah Scenario Flow?",
+    "answer": "Langkah Scenario Flow mendukung 4 jenis tipe body request:\n1) JSON: Payload raw JSON standar dengan validasi sintaks.\n2) Form-Data (multipart/form-data): Editor form key-value dinamis untuk pengiriman form field dan simulasi unggahan.\n3) URL-Encoded (application/x-www-form-urlencoded): Formulir key-value berstandar URL encoded.\n4) No-Body: Request tanpa payload body (cocok untuk metode GET, HEAD, atau DELETE sederhana).",
+    "category": "Scenario Flows (Request Flow)"
   },
   {
     "id": "24",
-    "question": "Bagaimana pembagian tanggung jawab folder di src/core, src/client/domain, dan src/client/data?",
-    "answer": "Struktur proyek mematuhi aturan Clean Architecture: 1) core/ menyimpan driver tingkat rendah seperti SQLite client dan inisialisasi HTTP wrapper. 2) domain/ memuat entities murni, rancangan interface repository, dan unit UseCase bisnis yang bebas dari framework React/Next.js. 3) data/ berisi model data DTO, implementasi data source pengakses database, serta repositori konkrit yang bertugas melakukan pemetaan (mapping) dari data model ke domain entity sebelum dioper ke UseCase.",
-    "category": "System Architecture & Guidelines"
+    "question": "Bagaimana cara menjalankan Multi-Run (Batch Executions) dan mengekspor laporan eksekusi?",
+    "answer": "Pada Scenario Flow Detail, Anda dapat memilih opsi multi-run untuk mengeksekusi flow secara berulang dalam batch (misal 5x atau 10x eksekusi) guna menguji konsistensi dan stabilitas API. Seluruh hasil eksekusi batch diakumulasi secara real-time dan dapat diekspor menjadi laporan komprehensif dalam format berkas Markdown (.md) maupun CSV (.csv) yang memuat statistik durasi, tingkat kelulusan, dan status tiap step.",
+    "category": "Scenario Flows (Request Flow)"
   },
   {
     "id": "25",
+    "question": "Bagaimana cara memantau riwayat eksekusi melalui Execution Timeline & Inspector?",
+    "answer": "Panel Execution Timeline menyajikan riwayat eksekusi alur dalam bentuk tabel terpaginasi (paginated table). Setiap baris eksekusi dapat diklik untuk membuka Inspector detail yang menampilkan snapshot lengkap request (URL, method, header, body), snapshot response (status code, payload balasan, durasi eksekusi dalam milidetik), variabel yang berhasil diekstrak, serta hasil evaluasi assertion (lulus atau gagal).",
+    "category": "Scenario Flows (Request Flow)"
+  },
+  {
+    "id": "26",
+    "question": "Apa itu fitur Data Sheets dan bagaimana cara memanfaatkannya?",
+    "answer": "Data Sheets ('tblDataSheet') adalah modul manajemen dataset pengujian terpusat yang mendukung format List atau Tabel. Fitur ini memungkinkan Anda menyimpan data uji berulang (seperti daftar pengguna contoh, katalog produk dummy, atau matriks kode error) yang dapat dimanfaatkan untuk parameterisasi pengujian skenario secara konsisten di seluruh proyek.",
+    "category": "Data Sheets"
+  },
+  {
+    "id": "27",
+    "question": "Database apa yang digunakan aplikasi dan bagaimana arsitekturnya?",
+    "answer": "Mock API Studio menggunakan database relasional PostgreSQL yang dikelola melalui Prisma ORM. Skema database terpusat pada 'prisma/schema.prisma' yang mencakup model Proyek, Environment, Koleksi, API, Skenario, Scenario Flow, Eksekusi, Akun Pengguna, Audit Change Logs, dan Data Sheets. Konfigurasi koneksi diatur melalui variabel 'DATABASE_URL' di berkas '.env', dan migrasi dikelola menggunakan perintah 'pnpm db:migrate' atau 'pnpm db:push'.",
+    "category": "Database & Import/Export"
+  },
+  {
+    "id": "28",
+    "question": "Bagaimana cara melakukan ekspor (Export) database sebagai backup?",
+    "answer": "Untuk mencadangkan atau memindahkan konfigurasi sistem: masuk ke menu Settings atau klik tombol 'Import/Export' di dashboard. Pada tab 'Export Data', klik tombol ekspor untuk mengunduh berkas snapshot JSON terenkapsulasi yang memuat seluruh data tabel relasional database Anda secara lengkap dan aman.",
+    "category": "Database & Import/Export"
+  },
+  {
+    "id": "29",
+    "question": "Bagaimana cara mengimpor (Import) data proyek dari berkas JSON?",
+    "answer": "Unggah berkas snapshot JSON cadangan melalui dialog 'Import Data'. Tersedia 2 mode impor:\n1) MERGE: Menggabungkan data cadangan ke dalam database aktif saat ini tanpa menghapus data yang telah ada. Sistem otomatis membuat identitas baru jika terjadi duplikasi ID.\n2) REPLACE: Mengosongkan data aktif dan memulihkan seluruh struktur database secara bersih menggunakan data cadangan dari berkas JSON yang diunggah.",
+    "category": "Database & Import/Export"
+  },
+  {
+    "id": "30",
+    "question": "Bagaimana cara melakukan Reset Database ke kondisi awal?",
+    "answer": "Jika Anda ingin mengembalikan kondisi database ke setelan awal: masuk ke menu Settings > Database Engine lalu klik tombol 'Reset Database', atau jalankan perintah 'pnpm db:reset' melalui terminal. Tindakan ini akan mengosongkan tabel, menjalankan migrasi ulang skema Prisma, dan mengisi kembali data seeder awal bawaan sistem.",
+    "category": "Database & Import/Export"
+  },
+  {
+    "id": "31",
+    "question": "Bagaimana cara mengimpor spesifikasi OpenAPI (Swagger) atau koleksi Insomnia?",
+    "answer": "Mock API Studio menyediakan fitur impor OpenAPI 3.0 (YAML/JSON) yang mendukung anotasi kustom 'x-environments' untuk secara otomatis memetakan server variables menjadi Environment studio. Selain itu, sistem juga dilengkapi parser koleksi Insomnia untuk mengonversi koleksi request dan template script secara otomatis menjadi API endpoints dan Scenario Flows siap pakai.",
+    "category": "OpenAPI & Insomnia Integration"
+  },
+  {
+    "id": "32",
+    "question": "Bagaimana cara kerja Google Workspace SSO dan pembatasan domain (SSO_DOMAINS)?",
+    "answer": "Aplikasi mendukung Single Sign-On (SSO) berbasis Google OAuth 2.0. Dengan mengonfigurasi 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', dan 'GOOGLE_CALLBACK_ROUTE' di '.env', pengguna dapat masuk menggunakan akun Google Workspace perusahaan. Anda dapat membatasi akses login hanya untuk domain tertentu dengan mengisi variabel 'SSO_DOMAINS' (contoh: 'SSO_DOMAINS=perusahaan.com,partner.id'). Pengguna di luar domain whitelist akan otomatis ditolak.",
+    "category": "Authentication, Roles & Audit"
+  },
+  {
+    "id": "33",
+    "question": "Apa fungsi Change Logs pada menu Admin?",
+    "answer": "Change Logs ('tblChangeLog') berfungsi sebagai jejak audit sistem (system audit trail). Setiap operasi penting (pembuatan, perubahan konfigurasi, atau penghapusan data pada Project, API, Environment, dll) secara otomatis dicatat dengan merekam identitas operator pelaksana, timestamp, deskripsi aksi, serta snapshot status sebelum ('before_state') dan sesudah ('after_state') perubahan.",
+    "category": "Authentication, Roles & Audit"
+  },
+  {
+    "id": "34",
+    "question": "Mengapa aplikasi ini melarang penggunaan LocalStorage untuk persistence?",
+    "answer": "Mock API Studio dibangun dengan paradigma Server-Side Rendering (SSR) dan Server Actions Next.js. Data yang disimpan di LocalStorage peramban tidak dapat diakses oleh server saat proses rendering awal maupun saat engine proxy internal mengevaluasi request matching di backend. Menggunakan database PostgreSQL memastikan sinkronisasi data yang konsisten, mencegah hidrasi tidak sinkron (hydration mismatch), dan menjamin keamanan kredensial.",
+    "category": "System Architecture & Guidelines"
+  },
+  {
+    "id": "35",
+    "question": "Bagaimana pembagian tanggung jawab folder di src/core, src/client, dan src/server?",
+    "answer": "Struktur proyek mematuhi aturan Clean Architecture:\n1) 'src/core': Driver tingkat rendah seperti Prisma client, HTTP client wrapper, Dependency Injection (DI via '@needle-di/core'), dan utilitas format.\n2) 'src/client/domain': Entities murni dan UseCase bisnis yang independen dari framework.\n3) 'src/client/data': Data transfer objects (DTO), implementasi remote data source, dan repositori konkrit.\n4) 'src/client/presentation': Lapisan UI berbasis MVVM (View, ViewModel hook, Zustand store, shared components).\n5) 'src/server': Service layer backend Next.js, controller API, handler aksi database Prisma, engine orkestrasi scenario flow, dan engine proxy matching internal.",
+    "category": "System Architecture & Guidelines"
+  },
+  {
+    "id": "36",
     "question": "Mengapa cache proxy internal dibersihkan setiap kali ada operasi database write?",
-    "answer": "Untuk mempercepat proses pencocokan rute request matching klien secara real-time, engine proxy memelihara data in-memory cache pada file 'internal-proxy-cache.ts'. Setiap kali ada mutasi tulis data di database (seperti menambah endpoint, mengubah skenario respon, dll), fungsi 'clearInternalProxyCache()' akan dipicu untuk membuang cache lama agar request klien berikutnya langsung dievaluasi menggunakan aturan konfigurasi terbaru.",
+    "answer": "Untuk mempercepat proses evaluasi pencocokan rute request matching secara real-time, engine proxy memelihara in-memory cache pada 'internal-proxy-cache.ts'. Setiap kali ada mutasi tulis data pada database (seperti menambah endpoint, mengubah skenario respon, dll), fungsi 'clearInternalProxyCache()' akan dipicu secara otomatis untuk membuang cache lama agar request klien berikutnya langsung dievaluasi menggunakan konfigurasi aturan terbaru.",
     "category": "System Architecture & Guidelines"
   }
 ]

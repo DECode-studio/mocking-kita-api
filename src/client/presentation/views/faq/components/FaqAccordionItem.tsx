@@ -54,11 +54,11 @@ export const FaqAccordionItem: React.FC<FaqAccordionItemProps> = ({ faq, isExpan
         className={cn(
           'transition-all duration-300 ease-in-out overflow-hidden',
           isExpanded
-            ? 'max-h-125 border-t border-slate-100 dark:border-slate-800/50'
+            ? 'max-h-200 border-t border-slate-100 dark:border-slate-800/50'
             : 'max-h-0'
         )}
       >
-        <div className="px-5 py-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50/50 dark:bg-slate-900/30 font-normal">
+        <div className="px-5 py-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50/50 dark:bg-slate-900/30 font-normal whitespace-pre-line">
           {faq.answer}
         </div>
       </div>
