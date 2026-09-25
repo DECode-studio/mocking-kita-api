@@ -75,6 +75,16 @@ export const SCENARIO_FLOW_DETAIL_TEXT = {
   EXECUTION_FAILED_PREFIX: 'Execution Failed',
   EXECUTION_TIMELINE_LABEL: 'Execution Timeline',
   STEP_ORDER_LABEL: (order: number) => `Step ${order}`,
+  TABLE_HEADER_STEP: '#',
+  TABLE_HEADER_NAME: 'Step Name',
+  TABLE_HEADER_METHOD: 'Method',
+  TABLE_HEADER_STATUS: 'Status',
+  TABLE_HEADER_DURATION: 'Duration',
+  TABLE_PAGINATION_SHOWING: (from: number, to: number, total: number) => `${from}-${to} of ${total}`,
+  TABLE_PAGE_LABEL: (page: number, totalPages: number) => `${page} / ${totalPages}`,
+  TABLE_PREV: 'Previous',
+  TABLE_NEXT: 'Next',
+  NO_STEPS_RECORDED: 'No step executions recorded',
 
   // Step Card
   STEP_CARD_RUNNING: 'RUNNING',
