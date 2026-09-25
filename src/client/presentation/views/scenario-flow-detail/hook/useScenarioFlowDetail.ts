@@ -53,7 +53,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   }, [isRunning]);
 
   // Canvas & View State
-  const [viewMode, setViewMode] = useState<'canvas' | 'list'>('canvas');
+  const [viewMode, setViewMode] = useState<'canvas' | 'list'>('list');
   const [stepPositions, setStepPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const savePositionsTimerRef = useRef<NodeJS.Timeout | null>(null);
