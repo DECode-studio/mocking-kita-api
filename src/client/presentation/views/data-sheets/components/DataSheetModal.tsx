@@ -190,20 +190,21 @@ export const DataSheetModal: React.FC<DataSheetModalProps> = ({
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {DATA_SHEET_TEXT.CATEGORY_LABEL}
                 </label>
-                <input
+                <select
                   id={DATA_SHEET_SEMANTIC_ID.MODAL_FORM_SELECT_CATEGORY}
-                  type="text"
-                  list="category-suggestions"
-                  placeholder={DATA_SHEET_TEXT.CATEGORY_PLACEHOLDER}
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <datalist id="category-suggestions">
+                  className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                >
+                  {category && !DATA_SHEET_CATEGORIES.includes(category) && (
+                    <option value={category}>{category}</option>
+                  )}
                   {DATA_SHEET_CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat} />
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               <div>
