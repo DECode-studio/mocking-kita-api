@@ -215,7 +215,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         /* Mode 2: Classic 2-Column List Layout */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Chained Steps Sequence (col-span-5) */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="lg:col-span-5 space-y-4 min-w-0">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -356,7 +356,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
           </div>
 
           {/* Right Column: Real-Time Runner & Inspector (col-span-7) */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="lg:col-span-7 space-y-5 min-w-0">
             <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
               <Activity className="w-4 h-4 text-indigo-500" />
               <span>{SCENARIO_FLOW_DETAIL_TEXT.RUNNER_HEADER}</span>
