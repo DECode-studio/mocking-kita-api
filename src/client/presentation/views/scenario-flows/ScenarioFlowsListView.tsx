@@ -1,12 +1,16 @@
 'use client';
 
 import React from 'react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import {
   Plus,
   UploadCloud,
   Search,
   Layers,
   GitFork,
+  ChevronDown,
+  FileJson,
+  Boxes,
 } from 'lucide-react';
 import { useScenarioFlows } from './hook/useScenarioFlows';
 import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from './constant';
@@ -14,6 +18,7 @@ import {
   ScenarioFlowCard,
   CreateScenarioFlowModal,
   ImportScenarioFlowModal,
+  ImportInsomniaModal,
 } from './components';
 import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
@@ -36,6 +41,8 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
     setIsCreateModalOpen,
     isImportModalOpen,
     setIsImportModalOpen,
+    isImportInsomniaModalOpen,
+    setIsImportInsomniaModalOpen,
     runningFlowId,
     handleCreateFlow,
     handleImportSuccess,
@@ -60,14 +67,69 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            id={SCENARIO_FLOWS_SEMANTIC_ID.IMPORT_BTN}
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-2xs transition-all cursor-pointer"
-          >
-            <UploadCloud className="w-4 h-4 text-indigo-500" />
-            <span>{SCENARIO_FLOWS_TEXT.IMPORT_BTN}</span>
-          </button>
+          {/* Import Dropdown Menu */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                id={SCENARIO_FLOWS_SEMANTIC_ID.IMPORT_DROPDOWN_TRIGGER}
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 shadow-2xs transition-all cursor-pointer"
+              >
+                <UploadCloud className="w-4 h-4 text-indigo-500" />
+                <span>{SCENARIO_FLOWS_TEXT.IMPORT_BTN}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-0.5 opacity-80" />
+              </button>
+            </DropdownMenu.Trigger>
+
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={6}
+                className="w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 shadow-2xl z-50 text-xs space-y-1 animate-in fade-in zoom-in-95 duration-150"
+              >
+                {/* Option 1: Flow Template JSON */}
+                <DropdownMenu.Item
+                  id={SCENARIO_FLOWS_SEMANTIC_ID.IMPORT_OPTION_JSON}
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-800 dark:text-slate-200 cursor-pointer outline-none transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                    <FileJson className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      {SCENARIO_FLOWS_TEXT.IMPORT_DROPDOWN_JSON_TITLE}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                      {SCENARIO_FLOWS_TEXT.IMPORT_DROPDOWN_JSON_DESC}
+                    </div>
+                  </div>
+                </DropdownMenu.Item>
+
+                {/* Option 2: Insomnia Collection (YAML / JSON) */}
+                <DropdownMenu.Item
+                  id={SCENARIO_FLOWS_SEMANTIC_ID.IMPORT_OPTION_INSOMNIA}
+                  onClick={() => setIsImportInsomniaModalOpen(true)}
+                  className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/40 text-slate-800 dark:text-slate-200 cursor-pointer outline-none transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                    <Boxes className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors flex items-center gap-1.5">
+                      <span>{SCENARIO_FLOWS_TEXT.IMPORT_DROPDOWN_INSOMNIA_TITLE}</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400">
+                        v5
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                      {SCENARIO_FLOWS_TEXT.IMPORT_DROPDOWN_INSOMNIA_DESC}
+                    </div>
+                  </div>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
 
           <button
             id={SCENARIO_FLOWS_SEMANTIC_ID.CREATE_BTN}
@@ -136,7 +198,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
               {SCENARIO_FLOWS_TEXT.EMPTY_DESC}
             </p>
           </div>
-          <div className="flex items-center justify-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
               id={SCENARIO_FLOWS_SEMANTIC_ID.EMPTY_CREATE_BTN}
               onClick={() => setIsCreateModalOpen(true)}
@@ -150,8 +212,15 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
               onClick={() => setIsImportModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-indigo-500" />
+              <FileJson className="w-3.5 h-3.5 text-indigo-500" />
               {SCENARIO_FLOWS_TEXT.IMPORT_TEMPLATE_JSON}
+            </button>
+            <button
+              onClick={() => setIsImportInsomniaModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
+            >
+              <Boxes className="w-3.5 h-3.5 text-purple-500" />
+              <span>{SCENARIO_FLOWS_TEXT.INSOMNIA_MODAL_TITLE}</span>
             </button>
           </div>
         </div>
@@ -184,6 +253,15 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
       <ImportScenarioFlowModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
+        projectId={projectId}
+        projects={projects}
+        onSuccess={handleImportSuccess}
+        onImportFlow={handleImportFlow}
+      />
+
+      <ImportInsomniaModal
+        isOpen={isImportInsomniaModalOpen}
+        onClose={() => setIsImportInsomniaModalOpen(false)}
         projectId={projectId}
         projects={projects}
         onSuccess={handleImportSuccess}

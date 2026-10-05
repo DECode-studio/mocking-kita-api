@@ -22,6 +22,7 @@ export function useScenarioFlows(projectId?: string) {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isImportInsomniaModalOpen, setIsImportInsomniaModalOpen] = useState(false);
   const [runningFlowId, setRunningFlowId] = useState<string | null>(null);
 
   const addToast = useUIStore((state) => state.addToast);
@@ -125,6 +126,7 @@ export function useScenarioFlows(projectId?: string) {
       type: 'success',
     });
     setIsImportModalOpen(false);
+    setIsImportInsomniaModalOpen(false);
     loadData();
     if (result.flowId) {
       if (projectId) {
@@ -200,6 +202,8 @@ export function useScenarioFlows(projectId?: string) {
     setIsCreateModalOpen,
     isImportModalOpen,
     setIsImportModalOpen,
+    isImportInsomniaModalOpen,
+    setIsImportInsomniaModalOpen,
     runningFlowId,
     handleCreateFlow,
     handleImportSuccess,
@@ -210,3 +214,4 @@ export function useScenarioFlows(projectId?: string) {
     refresh: loadData,
   };
 }
+

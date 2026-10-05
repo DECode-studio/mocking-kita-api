@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, ChangeEvent } from 'react';
 import { getErrorMessage } from '@/src/core/utils/error';
+import { usePageLoadingOverlay } from '@/src/client/presentation/components/shared/PageLoadingOverlay';
 import { SCENARIO_FLOWS_TEXT } from '../constant';
 
 interface UseImportScenarioFlowModalProps {
@@ -25,6 +26,7 @@ export const useImportScenarioFlowModal = ({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pageLoading = usePageLoadingOverlay();
 
   useEffect(() => {
     if (isOpen) {
@@ -81,19 +83,27 @@ export const useImportScenarioFlowModal = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      if (onImportFlow) {
-        const res = await onImportFlow(effectiveProjectId, parsed);
-        onSuccess(res);
-        setJsonText('');
-        setFileName(null);
-        onClose();
-      }
+      await pageLoading.run(
+        {
+          title: 'Mengimpor Scenario Flow Template',
+          description: `Mengimpor dan melakukan upserting flow '${parsed.flow?.name || 'Scenario Flow'}' ke project...`,
+        },
+        async () => {
+          if (onImportFlow) {
+            const res = await onImportFlow(effectiveProjectId, parsed);
+            onSuccess(res);
+            setJsonText('');
+            setFileName(null);
+            onClose();
+          }
+        }
+      );
     } catch (err) {
       setError(getErrorMessage(err, SCENARIO_FLOWS_TEXT.MODAL_IMPORT_ERR_FAILED));
     } finally {
       setIsSubmitting(false);
     }
-  }, [targetProjectId, projectId, jsonText, onImportFlow, onSuccess, onClose]);
+  }, [targetProjectId, projectId, jsonText, pageLoading, onImportFlow, onSuccess, onClose]);
 
   const insertSampleTemplate = useCallback(() => {
     setJsonText(
