@@ -74,6 +74,29 @@ export const SCENARIO_FLOWS_TEXT = {
   MODAL_IMPORT_ERR_SYNTAX: 'Invalid JSON syntax. Please check the JSON format.',
   MODAL_IMPORT_ERR_FAILED: 'Failed to import scenario flow.',
 
+  // Import Dropdown Options
+  IMPORT_DROPDOWN_JSON_TITLE: 'Flow Template JSON',
+  IMPORT_DROPDOWN_JSON_DESC: 'Import native Mock API Studio flow format (.json)',
+  IMPORT_DROPDOWN_INSOMNIA_TITLE: 'Insomnia Collection (YAML / JSON)',
+  IMPORT_DROPDOWN_INSOMNIA_DESC: 'Convert Insomnia collection v5 with response chaining (.yaml, .json)',
+
+  // Import Insomnia Modal
+  INSOMNIA_MODAL_TITLE: 'Import Insomnia Collection',
+  INSOMNIA_MODAL_SUBTITLE: 'Convert Insomnia v5 Collection (YAML / JSON) with response chaining into Scenario Flow',
+  MODAL_INSOMNIA_CLICK_UPLOAD: 'Click to upload Insomnia export file',
+  MODAL_INSOMNIA_OR_PASTE_HINT: 'or paste YAML / JSON below',
+  MODAL_INSOMNIA_TEXTAREA_LABEL: 'Insomnia Collection Content (YAML or JSON)',
+  MODAL_INSOMNIA_TEXTAREA_PLACEHOLDER: 'Paste Insomnia collection YAML or JSON here (e.g. type: collection.insomnia.rest/5.0)...',
+  MODAL_INSOMNIA_SAMPLE_BTN: 'Insert Sample Insomnia YAML',
+  MODAL_INSOMNIA_PREVIEW_TITLE: 'Conversion Preview',
+  MODAL_INSOMNIA_STAT_REQUESTS: 'Requests / Steps',
+  MODAL_INSOMNIA_STAT_CHAINS: 'Response Chains',
+  MODAL_INSOMNIA_STAT_ENVS: 'Base URL Envs',
+  MODAL_INSOMNIA_SUBMIT_BTN: 'Convert & Import Flow',
+  MODAL_INSOMNIA_SUBMITTING_BTN: 'Converting & Upserting...',
+  MODAL_INSOMNIA_ERR_INVALID: 'Failed to parse Insomnia collection. Please check file format.',
+  MODAL_INSOMNIA_ERR_EMPTY: 'Please upload an Insomnia YAML/JSON file or paste its content.',
+
   // Card
   CARD_NO_DESC: 'No description provided.',
   CARD_OPEN_BUILDER: 'Open Builder',
