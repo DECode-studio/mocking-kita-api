@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Globe, X, Copy, Check, Plus, Search, Sparkles, KeyRound } from 'lucide-react';
+import Link from 'next/link';
+import { Globe, X, Copy, Check, Plus, Search, Sparkles, KeyRound, ExternalLink } from 'lucide-react';
 import { Environment, ALL_ENVIRONMENT_TYPES } from '@/src/client/domain/environment/entity/environment';
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 import { EnvironmentTypeBadge } from './EnvironmentTypeBadge';
@@ -15,6 +16,8 @@ interface EnvironmentVariablePickerProps {
 }
 
 interface EnvVarItem {
+  environmentId?: string;
+  projectId?: string;
   key: string;
   token: string;
   namespacedToken: string;
@@ -72,12 +75,15 @@ export const EnvironmentVariablePicker: React.FC<EnvironmentVariablePickerProps>
   // Build selectable items from environments
   const items: EnvVarItem[] = [];
   for (const env of environments) {
+    const activeStages = ALL_ENVIRONMENT_TYPES.filter(
+      (stage) => !!env.values?.[stage]
+    );
+
     // 1. Matrix variable (isBaseUrl: false) or regular named environment
     if (env.isBaseUrl === false && env.name) {
-      const activeStages = ALL_ENVIRONMENT_TYPES.filter(
-        (stage) => !!env.values?.[stage]
-      );
       items.push({
+        environmentId: env.id,
+        projectId: env.projectId,
         key: env.name,
         token: `{{${env.name}}}`,
         namespacedToken: `{{env.${env.name}}}`,
@@ -86,14 +92,14 @@ export const EnvironmentVariablePicker: React.FC<EnvironmentVariablePickerProps>
         activeStages,
       });
     } else if (env.isBaseUrl) {
-      // Base URL environment
-      const activeStages = ALL_ENVIRONMENT_TYPES.filter(
-        (stage) => !!env.values?.[stage]
-      );
+      // Base URL environment: use actual name (e.g. MDM_API_AREA_URL, los_auth_url, or Base URL)
+      const varKey = env.name ? env.name.replace(/\s+/g, '_') : 'base_url';
       items.push({
-        key: 'base_url',
-        token: `{{base_url}}`,
-        namespacedToken: `{{env.base_url}}`,
+        environmentId: env.id,
+        projectId: env.projectId,
+        key: varKey,
+        token: `{{${varKey}}}`,
+        namespacedToken: `{{env.${varKey}}}`,
         environmentName: env.name || 'Base URL',
         isBaseUrl: true,
         activeStages,
@@ -107,6 +113,8 @@ export const EnvironmentVariablePicker: React.FC<EnvironmentVariablePickerProps>
         const exists = items.some((i) => i.key.toLowerCase() === v.key.toLowerCase());
         if (!exists) {
           items.push({
+            environmentId: env.id,
+            projectId: env.projectId,
             key: v.key,
             token: `{{${v.key}}}`,
             namespacedToken: `{{env.${v.key}}}`,
@@ -193,36 +201,56 @@ export const EnvironmentVariablePicker: React.FC<EnvironmentVariablePickerProps>
                   </p>
                 </div>
               ) : (
-                filteredItems.map((item) => (
+                filteredItems.map((item: EnvVarItem) => (
                   <div
                     key={`${item.environmentName}_${item.key}`}
-                    className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-2"
+                    className="p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl space-y-2.5"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono truncate">
                           {item.key}
                         </span>
                         {item.isBaseUrl ? (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 shrink-0">
                             Base URL
                           </span>
                         ) : (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 shrink-0">
                             Matrix Variable
                           </span>
                         )}
+                        {item.environmentName && item.environmentName !== item.key && (
+                          <span className="text-[10px] text-slate-400 truncate">
+                            ({item.environmentName})
+                          </span>
+                        )}
                       </div>
-                      {item.activeStages.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          {item.activeStages.map((stage) => (
-                            <EnvironmentTypeBadge key={stage} type={stage} size="sm" />
-                          ))}
-                        </div>
-                      )}
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {item.activeStages.length > 0 && (
+                          <div className="flex items-center gap-1">
+                            {item.activeStages.map((stage) => (
+                              <EnvironmentTypeBadge key={stage} type={stage} size="sm" />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Direct Link to Environments page */}
+                        <Link
+                          href={`/environments?projectId=${item.projectId || projectId || 'ALL'}&search=${encodeURIComponent(item.environmentName || item.key)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={`Lihat konfigurasi '${item.environmentName || item.key}' di halaman Environments`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 rounded-md transition-colors"
+                        >
+                          <span>Detail</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <div className="flex items-center gap-2 flex-wrap pt-0.5">
                       {/* Standard Token */}
                       <div className="flex items-center rounded-lg border border-emerald-200 dark:border-emerald-800/80 overflow-hidden text-[11px]">
                         <span className="font-mono px-2 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
@@ -253,16 +281,35 @@ export const EnvironmentVariablePicker: React.FC<EnvironmentVariablePickerProps>
                       </div>
 
                       {/* Namespaced Token button {{env.KEY}} */}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onInsert ? handleInsert(item.namespacedToken) : handleCopy(item.namespacedToken)
-                        }
-                        title={`Explicit scope: ${item.namespacedToken}`}
-                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-mono hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                      >
-                        {item.namespacedToken}
-                      </button>
+                      <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden text-[11px]">
+                        <span className="font-mono px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          {item.namespacedToken}
+                        </span>
+                        {onInsert ? (
+                          <button
+                            type="button"
+                            onClick={() => handleInsert(item.namespacedToken)}
+                            title={`Insert scoped token ${item.namespacedToken}`}
+                            className="px-2 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" /> Insert
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(item.namespacedToken)}
+                            title={`Copy scoped token ${item.namespacedToken}`}
+                            className="px-2 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            {copiedToken === item.namespacedToken ? (
+                              <Check className="w-3 h-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="w-3 h-3" />
+                            )}
+                            Copy
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))
