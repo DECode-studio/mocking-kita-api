@@ -6,6 +6,13 @@ import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 
 let mockEnvUseCase: any;
 let mockProjectUseCase: any;
+const mockReplace = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/environments',
+  useRouter: () => ({ replace: mockReplace }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 vi.mock('@/src/core/di', () => ({
   CLIENT_DI_TOKENS: {
@@ -19,7 +26,7 @@ vi.mock('@/src/core/di', () => ({
   },
 }));
 
-describe('useEnvironments Hook (Matrix Model)', () => {
+describe('useEnvironments Hook (Matrix Model, Categories, View Modes, Pagination)', () => {
   const mockEnvironments = [
     {
       id: 'env-1',
@@ -33,7 +40,7 @@ describe('useEnvironments Hook (Matrix Model)', () => {
         PRODUCTION: 'https://auth.example.com',
       },
       status: true,
-      variables: [],
+      variables: [{ id: 'v1', key: 'AUTH_SECRET', value: 's3cr3t', type: 'secret', enabled: true }],
     },
     {
       id: 'env-2',
@@ -45,7 +52,7 @@ describe('useEnvironments Hook (Matrix Model)', () => {
         DEVELOPMENT: 'dev-secret-456',
       },
       status: true,
-      variables: [{ key: 'API_KEY', value: 'xyz', type: 'secret', enabled: true }],
+      variables: [{ id: 'v2', key: 'API_KEY', value: 'xyz', type: 'plain', enabled: true }],
     },
   ];
 
@@ -66,6 +73,7 @@ describe('useEnvironments Hook (Matrix Model)', () => {
     };
 
     useUIStore.setState({ toasts: [] });
+    mockReplace.mockClear();
   });
 
   it('should load matrix environments and filter by query', async () => {
@@ -83,6 +91,44 @@ describe('useEnvironments Hook (Matrix Model)', () => {
     });
     expect(result.current.environments).toHaveLength(1);
     expect(result.current.environments[0].name).toBe('Platform AUTH');
+  });
+
+  it('should filter environments by category stage correctly', async () => {
+    const { result } = renderHook(() => useEnvironments());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.categoryCounts.ALL).toBe(2);
+    expect(result.current.categoryCounts.PRODUCTION).toBe(1);
+
+    act(() => {
+      result.current.handleSelectCategory('PRODUCTION');
+    });
+
+    expect(result.current.selectedCategory).toBe('PRODUCTION');
+    expect(result.current.environments).toHaveLength(1);
+    expect(result.current.environments[0].name).toBe('Platform AUTH');
+  });
+
+  it('should switch between View as Env and View as Variable', async () => {
+    const { result } = renderHook(() => useEnvironments());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.viewMode).toBe('env');
+    expect(result.current.totalVariablesCount).toBe(1);
+
+    act(() => {
+      result.current.handleSelectViewMode('variable');
+    });
+
+    expect(result.current.viewMode).toBe('variable');
+    expect(result.current.variables).toHaveLength(1);
+    expect(result.current.variables.map((v) => v.key)).toEqual(['App Credentials']);
   });
 
   it('should pass isBaseUrl and matrix values when creating new environment', async () => {

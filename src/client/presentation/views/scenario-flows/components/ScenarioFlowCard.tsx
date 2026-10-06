@@ -29,6 +29,7 @@ interface ScenarioFlowCardProps {
 
 export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
   flow,
+  projectId,
   isRunning,
   onQuickRun,
   onExport,
@@ -36,8 +37,8 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
 }) => {
   const stepsCount = flow.steps?.length ?? 0;
   const latestExecution = flow.executions?.[0];
-  const targetDetailUrl = flow.projectId
-    ? ROUTES.SCENARIO_FLOW_DETAIL(flow.projectId, flow.id)
+  const targetDetailUrl = projectId
+    ? ROUTES.SCENARIO_FLOW_DETAIL(projectId, flow.id)
     : ROUTES.SCENARIO_FLOW_DETAIL_GLOBAL(flow.id);
 
   return (

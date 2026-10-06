@@ -475,11 +475,97 @@ export function parseOpenApiSpecToProjectData(
   // Parse OpenAPI servers / Swagger host -> Environments (Matrix Model)
   const explicitEnvs = rawSpec['x-environments'] || rawSpec.environments;
 
-  // Extract any top-level custom variables (e.g. from extensions or Postman/Insomnia conversions)
+  // Extract any top-level custom variables (e.g. from extensions, securitySchemes, or parameters)
   const topLevelCustomVars: EnvironmentVariable[] = [];
   const rawTopVars = rawSpec['x-variables'] || rawSpec['x-environment-variables'] || rawSpec.variables;
   if (rawTopVars) {
     topLevelCustomVars.push(...parseRawVariables(rawTopVars));
+  }
+
+  // Extract security schemes (OpenAPI 3 components.securitySchemes or Swagger 2 securityDefinitions)
+  const securitySchemes = rawSpec.components?.securitySchemes || rawSpec.securityDefinitions || {};
+  if (securitySchemes && typeof securitySchemes === 'object') {
+    for (const [schemeKey, rawScheme] of Object.entries(securitySchemes as Record<string, any>)) {
+      if (!rawScheme || typeof rawScheme !== 'object') continue;
+      const type = String(rawScheme.type || '').toLowerCase();
+      const scheme = String(rawScheme.scheme || '').toLowerCase();
+      const inLocation = String(rawScheme.in || '').toLowerCase();
+      const name = rawScheme.name ? String(rawScheme.name) : schemeKey;
+
+      if (type === 'apikey') {
+        const varKey = name || schemeKey;
+        if (!topLevelCustomVars.some((v) => v.key.toLowerCase() === varKey.toLowerCase())) {
+          topLevelCustomVars.push({
+            id: generateId(),
+            key: varKey,
+            value: `sample_${varKey.toLowerCase()}_value`,
+            type: 'secret',
+            enabled: true,
+            description: rawScheme.description ? String(rawScheme.description) : `API Key for ${schemeKey} (${inLocation})`,
+          });
+        }
+      } else if (type === 'http' && scheme === 'bearer') {
+        if (!topLevelCustomVars.some((v) => v.key.toLowerCase() === 'authorization' || v.key.toLowerCase() === 'token')) {
+          topLevelCustomVars.push({
+            id: generateId(),
+            key: 'Authorization',
+            value: 'Bearer sample_token_jwt',
+            type: 'secret',
+            enabled: true,
+            description: rawScheme.description ? String(rawScheme.description) : `Bearer Token for ${schemeKey}`,
+          });
+        }
+      } else if (type === 'http' && scheme === 'basic') {
+        if (!topLevelCustomVars.some((v) => v.key.toLowerCase() === 'authorization')) {
+          topLevelCustomVars.push({
+            id: generateId(),
+            key: 'Authorization',
+            value: 'Basic sample_credentials',
+            type: 'secret',
+            enabled: true,
+            description: rawScheme.description ? String(rawScheme.description) : `Basic Auth for ${schemeKey}`,
+          });
+        }
+      } else if (type === 'oauth2' || type === 'openidconnect') {
+        if (!topLevelCustomVars.some((v) => v.key.toLowerCase() === 'authorization' || v.key.toLowerCase() === 'token')) {
+          topLevelCustomVars.push({
+            id: generateId(),
+            key: 'Authorization',
+            value: 'Bearer sample_oauth2_token',
+            type: 'secret',
+            enabled: true,
+            description: rawScheme.description ? String(rawScheme.description) : `OAuth2 Token for ${schemeKey}`,
+          });
+        }
+      }
+    }
+  }
+
+  // Extract common header parameters defined at root (OpenAPI 3 components.parameters or Swagger 2 parameters)
+  const rootParams = rawSpec.components?.parameters || rawSpec.parameters || {};
+  if (rootParams && typeof rootParams === 'object') {
+    for (const [, p] of Object.entries(rootParams as Record<string, any>)) {
+      if (p && typeof p === 'object' && p.in === 'header' && p.name) {
+        const hName = String(p.name);
+        if (!topLevelCustomVars.some((v) => v.key.toLowerCase() === hName.toLowerCase())) {
+          const lowerH = hName.toLowerCase();
+          const isSecret =
+            lowerH.includes('key') ||
+            lowerH.includes('token') ||
+            lowerH.includes('auth') ||
+            lowerH.includes('secret') ||
+            lowerH.includes('signature');
+          topLevelCustomVars.push({
+            id: generateId(),
+            key: hName,
+            value: String(p.example || p.default || `sample_${hName.toLowerCase()}`),
+            type: isSecret ? 'secret' : 'plain',
+            enabled: true,
+            description: p.description ? String(p.description) : undefined,
+          });
+        }
+      }
+    }
   }
 
   if (Array.isArray(explicitEnvs) && explicitEnvs.length > 0) {
@@ -502,12 +588,10 @@ export function parseOpenApiSpecToProjectData(
         });
       }
 
-      // Merge top level custom vars into the first or default environment
-      if (i === 0 && topLevelCustomVars.length > 0) {
-        for (const tVar of topLevelCustomVars) {
-          if (!parsedVars.some((v) => v.key === tVar.key)) {
-            parsedVars.push({ ...tVar });
-          }
+      // Merge top level custom vars into the environment
+      for (const tVar of topLevelCustomVars) {
+        if (!parsedVars.some((v) => v.key === tVar.key)) {
+          parsedVars.push({ ...tVar });
         }
       }
 
@@ -626,6 +710,26 @@ export function parseOpenApiSpecToProjectData(
       environmentType: envType,
       variables: envVars,
       baseUrl: fullUrl,
+      status: true,
+    });
+  } else if (topLevelCustomVars.length > 0) {
+    const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
+    const envId = generateId();
+    environmentsToCreate.push({
+      id: envId,
+      projectId,
+      name: serviceName,
+      isBaseUrl: false,
+      values: {
+        LOCAL: null,
+        DEVELOPMENT: null,
+        TESTING: null,
+        STAGING: null,
+        PRODUCTION: null,
+      },
+      environmentType: 'DEVELOPMENT',
+      variables: [...topLevelCustomVars],
+      baseUrl: '',
       status: true,
     });
   }

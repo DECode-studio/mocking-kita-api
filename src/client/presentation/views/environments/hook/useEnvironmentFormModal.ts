@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, FormEvent } from 'react';
 import {
   Environment,
-  EnvironmentVariable,
   EnvironmentValuesMap,
   ALL_ENVIRONMENT_TYPES,
   normalizeEnvironmentValues,
@@ -11,18 +10,7 @@ import {
 } from '@/src/client/domain/environment/entity/environment';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { EnvironmentType } from '@/src/core/utils/types';
-import { generateId } from '@/src/core/utils/uuid';
 import { EnvironmentFormData } from './useEnvironments';
-
-export interface VariableDraftItem {
-  id: string;
-  key: string;
-  value: string;
-  type: 'plain' | 'secret';
-  enabled: boolean;
-  description?: string;
-  showValue?: boolean;
-}
 
 interface UseEnvironmentFormModalProps {
   isOpen: boolean;
@@ -52,8 +40,6 @@ export const useEnvironmentFormModal = ({
     PRODUCTION: '',
   });
   const [status, setStatus] = useState(true);
-  const [variables, setVariables] = useState<VariableDraftItem[]>([]);
-  const [showVariablesSection, setShowVariablesSection] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -90,23 +76,6 @@ export const useEnvironmentFormModal = ({
         initialValues.LOCAL = null;
       }
       setStageValues(initialValues);
-
-      let initialVars: VariableDraftItem[] = [];
-      if (Array.isArray(editingEnvironment.variables) && editingEnvironment.variables.length > 0) {
-        initialVars = editingEnvironment.variables
-          .filter((v) => v.key.toLowerCase() !== 'baseurl' && v.key.toLowerCase() !== 'base_url')
-          .map((v) => ({
-            id: v.id || generateId(),
-            key: v.key || '',
-            value: v.value || '',
-            type: v.type || 'plain',
-            enabled: v.enabled !== false,
-            description: v.description || '',
-            showValue: false,
-          }));
-      }
-      setVariables(initialVars);
-      setShowVariablesSection(initialVars.length > 0);
     } else {
       setName('');
       setProjectId(defaultProjectId || (projects.length > 0 ? projects[0].id : ''));
@@ -119,8 +88,6 @@ export const useEnvironmentFormModal = ({
         PRODUCTION: '',
       });
       setStatus(true);
-      setVariables([]);
-      setShowVariablesSection(false);
     }
   }, [editingEnvironment, projects, defaultProjectId, isOpen]);
 
@@ -141,63 +108,9 @@ export const useEnvironmentFormModal = ({
     });
   }, []);
 
-  const handleAddVariable = useCallback((
-    key = '',
-    value = '',
-    type: 'plain' | 'secret' = 'plain',
-    description = ''
-  ) => {
-    setVariables((prev) => [
-      ...prev,
-      {
-        id: generateId(),
-        key,
-        value,
-        type,
-        enabled: true,
-        description,
-        showValue: type === 'plain',
-      },
-    ]);
-    setShowVariablesSection(true);
-  }, []);
-
-  const handleUpdateVariable = useCallback((id: string, updates: Partial<VariableDraftItem>) => {
-    setVariables((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
-  }, []);
-
-  const handleRemoveVariable = useCallback((id: string) => {
-    setVariables((prev) => prev.filter((item) => item.id !== id));
-  }, []);
-
-  const handleToggleShowValue = useCallback((id: string) => {
-    setVariables((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, showValue: !item.showValue } : item
-      )
-    );
-  }, []);
-
-  const handleClearAllVariables = useCallback(() => {
-    setVariables([]);
-  }, []);
-
   const handleSubmit = useCallback(async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !projectId) return;
-
-    const cleanVariables: EnvironmentVariable[] = variables
-      .filter((v) => v.key.trim().length > 0)
-      .map((v) => ({
-        id: v.id,
-        key: v.key.trim(),
-        value: v.value,
-        type: v.type,
-        enabled: v.enabled,
-        description: v.description?.trim() || undefined,
-      }));
 
     const normalizedMatrix = normalizeEnvironmentValues(stageValues, isBaseUrl);
 
@@ -213,7 +126,7 @@ export const useEnvironmentFormModal = ({
         isBaseUrl,
         values: normalizedMatrix,
         environmentType: firstFilledStage,
-        variables: cleanVariables,
+        variables: [],
         baseUrl: legacyBaseUrl,
         status,
       });
@@ -221,7 +134,7 @@ export const useEnvironmentFormModal = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [name, projectId, variables, stageValues, isBaseUrl, status, onSave, onClose]);
+  }, [name, projectId, stageValues, isBaseUrl, status, onSave, onClose]);
 
   return {
     name,
@@ -232,17 +145,9 @@ export const useEnvironmentFormModal = ({
     stageValues,
     status,
     setStatus,
-    variables,
-    showVariablesSection,
-    setShowVariablesSection,
     isSubmitting,
     handleStageValueChange,
     handleToggleIsBaseUrl,
-    handleAddVariable,
-    handleUpdateVariable,
-    handleRemoveVariable,
-    handleToggleShowValue,
-    handleClearAllVariables,
     handleSubmit,
   };
 };

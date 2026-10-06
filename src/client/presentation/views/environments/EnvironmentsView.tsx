@@ -1,24 +1,45 @@
 'use client';
 
 import React from 'react';
-import { Server } from 'lucide-react';
 import { useEnvironments } from './hook/useEnvironments';
-import { EnvironmentHeader, EnvironmentCard, EnvironmentFormModal } from './components';
+import {
+  EnvironmentHeader,
+  EnvironmentsTableView,
+  VariablesTableView,
+  EnvironmentPagination,
+  EnvironmentFormModal,
+} from './components';
 import { ConfirmDialog } from '@/src/client/presentation/components/shared/ConfirmDialog';
-import { EmptyState } from '@/src/client/presentation/components/shared/EmptyState';
 import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 import { ENVIRONMENTS_TEXT, ENVIRONMENTS_SEMANTIC_ID } from './constant';
 
 export const EnvironmentsView: React.FC = () => {
   const {
     environments,
+    variables,
+    totalVariablesCount,
     projects,
     projectMap,
     isLoading,
-    searchQuery,
-    setSearchQuery,
+    // Search
+    searchInputValue,
+    handleSearchInputChange,
+    handleClearSearch,
+    // Filter & Mode
     selectedProjectId,
-    setSelectedProjectId,
+    handleSelectProject,
+    selectedCategory,
+    handleSelectCategory,
+    categoryCounts,
+    viewMode,
+    handleSelectViewMode,
+    // Pagination
+    currentPage,
+    totalPages,
+    totalItems,
+    pageSize,
+    handlePageChange,
+    // Modals
     isFormOpen,
     editingEnvironment,
     deleteTargetId,
@@ -35,46 +56,67 @@ export const EnvironmentsView: React.FC = () => {
     <div id={ENVIRONMENTS_SEMANTIC_ID.CONTAINER} className="w-full space-y-6">
       {/* Header */}
       <EnvironmentHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchInputValue={searchInputValue}
+        onSearchInputChange={handleSearchInputChange}
+        onClearSearch={handleClearSearch}
         selectedProjectId={selectedProjectId}
-        onProjectChange={setSelectedProjectId}
+        onProjectChange={handleSelectProject}
         projects={projects}
+        viewMode={viewMode}
+        onViewModeChange={handleSelectViewMode}
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleSelectCategory}
+        categoryCounts={categoryCounts}
+        totalVariablesCount={totalVariablesCount}
         onCreateClick={handleOpenCreateModal}
       />
 
       {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-4 animate-pulse">
+          <div className="h-8 bg-slate-200 dark:bg-slate-800 rounded-lg w-full" />
+          {[1, 2, 3, 4, 5].map((n) => (
             <div
               key={n}
-              className="h-44 bg-gray-200 dark:bg-gray-800 rounded-xl"
+              className="h-12 bg-slate-100 dark:bg-slate-800/60 rounded-lg w-full"
             />
           ))}
         </div>
-      ) : environments.length === 0 ? (
-        <div id={ENVIRONMENTS_SEMANTIC_ID.EMPTY_STATE} className="bg-white dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700/60 rounded-2xl p-12 text-center">
-          <EmptyState
-            icon={Server}
-            title={ENVIRONMENTS_TEXT.NO_ENVIRONMENTS}
-            description={ENVIRONMENTS_TEXT.NO_ENVIRONMENTS_SUBTITLE}
-            actionLabel={ENVIRONMENTS_TEXT.CREATE_BUTTON}
-            onAction={handleOpenCreateModal}
+      ) : viewMode === 'env' ? (
+        <div className="space-y-4">
+          <EnvironmentsTableView
+            environments={environments}
+            projectMap={projectMap}
+            selectedCategory={selectedCategory}
+            onEdit={handleOpenEditModal}
+            onDelete={(id) => setDeleteTargetId(id)}
+            onToggleStatus={handleToggleStatus}
+            onCreateClick={handleOpenCreateModal}
+          />
+
+          <EnvironmentPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
           />
         </div>
       ) : (
-        <div id={ENVIRONMENTS_SEMANTIC_ID.GRID} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {environments.map((env) => (
-            <EnvironmentCard
-              key={env.id}
-              environment={env}
-              project={projectMap.get(env.projectId)}
-              onEdit={handleOpenEditModal}
-              onDelete={(id) => setDeleteTargetId(id)}
-              onToggleStatus={handleToggleStatus}
-            />
-          ))}
+        <div className="space-y-4">
+          <VariablesTableView
+            variables={variables}
+            onEditEnvironment={handleOpenEditModal}
+            onCreateClick={handleOpenCreateModal}
+          />
+
+          <EnvironmentPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+          />
         </div>
       )}
 

@@ -34,6 +34,51 @@ export const ENVIRONMENTS_TEXT = {
   BTN_SAVING: 'Saving...',
   BTN_CANCEL: 'Cancel',
 
+  // Category & View Mode
+  CATEGORY: {
+    ALL: 'All Stages',
+    LOCAL: 'Local Mock',
+    DEVELOPMENT: 'Dev',
+    TESTING: 'Test',
+    STAGING: 'Staging',
+    PRODUCTION: 'Prod',
+  },
+  VIEW_MODE_ENV: 'View as Env',
+  VIEW_MODE_VARIABLE: 'View as Variable',
+  VIEW_MODE_ENV_DESC: 'Environments filtered by active stage category',
+  VIEW_MODE_VAR_DESC: 'Global variable names across all environments',
+
+  // Table Columns
+  TABLE: {
+    COL_NAME: 'Environment',
+    COL_PROJECT: 'Project',
+    COL_STAGE_URL: 'Stage Endpoint',
+    COL_MATRIX: 'Stages Matrix',
+    COL_VARS_COUNT: 'Variables',
+    COL_STATUS: 'Status',
+    COL_ACTIONS: 'Actions',
+    COL_VAR_KEY: 'Variable Name',
+    COL_VAR_TYPE: 'Type',
+    COL_VAR_PARENT_ENV: 'Source Environment',
+    COL_VAR_DESC: 'Description',
+    STAGE_NOT_SET: 'Not configured for this stage',
+    LOCAL_MOCK_HINT: 'Internal Mock Proxy (localhost)',
+    SECRET_MASKED: 'Secret Variable',
+    PLAIN_TEXT: 'Plain Variable',
+  },
+
+  // Pagination Text
+  PAGINATION: {
+    SHOWING: (from: number, to: number, total: number) => `Showing ${from} to ${to} of ${total} entries`,
+    TOTAL_ITEMS: (count: number) => `${count} items total`,
+    PREVIOUS: 'Previous',
+    NEXT: 'Next',
+    PAGE_OF: (current: number, total: number) => `Page ${current} of ${total}`,
+  },
+  
+  NO_VARS_MATCH: 'No environment variables found',
+  NO_VARS_MATCH_DESC: 'Try adjusting your search query or project filter.',
+
   // Card Text
   CARD_ENV_STAGES: 'Environment Stages',
   CARD_CONFIGURED: 'configured',

@@ -209,6 +209,22 @@ function extractScriptEnvironmentRefs(script: any): { reads: Set<string>; writes
   return { reads, writes };
 }
 
+function isSecretKey(key: string): boolean {
+  const lower = String(key || '').toLowerCase();
+  return (
+    lower.includes('token') ||
+    lower.includes('secret') ||
+    lower.includes('password') ||
+    lower.includes('auth') ||
+    lower.includes('key') ||
+    lower.includes('bearer') ||
+    lower.includes('credential') ||
+    lower.includes('signature') ||
+    lower.includes('private') ||
+    lower.includes('cert')
+  );
+}
+
 function buildEnvironmentTemplate(
   parsed: any,
   warnings: string[],
@@ -230,7 +246,7 @@ function buildEnvironmentTemplate(
     }
     const stage = stageFor(String(subenv.name || ''));
     if (!stageData[stage]) {
-      stageData[stage] = {};
+      stageData[stage] = { ...baseData };
     }
     Object.assign(stageData[stage], subenv.data);
   }
@@ -257,6 +273,39 @@ function buildEnvironmentTemplate(
   if (baseKeys.size === 0) {
     warnings.push('No base URL environment variables detected in collection environments.');
   }
+
+  const preferredStage = stageData['DEVELOPMENT'] ? 'DEVELOPMENT' : Object.keys(stageData)[0];
+  const sortedVariableKeys = Array.from(variableKeys).sort();
+
+  // Extract non-baseUrl variables (headers, tokens, keys, secrets)
+  const envVariables = sortedVariableKeys.map((key) => {
+    let rawVal: any = undefined;
+    if (preferredStage && stageData[preferredStage] && stageData[preferredStage][key] !== undefined) {
+      rawVal = stageData[preferredStage][key];
+    } else {
+      for (const stage of STAGES) {
+        if (stageData[stage] && stageData[stage][key] !== undefined) {
+          rawVal = stageData[stage][key];
+          break;
+        }
+      }
+    }
+
+    const valueStr =
+      rawVal !== undefined && rawVal !== null
+        ? typeof rawVal === 'object'
+          ? JSON.stringify(rawVal)
+          : String(rawVal)
+        : '';
+
+    return {
+      id: key,
+      key,
+      value: valueStr,
+      type: (isSecretKey(key) ? 'secret' : 'plain') as 'plain' | 'secret',
+      enabled: true,
+    };
+  });
 
   const sortedBaseKeys = Array.from(baseKeys).sort();
   const environments: NonNullable<FlowExportTemplate['environments']> = [];
@@ -287,15 +336,84 @@ function buildEnvironmentTemplate(
       isBaseUrl: true,
       environmentType: defaultType,
       values,
-      variables: [],
+      variables: [...envVariables],
       isDefault: index === 0,
     });
   }
 
+  // Create dedicated variable set environments for variables that have distinct values per stage
+  for (const varKey of sortedVariableKeys) {
+    const stageValues: Record<StageType, string | null> = {
+      LOCAL: null,
+      DEVELOPMENT: null,
+      TESTING: null,
+      STAGING: null,
+      PRODUCTION: null,
+    };
+    let hasDistinctStageValues = false;
+    let stageCount = 0;
+    let firstVal: string | null = null;
+
+    for (const stage of STAGES) {
+      if (stageData[stage] && stageData[stage][varKey] !== undefined && String(stageData[stage][varKey]) !== '') {
+        const strVal = String(stageData[stage][varKey]);
+        stageValues[stage] = strVal;
+        stageCount++;
+        if (firstVal === null) {
+          firstVal = strVal;
+        } else if (firstVal !== strVal) {
+          hasDistinctStageValues = true;
+        }
+      }
+    }
+
+    if (hasDistinctStageValues && stageCount > 1) {
+      const defaultType: StageType = stageValues.DEVELOPMENT
+        ? 'DEVELOPMENT'
+        : (Object.keys(stageData)[0] as StageType) || 'DEVELOPMENT';
+      environments.push({
+        id: varKey,
+        name: varKey,
+        isBaseUrl: false,
+        environmentType: defaultType,
+        values: stageValues,
+        variables: [
+          {
+            id: varKey,
+            key: varKey,
+            value: stageValues[defaultType] || firstVal || '',
+            type: isSecretKey(varKey) ? 'secret' : 'plain',
+            enabled: true,
+          },
+        ],
+        isDefault: false,
+      });
+    }
+  }
+
+  // If no base keys were detected, but variable keys exist, create a Variable Set environment
+  if (environments.length === 0 && envVariables.length > 0) {
+    const defaultType: StageType = (preferredStage as StageType) || 'DEVELOPMENT';
+    environments.push({
+      id: 'env_variables',
+      name: String(parsed.name || 'Environment Variables'),
+      isBaseUrl: false,
+      environmentType: defaultType,
+      values: {
+        LOCAL: null,
+        DEVELOPMENT: null,
+        TESTING: null,
+        STAGING: null,
+        PRODUCTION: null,
+      },
+      variables: [...envVariables],
+      isDefault: true,
+    });
+  }
+
   const flowVariables: Record<string, any> = {};
-  const preferredStage = stageData['DEVELOPMENT'] ? 'DEVELOPMENT' : Object.keys(stageData)[0];
   if (preferredStage && stageData[preferredStage]) {
-    for (const key of Array.from(variableKeys).sort()) {
+    for (const key of sortedVariableKeys) {
       const val = stageData[preferredStage][key];
       flowVariables[key] = val !== undefined ? val : null;
     }
