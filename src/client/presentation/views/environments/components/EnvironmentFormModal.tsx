@@ -1,21 +1,16 @@
+'use client';
+
 import React from 'react';
 import {
   X,
   Server,
   FolderGit2,
-  Plus,
-  Trash2,
-  Eye,
-  EyeOff,
-  KeyRound,
-  Shield,
   Globe,
-  Lock,
-  User,
   Info,
   Layers,
   Sparkles,
   CheckCircle2,
+  KeyRound,
 } from 'lucide-react';
 import {
   Environment,
@@ -53,16 +48,9 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
     stageValues,
     status,
     setStatus,
-    variables,
-    showVariablesSection,
-    setShowVariablesSection,
     isSubmitting,
     handleStageValueChange,
     handleToggleIsBaseUrl,
-    handleAddVariable,
-    handleUpdateVariable,
-    handleRemoveVariable,
-    handleToggleShowValue,
     handleSubmit,
   } = useEnvironmentFormModal({
     isOpen,
@@ -79,7 +67,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs overflow-y-auto">
       <div
         id={ENVIRONMENTS_SEMANTIC_ID.FORM_MODAL}
-        className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-8"
+        className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-8"
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900">
@@ -112,7 +100,8 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
             {/* Name */}
             <div className="sm:col-span-6">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {ENVIRONMENTS_TEXT.FORM.NAME_LABEL} <span className="text-rose-500">*</span>
+                {isBaseUrl ? 'Service / Base URL Name' : 'Variable Name / Key'}{' '}
+                <span className="text-rose-500">*</span>
               </label>
               <input
                 id={ENVIRONMENTS_SEMANTIC_ID.FORM_NAME_INPUT}
@@ -120,8 +109,8 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={ENVIRONMENTS_TEXT.FORM.NAME_PLACEHOLDER}
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                placeholder={isBaseUrl ? 'e.g. auth_service, api_gateway' : 'e.g. access_token, api_key'}
+                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono"
               />
             </div>
 
@@ -291,7 +280,7 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                               type="text"
                               value={stageValues[stage] ?? ''}
                               onChange={(e) => handleStageValueChange(stage, e.target.value)}
-                              placeholder={config.placeholder}
+                              placeholder={isBaseUrl ? config.placeholder : `Value for ${config.label} stage...`}
                               className="w-full px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                             />
                             {stageValues[stage] && (
@@ -320,177 +309,6 @@ export const EnvironmentFormModal: React.FC<EnvironmentFormModalProps> = ({
                 <p className="text-[11px] leading-relaxed">
                   <strong>{ENVIRONMENTS_TEXT.FORM_BASE_URL_PATTERN_STRONG}</strong> {ENVIRONMENTS_TEXT.FORM_BASE_URL_PATTERN_DESC}
                 </p>
-              </div>
-            )}
-          </div>
-
-          {/* Section: Additional Custom Variables (Optional) */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-2">
-              <button
-                id={ENVIRONMENTS_SEMANTIC_ID.FORM_TOGGLE_VARS_SECTION_BTN}
-                type="button"
-                onClick={() => setShowVariablesSection(!showVariablesSection)}
-                className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
-              >
-                <KeyRound className="w-3.5 h-3.5 text-indigo-500" />
-                <span>{ENVIRONMENTS_TEXT.FORM_CUSTOM_VARS_TITLE(variables.length)}</span>
-                <span className="text-[10px] text-slate-400 font-normal">
-                  {showVariablesSection ? ENVIRONMENTS_TEXT.FORM_CLICK_TO_HIDE : ENVIRONMENTS_TEXT.FORM_CLICK_TO_SHOW}
-                </span>
-              </button>
-
-              {showVariablesSection && (
-                <div className="flex items-center flex-wrap gap-1.5">
-                  <button
-                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_PRESET_APIKEY_BTN}
-                    type="button"
-                    onClick={() => handleAddVariable('apiKey', '', 'secret', 'API key credential')}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 rounded border border-amber-200 dark:border-amber-800 cursor-pointer"
-                  >
-                    <KeyRound className="w-2.5 h-2.5" />
-                    <span>{ENVIRONMENTS_TEXT.FORM_PRESET_API_KEY}</span>
-                  </button>
-                  <button
-                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_PRESET_BEARER_BTN}
-                    type="button"
-                    onClick={() => handleAddVariable('bearerToken', '', 'secret', 'Bearer token')}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 rounded border border-emerald-200 dark:border-emerald-800 cursor-pointer"
-                  >
-                    <Shield className="w-2.5 h-2.5" />
-                    <span>{ENVIRONMENTS_TEXT.FORM_PRESET_BEARER}</span>
-                  </button>
-                  <button
-                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_PRESET_BASICAUTH_BTN}
-                    type="button"
-                    onClick={() => {
-                      handleAddVariable('username', '', 'plain', 'Auth username');
-                      handleAddVariable('password', '', 'secret', 'Auth password');
-                    }}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 rounded border border-purple-200 dark:border-purple-800 cursor-pointer"
-                  >
-                    <User className="w-2.5 h-2.5" />
-                    <span>{ENVIRONMENTS_TEXT.FORM_PRESET_BASIC_AUTH}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {showVariablesSection && (
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50/40 dark:bg-slate-950/40">
-                <div className="grid grid-cols-12 gap-2 px-3 py-1.5 bg-slate-100/80 dark:bg-slate-800/80 text-[11px] font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                  <div className="col-span-1 text-center">{ENVIRONMENTS_TEXT.FORM_COL_USE}</div>
-                  <div className="col-span-4">{ENVIRONMENTS_TEXT.TABLE_COL_KEY}</div>
-                  <div className="col-span-5">{ENVIRONMENTS_TEXT.TABLE_COL_VALUE}</div>
-                  <div className="col-span-2 text-right pr-2">{ENVIRONMENTS_TEXT.TABLE_COL_ACTIONS}</div>
-                </div>
-
-                <div className="max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
-                  {variables.length === 0 ? (
-                    <div className="py-5 text-center text-xs text-slate-500 dark:text-slate-400">
-                      <p>{ENVIRONMENTS_TEXT.FORM.NO_VARIABLES}</p>
-                    </div>
-                  ) : (
-                    variables.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`grid grid-cols-12 gap-2 items-center px-3 py-1.5 text-xs transition-colors ${
-                          item.enabled ? 'bg-white dark:bg-slate-900/60' : 'bg-slate-50/70 dark:bg-slate-950/50 opacity-60'
-                        }`}
-                      >
-                        <div className="col-span-1 flex justify-center">
-                          <input
-                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_TOGGLE_BTN(item.id)}
-                            type="checkbox"
-                            checked={item.enabled}
-                            onChange={(e) => handleUpdateVariable(item.id, { enabled: e.target.checked })}
-                            className="w-3.5 h-3.5 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 dark:border-slate-600 cursor-pointer"
-                          />
-                        </div>
-
-                        <div className="col-span-4">
-                          <input
-                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_KEY_INPUT(item.id)}
-                            type="text"
-                            value={item.key}
-                            onChange={(e) => handleUpdateVariable(item.id, { key: e.target.value })}
-                            placeholder="e.g. clientSecret, appId"
-                            className="w-full px-2 py-1 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-hidden focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                          />
-                        </div>
-
-                        <div className="col-span-5 relative flex items-center">
-                          <input
-                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_VALUE_INPUT(item.id)}
-                            type={item.type === 'secret' && !item.showValue ? 'password' : 'text'}
-                            value={item.value}
-                            onChange={(e) => handleUpdateVariable(item.id, { value: e.target.value })}
-                            placeholder="Value..."
-                            className="w-full pl-2 pr-14 py-1 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-hidden focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                          />
-                          <div className="absolute right-1 flex items-center gap-0.5">
-                            {item.type === 'secret' && (
-                              <button
-                                id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_SHOW_VALUE_BTN(item.id)}
-                                type="button"
-                                onClick={() => handleToggleShowValue(item.id)}
-                                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                                title={item.showValue ? ENVIRONMENTS_TEXT.FORM_TOOLTIP_HIDE_VALUE : ENVIRONMENTS_TEXT.FORM_TOOLTIP_SHOW_VALUE}
-                              >
-                                {item.showValue ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            )}
-                            <button
-                              id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_TYPE_SELECT(item.id)}
-                              type="button"
-                              onClick={() =>
-                                handleUpdateVariable(item.id, {
-                                  type: item.type === 'secret' ? 'plain' : 'secret',
-                                  showValue: item.type === 'secret',
-                                })
-                              }
-                              className={`p-1 rounded text-[10px] cursor-pointer ${
-                                item.type === 'secret'
-                                  ? 'text-amber-600 dark:text-amber-400 font-bold'
-                                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                              }`}
-                              title={item.type === 'secret' ? ENVIRONMENTS_TEXT.FORM_TOOLTIP_MASKED_SECRET : ENVIRONMENTS_TEXT.FORM_TOOLTIP_PLAIN_TEXT}
-                            >
-                              {item.type === 'secret' ? <Lock className="w-3 h-3" /> : <span className="text-[10px]">T</span>}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="col-span-2 flex items-center justify-end pr-1">
-                          <button
-                            id={ENVIRONMENTS_SEMANTIC_ID.FORM_VAR_DELETE_BTN(item.id)}
-                            type="button"
-                            onClick={() => handleRemoveVariable(item.id)}
-                            className="p-1 text-slate-400 hover:text-rose-500 rounded transition-colors cursor-pointer"
-                            title={ENVIRONMENTS_TEXT.FORM_TOOLTIP_REMOVE_VAR}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="p-2 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
-                  <button
-                    id={ENVIRONMENTS_SEMANTIC_ID.FORM_ADD_VAR_BTN}
-                    type="button"
-                    onClick={() => handleAddVariable()}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg shadow-2xs hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>{ENVIRONMENTS_TEXT.FORM.ADD_VARIABLE}</span>
-                  </button>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {ENVIRONMENTS_TEXT.FORM_VARS_COUNT_LABEL(variables.length)}
-                  </span>
-                </div>
               </div>
             )}
           </div>
