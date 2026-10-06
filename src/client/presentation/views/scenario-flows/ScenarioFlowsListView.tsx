@@ -230,7 +230,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
             <ScenarioFlowCard
               key={flow.id}
               flow={flow}
-              projectId={projectId || flow.projectId || undefined}
+              projectId={projectId}
               isRunning={runningFlowId === flow.id}
               onQuickRun={handleQuickRun}
               onExport={handleExportFlow}
