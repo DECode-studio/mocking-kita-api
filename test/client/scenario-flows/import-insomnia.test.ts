@@ -75,6 +75,25 @@ environments:
     // Verify ordering: Login -> Province -> City -> District -> Village -> Draft -> Submit
     const stepNames = result.template.steps.map((s) => s.name);
     expect(stepNames[0]).toContain('Login');
+
+    // Verify environment variables (e.g. it_support_access_token) are extracted
+    const envs = result.template.environments || [];
+    expect(envs.length).toBeGreaterThan(0);
+    const mdmEnv = envs.find((e) => e.name === 'MDM_API_AREA_URL');
+    expect(mdmEnv).toBeDefined();
+    expect(mdmEnv?.variables?.some((v) => v.key === 'it_support_access_token')).toBe(true);
+
+    // Verify token has secret type
+    const tokenVar = mdmEnv?.variables?.find((v) => v.key === 'it_support_access_token');
+    expect(tokenVar?.type).toBe('secret');
+
+    // Verify variable with distinct stage values has a dedicated environment
+    const tokenEnv = envs.find((e) => e.name === 'it_support_access_token');
+    expect(tokenEnv).toBeDefined();
+    expect(tokenEnv?.isBaseUrl).toBe(false);
+    expect(tokenEnv?.values?.DEVELOPMENT).toBe('dev-mock-token-12345');
+    expect(tokenEnv?.values?.STAGING).toBe('staging-mock-token-12345');
+    expect(tokenEnv?.values?.PRODUCTION).toBe('prod-mock-token-12345');
   });
 });
 
