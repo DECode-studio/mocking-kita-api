@@ -3,9 +3,28 @@ export const ENVIRONMENTS_SEMANTIC_ID = {
   PAGE_TITLE: 'environments-page-title',
   CREATE_BTN: 'environments-create-btn',
   SEARCH_INPUT: 'environments-search-input',
+  SEARCH_CLEAR_BTN: 'environments-search-clear-btn',
   PROJECT_FILTER: 'environments-project-filter',
   GRID: 'environments-grid',
   EMPTY_STATE: 'environments-empty-state',
+  
+  // Category tabs & View mode
+  CATEGORY_TAB: (cat: string) => `environments-category-tab-${cat.toLowerCase()}`,
+  VIEW_MODE_ENV: 'environments-view-mode-env',
+  VIEW_MODE_VAR: 'environments-view-mode-var',
+
+  // Table
+  TABLE: 'environments-table',
+  TABLE_ROW: (id: string) => `environments-table-row-${id}`,
+  VARS_TABLE: 'environments-variables-table',
+  VARS_TABLE_ROW: (id: string, key: string) => `environments-var-row-${id}-${key}`,
+
+  // Pagination
+  PAGINATION: 'environments-pagination',
+  PAGINATION_PREV: 'environments-pagination-prev',
+  PAGINATION_NEXT: 'environments-pagination-next',
+  PAGINATION_PAGE: (p: number) => `environments-pagination-page-${p}`,
+
   CARD: (id: string) => `environment-card-${id}`,
   EDIT_BTN: (id: string) => `environment-edit-btn-${id}`,
   DELETE_BTN: (id: string) => `environment-delete-btn-${id}`,
