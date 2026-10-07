@@ -493,3 +493,243 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     console.error('[GoogleSpaceNotifier] Failed to send notification to Google Space:', error?.message || error);
   }
 }
+
+export interface JobFailureNotificationPayload {
+  jobId: string;
+  jobName: string;
+  flowId: string;
+  flowName: string;
+  projectId?: string | null;
+  environmentName?: string | null;
+  iteration: number;
+  totalIterations?: number | null;
+  failedStepName?: string | null;
+  failedStepOrder?: number | null;
+  failedStepUrl?: string | null;
+  failedStepMethod?: string | null;
+  httpStatusCode?: number | null;
+  errorMessage: string;
+  scheduleType?: string | null;
+  cronExpression?: string | null;
+}
+
+/**
+ * Sends a high-priority failure alert card to Google Space when a scheduled Scenario Flow Job fails or encounters errors.
+ */
+export async function sendJobFailureGoogleSpaceNotification(
+  payload: JobFailureNotificationPayload
+): Promise<void> {
+  const webhookUrl = ENV.GOOGLE_SPACE_WEBHOOK_URL;
+  if (!webhookUrl || !webhookUrl.trim()) {
+    return;
+  }
+
+  const {
+    jobName,
+    flowName,
+    projectId,
+    environmentName,
+    iteration,
+    failedStepName,
+    failedStepOrder,
+    failedStepUrl,
+    failedStepMethod,
+    httpStatusCode,
+    errorMessage,
+    scheduleType,
+    cronExpression,
+  } = payload;
+
+  // Resolve Project PIC(s)
+  interface PicUser {
+    id: string;
+    name: string;
+    username: string;
+    googleId?: string | null;
+  }
+
+  const picMap = new Map<string, PicUser>();
+  let projectName = '';
+
+  if (projectId) {
+    try {
+      const proj = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+          name: true,
+          pics: {
+            select: {
+              account: {
+                select: { id: true, name: true, username: true, googleId: true },
+              },
+            },
+          },
+        },
+      });
+      if (proj) {
+        projectName = proj.name;
+        if (proj.pics) {
+          for (const picItem of proj.pics) {
+            const acc = picItem.account;
+            if (acc) {
+              picMap.set(acc.id, {
+                id: acc.id,
+                name: acc.name || acc.username,
+                username: acc.username,
+                googleId: acc.googleId || null,
+              });
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore DB query errors
+    }
+  }
+
+  const pics = Array.from(picMap.values());
+  const googleMentions: string[] = [];
+  const picDisplayTexts: string[] = [];
+
+  for (const pic of pics) {
+    if (pic.googleId) {
+      googleMentions.push(`<users/${pic.googleId}>`);
+      picDisplayTexts.push(`${pic.name} (<users/${pic.googleId}>)`);
+    } else {
+      picDisplayTexts.push(`${pic.name} (@${pic.username})`);
+    }
+  }
+
+  const timestamp = new Date().toLocaleString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const cardHeaderTitle = `🚨 [JOB FAILURE] Flow: "${flowName}"`;
+  const cardHeaderSubtitle = `Job "${jobName}" failed at iteration #${iteration}`;
+  const alertIconUrl = 'https://cdn-icons-png.flaticon.com/512/564/564619.png';
+
+  const cardWidgets: any[] = [
+    {
+      decoratedText: {
+        topLabel: 'FLOW & JOB',
+        text: `<b>${flowName}</b> (Job: <code>${jobName}</code>)`,
+        startIcon: { knownIcon: 'STAR' },
+      },
+    },
+    {
+      decoratedText: {
+        topLabel: 'TRIGGER SCHEDULE',
+        text: scheduleType === 'CRON' ? `CRON: <code>${cronExpression || '* * * * *'}</code>` : `${scheduleType || 'SCHEDULED'}`,
+        startIcon: { knownIcon: 'CLOCK' },
+      },
+    },
+  ];
+
+  if (projectName) {
+    cardWidgets.push({
+      decoratedText: {
+        topLabel: 'PROJECT',
+        text: `<b>${projectName}</b>`,
+        startIcon: { knownIcon: 'BOOKMARK' },
+      },
+    });
+  }
+
+  if (environmentName) {
+    cardWidgets.push({
+      decoratedText: {
+        topLabel: 'TARGET ENVIRONMENT',
+        text: `<b>${environmentName}</b>`,
+        startIcon: { knownIcon: 'MAP_PIN' },
+      },
+    });
+  }
+
+  if (failedStepName || failedStepOrder) {
+    const stepDetail = failedStepOrder ? `Step #${failedStepOrder}: ${failedStepName || ''}` : failedStepName;
+    const httpInfo = failedStepMethod && failedStepUrl ? ` [<code>${failedStepMethod} ${failedStepUrl}</code>]` : '';
+    const statusText = httpStatusCode ? ` (HTTP ${httpStatusCode})` : '';
+
+    cardWidgets.push({
+      decoratedText: {
+        topLabel: 'FAILED STEP',
+        text: `<b>${stepDetail}</b>${statusText}${httpInfo}`,
+        startIcon: { knownIcon: 'DESCRIPTION' },
+      },
+    });
+  }
+
+  cardWidgets.push({
+    decoratedText: {
+      topLabel: 'ERROR DETAILS',
+      text: `<font color="#d93025"><b>${errorMessage}</b></font>`,
+      startIcon: { knownIcon: 'BUS' },
+    },
+  });
+
+  if (pics.length > 0) {
+    cardWidgets.push({
+      decoratedText: {
+        topLabel: 'PIC(S) NOTIFIED',
+        text: picDisplayTexts.join(', '),
+        startIcon: { knownIcon: 'MEMBERSHIP' },
+      },
+    });
+  }
+
+  cardWidgets.push({
+    decoratedText: {
+      topLabel: 'TIMESTAMP',
+      text: `${timestamp} WIB`,
+      startIcon: { knownIcon: 'CLOCK' },
+    },
+  });
+
+  const cardsV2 = [
+    {
+      cardId: 'mockApiStudioJobFailureCard',
+      card: {
+        header: {
+          title: cardHeaderTitle,
+          subtitle: cardHeaderSubtitle,
+          imageUrl: alertIconUrl,
+          imageType: 'CIRCLE',
+        },
+        sections: [
+          {
+            widgets: cardWidgets,
+          },
+        ],
+      },
+    },
+  ];
+
+  try {
+    const requestBody: Record<string, any> = {
+      cardsV2,
+    };
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) {
+      console.error(`[GoogleSpaceNotifier] Job failure webhook returned status ${response.status}`);
+    }
+  } catch (error: any) {
+    console.error('[GoogleSpaceNotifier] Failed to send job failure alert to Google Space:', error?.message || error);
+  }
+}
+
