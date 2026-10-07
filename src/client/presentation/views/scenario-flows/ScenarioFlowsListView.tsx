@@ -11,6 +11,7 @@ import {
   ChevronDown,
   FileJson,
   Boxes,
+  Clock,
 } from 'lucide-react';
 import { useScenarioFlows } from './hook/useScenarioFlows';
 import { SCENARIO_FLOWS_TEXT, SCENARIO_FLOWS_SEMANTIC_ID } from './constant';
@@ -20,6 +21,7 @@ import {
   ImportScenarioFlowModal,
   ImportInsomniaModal,
 } from './components';
+import { FlowJobsTab } from '@/src/client/presentation/views/scenario-flow-detail/components/FlowJobsTab';
 import { ScrollToTopButton } from '@/src/client/presentation/components/shared/ScrollToTopButton';
 
 interface ScenarioFlowsListViewProps {
@@ -51,6 +53,8 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
     handleQuickRun,
     handleExportFlow,
   } = useScenarioFlows(projectId);
+
+  const [currentTab, setCurrentTab] = React.useState<'flows' | 'jobs'>('flows');
 
   return (
     <div id={SCENARIO_FLOWS_SEMANTIC_ID.CONTAINER} className="space-y-6">
@@ -142,42 +146,79 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
         </div>
       </div>
 
-      {/* Filter / Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            id={SCENARIO_FLOWS_SEMANTIC_ID.SEARCH_INPUT}
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={SCENARIO_FLOWS_TEXT.SEARCH_PLACEHOLDER}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
-          />
-        </div>
-
-        {!projectId && (
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-slate-500">{SCENARIO_FLOWS_TEXT.FILTER_PROJECT_LABEL}</span>
-            <select
-              id={SCENARIO_FLOWS_SEMANTIC_ID.PROJECT_FILTER}
-              value={filterProjectId}
-              onChange={(e) => setFilterProjectId(e.target.value)}
-              className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/30"
-            >
-              <option value="ALL">
-                {SCENARIO_FLOWS_TEXT.ALL_PROJECTS} ({allFlowsCount})
-              </option>
-              <option value="CROSS_PROJECT">🌐 {SCENARIO_FLOWS_TEXT.CROSS_PROJECT_FLOWS}</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  📁 {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+      {/* Sub-tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setCurrentTab('flows')}
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            currentTab === 'flows'
+              ? 'bg-purple-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Scenario Flows ({flows.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setCurrentTab('jobs')}
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            currentTab === 'jobs'
+              ? 'bg-purple-600 text-white shadow-xs'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>Scheduled Jobs</span>
+        </button>
       </div>
+
+      {/* Render Current Tab */}
+      {currentTab === 'jobs' ? (
+        <FlowJobsTab
+          projectId={projectId}
+          environments={environments}
+          flows={flows}
+        />
+      ) : (
+        <>
+          {/* Filter / Search Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                id={SCENARIO_FLOWS_SEMANTIC_ID.SEARCH_INPUT}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={SCENARIO_FLOWS_TEXT.SEARCH_PLACEHOLDER}
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition-all"
+              />
+            </div>
+
+            {!projectId && (
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-slate-500">{SCENARIO_FLOWS_TEXT.FILTER_PROJECT_LABEL}</span>
+                <select
+                  id={SCENARIO_FLOWS_SEMANTIC_ID.PROJECT_FILTER}
+                  value={filterProjectId}
+                  onChange={(e) => setFilterProjectId(e.target.value)}
+                  className="px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-purple-500/30"
+                >
+                  <option value="ALL">
+                    {SCENARIO_FLOWS_TEXT.ALL_PROJECTS} ({allFlowsCount})
+                  </option>
+                  <option value="CROSS_PROJECT">🌐 {SCENARIO_FLOWS_TEXT.CROSS_PROJECT_FLOWS}</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      📁 {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
       {/* Content List */}
       {isLoading ? (
@@ -237,7 +278,9 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
               onDelete={handleDeleteFlow}
             />
           ))}
-        </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Modals */}

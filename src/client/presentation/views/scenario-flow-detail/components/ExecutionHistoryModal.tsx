@@ -98,7 +98,7 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                         )}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold text-slate-900 dark:text-white">
                             {passed
                               ? SCENARIO_FLOW_DETAIL_TEXT.ALL_STEPS_PASSED
@@ -107,6 +107,12 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                           {exec.environment && (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                               {exec.environment.name}
+                            </span>
+                          )}
+                          {(exec.triggerSource === 'SCHEDULED_JOB' || exec.jobId) && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center gap-1 border border-purple-500/20">
+                              <Clock className="w-2.5 h-2.5" />
+                              <span>Job Trigger</span>
                             </span>
                           )}
                         </div>
