@@ -96,10 +96,58 @@ export interface ScenarioFlowExecutionStep {
   createdAt: string;
 }
 
+export interface ScenarioFlowJob {
+  id: string;
+  projectId?: string | null;
+  flowId: string;
+  environmentId?: string | null;
+  name: string;
+  description?: string | null;
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'FAILED';
+  scheduleType: 'CRON' | 'INTERVAL' | 'ONCE';
+  cronExpression?: string | null;
+  intervalSeconds?: number | null;
+  scheduledAt?: string | null;
+  targetMode: 'LIVE' | 'MOCK';
+  stopCondition: 'FOREVER' | 'MAX_ITERATIONS' | 'UNTIL_DATE' | 'DATASHEET_EXHAUSTED';
+  maxIterations?: number | null;
+  currentIteration: number;
+  endAt?: string | null;
+  dataSourceType: 'NONE' | 'STATIC' | 'DATASHEET';
+  dataSheetId?: string | null;
+  dataIterationMode: 'PER_TICK' | 'BATCH_ALL';
+  dataSheetCurrentIndex: number;
+  customVariables?: Record<string, any> | null;
+  lastRunAt?: string | null;
+  nextRunAt?: string | null;
+  lastStatus?: string | null;
+  lastError?: string | null;
+  totalRuns: number;
+  successRuns: number;
+  failedRuns: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  flow?: {
+    id: string;
+    name: string;
+  };
+  environment?: {
+    id: string;
+    name: string;
+  } | null;
+  dataSheet?: {
+    id: string;
+    name: string;
+    code: string;
+  } | null;
+}
+
 export interface ScenarioFlowExecution {
   id: string;
   flowId: string;
   environmentId?: string | null;
+  jobId?: string | null;
   status: 'RUNNING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
   triggerSource: string;
   targetMode: 'LIVE' | 'MOCK';
@@ -118,6 +166,10 @@ export interface ScenarioFlowExecution {
     environmentType: string;
     variables?: any;
     baseUrl?: string | null;
+  } | null;
+  job?: {
+    id: string;
+    name: string;
   } | null;
   steps?: ScenarioFlowExecutionStep[];
 }
@@ -146,4 +198,6 @@ export interface ScenarioFlow {
 
   steps?: ScenarioFlowStep[];
   executions?: ScenarioFlowExecution[];
+  jobs?: ScenarioFlowJob[];
 }
+

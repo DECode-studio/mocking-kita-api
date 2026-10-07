@@ -149,4 +149,64 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
     }
     return res.json();
   }
+
+  async getJobs(flowId?: string, projectId?: string): Promise<any[]> {
+    const query = new URLSearchParams();
+    if (flowId) query.set('flowId', flowId);
+    if (projectId) query.set('projectId', projectId);
+    const queryString = query.toString();
+    const url = queryString ? `/api/scenario-flows/jobs?${queryString}` : '/api/scenario-flows/jobs';
+    return unwrapRemoteData(await apiRequest<RemoteEnvelope<any[]>>(url));
+  }
+
+  async getJobById(jobId: string): Promise<any> {
+    return unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<any>>(`/api/scenario-flows/jobs/${encodeURIComponent(jobId)}`)
+    );
+  }
+
+  async createJob(input: any): Promise<any> {
+    const url = input.flowId
+      ? `/api/scenario-flows/${encodeURIComponent(input.flowId)}/jobs`
+      : '/api/scenario-flows/jobs';
+    return unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<any>>(url, { method: 'POST', body: input })
+    );
+  }
+
+  async updateJob(jobId: string, input: any): Promise<any> {
+    return unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<any>>(
+        `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}`,
+        { method: 'PUT', body: input }
+      )
+    );
+  }
+
+  async deleteJob(jobId: string): Promise<void> {
+    unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<void>>(
+        `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}`,
+        { method: 'DELETE' }
+      )
+    );
+  }
+
+  async toggleJobStatus(jobId: string): Promise<any> {
+    return unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<any>>(
+        `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}/toggle`,
+        { method: 'POST' }
+      )
+    );
+  }
+
+  async runNowJob(jobId: string): Promise<any> {
+    return unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<any>>(
+        `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}/run-now`,
+        { method: 'POST' }
+      )
+    );
+  }
 }

@@ -91,4 +91,32 @@ export class ScenarioFlowRepositoryImpl implements ScenarioFlowRepository {
   async exportTemplate(flowId: string): Promise<any> {
     return this.dataSource.exportTemplate(flowId);
   }
+
+  async getJobs(flowId?: string, projectId?: string): Promise<any[]> {
+    return this.dataSource.getJobs(flowId, projectId);
+  }
+
+  async getJobById(jobId: string): Promise<any> {
+    return this.dataSource.getJobById(jobId);
+  }
+
+  async createJob(input: any): Promise<any> {
+    return this.dataSource.createJob(input);
+  }
+
+  async updateJob(jobId: string, input: any): Promise<any> {
+    return this.dataSource.updateJob(jobId, input);
+  }
+
+  async deleteJob(jobId: string): Promise<void> {
+    return this.dataSource.deleteJob(jobId);
+  }
+
+  async toggleJobStatus(jobId: string): Promise<any> {
+    return this.dataSource.toggleJobStatus(jobId);
+  }
+
+  async runNowJob(jobId: string): Promise<any> {
+    return this.dataSource.runNowJob(jobId);
+  }
 }
