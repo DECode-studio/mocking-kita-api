@@ -62,6 +62,8 @@ export interface FlowRunOptions {
   initialVariables?: Record<string, any>;
   executedBy?: string;
   stepId?: string | null;
+  jobId?: string | null;
+  triggerSource?: 'MANUAL' | 'SCHEDULED_JOB' | 'API';
 }
 
 export interface FlowExportTemplate {

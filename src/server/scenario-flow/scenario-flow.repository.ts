@@ -269,6 +269,8 @@ export async function reorderScenarioFlowSteps(flowId: string, stepIds: string[]
 export async function createExecutionRecord(data: {
   flowId: string;
   environmentId?: string | null;
+  jobId?: string | null;
+  triggerSource?: string;
   targetMode: 'LIVE' | 'MOCK';
   totalSteps: number;
   initialVariables?: any;
@@ -278,6 +280,8 @@ export async function createExecutionRecord(data: {
     data: {
       flowId: data.flowId,
       environmentId: data.environmentId ?? null,
+      jobId: data.jobId ?? null,
+      triggerSource: data.triggerSource ?? 'MANUAL',
       status: 'RUNNING',
       targetMode: data.targetMode,
       totalSteps: data.totalSteps,
