@@ -103,4 +103,32 @@ export class ScenarioFlowUseCaseImpl implements ScenarioFlowUseCase {
   async exportTemplate(flowId: string): Promise<any> {
     return this.repository.exportTemplate(flowId);
   }
+
+  async getJobs(flowId?: string, projectId?: string): Promise<any[]> {
+    return this.repository.getJobs(flowId, projectId);
+  }
+
+  async getJobById(jobId: string): Promise<any> {
+    return this.repository.getJobById(jobId);
+  }
+
+  async createJob(input: any): Promise<any> {
+    return this.repository.createJob(input);
+  }
+
+  async updateJob(jobId: string, input: any): Promise<any> {
+    return this.repository.updateJob(jobId, input);
+  }
+
+  async deleteJob(jobId: string): Promise<void> {
+    return this.repository.deleteJob(jobId);
+  }
+
+  async toggleJobStatus(jobId: string): Promise<any> {
+    return this.repository.toggleJobStatus(jobId);
+  }
+
+  async runNowJob(jobId: string): Promise<any> {
+    return this.repository.runNowJob(jobId);
+  }
 }

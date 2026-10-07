@@ -26,6 +26,7 @@ import {
   StepExecutionInspector,
   ExecutionHistoryModal,
   EditFlowModal,
+  FlowJobsTab,
 } from './components';
 import { ROUTES } from '@/src/core/constants/routes';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
@@ -183,8 +184,16 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
         onOpenEditFlow={() => setIsEditFlowModalOpen(true)}
       />
 
-      {/* Mode 1: Interactive Diagram Flow Canvas */}
-      {viewMode === 'canvas' ? (
+      {/* Mode 1: Scheduled Jobs Tab */}
+      {viewMode === 'jobs' ? (
+        <FlowJobsTab
+          flowId={flowId}
+          projectId={projectId}
+          environments={environments}
+          onOpenHistory={() => setIsHistoryModalOpen(true)}
+        />
+      ) : viewMode === 'canvas' ? (
+        /* Mode 2: Interactive Diagram Flow Canvas */
         <div className="relative">
           <ScenarioFlowCanvas
             flow={flow}
@@ -212,7 +221,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
           />
         </div>
       ) : (
-        /* Mode 2: Classic 2-Column List Layout */
+        /* Mode 3: Classic 2-Column List Layout */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column: Chained Steps Sequence (col-span-5) */}
           <div className="lg:col-span-5 space-y-4 min-w-0">

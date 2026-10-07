@@ -37,4 +37,12 @@ export interface ScenarioFlowRemoteDataSource {
 
   importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult>;
   exportTemplate(flowId: string): Promise<any>;
+
+  getJobs(flowId?: string, projectId?: string): Promise<any[]>;
+  getJobById(jobId: string): Promise<any>;
+  createJob(input: any): Promise<any>;
+  updateJob(jobId: string, input: any): Promise<any>;
+  deleteJob(jobId: string): Promise<void>;
+  toggleJobStatus(jobId: string): Promise<any>;
+  runNowJob(jobId: string): Promise<any>;
 }

@@ -2,6 +2,7 @@ import {
   ScenarioFlow,
   ScenarioFlowStep,
   ScenarioFlowExecution,
+  ScenarioFlowJob,
 } from '../entity/scenario_flow';
 
 export interface ImportFlowResult {
@@ -49,4 +50,13 @@ export interface ScenarioFlowRepository {
   // Import / Export
   importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult>;
   exportTemplate(flowId: string): Promise<any>;
+
+  // Scheduled Jobs
+  getJobs(flowId?: string, projectId?: string): Promise<ScenarioFlowJob[]>;
+  getJobById(jobId: string): Promise<ScenarioFlowJob | null>;
+  createJob(input: Partial<ScenarioFlowJob> & { flowId: string; name: string }): Promise<ScenarioFlowJob>;
+  updateJob(jobId: string, input: Partial<ScenarioFlowJob>): Promise<ScenarioFlowJob>;
+  deleteJob(jobId: string): Promise<void>;
+  toggleJobStatus(jobId: string): Promise<ScenarioFlowJob>;
+  runNowJob(jobId: string): Promise<ScenarioFlowJob>;
 }

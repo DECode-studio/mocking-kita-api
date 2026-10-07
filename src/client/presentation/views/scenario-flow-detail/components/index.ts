@@ -8,3 +8,6 @@ export * from './FlowExecutionPanel';
 export * from './StepExecutionInspector';
 export * from './ExecutionHistoryModal';
 export * from './EditFlowModal';
+export * from './JobModal';
+export * from './FlowJobsTab';
+

@@ -23,6 +23,7 @@ model Project {
   apis         Api[]
   scenarioFlows ScenarioFlow[]
   dataSheets   DataSheet[]
+  scenarioFlowJobs ScenarioFlowJob[]
 
   @@map("tblProject")
 }
@@ -52,6 +53,7 @@ model Environment {
   apiEnvironments        ApiEnvironment[]
   scenarioFlows          ScenarioFlow[]
   scenarioFlowExecutions ScenarioFlowExecution[]
+  scenarioFlowJobs       ScenarioFlowJob[]
 
   @@map("tblEnvironment")
 }
@@ -206,6 +208,7 @@ model ScenarioFlow {
   defaultEnvironment Environment?            @relation(fields: [defaultEnvironmentId], references: [id], onDelete: SetNull)
   steps              ScenarioFlowStep[]
   executions         ScenarioFlowExecution[]
+  jobs               ScenarioFlowJob[]
 
   @@index([projectId])
   @@map("tblScenarioFlow")
@@ -245,10 +248,60 @@ model ScenarioFlowStep {
   @@map("tblScenarioFlowStep")
 }
 
+model ScenarioFlowJob {
+  id                    String    @id @default(uuid())
+  projectId             String?   @map("project_id")
+  flowId                String    @map("flow_id")
+  environmentId         String?   @map("environment_id")
+  name                  String
+  description           String?
+  status                String    @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED, FAILED
+  scheduleType          String    @default("CRON") // CRON, INTERVAL, ONCE
+  cronExpression        String?   @map("cron_expression")
+  intervalSeconds       Int?      @map("interval_seconds")
+  scheduledAt           DateTime? @map("scheduled_at")
+  targetMode            String    @default("LIVE") @map("target_mode") // LIVE, MOCK
+  
+  stopCondition         String    @default("FOREVER") @map("stop_condition") // FOREVER, MAX_ITERATIONS, UNTIL_DATE, DATASHEET_EXHAUSTED
+  maxIterations         Int?      @map("max_iterations")
+  currentIteration      Int       @default(0) @map("current_iteration")
+  endAt                 DateTime? @map("end_at")
+  
+  dataSourceType        String    @default("NONE") @map("data_source_type") // NONE, STATIC, DATASHEET
+  dataSheetId           String?   @map("data_sheet_id")
+  dataIterationMode     String    @default("PER_TICK") @map("data_iteration_mode") // PER_TICK, BATCH_ALL
+  dataSheetCurrentIndex Int       @default(0) @map("data_sheet_current_index")
+  customVariables       Json?     @map("custom_variables")
+  
+  lastRunAt             DateTime? @map("last_run_at")
+  nextRunAt             DateTime? @map("next_run_at")
+  lastStatus            String?   @map("last_status") // SUCCESS, FAILED
+  lastError             String?   @map("last_error")
+  totalRuns             Int       @default(0) @map("total_runs")
+  successRuns           Int       @default(0) @map("success_runs")
+  failedRuns            Int       @default(0) @map("failed_runs")
+  
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  flow                  ScenarioFlow            @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  project               Project?                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  environment           Environment?            @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  dataSheet             DataSheet?              @relation(fields: [dataSheetId], references: [id], onDelete: SetNull)
+  executions            ScenarioFlowExecution[]
+
+  @@index([flowId])
+  @@index([projectId])
+  @@index([status])
+  @@map("tblScenarioFlowJob")
+}
+
 model ScenarioFlowExecution {
   id               String    @id @default(uuid())
   flowId           String    @map("flow_id")
   environmentId    String?   @map("environment_id")
+  jobId            String?   @map("job_id")
   status           String    @default("RUNNING")
   triggerSource    String    @default("MANUAL") @map("trigger_source")
   targetMode       String    @default("LIVE") @map("target_mode")
@@ -264,9 +317,11 @@ model ScenarioFlowExecution {
 
   flow        ScenarioFlow                @relation(fields: [flowId], references: [id], onDelete: Cascade)
   environment Environment?                @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+  job         ScenarioFlowJob?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
   steps       ScenarioFlowExecutionStep[]
 
   @@index([flowId])
+  @@index([jobId])
   @@index([createdAt(sort: Desc)])
   @@map("tblScenarioFlowExecution")
 }
@@ -349,7 +404,8 @@ model DataSheet {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project          Project?          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scenarioFlowJobs ScenarioFlowJob[]
 
   @@index([projectId])
   @@index([code])

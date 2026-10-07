@@ -748,10 +748,12 @@ export async function executeScenarioFlow(
   const execution = await createExecutionRecord({
     flowId: flow.id,
     environmentId: recordedEnvId || null,
+    jobId: options.jobId || null,
+    triggerSource: options.triggerSource || (options.jobId ? 'SCHEDULED_JOB' : 'MANUAL'),
     targetMode: options.targetMode || 'LIVE',
     totalSteps: stepsToRun.length,
     initialVariables: currentVariables,
-    executedBy: options.executedBy || 'User',
+    executedBy: options.executedBy || (options.jobId ? 'Scheduler' : 'User'),
   });
 
   const stepExecutionResults: any[] = [];

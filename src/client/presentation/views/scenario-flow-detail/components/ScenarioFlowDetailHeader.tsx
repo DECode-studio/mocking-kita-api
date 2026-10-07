@@ -12,6 +12,7 @@ import {
   Network,
   List,
   Edit2,
+  Clock,
 } from 'lucide-react';
 import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
@@ -36,8 +37,8 @@ interface ScenarioFlowDetailHeaderProps {
   setSelectedEnvironmentType: (type: string) => void;
   targetMode: 'LIVE' | 'MOCK';
   setTargetMode: (mode: 'LIVE' | 'MOCK') => void;
-  viewMode: 'canvas' | 'list';
-  onToggleViewMode: (mode: 'canvas' | 'list') => void;
+  viewMode: 'canvas' | 'list' | 'jobs';
+  onToggleViewMode: (mode: 'canvas' | 'list' | 'jobs') => void;
   onAutoArrange?: () => void;
   isRunning: boolean;
   elapsedMs?: number;
@@ -180,6 +181,19 @@ export const ScenarioFlowDetailHeader: React.FC<ScenarioFlowDetailHeaderProps> =
             >
               <Network className="w-3.5 h-3.5" />
               <span>{SCENARIO_FLOW_DETAIL_TEXT.DIAGRAM_FLOW}</span>
+            </button>
+            <button
+              id="scenario-flow-view-mode-jobs"
+              onClick={() => onToggleViewMode('jobs')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'jobs'
+                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-2xs font-bold'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+              title="Scheduled Jobs"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Jobs & Cron</span>
             </button>
           </div>
 
