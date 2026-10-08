@@ -48,8 +48,8 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   if (isLoading && !project) {
     return (
       <div className="py-16 text-center space-y-3">
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">Loading project...</h2>
-        <p className="text-xs text-slate-500">Fetching project data from the server.</p>
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">{PROJECT_DETAIL_TEXT.LOADING_TITLE}</h2>
+        <p className="text-xs text-slate-500">{PROJECT_DETAIL_TEXT.LOADING_DESC}</p>
       </div>
     );
   }
@@ -57,13 +57,14 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
   if (!project) {
     return (
       <div className="py-16 text-center space-y-3">
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">Project Not Found</h2>
-        <p className="text-xs text-slate-500">The requested project ID does not exist or was deleted.</p>
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">{PROJECT_DETAIL_TEXT.NOT_FOUND_TITLE}</h2>
+        <p className="text-xs text-slate-500">{PROJECT_DETAIL_TEXT.NOT_FOUND_DESC}</p>
         <button
+          id={PROJECT_DETAIL_SEMANTIC_ID.BACK_BTN}
           onClick={() => router.push('/projects')}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 rounded-md"
         >
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Projects
+          <ArrowLeft className="w-3.5 h-3.5" /> {PROJECT_DETAIL_TEXT.BACK_TO_PROJECTS}
         </button>
       </div>
     );
@@ -97,6 +98,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
       <Tabs.Root value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <Tabs.List id={PROJECT_DETAIL_SEMANTIC_ID.TAB_LIST} className="flex border-b border-slate-200 dark:border-slate-800 gap-4">
           <Tabs.Trigger
+            id={PROJECT_DETAIL_SEMANTIC_ID.TAB_TRIGGER('apis')}
             value="apis"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'apis'
@@ -108,6 +110,7 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            id={PROJECT_DETAIL_SEMANTIC_ID.TAB_TRIGGER('environments')}
             value="environments"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'environments'
@@ -115,10 +118,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Environments
+            {PROJECT_DETAIL_TEXT.TAB_ENVIRONMENTS}
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            id={PROJECT_DETAIL_SEMANTIC_ID.TAB_TRIGGER('scenario-flows')}
             value="scenario-flows"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'scenario-flows'
@@ -126,10 +130,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Flow Scenarios
+            {PROJECT_DETAIL_TEXT.TAB_SCENARIO_FLOWS}
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            id={PROJECT_DETAIL_SEMANTIC_ID.TAB_TRIGGER('data-sheets')}
             value="data-sheets"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'data-sheets'
@@ -137,10 +142,11 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({
                 : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Data Sheets
+            {PROJECT_DETAIL_TEXT.TAB_DATA_SHEETS}
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            id={PROJECT_DETAIL_SEMANTIC_ID.TAB_TRIGGER('overview')}
             value="overview"
             className={`pb-2.5 text-xs font-semibold transition-colors relative ${
               activeTab === 'overview'
