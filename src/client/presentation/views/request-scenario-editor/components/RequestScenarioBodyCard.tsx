@@ -53,7 +53,7 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-5">
+    <div id={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.BODY_CARD} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -65,11 +65,11 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
         <div className="flex items-center gap-2 text-xs flex-wrap">
           <EnvironmentVariablePicker
             projectId={projectId}
-            buttonLabel="Env Vars"
+            buttonLabel={REQUEST_SCENARIO_EDITOR_TEXT.ENV_VARS_BTN}
             onInsert={handleInsertBodyToken}
           />
           <DataSheetVariablePicker
-            buttonLabel="Data Sheets"
+            buttonLabel={REQUEST_SCENARIO_EDITOR_TEXT.DATA_SHEETS_BTN}
             onInsert={handleInsertBodyToken}
           />
           <div className="flex items-center gap-2">
@@ -103,15 +103,15 @@ export const RequestScenarioBodyCard: React.FC<RequestScenarioBodyCardProps> = (
               projectId={projectId}
               label={
                 bodyType === 'JSON'
-                  ? 'Full Body Payload Matching (JSON)'
+                  ? REQUEST_SCENARIO_EDITOR_TEXT.BODY_JSON_LABEL
                   : bodyType === 'FORM_DATA'
-                  ? 'Body Fields & Files Matching (JSON Object)'
-                  : 'Body Fields Matching (JSON Object)'
+                  ? REQUEST_SCENARIO_EDITOR_TEXT.BODY_FORM_DATA_LABEL
+                  : REQUEST_SCENARIO_EDITOR_TEXT.BODY_URL_ENCODED_LABEL
               }
               value={body}
               onChange={onBodyChange}
               supportFiles={bodyType === 'FORM_DATA'}
-              placeholderValue="Expected Value"
+              placeholderValue={REQUEST_SCENARIO_EDITOR_TEXT.EXPECTED_VALUE_PLACEHOLDER}
               idPrefix={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.BODY_EDITOR}
             />
           </div>
