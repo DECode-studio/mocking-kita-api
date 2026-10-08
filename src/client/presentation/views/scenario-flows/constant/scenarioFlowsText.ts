@@ -97,8 +97,13 @@ export const SCENARIO_FLOWS_TEXT = {
   MODAL_INSOMNIA_ERR_INVALID: 'Failed to parse Insomnia collection. Please check file format.',
   MODAL_INSOMNIA_ERR_EMPTY: 'Please upload an Insomnia YAML/JSON file or paste its content.',
 
-  // Card
   CARD_NO_DESC: 'No description provided.',
   CARD_OPEN_BUILDER: 'Open Builder',
   CARD_RUN_TEST: 'Run Test',
+  TAB_FLOWS_COUNT: (count: number) => `Scenario Flows (${count})`,
+  TAB_JOBS: 'Scheduled Jobs',
+  OPTIONAL_LABEL: '(Optional)',
+  YAML_JSON_V5: 'YAML / JSON v5',
+  PASSED_STATUS: (duration: number) => `Passed (${duration}ms)`,
+  IMPORT_INSOMNIA_BTN: 'Import Insomnia Collection',
 } as const;

@@ -31,6 +31,7 @@ export const ApiCollectionHeader: React.FC<ApiCollectionHeaderProps> = ({
 
       <div className="flex items-center gap-2 shrink-0">
         <button
+          id={API_COLLECTIONS_SEMANTIC_ID.ADD_FOLDER_BTN}
           type="button"
           onClick={onAddCollectionClick}
           disabled={!activeProjectId}

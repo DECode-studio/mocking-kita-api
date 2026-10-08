@@ -8,4 +8,6 @@ export const SIGN_IN_SEMANTIC_ID = {
   REMEMBER_ME_CHECKBOX: 'sign-in-remember-me-checkbox',
   SUBMIT_BTN: 'sign-in-submit-btn',
   TOGGLE_PASSWORD_BTN: 'sign-in-toggle-password-btn',
+  GOOGLE_SSO_BTN: 'sign-in-google-sso-btn',
+  REDIRECTING: 'sign-in-redirecting',
 } as const;

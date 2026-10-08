@@ -21,7 +21,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
   const isSystemAdmin = account.username === 'admin';
   return (
     <div
-      id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_ITEM}
+      id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_ITEM_PREFIX(account.id)}
       className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/90 rounded-xl flex items-start justify-between gap-4 shadow-xs hover:border-indigo-500/30 transition-all"
     >
       <div className="flex items-start gap-3.5">
@@ -45,7 +45,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
             </span>
             {account.googleId && (
               <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-md flex items-center gap-1">
-                <span>Google ID: {account.googleId}</span>
+                <span>{ADMIN_ACCOUNTS_TEXT.GOOGLE_ID_PREFIX(account.googleId)}</span>
               </span>
             )}
             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-sans">
@@ -57,7 +57,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
 
       <div className="flex gap-1 shrink-0">
         <button
-          id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_EDIT_BTN}
+          id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_EDIT_BTN_PREFIX(account.id)}
           onClick={() => onEdit(account)}
           className="p-2 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors cursor-pointer"
           title={ADMIN_ACCOUNTS_TEXT.TITLE_EDIT_USER}
@@ -65,7 +65,7 @@ export const AccountListItem: React.FC<AccountListItemProps> = ({
           <Edit2 className="w-3.5 h-3.5" />
         </button>
         <button
-          id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_DELETE_BTN}
+          id={ADMIN_ACCOUNTS_SEMANTIC_ID.CARD_DELETE_BTN_PREFIX(account.id)}
           onClick={() => onDelete(account)}
           disabled={isSystemAdmin}
           className="p-2 text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:pointer-events-none"

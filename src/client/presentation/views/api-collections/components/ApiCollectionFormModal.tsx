@@ -51,6 +51,7 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
               {editingApi ? API_COLLECTIONS_TEXT.MODAL_EDIT_TITLE : API_COLLECTIONS_TEXT.MODAL_ADD_TITLE}
             </Dialog.Title>
             <button
+              id={API_COLLECTIONS_SEMANTIC_ID.FORM_CLOSE_BTN}
               type="button"
               onClick={() => onOpenChange(false)}
               className="text-slate-400 hover:text-slate-600"
@@ -79,6 +80,7 @@ export const ApiCollectionFormModal: React.FC<ApiCollectionFormModalProps> = ({
                 {API_COLLECTIONS_TEXT.LABEL_FOLDER_COLLECTION_OPTIONAL}
               </label>
               <select
+                id={API_COLLECTIONS_SEMANTIC_ID.FORM_SELECT_COLLECTION}
                 {...register('collectionId')}
                 className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
               >

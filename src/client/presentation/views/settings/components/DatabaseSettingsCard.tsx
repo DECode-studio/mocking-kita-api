@@ -69,7 +69,7 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
         </div>
         <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-mono">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Prisma 6 Client & PostgreSQL Schema</span>
+          <span>{SETTINGS_TEXT.DATABASE_SCHEMA_DESC}</span>
         </div>
       </div>
 
@@ -130,11 +130,12 @@ export const DatabaseSettingsCard: React.FC<DatabaseSettingsCardProps> = ({
               </button>
 
               <button
+                id={SETTINGS_SEMANTIC_ID.DOWNLOAD_BACKUP_JSON_BTN}
                 type="button"
                 onClick={() => onDownloadBackupClick('json')}
                 disabled={!canBackupRestoreDb || isDownloading}
                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all cursor-pointer"
-                title="Download JSON Snapshot backup"
+                title={SETTINGS_TEXT.DOWNLOAD_JSON_TOOLTIP}
               >
                 {isDownloading && downloadFormat === 'json' ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

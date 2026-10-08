@@ -133,7 +133,7 @@ export const ScenarioFlowCard: React.FC<ScenarioFlowCardProps> = ({
             <div className="flex items-center gap-1.5 text-[11px]">
               {latestExecution.status === 'SUCCESS' ? (
                 <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Passed ({latestExecution.durationMs}ms)
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {SCENARIO_FLOWS_TEXT.PASSED_STATUS(latestExecution.durationMs)}
                 </span>
               ) : latestExecution.status === 'RUNNING' ? (
                 <span className="inline-flex items-center gap-1 text-blue-500 font-semibold">

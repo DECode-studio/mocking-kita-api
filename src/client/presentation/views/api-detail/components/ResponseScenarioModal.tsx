@@ -84,6 +84,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                 : API_DETAIL_TEXT.MODAL_RESP_ADD_TITLE}
             </Dialog.Title>
             <button
+              id={API_DETAIL_SEMANTIC_ID.RESP_MODAL_CLOSE_BTN}
               type="button"
               onClick={() => onOpenChange(false)}
               disabled={isUploading}
@@ -305,6 +306,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
                     {API_DETAIL_TEXT.LABEL_RESPONSE_BODY}
                   </label>
                   <button
+                    id={API_DETAIL_SEMANTIC_ID.RESP_MODAL_BEAUTIFY_BTN}
                     type="button"
                     onClick={() => setBody(formatJsonString(body))}
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
@@ -341,6 +343,7 @@ export const ResponseScenarioModal: React.FC<ResponseScenarioModalProps> = ({
               className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800"
             >
               <button
+                id={API_DETAIL_SEMANTIC_ID.RESP_MODAL_BTN_CANCEL}
                 type="button"
                 onClick={() => onOpenChange(false)}
                 disabled={isUploading}

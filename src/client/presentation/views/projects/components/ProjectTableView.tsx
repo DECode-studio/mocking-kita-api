@@ -32,7 +32,12 @@ export const ProjectTableView: React.FC<ProjectTableViewProps> = ({
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {projects.map((project) => (
-            <tr key={project.id} data-tour="project-item" className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+            <tr
+              key={project.id}
+              id={PROJECTS_SEMANTIC_ID.TABLE_ROW(project.id)}
+              data-tour="project-item"
+              className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+            >
               <td className="p-3.5">
                 <span
                   onClick={() => onNavigateDetail(project.id)}
@@ -41,7 +46,7 @@ export const ProjectTableView: React.FC<ProjectTableViewProps> = ({
                   {project.name}
                 </span>
                 <span className="text-[11px] text-slate-400 block truncate max-w-xs">
-                  {project.description || 'No description'}
+                  {project.description || PROJECTS_TEXT.NO_DESCRIPTION}
                 </span>
               </td>
               <td className="p-3.5">
@@ -50,17 +55,19 @@ export const ProjectTableView: React.FC<ProjectTableViewProps> = ({
               <td className="p-3.5 font-mono text-slate-500">{formatDate(project.createdAt)}</td>
               <td className="p-3.5 text-right space-x-2">
                 <button
+                  id={PROJECTS_SEMANTIC_ID.TABLE_VIEW_BTN(project.id)}
                   type="button"
                   onClick={() => onNavigateDetail(project.id)}
                   className="px-2.5 py-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 rounded hover:bg-indigo-100 transition-colors"
                 >
-                  View
+                  {PROJECTS_TEXT.TABLE_ACTION_VIEW}
                 </button>
                 <button
+                  id={PROJECTS_SEMANTIC_ID.TABLE_EDIT_BTN(project.id)}
                   type="button"
                   onClick={() => onEdit(project)}
                   className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                  title="Edit"
+                  title={PROJECTS_TEXT.TABLE_ACTION_EDIT}
                 >
                   <Edit2 className="w-3.5 h-3.5 inline" />
                 </button>

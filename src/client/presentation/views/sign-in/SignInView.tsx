@@ -35,8 +35,8 @@ export const SignInView: React.FC = () => {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
-        <p className="text-xs font-mono text-slate-400">Redirecting to dashboard...</p>
+      <div id={SIGN_IN_SEMANTIC_ID.REDIRECTING} className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
+        <p className="text-xs font-mono text-slate-400">{SIGN_IN_TEXT.REDIRECTING}</p>
       </div>
     );
   }

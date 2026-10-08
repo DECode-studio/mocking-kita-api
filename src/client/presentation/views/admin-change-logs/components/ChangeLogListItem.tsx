@@ -58,6 +58,8 @@ export const ChangeLogListItem: React.FC<ChangeLogListItemProps> = ({
       </td>
       <td className="py-3.5 px-4.5 text-right whitespace-nowrap">
         <button
+          id={CHANGE_LOGS_ADMIN_SEMANTIC_ID.LOG_ITEM_VIEW_PREFIX(log.id)}
+          type="button"
           onClick={() => onViewDetails(log)}
           className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline cursor-pointer"
         >

@@ -32,12 +32,15 @@ export const RequestScenarioBasicCard: React.FC<RequestScenarioBasicCardProps> =
   onMatchStrategyChange,
 }) => {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-4">
+    <div
+      id={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.BASIC_CARD}
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-4"
+    >
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Settings2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-            Basic Configuration & Matchmaking Strategy
+            {REQUEST_SCENARIO_EDITOR_TEXT.BASIC_CARD_TITLE}
           </h2>
         </div>
         <div className="flex items-center gap-2">
@@ -47,7 +50,7 @@ export const RequestScenarioBasicCard: React.FC<RequestScenarioBasicCardProps> =
           <StatusSwitch
             checked={status}
             onCheckedChange={onStatusChange}
-            label={status ? 'Active' : 'Inactive'}
+            label={status ? REQUEST_SCENARIO_EDITOR_TEXT.STATUS_ACTIVE : REQUEST_SCENARIO_EDITOR_TEXT.STATUS_INACTIVE}
             size="sm"
           />
         </div>
@@ -68,7 +71,7 @@ export const RequestScenarioBasicCard: React.FC<RequestScenarioBasicCardProps> =
             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-medium"
           />
           <p className="text-[11px] text-slate-400">
-            Identitas unik untuk mendeskripsikan kondisi skenario request ini.
+            {REQUEST_SCENARIO_EDITOR_TEXT.NAME_HINT}
           </p>
         </div>
 
@@ -84,7 +87,7 @@ export const RequestScenarioBasicCard: React.FC<RequestScenarioBasicCardProps> =
             onChange={(e) => onPriorityChange(Number(e.target.value))}
             className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
           />
-          <p className="text-[11px] text-slate-400">Prioritas evaluasi (nilai lebih tinggi dievaluasi duluan).</p>
+          <p className="text-[11px] text-slate-400">{REQUEST_SCENARIO_EDITOR_TEXT.PRIORITY_HINT}</p>
         </div>
 
         <div className="md:col-span-4 space-y-1.5">
@@ -101,7 +104,7 @@ export const RequestScenarioBasicCard: React.FC<RequestScenarioBasicCardProps> =
             <option value="ANY">{REQUEST_SCENARIO_EDITOR_TEXT.STRATEGY_ANY}</option>
           </select>
           <p className="text-[11px] text-slate-400">
-            Pilih apakah seluruh kriteria harus cocok (AND) atau minimal satu cocok (OR).
+            {REQUEST_SCENARIO_EDITOR_TEXT.MATCH_STRATEGY_HINT}
           </p>
         </div>
       </div>

@@ -150,6 +150,7 @@ export const ExternalApiDocsView: React.FC = () => {
           {categories.map((cat) => (
             <button
               key={cat}
+              id={EXTERNAL_API_DOCS_SEMANTIC_ID.CATEGORY_PILL_BTN(cat)}
               onClick={() => setActiveCategory(cat)}
               className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
                 activeCategory === cat

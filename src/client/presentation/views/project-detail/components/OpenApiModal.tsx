@@ -4,7 +4,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Download, Upload, X, FileJson, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useOpenApi } from '../hook/useOpenApi';
-import { PROJECT_DETAIL_TEXT } from '../constant';
+import { PROJECT_DETAIL_TEXT, PROJECT_DETAIL_SEMANTIC_ID } from '../constant';
 
 interface OpenApiModalProps {
   isOpen: boolean;
@@ -42,7 +42,10 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && !loading && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 animate-in fade-in duration-200" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl space-y-4 overflow-hidden">
+        <Dialog.Content
+          id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_MODAL}
+          className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl space-y-4 overflow-hidden"
+        >
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
             <div className="flex items-center gap-2">
               <FileJson className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -51,6 +54,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
               </Dialog.Title>
             </div>
             <Dialog.Close
+              id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_CLOSE_BTN}
               onClick={onClose}
               disabled={loading}
               className="p-1 rounded-md text-slate-400 hover:text-slate-600 disabled:opacity-40 dark:hover:text-slate-200"
@@ -66,6 +70,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
           {/* Tabs header */}
           <div className="flex border-b border-slate-200 dark:border-slate-800 gap-4">
             <button
+              id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_TAB_EXPORT}
               type="button"
               onClick={() => changeTab('export')}
               className={`pb-2 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
@@ -77,6 +82,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
               <Download className="w-3.5 h-3.5" /> {PROJECT_DETAIL_TEXT.OPENAPI_TAB_EXPORT}
             </button>
             <button
+              id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_TAB_IMPORT}
               type="button"
               onClick={() => changeTab('import')}
               className={`pb-2 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
@@ -108,24 +114,26 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
             <div className="space-y-4 py-2">
               <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-1">
                 <div className="font-semibold">{PROJECT_DETAIL_TEXT.OPENAPI_EXPORT_FORMAT_LABEL}</div>
-                <div>Includes all collections, endpoints, request parameters, and response scenarios for this project.</div>
+                <div>{PROJECT_DETAIL_TEXT.OPENAPI_EXPORT_INCLUDES_DESC}</div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button
+                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_CANCEL_BTN}
                   type="button"
                   onClick={onClose}
                   className="px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md"
                 >
-                  Cancel
+                  {PROJECT_DETAIL_TEXT.BTN_CANCEL}
                 </button>
                 <button
+                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_EXPORT_BTN}
                   type="button"
                   onClick={handleExport}
                   disabled={loading}
                   className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-md shadow-xs"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  {loading ? 'Exporting...' : PROJECT_DETAIL_TEXT.OPENAPI_BTN_EXPORT}
+                  {loading ? PROJECT_DETAIL_TEXT.OPENAPI_BTN_EXPORTING : PROJECT_DETAIL_TEXT.OPENAPI_BTN_EXPORT}
                 </button>
               </div>
             </div>
@@ -133,10 +141,11 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
             <div className="space-y-3 py-1">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Import Mode
+                  {PROJECT_DETAIL_TEXT.IMPORT_MODE_LABEL}
                 </label>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <button
+                    id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_MODE_BTN('upsert')}
                     type="button"
                     onClick={() => setImportMode('upsert')}
                     className={`p-2.5 rounded-lg border text-left transition-colors ${
@@ -146,12 +155,13 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-1">
-                      <span>Upsert</span>
-                      <span className="text-[9px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1 py-0.5 rounded font-bold">Default</span>
+                      <span>{PROJECT_DETAIL_TEXT.IMPORT_MODE_UPSERT_LABEL}</span>
+                      <span className="text-[9px] bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 px-1 py-0.5 rounded font-bold">{PROJECT_DETAIL_TEXT.IMPORT_MODE_UPSERT_BADGE}</span>
                     </div>
-                    <div className="text-[10px] text-slate-500 font-normal">Update existing & insert new</div>
+                    <div className="text-[10px] text-slate-500 font-normal">{PROJECT_DETAIL_TEXT.IMPORT_MODE_UPSERT_DESC}</div>
                   </button>
                   <button
+                    id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_MODE_BTN('merge')}
                     type="button"
                     onClick={() => setImportMode('merge')}
                     className={`p-2.5 rounded-lg border text-left transition-colors ${
@@ -160,10 +170,11 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                         : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    <div>Merge</div>
-                    <div className="text-[10px] text-slate-500 font-normal">Add all endpoints as new</div>
+                    <div>{PROJECT_DETAIL_TEXT.IMPORT_MODE_MERGE_LABEL}</div>
+                    <div className="text-[10px] text-slate-500 font-normal">{PROJECT_DETAIL_TEXT.IMPORT_MODE_MERGE_DESC}</div>
                   </button>
                   <button
+                    id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_MODE_BTN('replace')}
                     type="button"
                     onClick={() => setImportMode('replace')}
                     className={`p-2.5 rounded-lg border text-left transition-colors ${
@@ -172,8 +183,8 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                         : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
-                    <div>Replace</div>
-                    <div className="text-[10px] text-slate-500 font-normal">Overwrite all endpoints</div>
+                    <div>{PROJECT_DETAIL_TEXT.IMPORT_MODE_REPLACE_LABEL}</div>
+                    <div className="text-[10px] text-slate-500 font-normal">{PROJECT_DETAIL_TEXT.IMPORT_MODE_REPLACE_DESC}</div>
                   </button>
                 </div>
               </div>
@@ -183,12 +194,14 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                   {PROJECT_DETAIL_TEXT.OPENAPI_UPLOAD_OR_PASTE_LABEL}
                 </label>
                 <input
+                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_FILE_INPUT}
                   type="file"
                   accept=".json,application/json"
                   onChange={handleFileUpload}
                   className="block w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 mb-2"
                 />
                 <textarea
+                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_JSON_TEXTAREA}
                   rows={5}
                   value={jsonText}
                   onChange={(e) => setJsonText(e.target.value)}
@@ -199,13 +212,15 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
+                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_CANCEL_BTN}
                   type="button"
                   onClick={onClose}
                   className="px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md"
                 >
-                  Cancel
+                  {PROJECT_DETAIL_TEXT.BTN_CANCEL}
                 </button>
                 <button
+                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_IMPORT_BTN}
                   type="button"
                   onClick={handleImport}
                   disabled={loading || !jsonText.trim()}

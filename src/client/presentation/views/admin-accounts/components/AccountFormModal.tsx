@@ -81,6 +81,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
               )}
             </Dialog.Title>
             <button
+              id={ADMIN_ACCOUNTS_SEMANTIC_ID.DIALOG_CLOSE_BTN}
               onClick={() => onOpenChange(false)}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg"
             >
@@ -104,6 +105,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
               {isEmailAccount ? (
                 <div className="flex gap-2 items-center">
                   <input
+                    id={ADMIN_ACCOUNTS_SEMANTIC_ID.INPUT_USERNAME}
                     type="text"
                     required
                     placeholder={ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_SSO_USERNAME}
@@ -113,6 +115,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
                   />
                   <span className="text-slate-400 font-mono text-sm shrink-0">@</span>
                   <select
+                    id={ADMIN_ACCOUNTS_SEMANTIC_ID.SELECT_EMAIL_DOMAIN}
                     value={emailDomain}
                     onChange={(e) => onEmailDomainChange(e.target.value)}
                     className="w-44 text-xs px-3.5 py-2.5 bg-slate-55 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shrink-0 cursor-pointer"
@@ -126,6 +129,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
                 </div>
               ) : (
                 <input
+                  id={ADMIN_ACCOUNTS_SEMANTIC_ID.INPUT_USERNAME}
                   type="text"
                   required
                   placeholder={ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_ADMIN_USERNAME}
@@ -142,6 +146,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
                 {ADMIN_ACCOUNTS_TEXT.LABEL_DISPLAY_NAME}
               </label>
               <input
+                id={ADMIN_ACCOUNTS_SEMANTIC_ID.INPUT_DISPLAY_NAME}
                 type="text"
                 required
                 placeholder={ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_DISPLAY_NAME}
@@ -159,6 +164,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
               <div className="relative flex items-center">
                 <Key className="absolute left-3 w-4 h-4 text-slate-400" />
                 <input
+                  id={ADMIN_ACCOUNTS_SEMANTIC_ID.INPUT_PASSWORD}
                   type="password"
                   placeholder={editingAccount ? ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_EDIT : ADMIN_ACCOUNTS_TEXT.PLACEHOLDER_PASSWORD_NEW}
                   required={!editingAccount}
@@ -175,6 +181,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
                 {ADMIN_ACCOUNTS_TEXT.LABEL_ACCOUNT_ROLE}
               </label>
               <select
+                id={ADMIN_ACCOUNTS_SEMANTIC_ID.SELECT_ROLE}
                 value={role}
                 onChange={(e) => {
                   const newRole = e.target.value;
@@ -196,6 +203,7 @@ export const AccountFormModal: React.FC<AccountFormModalProps> = ({
             {/* Submit Buttons */}
             <div className="flex justify-end gap-2 pt-4">
               <button
+                id={ADMIN_ACCOUNTS_SEMANTIC_ID.DIALOG_CANCEL_BTN}
                 type="button"
                 onClick={() => onOpenChange(false)}
                 className="px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg cursor-pointer"

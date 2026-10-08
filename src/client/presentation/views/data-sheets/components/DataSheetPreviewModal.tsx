@@ -5,7 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Table2, X, Search, Copy, Check, Download, Edit2, Sparkles } from 'lucide-react';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { DataSheetVariableTagBadge } from './DataSheetVariableTagBadge';
-import { DATA_SHEET_SEMANTIC_ID } from '../constant';
+import { DATA_SHEET_SEMANTIC_ID, DATA_SHEET_TEXT } from '../constant';
 
 interface DataSheetPreviewModalProps {
   sheet: DataSheet | null;
@@ -90,7 +90,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
                   </span>
                 </div>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                  {sheet.description || `${items.length} items stored in this dataset`}
+                  {sheet.description || DATA_SHEET_TEXT.ITEMS_STORED_FALLBACK(items.length)}
                 </Dialog.Description>
               </div>
             </div>
@@ -105,7 +105,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
                 }}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
               >
-                <Edit2 className="w-3.5 h-3.5" /> Edit
+                <Edit2 className="w-3.5 h-3.5" /> {DATA_SHEET_TEXT.EDIT_LABEL}
               </button>
               <button
                 id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_CLOSE_BTN}
@@ -120,7 +120,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
           {/* Quick Variable Tokens Bar */}
           <div className="flex items-center justify-between p-2.5 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-800/60 rounded-xl text-xs flex-wrap gap-2">
             <span className="text-purple-700 dark:text-purple-300 font-medium flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> Dynamic Tokens:
+              <Sparkles className="w-3.5 h-3.5" /> {DATA_SHEET_TEXT.DYNAMIC_TOKENS_LABEL}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
               <DataSheetVariableTagBadge code={sheet.code} mode="asc" />
@@ -137,7 +137,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
               <input
                 id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_SEARCH_INPUT}
                 type="text"
-                placeholder={`Search among ${items.length} items...`}
+                placeholder={DATA_SHEET_TEXT.SEARCH_ITEMS_COUNT_PLACEHOLDER(items.length)}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full text-xs pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -149,19 +149,20 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
                 type="button"
                 onClick={handleCopyAll}
                 className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-                title="Copy all data as JSON"
+                title={DATA_SHEET_TEXT.COPY_ALL_DATA_TOOLTIP}
               >
                 {copiedAll ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedAll ? 'Copied All' : 'Copy All'}</span>
+                <span>{copiedAll ? DATA_SHEET_TEXT.COPIED_ALL_LABEL : DATA_SHEET_TEXT.COPY_ALL_LABEL}</span>
               </button>
               <button
+                id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_DOWNLOAD_BTN}
                 type="button"
                 onClick={handleDownloadJson}
-                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors"
-                title="Download JSON file"
+                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                title={DATA_SHEET_TEXT.DOWNLOAD_JSON_TOOLTIP}
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Download</span>
+                <span>{DATA_SHEET_TEXT.DOWNLOAD_LABEL}</span>
               </button>
             </div>
           </div>
@@ -170,7 +171,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
           <div className="flex-1 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-xl max-h-[45vh] divide-y divide-slate-100 dark:divide-slate-800 font-mono text-xs">
             {filteredItems.length === 0 ? (
               <div className="p-8 text-center text-slate-400 font-sans">
-                {items.length === 0 ? 'No items in this data sheet' : 'No items match your search'}
+                {items.length === 0 ? DATA_SHEET_TEXT.NO_ITEMS_STORED : DATA_SHEET_TEXT.NO_ITEMS_MATCH_SEARCH}
               </div>
             ) : (
               filteredItems.map(({ item, originalIndex }) => (
@@ -188,10 +189,11 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
                   </div>
 
                   <button
+                    id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_ROW_COPY_BTN(originalIndex)}
                     type="button"
                     onClick={() => handleCopyRow(item, originalIndex)}
-                    className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 opacity-60 group-hover:opacity-100 transition-opacity shrink-0"
-                    title="Copy value"
+                    className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 opacity-60 group-hover:opacity-100 transition-opacity shrink-0 cursor-pointer"
+                    title={DATA_SHEET_TEXT.COPY_VALUE_TOOLTIP}
                   >
                     {copiedIndex === originalIndex ? (
                       <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -207,14 +209,15 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
           {/* Footer */}
           <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
             <span>
-              Showing {filteredItems.length} of {items.length} items
+              {DATA_SHEET_TEXT.SHOWING_FILTERED_COUNT(filteredItems.length, items.length)}
             </span>
             <button
+              id={DATA_SHEET_SEMANTIC_ID.MODAL_PREVIEW_FOOTER_CLOSE_BTN}
               type="button"
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-4 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
-              Close
+              {DATA_SHEET_TEXT.CLOSE_LABEL}
             </button>
           </div>
         </Dialog.Content>

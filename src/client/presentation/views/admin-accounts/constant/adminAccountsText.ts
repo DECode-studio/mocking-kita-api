@@ -51,6 +51,7 @@ export const ADMIN_ACCOUNTS_TEXT = {
   OVERLAY_DELETE_DESC: 'Akun sedang dihapus dan tidak akan bisa digunakan untuk masuk.',
   ERROR_DELETE_ACCOUNT: 'Failed to delete account',
   ERROR_LOAD_ACCOUNTS: 'Failed to load accounts',
+  GOOGLE_ID_PREFIX: (id: string) => `Google ID: ${id}`,
 } as const;
 
 

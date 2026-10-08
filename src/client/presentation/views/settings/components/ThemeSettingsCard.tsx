@@ -21,6 +21,7 @@ export const ThemeSettingsCard: React.FC<ThemeSettingsCardProps> = ({ theme, onT
 
       <div className="grid grid-cols-3 gap-3">
         <button
+          id={SETTINGS_SEMANTIC_ID.THEME_LIGHT_BTN}
           type="button"
           onClick={() => onThemeChange('light')}
           className={`p-4 rounded-xl border text-center space-y-2 transition-all ${
@@ -33,6 +34,7 @@ export const ThemeSettingsCard: React.FC<ThemeSettingsCardProps> = ({ theme, onT
           <span className="block text-xs">{SETTINGS_TEXT.LIGHT_MODE}</span>
         </button>
         <button
+          id={SETTINGS_SEMANTIC_ID.THEME_DARK_BTN}
           type="button"
           onClick={() => onThemeChange('dark')}
           className={`p-4 rounded-xl border text-center space-y-2 transition-all ${
@@ -45,6 +47,7 @@ export const ThemeSettingsCard: React.FC<ThemeSettingsCardProps> = ({ theme, onT
           <span className="block text-xs">{SETTINGS_TEXT.DARK_MODE}</span>
         </button>
         <button
+          id={SETTINGS_SEMANTIC_ID.THEME_SYSTEM_BTN}
           type="button"
           onClick={() => onThemeChange('system')}
           className={`p-4 rounded-xl border text-center space-y-2 transition-all ${

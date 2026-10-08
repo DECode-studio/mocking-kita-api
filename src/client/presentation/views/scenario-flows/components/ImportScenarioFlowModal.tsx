@@ -68,6 +68,7 @@ export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = (
               </div>
             </div>
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_IMPORT_CLOSE_BTN}
               onClick={onClose}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >

@@ -54,6 +54,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               {editingProject ? PROJECTS_TEXT.MODAL_EDIT_TITLE : PROJECTS_TEXT.MODAL_ADD_TITLE}
             </Dialog.Title>
             <button
+              id={PROJECTS_SEMANTIC_ID.FORM_CLOSE_BTN}
               type="button"
               onClick={() => onOpenChange(false)}
               className="text-slate-400 hover:text-slate-600"

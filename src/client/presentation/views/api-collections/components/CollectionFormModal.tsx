@@ -5,7 +5,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { Collection } from '@/src/client/domain/collection/entity/collection';
-import { API_COLLECTIONS_TEXT } from '../constant';
+import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from '../constant';
 
 interface CollectionFormModalProps {
   isOpen: boolean;
@@ -37,12 +37,16 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl z-50 space-y-4 focus:outline-none">
+        <Dialog.Content
+          id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_MODAL}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-2xl z-50 space-y-4 focus:outline-none"
+        >
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <Dialog.Title className="text-base font-semibold text-slate-900 dark:text-slate-100">
               {editingCollection ? API_COLLECTIONS_TEXT.MODAL_EDIT_COLLECTION_TITLE : API_COLLECTIONS_TEXT.MODAL_CREATE_COLLECTION_TITLE}
             </Dialog.Title>
             <button
+              id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_MODAL_CLOSE_BTN}
               type="button"
               onClick={() => onOpenChange(false)}
               className="text-slate-400 hover:text-slate-600"
@@ -57,6 +61,7 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
                 {API_COLLECTIONS_TEXT.LABEL_NAME}
               </label>
               <input
+                id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_MODAL_INPUT_NAME}
                 type="text"
                 value={name}
                 onChange={(e) => onNameChange(e.target.value)}
@@ -71,6 +76,7 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
                 {API_COLLECTIONS_TEXT.LABEL_DESCRIPTION}
               </label>
               <textarea
+                id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_MODAL_TEXTAREA_DESC}
                 value={description}
                 onChange={(e) => onDescriptionChange(e.target.value)}
                 rows={3}
@@ -81,6 +87,7 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
+                id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_MODAL_BTN_CANCEL}
                 type="button"
                 onClick={() => onOpenChange(false)}
                 className="px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-md"
@@ -88,6 +95,7 @@ export const CollectionFormModal: React.FC<CollectionFormModalProps> = ({
                 {API_COLLECTIONS_TEXT.BTN_CANCEL}
               </button>
               <button
+                id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_MODAL_BTN_SUBMIT}
                 type="submit"
                 className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-md shadow-xs transition-colors"
               >

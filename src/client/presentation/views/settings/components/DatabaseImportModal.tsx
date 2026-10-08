@@ -102,6 +102,7 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
               </div>
             </div>
             <button
+              id={SETTINGS_SEMANTIC_ID.IMPORT_MODAL_CLOSE_BTN}
               onClick={() => onOpenChange(false)}
               disabled={isImporting}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
@@ -156,16 +157,17 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                       </div>
                       <span className="text-[11px] text-slate-400 block font-mono">
-                        {fileSize} • {fileSummary?.format === 'sql' ? 'Valid PostgreSQL SQL Script' : 'Valid JSON Backup'}
+                        {fileSize} • {fileSummary?.format === 'sql' ? SETTINGS_TEXT.VALID_POSTGRESQL_SCRIPT : SETTINGS_TEXT.VALID_JSON_BACKUP}
                       </span>
                     </div>
                   </div>
                   {!isImporting && (
                     <button
+                      id={SETTINGS_SEMANTIC_ID.IMPORT_CLEAR_FILE_BTN}
                       type="button"
                       onClick={onClearFile}
                       className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Remove file"
+                      title={SETTINGS_TEXT.REMOVE_FILE_TITLE}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -179,28 +181,28 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
                       <>
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/60">
                           <FileCode className="w-3 h-3" />
-                          SQL Script Dump
+                          {SETTINGS_TEXT.SQL_SCRIPT_DUMP}
                         </span>
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60">
                           <Layers className="w-3 h-3" />
-                          ~{fileSummary.statementsCount} SQL Statements
+                          {SETTINGS_TEXT.SQL_STATEMENTS_COUNT(fileSummary.statementsCount || 0)}
                         </span>
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          {fileSummary.lineCount} Lines
+                          {SETTINGS_TEXT.LINES_COUNT(fileSummary.lineCount || 0)}
                         </span>
                       </>
                     ) : (
                       <>
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/60">
                           <Layers className="w-3 h-3" />
-                          {fileSummary.projects} Projects
+                          {SETTINGS_TEXT.PROJECTS_COUNT(fileSummary.projects || 0)}
                         </span>
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/60">
                           <Sparkles className="w-3 h-3" />
-                          {fileSummary.apis} APIs
+                          {SETTINGS_TEXT.APIS_COUNT(fileSummary.apis || 0)}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-900/60">
-                          🎯 {fileSummary.scenarios} Scenarios
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-900/60">
+                          {SETTINGS_TEXT.SCENARIOS_COUNT(fileSummary.scenarios || 0)}
                         </span>
                       </>
                     )}

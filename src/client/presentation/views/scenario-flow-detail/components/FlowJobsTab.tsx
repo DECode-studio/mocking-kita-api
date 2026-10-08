@@ -24,6 +24,11 @@ import { JobModal } from './JobModal';
 import { useScenarioFlowJobs } from '../hook/useScenarioFlowJobs';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 
+import {
+  SCENARIO_FLOW_DETAIL_TEXT,
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+} from '../constant';
+
 interface FlowJobsTabProps {
   flowId?: string;
   flows?: Array<{ id: string; name: string }>;
@@ -65,32 +70,35 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
     }
     if (job.scheduleType === 'INTERVAL') {
       const sec = job.intervalSeconds || 0;
-      if (sec >= 3600) return `Every ${Math.round(sec / 3600)} hour(s)`;
-      if (sec >= 60) return `Every ${Math.round(sec / 60)} min(s)`;
-      return `Every ${sec} sec(s)`;
+      if (sec >= 3600) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_HOUR(sec / 3600);
+      if (sec >= 60) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_MIN(sec / 60);
+      return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_SEC(sec);
     }
     if (job.scheduleType === 'ONCE') {
       return job.scheduledAt
-        ? `Once at ${new Date(job.scheduledAt).toLocaleString()}`
-        : 'One-time run';
+        ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_ONCE_AT(new Date(job.scheduledAt).toLocaleString())
+        : SCENARIO_FLOW_DETAIL_TEXT.JOBS_ONE_TIME_RUN;
     }
     return job.scheduleType;
   };
 
   const formatNextRun = (dateStr?: string | null) => {
-    if (!dateStr) return 'No upcoming run scheduled';
+    if (!dateStr) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_NO_UPCOMING;
     const date = new Date(dateStr);
     const now = new Date();
     const diffSec = Math.round((date.getTime() - now.getTime()) / 1000);
 
-    if (diffSec <= 0) return 'Executing soon...';
-    if (diffSec < 60) return `In ${diffSec}s (${date.toLocaleTimeString()})`;
-    if (diffSec < 3600) return `In ${Math.round(diffSec / 60)}m (${date.toLocaleTimeString()})`;
-    return `On ${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    if (diffSec <= 0) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_EXECUTING_SOON;
+    if (diffSec < 60) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_IN_SECONDS(diffSec, date.toLocaleTimeString());
+    if (diffSec < 3600) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_IN_MINUTES(Math.round(diffSec / 60), date.toLocaleTimeString());
+    return SCENARIO_FLOW_DETAIL_TEXT.JOBS_ON_DATE(
+      date.toLocaleDateString(),
+      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    );
   };
 
   return (
-    <div className="space-y-6">
+    <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_CONTAINER} className="space-y-6">
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-3">
@@ -99,13 +107,13 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
           </div>
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>Scheduled Automation Jobs</span>
+              <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_TITLE}</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 font-mono">
                 {jobs.length}
               </span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Automate scenario flow executions continuously, on intervals, or iterated over Data Sheets.
+              {SCENARIO_FLOW_DETAIL_TEXT.JOBS_SUBTITLE}
             </p>
           </div>
         </div>
@@ -113,19 +121,21 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
         <div className="flex items-center gap-2.5 shrink-0">
           {/* Filter Status */}
           <select
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_FILTER_STATUS}
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="ACTIVE">Active Only</option>
-            <option value="PAUSED">Paused</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="FAILED">Failed</option>
+            <option value="ALL">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_ALL}</option>
+            <option value="ACTIVE">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_ACTIVE}</option>
+            <option value="PAUSED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_PAUSED}</option>
+            <option value="COMPLETED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_COMPLETED}</option>
+            <option value="FAILED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_FAILED}</option>
           </select>
 
           <button
             type="button"
+            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_CREATE_BTN}
             onClick={() => {
               setEditingJob(null);
               setIsModalOpen(true);
@@ -133,7 +143,7 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Job</span>
+            <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_CREATE_BTN}</span>
           </button>
         </div>
       </div>
@@ -142,7 +152,7 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
       {isLoading && jobs.length === 0 ? (
         <div className="py-16 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
           <RotateCw className="w-4 h-4 animate-spin text-purple-500" />
-          <span>Loading scheduled jobs...</span>
+          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_LOADING}</span>
         </div>
       ) : jobs.length === 0 ? (
         /* Empty State */
@@ -152,10 +162,10 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
           </div>
           <div className="space-y-1 max-w-md mx-auto">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-              No Scheduled Jobs Yet
+              {SCENARIO_FLOW_DETAIL_TEXT.JOBS_EMPTY_TITLE}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Create a job to run this flow periodically (e.g. every 5 minutes, daily) or iterate through rows in a Data Sheet automatically.
+              {SCENARIO_FLOW_DETAIL_TEXT.JOBS_EMPTY_DESC}
             </p>
           </div>
           <button
@@ -167,7 +177,7 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-xl shadow-md shadow-purple-500/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Create First Job</span>
+            <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_CREATE_FIRST_BTN}</span>
           </button>
         </div>
       ) : (
@@ -187,6 +197,7 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
             return (
               <div
                 key={job.id}
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_CARD_PREFIX(job.id)}
                 className="relative flex flex-col justify-between rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xs hover:border-purple-500/40 transition-all group"
               >
                 {/* Header */}
@@ -217,34 +228,37 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_TOGGLE_BTN_PREFIX(job.id)}
                         onClick={() => handleToggleStatus(job.id)}
                         className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                           job.status === 'ACTIVE'
                             ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40'
                             : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                         }`}
-                        title={job.status === 'ACTIVE' ? 'Pause Job' : 'Resume / Activate Job'}
+                        title={job.status === 'ACTIVE' ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_PAUSE_TOOLTIP : SCENARIO_FLOW_DETAIL_TEXT.JOBS_RESUME_TOOLTIP}
                       >
                         {job.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                       </button>
 
                       <button
                         type="button"
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_EDIT_BTN_PREFIX(job.id)}
                         onClick={() => {
                           setEditingJob(job);
                           setIsModalOpen(true);
                         }}
                         className="p-1.5 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Job"
+                        title={SCENARIO_FLOW_DETAIL_TEXT.JOBS_EDIT_TOOLTIP}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         type="button"
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_DELETE_BTN_PREFIX(job.id)}
                         onClick={() => handleDeleteJob(job.id)}
                         className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Job"
+                        title={SCENARIO_FLOW_DETAIL_TEXT.JOBS_DELETE_TOOLTIP}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -275,30 +289,30 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-purple-500" />
-                      Next Run:
+                      {SCENARIO_FLOW_DETAIL_TEXT.JOBS_NEXT_RUN_LABEL}
                     </span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {job.status === 'ACTIVE' ? formatNextRun(job.nextRunAt) : 'Paused / Inactive'}
+                      {job.status === 'ACTIVE' ? formatNextRun(job.nextRunAt) : SCENARIO_FLOW_DETAIL_TEXT.JOBS_PAUSED_INACTIVE}
                     </span>
                   </div>
 
                   {/* Progress Stats */}
                   <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-center">
                     <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-medium">Iteration</div>
+                      <div className="text-[10px] text-slate-400 uppercase font-medium">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_ITERATION_HEADER}</div>
                       <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
                         #{job.currentIteration}
                         {job.maxIterations ? `/${job.maxIterations}` : ''}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-medium">Success</div>
+                      <div className="text-[10px] text-slate-400 uppercase font-medium">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_SUCCESS_HEADER}</div>
                       <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                         {job.successRuns}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] text-slate-400 uppercase font-medium">Failed</div>
+                      <div className="text-[10px] text-slate-400 uppercase font-medium">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FAILED_HEADER}</div>
                       <div className="text-xs font-bold text-red-500">
                         {job.failedRuns}
                       </div>
@@ -308,11 +322,12 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
                   {/* Run Now Button */}
                   <div className="flex items-center justify-between gap-2 pt-1">
                     <div className="text-[11px] text-slate-400 truncate">
-                      {job.lastRunAt ? `Last run: ${new Date(job.lastRunAt).toLocaleTimeString()}` : 'Never executed'}
+                      {job.lastRunAt ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_LAST_RUN(new Date(job.lastRunAt).toLocaleTimeString()) : SCENARIO_FLOW_DETAIL_TEXT.JOBS_NEVER_EXECUTED}
                     </div>
 
                     <button
                       type="button"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_RUN_NOW_BTN_PREFIX(job.id)}
                       disabled={isJobRunning}
                       onClick={() => handleRunNow(job.id)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/80 transition-all cursor-pointer disabled:opacity-50"
@@ -320,12 +335,12 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
                       {isJobRunning ? (
                         <>
                           <RotateCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Running...</span>
+                          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUNNING}</span>
                         </>
                       ) : (
                         <>
                           <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>Run Now</span>
+                          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_NOW}</span>
                         </>
                       )}
                     </button>
@@ -361,3 +376,4 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
     </div>
   );
 };
+

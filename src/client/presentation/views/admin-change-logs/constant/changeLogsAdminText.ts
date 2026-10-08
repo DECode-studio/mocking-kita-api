@@ -29,5 +29,8 @@ export const CHANGE_LOGS_ADMIN_TEXT = {
   LOADING_LOGS: 'Loading Change Logs...',
   ERROR_LOADING_TITLE: 'Gagal memuat log riwayat',
   ERROR_LOAD_LOGS: 'Failed to load change logs',
+  NULL_LABEL: '// NULL',
+  NOT_AVAILABLE: 'N/A',
+  ID_PREFIX: 'ID:',
 } as const;
 

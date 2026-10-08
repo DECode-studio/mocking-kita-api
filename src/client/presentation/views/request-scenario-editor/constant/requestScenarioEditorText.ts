@@ -19,6 +19,20 @@ export const REQUEST_SCENARIO_EDITOR_TEXT = {
   BODY_NONE_NOTICE: 'Skenario ini tidak mengevaluasi request body (Body Type: None).',
   LOADING_SCENARIO_DETAILS: 'Loading scenario details...',
   DEFAULT_SCENARIO_NAME: 'Request Scenario',
+  BASIC_CARD_TITLE: 'Basic Configuration & Matchmaking Strategy',
+  STATUS_ACTIVE: 'Active',
+  STATUS_INACTIVE: 'Inactive',
+  NAME_HINT: 'Identitas unik untuk mendeskripsikan kondisi skenario request ini.',
+  PRIORITY_HINT: 'Prioritas evaluasi (nilai lebih tinggi dievaluasi duluan).',
+  MATCH_STRATEGY_HINT: 'Pilih apakah seluruh kriteria harus cocok (AND) atau minimal satu cocok (OR).',
+  ENV_VARS_BTN: 'Env Vars',
+  DATA_SHEETS_BTN: 'Data Sheets',
+  QUERY_PARAMS_LABEL: 'Query Params',
+  HEADERS_LABEL: 'Headers',
+  EXPECTED_VALUE_PLACEHOLDER: 'Expected Value',
+  BODY_JSON_LABEL: 'Full Body Payload Matching (JSON)',
+  BODY_FORM_DATA_LABEL: 'Body Fields & Files Matching (JSON Object)',
+  BODY_URL_ENCODED_LABEL: 'Body Fields Matching (JSON Object)',
 } as const;
 
 

@@ -34,6 +34,7 @@ export const ImportExportDialog: React.FC = () => {
               </Dialog.Title>
             </div>
             <button
+              id={DASHBOARD_SEMANTIC_ID.IMPORT_DIALOG_CLOSE_BTN}
               onClick={() => setImportModalOpen(false)}
               disabled={isProcessing}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg"
@@ -90,6 +91,7 @@ export const ImportExportDialog: React.FC = () => {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
+                  id={DASHBOARD_SEMANTIC_ID.IMPORT_MODE_MERGE_BTN}
                   type="button"
                   onClick={() => setImportMode('merge')}
                   disabled={isProcessing}
@@ -103,6 +105,7 @@ export const ImportExportDialog: React.FC = () => {
                   <span className="text-[10px] text-slate-500 font-normal">{DASHBOARD_TEXT.IMPORT_MODE_MERGE_DESC}</span>
                 </button>
                 <button
+                  id={DASHBOARD_SEMANTIC_ID.IMPORT_MODE_REPLACE_BTN}
                   type="button"
                   onClick={() => setImportMode('replace')}
                   disabled={isProcessing}

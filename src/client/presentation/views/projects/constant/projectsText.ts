@@ -41,5 +41,11 @@ export const PROJECTS_TEXT = {
   NO_DESCRIPTION: 'No description provided.',
   LABEL_PIC_PROJECT: 'Person In Charge (PIC)',
   PLACEHOLDER_PIC_PROJECT: 'Pilih PIC project...',
+  SORT_BY_DATE: 'Sort: Created Date',
+  SORT_BY_NAME: 'Sort: Name',
+  TABLE_ACTION_VIEW: 'View',
+  TABLE_ACTION_EDIT: 'Edit',
 } as const;
+
+
 

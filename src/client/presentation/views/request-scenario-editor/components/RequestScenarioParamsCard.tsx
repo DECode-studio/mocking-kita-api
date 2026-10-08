@@ -54,7 +54,7 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div id={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.PARAMS_CARD} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Query Params Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
@@ -67,21 +67,21 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
           <div className="flex items-center gap-2">
             <EnvironmentVariablePicker
               projectId={projectId}
-              buttonLabel="Env Vars"
+              buttonLabel={REQUEST_SCENARIO_EDITOR_TEXT.ENV_VARS_BTN}
               onInsert={handleInsertQueryParamToken}
             />
             <DataSheetVariablePicker
-              buttonLabel="Data Sheets"
+              buttonLabel={REQUEST_SCENARIO_EDITOR_TEXT.DATA_SHEETS_BTN}
               onInsert={handleInsertQueryParamToken}
             />
           </div>
         </div>
         <KeyValueOrJsonEditor
           projectId={projectId}
-          label="Query Params"
+          label={REQUEST_SCENARIO_EDITOR_TEXT.QUERY_PARAMS_LABEL}
           value={queryParams}
           onChange={onQueryParamsChange}
-          placeholderValue="Expected Value"
+          placeholderValue={REQUEST_SCENARIO_EDITOR_TEXT.EXPECTED_VALUE_PLACEHOLDER}
           idPrefix={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.QUERY_EDITOR}
         />
       </div>
@@ -98,21 +98,21 @@ export const RequestScenarioParamsCard: React.FC<RequestScenarioParamsCardProps>
           <div className="flex items-center gap-2">
             <EnvironmentVariablePicker
               projectId={projectId}
-              buttonLabel="Env Vars"
+              buttonLabel={REQUEST_SCENARIO_EDITOR_TEXT.ENV_VARS_BTN}
               onInsert={handleInsertHeaderToken}
             />
             <DataSheetVariablePicker
-              buttonLabel="Data Sheets"
+              buttonLabel={REQUEST_SCENARIO_EDITOR_TEXT.DATA_SHEETS_BTN}
               onInsert={handleInsertHeaderToken}
             />
           </div>
         </div>
         <KeyValueOrJsonEditor
           projectId={projectId}
-          label="Headers"
+          label={REQUEST_SCENARIO_EDITOR_TEXT.HEADERS_LABEL}
           value={headers}
           onChange={onHeadersChange}
-          placeholderValue="Expected Value"
+          placeholderValue={REQUEST_SCENARIO_EDITOR_TEXT.EXPECTED_VALUE_PLACEHOLDER}
           idPrefix={REQUEST_SCENARIO_EDITOR_SEMANTIC_ID.HEADERS_EDITOR}
         />
       </div>

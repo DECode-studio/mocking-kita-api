@@ -10,6 +10,12 @@ export const ENVIRONMENTS_TEXT = {
   DELETE_CONFIRM_TITLE: 'Delete Environment',
   DELETE_CONFIRM_MESSAGE: 'Are you sure you want to delete this environment? This action cannot be undone.',
   DELETE_CONFIRM_BTN: 'Delete',
+  SEARCH_VARS_PLACEHOLDER: 'Search variables by key, env, or project...',
+  CLEAR_SEARCH: 'Clear Search',
+  CATEGORY_LABEL: 'Category:',
+  BTN_EDIT: 'Edit',
+  EDIT_PARENT_ENV_TOOLTIP: 'Edit Parent Environment',
+  COPY_VAR_TOOLTIP: 'Copy {{variable}}',
 
   // Modal Text
   MODAL_TITLE_CREATE: 'Configure Environment',
