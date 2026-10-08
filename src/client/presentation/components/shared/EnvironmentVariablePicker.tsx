@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import Link from 'next/link';
 import { Globe, X, Copy, Check, Plus, Search, Sparkles, KeyRound, ExternalLink } from 'lucide-react';
-import { Environment, ALL_ENVIRONMENT_TYPES } from '@/src/client/domain/environment/entity/environment';
-import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 import { EnvironmentTypeBadge } from './EnvironmentTypeBadge';
+import { useEnvironmentVariablePicker, type EnvVarItem } from './useEnvironmentVariablePicker';
+
 
 interface EnvironmentVariablePickerProps {
   projectId?: string;
@@ -15,127 +15,24 @@ interface EnvironmentVariablePickerProps {
   buttonLabel?: string;
 }
 
-interface EnvVarItem {
-  environmentId?: string;
-  projectId?: string;
-  key: string;
-  token: string;
-  namespacedToken: string;
-  environmentName: string;
-  isBaseUrl: boolean;
-  activeStages: string[];
-}
-
 export const EnvironmentVariablePicker: React.FC<EnvironmentVariablePickerProps> = ({
   projectId,
   onInsert,
   triggerClassName = '',
   buttonLabel = 'Env Variables',
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [environments, setEnvironments] = useState<Environment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const {
+    isOpen,
+    setIsOpen,
+    isLoading,
+    search,
+    setSearch,
+    copiedToken,
+    filteredItems,
+    handleCopy,
+    handleInsert,
+  } = useEnvironmentVariablePicker({ projectId, onInsert });
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const fetchEnvironments = async () => {
-      setIsLoading(true);
-      try {
-        const useCase = getService(CLIENT_DI_TOKENS.environmentUseCase);
-        const list = projectId
-          ? await useCase.getByProjectId(projectId)
-          : await useCase.getAll();
-        setEnvironments(list.filter((e) => e.status && !e.deletedAt));
-      } catch (err) {
-        console.error('Failed to load environments for picker', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchEnvironments();
-  }, [isOpen, projectId]);
-
-  const handleCopy = (token: string) => {
-    navigator.clipboard.writeText(token);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 1500);
-  };
-
-  const handleInsert = (token: string) => {
-    if (onInsert) {
-      onInsert(token);
-      setIsOpen(false);
-    } else {
-      handleCopy(token);
-    }
-  };
-
-  // Build selectable items from environments
-  const items: EnvVarItem[] = [];
-  for (const env of environments) {
-    const activeStages = ALL_ENVIRONMENT_TYPES.filter(
-      (stage) => !!env.values?.[stage]
-    );
-
-    // 1. Matrix variable (isBaseUrl: false) or regular named environment
-    if (env.isBaseUrl === false && env.name) {
-      items.push({
-        environmentId: env.id,
-        projectId: env.projectId,
-        key: env.name,
-        token: `{{${env.name}}}`,
-        namespacedToken: `{{env.${env.name}}}`,
-        environmentName: env.name,
-        isBaseUrl: false,
-        activeStages,
-      });
-    } else if (env.isBaseUrl) {
-      // Base URL environment: use actual name (e.g. MDM_API_AREA_URL, los_auth_url, or Base URL)
-      const varKey = env.name ? env.name.replace(/\s+/g, '_') : 'base_url';
-      items.push({
-        environmentId: env.id,
-        projectId: env.projectId,
-        key: varKey,
-        token: `{{${varKey}}}`,
-        namespacedToken: `{{env.${varKey}}}`,
-        environmentName: env.name || 'Base URL',
-        isBaseUrl: true,
-        activeStages,
-      });
-    }
-
-    // 2. Granular variables if configured inside environment
-    if (Array.isArray(env.variables)) {
-      for (const v of env.variables) {
-        if (!v.key) continue;
-        const exists = items.some((i) => i.key.toLowerCase() === v.key.toLowerCase());
-        if (!exists) {
-          items.push({
-            environmentId: env.id,
-            projectId: env.projectId,
-            key: v.key,
-            token: `{{${v.key}}}`,
-            namespacedToken: `{{env.${v.key}}}`,
-            environmentName: env.name,
-            isBaseUrl: false,
-            activeStages: [],
-          });
-        }
-      }
-    }
-  }
-
-  const filteredItems = items.filter((item) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      item.key.toLowerCase().includes(q) ||
-      item.environmentName.toLowerCase().includes(q) ||
-      item.activeStages.some((s) => s.toLowerCase().includes(q))
-    );
-  });
 
   return (
     <>
