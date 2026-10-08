@@ -412,3 +412,21 @@ model DataSheet {
   @@map("tblDataSheet")
 }
 
+model AiApiKey {
+  id           String    @id @default(uuid())
+  name         String
+  provider     String    @default("NVIDIA_NIM")
+  encryptedKey String    @map("encrypted_key")
+  keyHint      String    @map("key_hint")
+  priority     Int       @default(1)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastUsedAt   DateTime? @map("last_used_at")
+  failureCount Int       @default(0) @map("failure_count")
+  lastError    String?   @map("last_error")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([provider, isActive, priority])
+  @@map("tblAiApiKey")
+}
+
