@@ -172,6 +172,59 @@ mock-api-studio/
           components/
           constant/
 
+        account-settings/
+          AccountSettingsView.tsx
+          hook/
+            useAccountSettings.ts
+          components/
+          constant/
+
+        data-sheets/
+          DataSheetsListView.tsx
+          hook/
+            useDataSheets.ts
+            useDataSheetModal.ts
+          components/
+          constant/
+
+        external-api-docs/
+          ExternalApiDocsView.tsx
+          hook/
+            useExternalApiDocs.ts
+            useEndpointCard.ts
+            usePlaygroundModal.ts
+          components/
+          constant/
+
+        request-scenario-editor/
+          RequestScenarioEditorView.tsx
+          hook/
+            useRequestScenarioEditor.ts
+          components/
+          constant/
+
+        scenario-flows/
+          ScenarioFlowsListView.tsx
+          hook/
+            useScenarioFlows.ts
+            useCreateScenarioFlowModal.ts
+            useImportScenarioFlowModal.ts
+            useImportInsomniaModal.ts
+          components/
+          constant/
+
+        scenario-flow-detail/
+          ScenarioFlowDetailView.tsx
+          hook/
+            useScenarioFlowDetail.ts
+            useScenarioFlowJobs.ts
+            useRunFlowButton.ts
+            useAddStepModal.ts
+            useEditFlowModal.ts
+          components/
+          constant/
+          utils/
+
       components/
         layout/
         shared/
@@ -199,6 +252,14 @@ mock-api-studio/
         entity/
         repository/
         usecase/
+      dashboard/
+        entity/
+        repository/
+        usecase/
+      data-sheet/
+        entity/
+        repository/
+        usecase/
       database/
         entity/
         repository/
@@ -220,6 +281,10 @@ mock-api-studio/
         repository/
         usecase/
       response-scenario/
+        entity/
+        repository/
+        usecase/
+      scenario-flow/
         entity/
         repository/
         usecase/
@@ -245,6 +310,14 @@ mock-api-studio/
         model/
         data_source/
         repository/
+      dashboard/
+        model/
+        data_source/
+        repository/
+      data-sheet/
+        model/
+        data_source/
+        repository/
       database/
         model/
         data_source/
@@ -269,6 +342,11 @@ mock-api-studio/
         model/
         data_source/
         repository/
+      scenario-flow/
+        model/
+        data_source/
+        repository/
+
 
     server/
       auth/
