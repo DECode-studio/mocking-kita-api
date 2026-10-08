@@ -149,6 +149,8 @@ export function useSettings(customDatabaseResetUseCase?: DatabaseResetUseCase) {
     setFileError(null);
   };
 
+  const databaseSnapshotUseCase = getService(CLIENT_DI_TOKENS.databaseSnapshotUseCase);
+
   const handleDownloadBackup = async (format: 'sql' | 'json' = 'sql') => {
     if (!canBackupRestoreDb) {
       addToast({
@@ -168,21 +170,7 @@ export function useSettings(customDatabaseResetUseCase?: DatabaseResetUseCase) {
       },
       async () => {
         try {
-          const response = await fetch(`/api/database/export?format=${format}`);
-          if (!response.ok) {
-            throw new Error(`Failed to export database (${response.status}: ${response.statusText})`);
-          }
-
-          const blob = await response.blob();
-          const disposition = response.headers.get('Content-Disposition');
-          let downloadName = `mock-api-studio-backup-${new Date().toISOString().slice(0, 10)}.${format}`;
-
-          if (disposition && disposition.includes('filename=')) {
-            const match = disposition.match(/filename="?([^"]+)"?/);
-            if (match && match[1]) {
-              downloadName = match[1];
-            }
-          }
+          const { blob, filename: downloadName } = await databaseSnapshotUseCase.exportDatabase(format);
 
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
@@ -232,29 +220,12 @@ export function useSettings(customDatabaseResetUseCase?: DatabaseResetUseCase) {
       },
       async () => {
         try {
-          const formData = new FormData();
-          formData.append('file', selectedFile);
-          formData.append('mode', importMode);
-
-          const response = await fetch('/api/database/import', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-          });
-
-          const data = (await response.json()) as {
-            success: boolean;
-            data?: { message?: string; statementsExecuted?: number; chunksExecuted?: number };
-            error?: string;
-          };
-          if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Failed to import database');
-          }
+          const result = await databaseSnapshotUseCase.importDatabaseFile(selectedFile, importMode);
 
           addToast({
             type: 'success',
             title: 'Database Import Successful',
-            description: data.data?.message || `Successfully restored mock database configurations from ${selectedFile.name}.`,
+            description: result.message || `Successfully restored mock database configurations from ${selectedFile.name}.`,
           });
 
           handleClearFile();
@@ -271,6 +242,7 @@ export function useSettings(customDatabaseResetUseCase?: DatabaseResetUseCase) {
       }
     );
   };
+
 
   const handleReset = async () => {
     if (!canResetDb) {

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/src/client/presentation/stores/authStore';
 import { usePageLoadingOverlay } from '@/src/client/presentation/components/shared/PageLoadingOverlay';
 import { canBackupRestoreDatabase } from '@/src/core/constants/roles';
 import { getErrorMessage } from '@/src/core/utils/error';
+import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 
 export function useImportExportDialog() {
   const { isImportModalOpen, setImportModalOpen, addToast } = useUIStore();
@@ -20,6 +21,7 @@ export function useImportExportDialog() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const canBackupRestoreDb = canBackupRestoreDatabase(session?.role);
+  const databaseSnapshotUseCase = getService(CLIENT_DI_TOKENS.databaseSnapshotUseCase);
 
   const handleExport = async () => {
     if (!canBackupRestoreDb) {
@@ -39,11 +41,15 @@ export function useImportExportDialog() {
       },
       async () => {
         try {
+          const { blob, filename } = await databaseSnapshotUseCase.exportDatabase('json');
+          const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
-          link.href = '/api/database/export';
+          link.href = url;
+          link.download = filename;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
 
           addToast({
             type: 'success',
@@ -105,25 +111,12 @@ export function useImportExportDialog() {
       },
       async () => {
         try {
-          const formData = new FormData();
-          formData.append('file', selectedFile);
-          formData.append('mode', importMode);
-
-          const response = await fetch('/api/database/import', {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-          });
-
-          const data = (await response.json()) as { success: boolean; error?: string };
-          if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Failed to import database');
-          }
+          const result = await databaseSnapshotUseCase.importDatabaseFile(selectedFile, importMode);
 
           addToast({
             type: 'success',
             title: 'Import Successful',
-            description: `Successfully ${importMode === 'replace' ? 'replaced' : 'merged'} database configurations.`,
+            description: result.message || `Successfully ${importMode === 'replace' ? 'replaced' : 'merged'} database configurations.`,
           });
           setSelectedFile(null);
           setFileName('');
@@ -140,6 +133,7 @@ export function useImportExportDialog() {
       }
     );
   };
+
 
   return {
     isImportModalOpen,

@@ -13,6 +13,12 @@ describe('useImportExportDialog', () => {
   });
 
   it('should handle export action', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob(['{}']),
+      headers: { get: () => 'attachment; filename="backup.json"' },
+    } as any);
+
     const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
     const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
 
@@ -26,6 +32,7 @@ describe('useImportExportDialog', () => {
     expect(removeChildSpy).toHaveBeenCalled();
     expect(useUIStore.getState().toasts[0].title).toBe('Database Exported');
   });
+
 
   it('should reject non-json files in handleFileChange', () => {
     const { result } = renderHook(() => useImportExportDialog());
