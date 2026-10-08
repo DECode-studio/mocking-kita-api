@@ -76,7 +76,7 @@ export const ImportInsomniaModal: React.FC<ImportInsomniaModalProps> = ({
                 <Dialog.Title className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span>{SCENARIO_FLOWS_TEXT.INSOMNIA_MODAL_TITLE}</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
-                    YAML / JSON v5
+                    {SCENARIO_FLOWS_TEXT.YAML_JSON_V5}
                   </span>
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400">
@@ -85,6 +85,7 @@ export const ImportInsomniaModal: React.FC<ImportInsomniaModalProps> = ({
               </div>
             </div>
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.MODAL_IMPORT_INSOMNIA_CLOSE_BTN}
               onClick={onClose}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >

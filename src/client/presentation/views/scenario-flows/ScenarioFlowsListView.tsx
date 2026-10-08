@@ -149,6 +149,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
       {/* Sub-tab Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
         <button
+          id={SCENARIO_FLOWS_SEMANTIC_ID.TAB_FLOWS_BTN}
           type="button"
           onClick={() => setCurrentTab('flows')}
           className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
@@ -158,9 +159,10 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Scenario Flows ({flows.length})</span>
+          <span>{SCENARIO_FLOWS_TEXT.TAB_FLOWS_COUNT(flows.length)}</span>
         </button>
         <button
+          id={SCENARIO_FLOWS_SEMANTIC_ID.TAB_JOBS_BTN}
           type="button"
           onClick={() => setCurrentTab('jobs')}
           className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
@@ -170,7 +172,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
           }`}
         >
           <Clock className="w-4 h-4" />
-          <span>Scheduled Jobs</span>
+          <span>{SCENARIO_FLOWS_TEXT.TAB_JOBS}</span>
         </button>
       </div>
 
@@ -257,6 +259,7 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
               {SCENARIO_FLOWS_TEXT.IMPORT_TEMPLATE_JSON}
             </button>
             <button
+              id={SCENARIO_FLOWS_SEMANTIC_ID.EMPTY_IMPORT_INSOMNIA_BTN}
               onClick={() => setIsImportInsomniaModalOpen(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all cursor-pointer"
             >
