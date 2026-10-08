@@ -15,6 +15,8 @@ export function useJsonEditor(
   const [copied, setCopied] = useState(false);
   const [validation, setValidation] = useState<{ isValid: boolean; error?: string }>({ isValid: true });
 
+  const serializedValue = typeof value === 'string' ? value : JSON.stringify(value ?? {});
+
   useEffect(() => {
     try {
       const formatted = typeof value === 'string' ? value : JSON.stringify(value ?? {}, null, 2);
@@ -23,7 +25,8 @@ export function useJsonEditor(
     } catch {
       setText('{}');
     }
-  }, [value]);
+  }, [serializedValue]);
+
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
