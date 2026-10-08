@@ -20,6 +20,11 @@ import { ScenarioFlowJob } from '@/src/client/domain/scenario-flow/entity/scenar
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 
+import {
+  SCENARIO_FLOW_DETAIL_TEXT,
+  SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
+} from '../constant';
+
 interface JobModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -143,11 +148,11 @@ export const JobModal: React.FC<JobModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFlowId) {
-      alert('Please select a scenario flow');
+      alert(SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_ERR_SELECT_FLOW);
       return;
     }
     if (!name.trim()) {
-      alert('Please enter a job name');
+      alert(SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_ERR_NAME_REQ);
       return;
     }
 
@@ -201,8 +206,10 @@ export const JobModal: React.FC<JobModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 animate-in fade-in duration-200" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl z-50 space-y-6 animate-in zoom-in-95 duration-200">
-          
+        <Dialog.Content
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl z-50 space-y-6 animate-in zoom-in-95 duration-200"
+        >
           {/* Header */}
           <div className="flex items-start justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-3">
@@ -211,17 +218,18 @@ export const JobModal: React.FC<JobModalProps> = ({
               </div>
               <div>
                 <Dialog.Title className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                  {editingJob ? 'Edit Scheduled Job' : 'Create Job Schedule'}
+                  {editingJob ? SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_EDIT_TITLE : SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_CREATE_TITLE}
                 </Dialog.Title>
                 <Dialog.Description className="text-xs text-slate-500 dark:text-slate-400">
-                  Configure automated cron schedules, Data Sheet iteration, and stop conditions.
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_SUBTITLE}
                 </Dialog.Description>
               </div>
             </div>
             <button
               type="button"
+              id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_BTN_CLOSE}
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -235,9 +243,10 @@ export const JobModal: React.FC<JobModalProps> = ({
               {!flowId && flows.length > 0 && (
                 <div className="sm:col-span-2 space-y-1.5">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Target Scenario Flow <span className="text-red-500">*</span>
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_TARGET_FLOW} <span className="text-red-500">*</span>
                   </label>
                   <select
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_FLOW}
                     value={selectedFlowId}
                     onChange={(e) => setSelectedFlowId(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 focus:border-purple-500 text-slate-900 dark:text-white outline-none cursor-pointer"
@@ -252,12 +261,13 @@ export const JobModal: React.FC<JobModalProps> = ({
               )}
               <div className="sm:col-span-2 space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Job Name <span className="text-red-500">*</span>
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_NAME} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_NAME}
                   required
-                  placeholder="e.g. Daily Payment Reconciliation, Bulk User Seed"
+                  placeholder={SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_NAME_PLACEHOLDER}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
@@ -266,11 +276,12 @@ export const JobModal: React.FC<JobModalProps> = ({
 
               <div className="sm:col-span-2 space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Description <span className="text-slate-400 font-normal">(Optional)</span>
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DESC} <span className="text-slate-400 font-normal">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DESC_OPTIONAL}</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="Purpose of this automated scheduled flow..."
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_DESC}
+                  placeholder={SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DESC_PLACEHOLDER}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400"
@@ -280,14 +291,15 @@ export const JobModal: React.FC<JobModalProps> = ({
               {/* Target Environment */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Target Environment
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_TARGET_ENV}
                 </label>
                 <select
+                  id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_ENV}
                   value={environmentId}
                   onChange={(e) => setEnvironmentId(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white outline-none cursor-pointer"
                 >
-                  <option value="">Default Flow Environment</option>
+                  <option value="">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DEFAULT_ENV}</option>
                   {environments.map((env) => (
                     <option key={env.id} value={env.id}>
                       {env.name} ({env.environmentType})
@@ -299,30 +311,32 @@ export const JobModal: React.FC<JobModalProps> = ({
               {/* Target Mode */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Execution Mode
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_EXEC_MODE}
                 </label>
                 <div className="flex rounded-xl p-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_BTN_MODE_LIVE}
                     onClick={() => setTargetMode('LIVE')}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       targetMode === 'LIVE'
                         ? 'bg-purple-600 text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    Live Request
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_LIVE_REQ}
                   </button>
                   <button
                     type="button"
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_BTN_MODE_MOCK}
                     onClick={() => setTargetMode('MOCK')}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       targetMode === 'MOCK'
                         ? 'bg-purple-600 text-white shadow-xs'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    Mock Proxy
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_MOCK_PROXY}
                   </button>
                 </div>
               </div>
@@ -334,7 +348,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Schedule Trigger
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_SCHEDULE_TRIGGER}
                   </span>
                 </div>
                 {/* Switch Schedule Type */}
@@ -343,8 +357,9 @@ export const JobModal: React.FC<JobModalProps> = ({
                     <button
                       key={type}
                       type="button"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SCHEDULE_TYPE_PREFIX(type)}
                       onClick={() => setScheduleType(type)}
-                      className={`px-2.5 py-1 rounded-md transition-all ${
+                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                         scheduleType === type
                           ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 font-bold shadow-2xs'
                           : 'text-slate-600 dark:text-slate-400'
@@ -361,10 +376,11 @@ export const JobModal: React.FC<JobModalProps> = ({
                 <div className="space-y-3">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Cron Expression
+                      {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_CRON_EXPR}
                     </label>
                     <input
                       type="text"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_CRON}
                       value={cronExpression}
                       onChange={(e) => setCronExpression(e.target.value)}
                       placeholder="* * * * *"
@@ -375,7 +391,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                   {/* Preset Chips */}
                   <div className="space-y-1.5">
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-purple-500" /> Quick Presets:
+                      <Sparkles className="w-3 h-3 text-purple-500" /> {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_QUICK_PRESETS}
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {CRON_PRESETS.map((preset) => (
@@ -383,7 +399,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                           key={preset.expr}
                           type="button"
                           onClick={() => setCronExpression(preset.expr)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
                             cronExpression === preset.expr
                               ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
                               : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-purple-400'
@@ -402,24 +418,26 @@ export const JobModal: React.FC<JobModalProps> = ({
               {scheduleType === 'INTERVAL' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Run Every
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_RUN_EVERY}
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_INTERVAL_VAL}
                       min={1}
                       value={intervalVal}
                       onChange={(e) => setIntervalVal(Number(e.target.value))}
                       className="w-28 px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
                     />
                     <select
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_INTERVAL_UNIT}
                       value={intervalUnit}
                       onChange={(e) => setIntervalUnit(e.target.value as any)}
                       className="px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                     >
-                      <option value="seconds">Seconds</option>
-                      <option value="minutes">Minutes</option>
-                      <option value="hours">Hours</option>
+                      <option value="seconds">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_SECONDS}</option>
+                      <option value="minutes">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_MINUTES}</option>
+                      <option value="hours">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_HOURS}</option>
                     </select>
                   </div>
                 </div>
@@ -429,10 +447,11 @@ export const JobModal: React.FC<JobModalProps> = ({
               {scheduleType === 'ONCE' && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Run At (Date & Time)
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_RUN_AT}
                   </label>
                   <input
                     type="datetime-local"
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_SCHEDULED_AT}
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
                     className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
@@ -447,7 +466,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                 <div className="flex items-center gap-2">
                   <Database className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Data Source & Variables
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DATA_SOURCE}
                   </span>
                 </div>
                 <div className="flex rounded-lg p-0.5 bg-slate-200/80 dark:bg-slate-700 text-[11px] font-medium">
@@ -455,14 +474,19 @@ export const JobModal: React.FC<JobModalProps> = ({
                     <button
                       key={source}
                       type="button"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_DATA_SOURCE_PREFIX(source)}
                       onClick={() => setDataSourceType(source)}
-                      className={`px-2.5 py-1 rounded-md transition-all ${
+                      className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                         dataSourceType === source
                           ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-2xs'
                           : 'text-slate-600 dark:text-slate-400'
                       }`}
                     >
-                      {source === 'NONE' ? 'Default' : source === 'DATASHEET' ? 'Data Sheet' : 'Custom JSON'}
+                      {source === 'NONE'
+                        ? SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DATA_SOURCE_DEFAULT
+                        : source === 'DATASHEET'
+                        ? SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DATA_SOURCE_DATASHEET
+                        : SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DATA_SOURCE_JSON}
                     </button>
                   ))}
                 </div>
@@ -474,14 +498,15 @@ export const JobModal: React.FC<JobModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Select Data Sheet
+                        {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_SELECT_DATASHEET}
                       </label>
                       <select
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_DATASHEET}
                         value={dataSheetId}
                         onChange={(e) => setDataSheetId(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                       >
-                        <option value="">-- Choose Data Sheet --</option>
+                        <option value="">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_CHOOSE_DATASHEET}</option>
                         {dataSheets.map((ds) => (
                           <option key={ds.id} value={ds.id}>
                             {ds.name} ({ds.code})
@@ -492,20 +517,21 @@ export const JobModal: React.FC<JobModalProps> = ({
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Iteration Mode
+                        {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_ITERATION_MODE}
                       </label>
                       <select
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_ITERATION_MODE}
                         value={dataIterationMode}
                         onChange={(e) => setDataIterationMode(e.target.value as any)}
                         className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                       >
-                        <option value="PER_TICK">1 Row per Scheduled Trigger (Sequential)</option>
-                        <option value="BATCH_ALL">Run All Rows per Trigger (Batch)</option>
+                        <option value="PER_TICK">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_ITERATION_PER_TICK}</option>
+                        <option value="BATCH_ALL">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_ITERATION_BATCH_ALL}</option>
                       </select>
                     </div>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Row column values (e.g. <code className="text-purple-600 dark:text-purple-400">{'{{userId}}'}</code>, <code className="text-purple-600 dark:text-purple-400">{'{{amount}}'}</code>) will be automatically injected into flow steps.
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_DATASHEET_HINT}
                   </p>
                 </div>
               )}
@@ -514,10 +540,11 @@ export const JobModal: React.FC<JobModalProps> = ({
               {dataSourceType === 'STATIC' && (
                 <div className="space-y-1.5 animate-in fade-in duration-150">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                    <span>Static JSON Variables</span>
-                    <span className="text-[10px] text-slate-400 font-mono">JSON format</span>
+                    <span>{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STATIC_JSON}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_JSON_FORMAT}</span>
                   </label>
                   <textarea
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_TEXTAREA_VARS}
                     rows={4}
                     value={customVariablesJson}
                     onChange={(e) => {
@@ -540,25 +567,26 @@ export const JobModal: React.FC<JobModalProps> = ({
               <div className="flex items-center gap-2">
                 <Repeat className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  Stop / Termination Condition
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_CONDITION}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Stop Condition
+                    {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_CONDITION}
                   </label>
                   <select
+                    id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_STOP_COND}
                     value={stopCondition}
                     onChange={(e) => setStopCondition(e.target.value as any)}
                     className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                   >
-                    <option value="FOREVER">Continuous (Run forever until manual pause)</option>
-                    <option value="MAX_ITERATIONS">Limit by Total Iteration Count</option>
-                    <option value="UNTIL_DATE">Stop at Specific Date & Time</option>
+                    <option value="FOREVER">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_FOREVER}</option>
+                    <option value="MAX_ITERATIONS">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_MAX_ITER}</option>
+                    <option value="UNTIL_DATE">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_UNTIL_DATE}</option>
                     {dataSourceType === 'DATASHEET' && (
-                      <option value="DATASHEET_EXHAUSTED">Stop when Data Sheet Rows End</option>
+                      <option value="DATASHEET_EXHAUSTED">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_DATASHEET_END}</option>
                     )}
                   </select>
                 </div>
@@ -566,14 +594,15 @@ export const JobModal: React.FC<JobModalProps> = ({
                 {stopCondition === 'MAX_ITERATIONS' && (
                   <div className="space-y-1.5 animate-in fade-in">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Max Iterations
+                      {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_MAX_ITERATIONS}
                     </label>
                     <input
                       type="number"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_MAX_ITERATIONS}
                       min={1}
                       value={maxIterations}
                       onChange={(e) => setMaxIterations(e.target.value === '' ? '' : Number(e.target.value))}
-                      placeholder="e.g. 50"
+                      placeholder={SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_MAX_ITERATIONS_PLACEHOLDER}
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
                     />
                   </div>
@@ -582,10 +611,11 @@ export const JobModal: React.FC<JobModalProps> = ({
                 {stopCondition === 'UNTIL_DATE' && (
                   <div className="space-y-1.5 animate-in fade-in">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      End Date & Time
+                      {SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_END_DATE}
                     </label>
                     <input
                       type="datetime-local"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_INPUT_END_AT}
                       value={endAt}
                       onChange={(e) => setEndAt(e.target.value)}
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none"
@@ -599,18 +629,20 @@ export const JobModal: React.FC<JobModalProps> = ({
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_BTN_CANCEL}
                 onClick={onClose}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
               >
-                Cancel
+                {SCENARIO_FLOW_DETAIL_TEXT.CANCEL}
               </button>
               <button
                 type="submit"
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_BTN_SUBMIT}
                 disabled={isSubmitting}
                 className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-md shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{editingJob ? 'Save Changes' : 'Create Job Schedule'}</span>
+                <span>{editingJob ? SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_SAVE_CHANGES : SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_CREATE_JOB_BTN}</span>
               </button>
             </div>
           </form>
@@ -620,3 +652,4 @@ export const JobModal: React.FC<JobModalProps> = ({
     </Dialog.Root>
   );
 };
+
