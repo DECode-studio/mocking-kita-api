@@ -99,6 +99,8 @@ export const ChangeLogsTable: React.FC<ChangeLogsTableProps> = ({
           </span>
           <div className="flex items-center gap-1.5">
             <button
+              id={CHANGE_LOGS_ADMIN_SEMANTIC_ID.PAGINATION_PREV_BTN}
+              type="button"
               onClick={() => onPageChange((prev) => Math.max(prev - 1, 1))}
               disabled={page === 1}
               className="p-1.5 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
@@ -110,6 +112,8 @@ export const ChangeLogsTable: React.FC<ChangeLogsTableProps> = ({
               {CHANGE_LOGS_ADMIN_TEXT.PAGE_LABEL(page, totalPages)}
             </span>
             <button
+              id={CHANGE_LOGS_ADMIN_SEMANTIC_ID.PAGINATION_NEXT_BTN}
+              type="button"
               onClick={() => onPageChange((prev) => Math.min(prev + 1, totalPages))}
               disabled={page === totalPages}
               className="p-1.5 border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"

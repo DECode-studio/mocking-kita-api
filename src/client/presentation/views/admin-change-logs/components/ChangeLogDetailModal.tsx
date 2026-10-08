@@ -42,10 +42,11 @@ export const ChangeLogDetailModal: React.FC<ChangeLogDetailModalProps> = ({
               {CHANGE_LOGS_ADMIN_TEXT.MODAL_TITLE}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              ID: <span className="font-mono text-[10px] select-all">{log.id}</span>
+              {CHANGE_LOGS_ADMIN_TEXT.ID_PREFIX} <span className="font-mono text-[10px] select-all">{log.id}</span>
             </p>
           </div>
           <button
+            id={CHANGE_LOGS_ADMIN_SEMANTIC_ID.MODAL_CLOSE_BTN}
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
           >
@@ -109,14 +110,14 @@ export const ChangeLogDetailModal: React.FC<ChangeLogDetailModalProps> = ({
                   {CHANGE_LOGS_ADMIN_TEXT.LABEL_BEFORE_STATE}
                 </span>
                 {!log.before_state && (
-                  <span className="text-[10px] font-medium text-slate-400">N/A</span>
+                  <span className="text-[10px] font-medium text-slate-400">{CHANGE_LOGS_ADMIN_TEXT.NOT_AVAILABLE}</span>
                 )}
               </div>
               <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/80 dark:border-slate-900 overflow-hidden">
                 <pre className="p-4 overflow-auto font-mono text-xs max-h-80 text-slate-700 dark:text-slate-300 leading-relaxed select-all">
                   {log.before_state
                     ? JSON.stringify(parseJSON(log.before_state), null, 2)
-                    : '// NULL'}
+                    : CHANGE_LOGS_ADMIN_TEXT.NULL_LABEL}
                 </pre>
               </div>
             </div>
@@ -128,14 +129,14 @@ export const ChangeLogDetailModal: React.FC<ChangeLogDetailModalProps> = ({
                   {CHANGE_LOGS_ADMIN_TEXT.LABEL_AFTER_STATE}
                 </span>
                 {!log.after_state && (
-                  <span className="text-[10px] font-medium text-slate-400">N/A</span>
+                  <span className="text-[10px] font-medium text-slate-400">{CHANGE_LOGS_ADMIN_TEXT.NOT_AVAILABLE}</span>
                 )}
               </div>
               <div className="bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200/80 dark:border-slate-900 overflow-hidden">
                 <pre className="p-4 overflow-auto font-mono text-xs max-h-80 text-slate-700 dark:text-slate-300 leading-relaxed select-all">
                   {log.after_state
                     ? JSON.stringify(parseJSON(log.after_state), null, 2)
-                    : '// NULL'}
+                    : CHANGE_LOGS_ADMIN_TEXT.NULL_LABEL}
                 </pre>
               </div>
             </div>
@@ -159,6 +160,7 @@ export const ChangeLogDetailModal: React.FC<ChangeLogDetailModalProps> = ({
         {/* Modal Footer */}
         <div className="flex justify-end gap-3 px-6 py-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 shrink-0">
           <button
+            id={CHANGE_LOGS_ADMIN_SEMANTIC_ID.MODAL_FOOTER_CLOSE_BTN}
             type="button"
             onClick={onClose}
             className="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition"

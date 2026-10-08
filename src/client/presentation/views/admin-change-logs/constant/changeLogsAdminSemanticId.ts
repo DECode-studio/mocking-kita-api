@@ -7,6 +7,11 @@ export const CHANGE_LOGS_ADMIN_SEMANTIC_ID = {
   PROJECT_FILTER: 'change-logs-admin-project-filter',
   LOG_LIST: 'change-logs-admin-log-list',
   LOG_CARD: 'change-logs-admin-log-card',
+  LOG_ITEM_VIEW_PREFIX: (id: string) => `change-logs-admin-item-view-${id}`,
   DETAIL_MODAL: 'change-logs-admin-detail-modal',
+  MODAL_CLOSE_BTN: 'change-logs-admin-modal-close-btn',
+  MODAL_FOOTER_CLOSE_BTN: 'change-logs-admin-modal-footer-close-btn',
   PAGINATION: 'change-logs-admin-pagination',
+  PAGINATION_PREV_BTN: 'change-logs-admin-pagination-prev-btn',
+  PAGINATION_NEXT_BTN: 'change-logs-admin-pagination-next-btn',
 } as const;
