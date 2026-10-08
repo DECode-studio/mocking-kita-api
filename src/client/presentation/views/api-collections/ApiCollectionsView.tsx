@@ -120,9 +120,11 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
             return (
               <div
                 key={col.id}
+                id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_ITEM(col.id)}
                 className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 space-y-3"
               >
                 <div 
+                  id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_TOGGLE_BTN(col.id)}
                   onClick={() => toggleCollectionCollapse(col.id)}
                   className="flex items-center justify-between cursor-pointer select-none hover:bg-slate-100/50 dark:hover:bg-slate-800/30 p-1.5 rounded-lg transition-colors"
                 >
@@ -151,6 +153,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
                   
                   <div className="flex items-center gap-1">
                     <button
+                      id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_EDIT_BTN(col.id)}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -162,6 +165,7 @@ export const ApiCollectionsView: React.FC<ApiCollectionsViewProps> = ({
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                     <button
+                      id={API_COLLECTIONS_SEMANTIC_ID.FOLDER_DELETE_BTN(col.id)}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();

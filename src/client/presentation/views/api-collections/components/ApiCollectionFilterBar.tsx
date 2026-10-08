@@ -38,6 +38,7 @@ export const ApiCollectionFilterBar: React.FC<ApiCollectionFilterBarProps> = ({
 
       <div className="flex flex-wrap items-center gap-2">
         <select
+          id={API_COLLECTIONS_SEMANTIC_ID.METHOD_FILTER_SELECT}
           value={methodFilter}
           onChange={(e) => onMethodFilterChange(e.target.value)}
           className="px-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
@@ -51,6 +52,7 @@ export const ApiCollectionFilterBar: React.FC<ApiCollectionFilterBarProps> = ({
         </select>
 
         <select
+          id={API_COLLECTIONS_SEMANTIC_ID.STATUS_FILTER_SELECT}
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
           className="px-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
