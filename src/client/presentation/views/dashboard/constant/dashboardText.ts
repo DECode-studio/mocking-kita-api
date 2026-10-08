@@ -35,5 +35,6 @@ export const DASHBOARD_TEXT = {
   APPLY_IMPORT_BTN: 'Apply Import',
   SHOWING_COUNT: (current: number, total: number) => `Showing ${current} of ${total}`,
   RULES_COUNT_SUFFIX: (count: number) => `${count} rules`,
+  APIS_COUNT_SUFFIX: (count: number) => `${count} APIs`,
 } as const;
 

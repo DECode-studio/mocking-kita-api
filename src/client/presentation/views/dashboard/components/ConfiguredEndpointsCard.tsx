@@ -31,6 +31,7 @@ export const ConfiguredEndpointsCard: React.FC<ConfiguredEndpointsCardProps> = (
         {endpoints.map((api) => (
             <div
               key={api.id}
+              id={DASHBOARD_SEMANTIC_ID.ENDPOINT_ITEM(api.id)}
               onClick={() => onNavigateApiDetail(api.projectId, api.id)}
               className="p-3 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 rounded-xl cursor-pointer transition-colors flex items-center justify-between gap-3"
             >
