@@ -112,12 +112,13 @@ export const SignInFormCard: React.FC<SignInFormCardProps> = ({
       {/* Divider */}
       <div className="relative flex py-2 items-center">
         <div className="grow border-t border-slate-800/80"></div>
-        <span className="shrink mx-4 text-slate-500 text-[10px] uppercase font-semibold font-mono tracking-wider">or</span>
+        <span className="shrink mx-4 text-slate-500 text-[10px] uppercase font-semibold font-mono tracking-wider">{SIGN_IN_TEXT.OR_DIVIDER}</span>
         <div className="grow border-t border-slate-800/80"></div>
       </div>
 
       {/* Google SSO Sign-in Button */}
       <button
+        id={SIGN_IN_SEMANTIC_ID.GOOGLE_SSO_BTN}
         type="button"
         onClick={onGoogleSsoClick}
         className="w-full py-3 px-4 text-xs font-semibold bg-white hover:bg-slate-100 active:bg-slate-200 text-slate-950 rounded-xl shadow-lg flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
@@ -140,7 +141,7 @@ export const SignInFormCard: React.FC<SignInFormCardProps> = ({
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
           />
         </svg>
-        <span>Sign In with Google Workspace</span>
+        <span>{SIGN_IN_TEXT.GOOGLE_SSO_BTN}</span>
       </button>
     </div>
   );

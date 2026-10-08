@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { HelpCircle, RefreshCw } from 'lucide-react';
 import { useOnboardingStore } from '@/src/client/presentation/stores/onboardingStore';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
-import { SETTINGS_TEXT } from '../constant';
+import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from '../constant';
 
 export const OnboardingSettingsCard: React.FC = () => {
   const { resetTour } = useOnboardingStore();
@@ -17,8 +17,8 @@ export const OnboardingSettingsCard: React.FC = () => {
     resetTour();
     addToast({
       type: 'success',
-      title: 'Tour Reset Successful',
-      description: 'Panduan onboarding telah direset. Silakan ke halaman Dashboard untuk memulai kembali.',
+      title: SETTINGS_TEXT.TOUR_RESET_SUCCESS_TITLE,
+      description: SETTINGS_TEXT.TOUR_RESET_SUCCESS_DESC,
     });
     router.push('/dashboard');
   };
@@ -36,6 +36,7 @@ export const OnboardingSettingsCard: React.FC = () => {
 
       <div className="pt-2">
         <button
+          id={SETTINGS_SEMANTIC_ID.RESTART_TOUR_BTN}
           type="button"
           onClick={handleReset}
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 rounded-lg transition-colors border border-purple-200 dark:border-purple-900"

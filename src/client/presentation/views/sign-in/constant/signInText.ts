@@ -20,5 +20,8 @@ export const SIGN_IN_TEXT = {
   REMEMBER_ME: 'Remember me',
   SUBMIT_BTN: 'Sign In to Dashboard',
   SUBMITTING_BTN: 'Authenticating...',
+  GOOGLE_SSO_BTN: 'Sign In with Google Workspace',
+  OR_DIVIDER: 'or',
+  REDIRECTING: 'Redirecting to dashboard...',
   FOOTER_CREDIT: 'Mock API Studio • High-Contrast Editorial Design',
 } as const;
