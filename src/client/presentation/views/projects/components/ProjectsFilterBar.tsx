@@ -45,6 +45,7 @@ export const ProjectsFilterBar: React.FC<ProjectsFilterBarProps> = ({
           {(['ALL', 'ACTIVE', 'INACTIVE', 'DELETED'] as const).map((st) => (
             <button
               key={st}
+              id={PROJECTS_SEMANTIC_ID.STATUS_FILTER_BTN(st)}
               type="button"
               onClick={() => onStatusFilterChange(st)}
               className={`px-2.5 py-1 rounded-md transition-colors ${
@@ -59,16 +60,18 @@ export const ProjectsFilterBar: React.FC<ProjectsFilterBarProps> = ({
         </div>
 
         <select
+          id={PROJECTS_SEMANTIC_ID.SORT_SELECT}
           value={sortBy}
           onChange={(e) => onSortByChange(e.target.value === 'name' ? 'name' : 'date')}
           className="px-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none font-medium"
         >
-          <option value="date">Sort: Created Date</option>
-          <option value="name">Sort: Name</option>
+          <option value="date">{PROJECTS_TEXT.SORT_BY_DATE}</option>
+          <option value="name">{PROJECTS_TEXT.SORT_BY_NAME}</option>
         </select>
 
         <div className="flex p-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
           <button
+            id={PROJECTS_SEMANTIC_ID.VIEW_MODE_GRID_BTN}
             type="button"
             onClick={() => onViewModeChange('grid')}
             className={`p-1 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-xs' : 'text-slate-400'}`}
@@ -77,6 +80,7 @@ export const ProjectsFilterBar: React.FC<ProjectsFilterBarProps> = ({
             <Grid className="w-3.5 h-3.5" />
           </button>
           <button
+            id={PROJECTS_SEMANTIC_ID.VIEW_MODE_TABLE_BTN}
             type="button"
             onClick={() => onViewModeChange('table')}
             className={`p-1 rounded ${viewMode === 'table' ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-xs' : 'text-slate-400'}`}

@@ -15,7 +15,7 @@ import {
 import { Project } from '@/src/client/domain/project/entity/project';
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { formatDate } from '@/src/core/utils/date';
-import { PROJECTS_TEXT } from '../constant';
+import { PROJECTS_TEXT, PROJECTS_SEMANTIC_ID } from '../constant';
 
 interface ProjectGridCardProps {
   project: Project;
@@ -40,6 +40,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
 }) => {
   return (
     <div
+      id={PROJECTS_SEMANTIC_ID.CARD_ITEM(project.id)}
       onClick={onNavigateDetail}
       data-tour="project-item"
       className="group relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/80 dark:hover:border-purple-500/80 rounded-2xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between cursor-pointer"
@@ -65,7 +66,11 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
 
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <button type="button" className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded">
+                <button
+                  id={PROJECTS_SEMANTIC_ID.CARD_DROPDOWN_TRIGGER(project.id)}
+                  type="button"
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded"
+                >
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </DropdownMenu.Trigger>
@@ -75,6 +80,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
                   className="w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1 shadow-xl z-50 text-xs text-slate-700 dark:text-slate-300 space-y-0.5"
                 >
                   <DropdownMenu.Item
+                    id={PROJECTS_SEMANTIC_ID.CARD_ACTION_OPEN(project.id)}
                     onClick={onNavigateDetail}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                   >
@@ -82,6 +88,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
                     <span>{PROJECTS_TEXT.ACTION_OPEN_DETAIL}</span>
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
+                    id={PROJECTS_SEMANTIC_ID.CARD_ACTION_EDIT(project.id)}
                     onClick={() => onEdit(project)}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                   >
@@ -89,6 +96,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
                     <span>{PROJECTS_TEXT.ACTION_EDIT_DETAILS}</span>
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
+                    id={PROJECTS_SEMANTIC_ID.CARD_ACTION_DUPLICATE(project.id)}
                     onClick={() => onDuplicate(project)}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                   >
@@ -99,6 +107,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
                   {project.deletedAt ? (
                     <>
                       <DropdownMenu.Item
+                        id={PROJECTS_SEMANTIC_ID.CARD_ACTION_RESTORE(project.id)}
                         onClick={() => onRestore(project.id)}
                         className="flex items-center gap-2 px-2.5 py-1.5 rounded text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
                       >
@@ -106,6 +115,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
                         <span>{PROJECTS_TEXT.ACTION_RESTORE}</span>
                       </DropdownMenu.Item>
                       <DropdownMenu.Item
+                        id={PROJECTS_SEMANTIC_ID.CARD_ACTION_PERM_DELETE(project.id)}
                         onClick={() =>
                           onHardDeleteRequest({ id: project.id, name: project.name, isPermanent: true })
                         }
@@ -117,6 +127,7 @@ export const ProjectGridCard: React.FC<ProjectGridCardProps> = ({
                     </>
                   ) : (
                     <DropdownMenu.Item
+                      id={PROJECTS_SEMANTIC_ID.CARD_ACTION_SOFT_DELETE(project.id)}
                       onClick={() => onSoftDelete(project.id)}
                       className="flex items-center gap-2 px-2.5 py-1.5 rounded text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                     >
