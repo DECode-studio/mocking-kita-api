@@ -98,6 +98,20 @@ export const DATA_SHEET_TEXT = {
   TOKENS_LABEL: 'Tokens:',
   EMPTY_STATE_CREATE_BTN: 'Create Data Sheet',
   CLICK_TO_COPY_TOKEN: 'Click to copy variable token',
+  DYNAMIC_TOKENS_LABEL: 'Dynamic Tokens:',
+  ITEMS_STORED_FALLBACK: (count: number) => `${count} items stored in this dataset`,
+  SEARCH_ITEMS_COUNT_PLACEHOLDER: (count: number) => `Search among ${count} items...`,
+  COPY_ALL_DATA_TOOLTIP: 'Copy all data as JSON',
+  DOWNLOAD_JSON_TOOLTIP: 'Download JSON file',
+  DOWNLOAD_LABEL: 'Download',
+  COPY_ALL_LABEL: 'Copy All',
+  COPIED_ALL_LABEL: 'Copied All',
+  COPY_VALUE_TOOLTIP: 'Copy value',
+  NO_ITEMS_STORED: 'No items in this data sheet',
+  NO_ITEMS_MATCH_SEARCH: 'No items match your search',
+  SHOWING_FILTERED_COUNT: (filtered: number, total: number) => `Showing ${filtered} of ${total} items`,
+  CLOSE_LABEL: 'Close',
+  EDIT_LABEL: 'Edit',
 } as const;
 
 export const DATA_SHEET_CATEGORIES = [

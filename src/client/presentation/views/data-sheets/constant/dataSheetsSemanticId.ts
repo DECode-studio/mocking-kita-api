@@ -38,7 +38,10 @@ export const DATA_SHEET_SEMANTIC_ID = {
   MODAL_FORM_BTN_CLOSE: 'data-sheet-modal-btn-close',
   MODAL_PREVIEW: 'data-sheet-modal-preview',
   MODAL_PREVIEW_CLOSE_BTN: 'data-sheet-preview-close-btn',
+  MODAL_PREVIEW_FOOTER_CLOSE_BTN: 'data-sheet-preview-footer-close-btn',
   MODAL_PREVIEW_SEARCH_INPUT: 'data-sheet-preview-search-input',
   MODAL_PREVIEW_EDIT_BTN: 'data-sheet-preview-edit-btn',
   MODAL_PREVIEW_COPY_BTN: 'data-sheet-preview-copy-btn',
+  MODAL_PREVIEW_DOWNLOAD_BTN: 'data-sheet-preview-download-btn',
+  MODAL_PREVIEW_ROW_COPY_BTN: (index: number) => `data-sheet-preview-row-copy-btn-${index}`,
 } as const;
