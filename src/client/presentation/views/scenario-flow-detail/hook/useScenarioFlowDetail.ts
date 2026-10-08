@@ -70,19 +70,20 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   const envUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.environmentUseCase), []);
   const apiUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.apiUseCase), []);
   const projectUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.projectUseCase), []);
-  const requestScenarioRepo = useMemo(() => getService(CLIENT_DI_TOKENS.requestScenarioRepository), []);
+  const requestScenarioUseCase = useMemo(() => getService(CLIENT_DI_TOKENS.requestScenarioUseCase), []);
 
   const loadScenariosForApi = useCallback(
     async (apiId: string) => {
       if (!apiId) return [];
       try {
-        return await requestScenarioRepo.getByApiId(apiId);
+        return await requestScenarioUseCase.getByApiId(apiId);
       } catch {
         return [];
       }
     },
-    [requestScenarioRepo]
+    [requestScenarioUseCase]
   );
+
 
   const handleSelectExecution = useCallback(
     async (exec: ScenarioFlowExecution) => {

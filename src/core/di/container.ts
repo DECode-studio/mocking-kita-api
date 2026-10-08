@@ -29,6 +29,7 @@ import { DatabaseResetUseCaseImpl } from '@/src/client/domain/database/usecase/d
 import { EnvironmentUseCaseImpl } from '@/src/client/domain/environment/usecase/environment_usecase_impl';
 import { FaqUseCaseImpl } from '@/src/client/domain/faq/usecase/faq_usecase_impl';
 import { ProjectUseCaseImpl } from '@/src/client/domain/project/usecase/project_usecase_impl';
+import { RequestScenarioUseCaseImpl } from '@/src/client/domain/request-scenario/usecase/request_scenario_usecase_impl';
 import { AccountUseCaseImpl } from '@/src/client/domain/account/usecase/account_usecase_impl';
 import { AccountAdminUseCaseImpl } from '@/src/client/domain/account/usecase/account_admin_usecase_impl';
 import { ChangeLogUseCaseImpl } from '@/src/client/domain/change-log/usecase/change_log_usecase_impl';
@@ -168,6 +169,11 @@ appContainer.bindAll(
     provide: CLIENT_DI_TOKENS.projectUseCase,
     useFactory: (container) =>
       new ProjectUseCaseImpl(container.get(CLIENT_DI_TOKENS.projectRepository)),
+  },
+  {
+    provide: CLIENT_DI_TOKENS.requestScenarioUseCase,
+    useFactory: (container) =>
+      new RequestScenarioUseCaseImpl(container.get(CLIENT_DI_TOKENS.requestScenarioRepository)),
   },
   {
     provide: CLIENT_DI_TOKENS.accountUseCase,

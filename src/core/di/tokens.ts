@@ -27,6 +27,7 @@ import type { DatabaseResetUseCase } from "@/src/client/domain/database/usecase/
 import type { EnvironmentUseCase } from "@/src/client/domain/environment/usecase/environment_usecase";
 import type { FaqUseCase } from "@/src/client/domain/faq/usecase/faq_usecase";
 import type { ProjectUseCase } from "@/src/client/domain/project/usecase/project_usecase";
+import type { RequestScenarioUseCase } from "@/src/client/domain/request-scenario/usecase/request_scenario_usecase";
 import type { AccountUseCase } from "@/src/client/domain/account/usecase/account_usecase";
 import type { AccountAdminUseCase } from "@/src/client/domain/account/usecase/account_admin_usecase";
 import type { ChangeLogUseCase } from "@/src/client/domain/change-log/usecase/change_log_usecase";
@@ -64,6 +65,7 @@ export const CLIENT_DI_TOKENS = {
   environmentUseCase: new InjectionToken<EnvironmentUseCase>("EnvironmentUseCase"),
   faqUseCase: new InjectionToken<FaqUseCase>("FaqUseCase"),
   projectUseCase: new InjectionToken<ProjectUseCase>("ProjectUseCase"),
+  requestScenarioUseCase: new InjectionToken<RequestScenarioUseCase>("RequestScenarioUseCase"),
   accountUseCase: new InjectionToken<AccountUseCase>("AccountUseCase"),
   accountAdminUseCase: new InjectionToken<AccountAdminUseCase>("AccountAdminUseCase"),
   changeLogUseCase: new InjectionToken<ChangeLogUseCase>("ChangeLogUseCase"),
