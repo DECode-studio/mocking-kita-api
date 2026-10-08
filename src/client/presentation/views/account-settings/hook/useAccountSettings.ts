@@ -1,23 +1,27 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/src/client/presentation/stores/authStore';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 import { getErrorMessage } from '@/src/core/utils/error';
+import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
+import { AccountProfile } from '@/src/client/domain/account/entity/account';
+import { AccountUseCase } from '@/src/client/domain/account/usecase/account_usecase';
 import { ACCOUNT_SETTINGS_TEXT } from '../constant';
 
-export interface UserAccountData {
-  id: string;
-  username: string;
-  name: string;
-  role: string;
-  googleId: string | null;
-  requiresCurrentPassword?: boolean;
-}
 
-export function useAccountSettings() {
+
+
+export type UserAccountData = AccountProfile;
+
+export function useAccountSettings(customAccountUseCase?: AccountUseCase) {
   const { session, updateSession } = useAuthStore();
   const { addToast } = useUIStore();
+
+  const accountUseCase = useMemo(
+    () => customAccountUseCase || getService(CLIENT_DI_TOKENS.accountUseCase),
+    [customAccountUseCase]
+  );
 
   const [accountData, setAccountData] = useState<UserAccountData | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(true);
@@ -36,14 +40,9 @@ export function useAccountSettings() {
   const fetchProfile = useCallback(async () => {
     setIsLoadingProfile(true);
     try {
-      const res = await fetch('/api/account/profile', { credentials: 'include' });
-      const json = await res.json();
-      if (res.ok && json.success && json.account) {
-        setAccountData(json.account);
-        setNameInput(json.account.name || '');
-      } else {
-        throw new Error(json.error || ACCOUNT_SETTINGS_TEXT.FETCH_ERROR_TITLE);
-      }
+      const profile = await accountUseCase.getProfile();
+      setAccountData(profile);
+      setNameInput(profile.name || '');
     } catch (err) {
       // Fallback to session if API fails
       if (session) {
@@ -64,7 +63,7 @@ export function useAccountSettings() {
     } finally {
       setIsLoadingProfile(false);
     }
-  }, [session, addToast]);
+  }, [accountUseCase, session, addToast]);
 
   useEffect(() => {
     void fetchProfile();
@@ -85,19 +84,9 @@ export function useAccountSettings() {
 
     setIsUpdatingName(true);
     try {
-      const res = await fetch('/api/account/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: cleanName }),
-        credentials: 'include',
-      });
-      const json = await res.json();
+      const { account } = await accountUseCase.updateProfile({ name: cleanName });
 
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Failed to update name');
-      }
-
-      setAccountData((prev) => (prev ? { ...prev, name: cleanName } : null));
+      setAccountData((prev) => (prev ? { ...prev, name: cleanName } : account));
       updateSession({ name: cleanName });
 
       addToast({
@@ -149,20 +138,10 @@ export function useAccountSettings() {
 
     setIsUpdatingPassword(true);
     try {
-      const res = await fetch('/api/account/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-        credentials: 'include',
+      await accountUseCase.updateProfile({
+        currentPassword,
+        newPassword,
       });
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Failed to change password');
-      }
 
       setAccountData((prev) =>
         prev
@@ -215,3 +194,4 @@ export function useAccountSettings() {
     handleUpdatePassword,
   };
 }
+

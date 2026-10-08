@@ -10,6 +10,7 @@ import type { CollectionRepository } from "@/src/client/domain/collection/reposi
 import type { DatabaseSnapshotRepository } from "@/src/client/domain/database/repository/database_snapshot_repository";
 import type { DatabaseResetRepository } from "@/src/client/domain/database/repository/database_reset_repository";
 import type { FaqRepository } from "@/src/client/domain/faq/repository/faq_repository";
+import type { AccountRepository } from "@/src/client/domain/account/repository/account_repository";
 import type { AccountAdminRepository } from "@/src/client/domain/account/repository/account_admin_repository";
 import type { ChangeLogRepository } from "@/src/client/domain/change-log/repository/change_log_repository";
 import type { DashboardRepository } from "@/src/client/domain/dashboard/repository/dashboard_repository";
@@ -26,6 +27,7 @@ import type { DatabaseResetUseCase } from "@/src/client/domain/database/usecase/
 import type { EnvironmentUseCase } from "@/src/client/domain/environment/usecase/environment_usecase";
 import type { FaqUseCase } from "@/src/client/domain/faq/usecase/faq_usecase";
 import type { ProjectUseCase } from "@/src/client/domain/project/usecase/project_usecase";
+import type { AccountUseCase } from "@/src/client/domain/account/usecase/account_usecase";
 import type { AccountAdminUseCase } from "@/src/client/domain/account/usecase/account_admin_usecase";
 import type { ChangeLogUseCase } from "@/src/client/domain/change-log/usecase/change_log_usecase";
 import type { DashboardUseCase } from "@/src/client/domain/dashboard/usecase/dashboard_usecase";
@@ -45,6 +47,7 @@ export const CLIENT_DI_TOKENS = {
   databaseSnapshotRepository: new InjectionToken<DatabaseSnapshotRepository>("DatabaseSnapshotRepository"),
   resetDatabaseRepository: new InjectionToken<DatabaseResetRepository>("ResetDatabaseRepository"),
   faqRepository: new InjectionToken<FaqRepository>("FaqRepository"),
+  accountRepository: new InjectionToken<AccountRepository>("AccountRepository"),
   accountAdminRepository: new InjectionToken<AccountAdminRepository>("AccountAdminRepository"),
   changeLogRepository: new InjectionToken<ChangeLogRepository>("ChangeLogRepository"),
   dashboardRepository: new InjectionToken<DashboardRepository>("DashboardRepository"),
@@ -61,9 +64,11 @@ export const CLIENT_DI_TOKENS = {
   environmentUseCase: new InjectionToken<EnvironmentUseCase>("EnvironmentUseCase"),
   faqUseCase: new InjectionToken<FaqUseCase>("FaqUseCase"),
   projectUseCase: new InjectionToken<ProjectUseCase>("ProjectUseCase"),
+  accountUseCase: new InjectionToken<AccountUseCase>("AccountUseCase"),
   accountAdminUseCase: new InjectionToken<AccountAdminUseCase>("AccountAdminUseCase"),
   changeLogUseCase: new InjectionToken<ChangeLogUseCase>("ChangeLogUseCase"),
   dashboardUseCase: new InjectionToken<DashboardUseCase>("DashboardUseCase"),
   scenarioFlowUseCase: new InjectionToken<ScenarioFlowUseCase>("ScenarioFlowUseCase"),
   dataSheetUseCase: new InjectionToken<DataSheetUseCase>("DataSheetUseCase"),
 } as const;
+
