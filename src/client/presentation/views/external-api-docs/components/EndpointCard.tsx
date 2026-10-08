@@ -66,6 +66,7 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
             <span>{EXTERNAL_API_DOCS_TEXT.BTN_TEST_ENDPOINT}</span>
           </button>
           <button
+            id={EXTERNAL_API_DOCS_SEMANTIC_ID.BTN_TOGGLE_CARD(spec.id)}
             type="button"
             onClick={toggleExpanded}
             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
@@ -83,6 +84,7 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
           {/* Sub Navigation Tabs */}
           <div className="flex border-b border-slate-200 dark:border-slate-800 gap-4">
             <button
+              id={EXTERNAL_API_DOCS_SEMANTIC_ID.CARD_TAB(spec.id, 'request')}
               onClick={() => setActiveTab('request')}
               className={`pb-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'request'
@@ -93,6 +95,7 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
               {EXTERNAL_API_DOCS_TEXT.TAB_REQUEST_CONTRACT}
             </button>
             <button
+              id={EXTERNAL_API_DOCS_SEMANTIC_ID.CARD_TAB(spec.id, 'response')}
               onClick={() => setActiveTab('response')}
               className={`pb-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'response'
@@ -103,6 +106,7 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
               {EXTERNAL_API_DOCS_TEXT.TAB_RESPONSE_EXAMPLES} ({spec.responseExamples.length})
             </button>
             <button
+              id={EXTERNAL_API_DOCS_SEMANTIC_ID.CARD_TAB(spec.id, 'curl')}
               onClick={() => setActiveTab('curl')}
               className={`pb-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'curl'
@@ -156,8 +160,9 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">{EXTERNAL_API_DOCS_TEXT.SAMPLE_REQUEST_BODY}</h4>
                     <button
+                      id={EXTERNAL_API_DOCS_SEMANTIC_ID.CARD_COPY_BTN(spec.id, 'request-body')}
                       onClick={() => handleCopy(JSON.stringify(spec.requestBodyExample, null, 2))}
-                      className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                      className="text-[11px] text-slate-500 hover:text-slate-800 dark:hover:white flex items-center gap-1 cursor-pointer"
                     >
                       {copiedCode ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedCode ? EXTERNAL_API_DOCS_TEXT.BTN_COPIED : EXTERNAL_API_DOCS_TEXT.BTN_COPY_JSON}</span>
@@ -196,6 +201,7 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
                     {EXTERNAL_API_DOCS_TEXT.RESPONSE_PAYLOAD_LABEL} ({spec.responseExamples[activeResponseIdx]?.status} Status)
                   </span>
                   <button
+                    id={EXTERNAL_API_DOCS_SEMANTIC_ID.CARD_COPY_BTN(spec.id, 'response-body')}
                     onClick={() =>
                       handleCopy(JSON.stringify(spec.responseExamples[activeResponseIdx]?.body, null, 2))
                     }
@@ -218,6 +224,7 @@ export const EndpointCard: React.FC<EndpointCardProps> = ({ spec, authToken, onT
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">{EXTERNAL_API_DOCS_TEXT.TERMINAL_CURL_LABEL}</h4>
                 <button
+                  id={EXTERNAL_API_DOCS_SEMANTIC_ID.CARD_COPY_BTN(spec.id, 'curl')}
                   onClick={() => handleCopy(generateCurl())}
                   className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
                 >

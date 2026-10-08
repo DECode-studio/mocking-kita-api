@@ -67,6 +67,7 @@ export const PlaygroundModal: React.FC<PlaygroundModalProps> = ({
               </div>
             </div>
             <button
+              id={EXTERNAL_API_DOCS_SEMANTIC_ID.PLAYGROUND_CLOSE_BTN}
               onClick={() => onOpenChange(false)}
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
             >
@@ -86,6 +87,7 @@ export const PlaygroundModal: React.FC<PlaygroundModalProps> = ({
                   </span>
                   <div className="flex gap-2">
                     <button
+                      id={EXTERNAL_API_DOCS_SEMANTIC_ID.PLAYGROUND_AUTH_TYPE_BEARER_BTN}
                       type="button"
                       onClick={() => setAuthHeaderType('bearer')}
                       className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
@@ -97,6 +99,7 @@ export const PlaygroundModal: React.FC<PlaygroundModalProps> = ({
                       {EXTERNAL_API_DOCS_TEXT.PLAYGROUND_TOKEN_TYPE_BEARER}
                     </button>
                     <button
+                      id={EXTERNAL_API_DOCS_SEMANTIC_ID.PLAYGROUND_AUTH_TYPE_APIKEY_BTN}
                       type="button"
                       onClick={() => setAuthHeaderType('apiKey')}
                       className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${
@@ -226,6 +229,7 @@ export const PlaygroundModal: React.FC<PlaygroundModalProps> = ({
                     )}
                   </div>
                   <button
+                    id={EXTERNAL_API_DOCS_SEMANTIC_ID.PLAYGROUND_COPY_OUTPUT_BTN}
                     type="button"
                     onClick={handleCopyResponse}
                     className="px-3 py-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"

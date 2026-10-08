@@ -112,7 +112,7 @@ export const VariablesTableView: React.FC<VariablesTableViewProps> = ({
                         type="button"
                         onClick={() => handleCopyKey(item.key)}
                         className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
-                        title="Copy {{variable}}"
+                        title={ENVIRONMENTS_TEXT.COPY_VAR_TOOLTIP}
                       >
                         {isCopied ? (
                           <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -189,10 +189,10 @@ export const VariablesTableView: React.FC<VariablesTableViewProps> = ({
                       type="button"
                       onClick={() => onEditEnvironment(item.environment)}
                       className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-lg transition-colors cursor-pointer"
-                      title="Edit Parent Environment"
+                      title={ENVIRONMENTS_TEXT.EDIT_PARENT_ENV_TOOLTIP}
                     >
                       <Edit2 className="w-3 h-3" />
-                      <span>Edit</span>
+                      <span>{ENVIRONMENTS_TEXT.BTN_EDIT}</span>
                     </button>
                   </td>
                 </tr>

@@ -2,6 +2,7 @@ import React from 'react';
 import { HelpCircle, ChevronDown } from 'lucide-react';
 import { cn } from '@/src/core/utils/cn';
 import { Faq } from '@/src/client/domain/faq/entity/faq';
+import { FAQ_SEMANTIC_ID } from '../constant/faqSemanticId';
 
 interface FaqAccordionItemProps {
   faq: Faq;
@@ -12,6 +13,7 @@ interface FaqAccordionItemProps {
 export const FaqAccordionItem: React.FC<FaqAccordionItemProps> = ({ faq, isExpanded, onToggle }) => {
   return (
     <div
+      id={FAQ_SEMANTIC_ID.ACCORDION_ITEM(faq.id)}
       className={cn(
         'group rounded-2xl border transition-all duration-200 bg-white dark:bg-slate-900 overflow-hidden',
         isExpanded
@@ -20,6 +22,7 @@ export const FaqAccordionItem: React.FC<FaqAccordionItemProps> = ({ faq, isExpan
       )}
     >
       <button
+        id={FAQ_SEMANTIC_ID.ACCORDION_TOGGLE(faq.id)}
         type="button"
         onClick={onToggle}
         className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 select-none focus:outline-none"

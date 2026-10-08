@@ -19,6 +19,7 @@ export const FaqCategoryFilter: React.FC<FaqCategoryFilterProps> = ({
       {categories.map((category) => (
         <button
           key={category}
+          id={FAQ_SEMANTIC_ID.CATEGORY_BTN(category)}
           type="button"
           onClick={() => onSelectCategory(category)}
           className={cn(
