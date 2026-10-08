@@ -1,5 +1,6 @@
-import { AuthLoginResponse } from '../repository/auth_repository';
-import { UserSession } from '../entity/user_session';
+import { UserSession, AuthLoginResponse } from '../entity/user_session';
+
+export type { AuthLoginResponse };
 
 export interface AuthUseCase {
   getSession(): Promise<UserSession | null>;
@@ -7,4 +8,5 @@ export interface AuthUseCase {
   logout(): Promise<void>;
   isAuthenticated(): Promise<boolean>;
 }
+
 
