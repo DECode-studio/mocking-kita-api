@@ -6,6 +6,7 @@ const UI_ROUTES = [
   '/',
   '/sign-in',
   '/dashboard',
+  '/assistant',
   '/projects',
   '/apis',
   '/environments',
@@ -20,6 +21,7 @@ const UI_ROUTES = [
 ];
 
 const STUDIO_INTERNAL_API_PREFIXES = [
+  '/api/ai',
   '/api/auth',
   '/api/account',
   '/api/accounts',

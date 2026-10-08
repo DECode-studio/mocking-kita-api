@@ -42,14 +42,20 @@ function hasDynamicTokens(value: unknown): boolean {
 }
 
 const INTERNAL_ROUTE_PREFIXES = [
+  '/api/ai',
   '/api/auth',
+  '/api/account',
+  '/api/accounts',
   '/api/database',
   '/api/settings',
   '/api/admin',
   '/api/upload',
   '/api/projects',
+  '/api/scenario-flows',
+  '/api/data-sheets',
   '/api/change-logs',
   '/api/faq',
+  '/api/v1/external',
 ];
 
 type PathMatchResult = {

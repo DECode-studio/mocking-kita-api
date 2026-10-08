@@ -10,6 +10,7 @@ import { ImportExportDialog } from '../../views/dashboard';
 import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '@/src/core/constants/routes';
 import { OnboardingTour } from './OnboardingTour';
+import { FloatingAssistantButton, ChatAssistantDrawer } from '../../views/assistant';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { session, isAuthenticated, isInitialized, logout } = useAuthStore();
@@ -56,6 +57,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
       <ToastContainer />
       <ImportExportDialog />
       <OnboardingTour />
+      <FloatingAssistantButton />
+      <ChatAssistantDrawer />
     </div>
   );
 };
