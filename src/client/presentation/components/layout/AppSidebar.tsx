@@ -1,11 +1,8 @@
 'use client';
 
-import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   FolderGit2,
@@ -24,45 +21,25 @@ import {
   Layers,
   Table2,
 } from 'lucide-react';
-import { useThemeStore } from '@/src/core/theme/themeStore';
-import { useUIStore } from '../../stores/uiStore';
-import { useAuthStore } from '../../stores/authStore';
 import { cn } from '@/src/core/utils/cn';
 import { ROUTES } from '@/src/core/constants/routes';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
-import { Project } from '@/src/client/domain/project/entity/project';
+import { useAppSidebar } from './useAppSidebar';
 
 export const AppSidebar: React.FC = () => {
-  const { theme, setTheme } = useThemeStore();
-  const { session } = useAuthStore();
   const {
+    theme,
+    toggleTheme,
+    session,
+    pathname,
+    router,
     isMobileSidebarOpen,
     setMobileSidebarOpen,
     isSidebarCollapsed,
     toggleSidebarCollapsed,
-  } = useUIStore();
-  const pathname = usePathname();
-  const router = useRouter();
+    recentProjects,
+  } = useAppSidebar();
 
-  const [recentProjects, setRecentProjects] = useState<Project[]>([]);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const useCase = getService(CLIENT_DI_TOKENS.projectUseCase);
-        const projects = await useCase.getAll();
-        const activeProjects = projects.filter((p) => !p.deletedAt);
-        setRecentProjects(activeProjects.slice(0, 5));
-      } catch (err) {
-        console.error('Failed to load recent projects in sidebar', err);
-      }
-    };
-    fetchProjects();
-  }, [pathname]);
-
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
 
   const navItems = [
     {

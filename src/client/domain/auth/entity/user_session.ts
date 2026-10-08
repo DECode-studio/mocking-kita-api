@@ -9,3 +9,8 @@ export interface UserSession {
   loginAt: string;
 }
 
+export type AuthLoginResponse =
+  | { success: true; session: UserSession }
+  | { success: false; error: string };
+
+

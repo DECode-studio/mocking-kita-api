@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Table2, X, Copy, Check, Plus, Search, Sparkles } from 'lucide-react';
-import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
-import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
+import { useDataSheetVariablePicker } from './useDataSheetVariablePicker';
 
 interface DataSheetVariablePickerProps {
   projectId?: string;
@@ -19,53 +18,18 @@ export const DataSheetVariablePicker: React.FC<DataSheetVariablePickerProps> = (
   triggerClassName = '',
   buttonLabel = 'Data Sheet Variables',
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [sheets, setSheets] = useState<DataSheet[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [search, setSearch] = useState('');
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const {
+    isOpen,
+    setIsOpen,
+    isLoading,
+    search,
+    setSearch,
+    copiedToken,
+    filteredSheets,
+    handleCopy,
+    handleInsert,
+  } = useDataSheetVariablePicker({ projectId, onInsert });
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const fetchSheets = async () => {
-      setIsLoading(true);
-      try {
-        const useCase = getService(CLIENT_DI_TOKENS.dataSheetUseCase);
-        const list = await useCase.getAll({ projectId: projectId || undefined });
-        setSheets(list.filter((s) => s.status && !s.deletedAt));
-      } catch (err) {
-        console.error('Failed to load data sheets for picker', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchSheets();
-  }, [isOpen, projectId]);
-
-  const handleCopy = (token: string) => {
-    navigator.clipboard.writeText(token);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 1500);
-  };
-
-  const handleInsert = (token: string) => {
-    if (onInsert) {
-      onInsert(token);
-      setIsOpen(false);
-    } else {
-      handleCopy(token);
-    }
-  };
-
-  const filteredSheets = sheets.filter((s) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      s.name.toLowerCase().includes(q) ||
-      s.code.toLowerCase().includes(q) ||
-      s.category?.toLowerCase().includes(q)
-    );
-  });
 
   return (
     <>

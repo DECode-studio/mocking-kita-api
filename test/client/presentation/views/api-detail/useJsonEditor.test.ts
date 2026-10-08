@@ -1,13 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+
 import { useJsonEditor } from '@/src/client/presentation/views/api-detail/hook/useJsonEditor';
 
 describe('useJsonEditor', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-  });
-
   it('should initialize with formatted JSON string', () => {
     const onChange = vi.fn();
     const { result } = renderHook(() => useJsonEditor({ foo: 'bar' }, onChange));
@@ -68,8 +65,13 @@ describe('useJsonEditor', () => {
   });
 
   it('should copy text to clipboard', () => {
+    vi.useFakeTimers();
     const writeTextSpy = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText: writeTextSpy } });
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: writeTextSpy },
+      configurable: true,
+      writable: true,
+    });
 
     const { result } = renderHook(() => useJsonEditor({ a: 1 }, vi.fn()));
 
@@ -77,14 +79,17 @@ describe('useJsonEditor', () => {
       result.current.handleCopy();
     });
 
-    expect(writeTextSpy).toHaveBeenCalled();
+    expect(writeTextSpy).toHaveBeenCalledWith('{\n  "a": 1\n}');
     expect(result.current.copied).toBe(true);
 
     act(() => {
       vi.advanceTimersByTime(2000);
     });
     expect(result.current.copied).toBe(false);
+    vi.useRealTimers();
   });
+
+
 
   it('should reset text and value on handleReset', () => {
     const onChange = vi.fn();

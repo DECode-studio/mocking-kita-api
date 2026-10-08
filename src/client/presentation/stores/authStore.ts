@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { AuthLoginResponse } from '@/src/client/domain/auth/repository/auth_repository';
-import { UserSession } from '@/src/client/domain/auth/entity/user_session';
+import { UserSession, AuthLoginResponse } from '@/src/client/domain/auth/entity/user_session';
 import { AuthUseCase } from '@/src/client/domain/auth/usecase/auth_usecase';
+
 
 let authUseCase: AuthUseCase | null = null;
 

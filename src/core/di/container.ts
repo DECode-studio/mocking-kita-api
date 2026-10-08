@@ -12,6 +12,7 @@ import { CollectionRepositoryImpl } from '@/src/client/data/collection/repositor
 import { DatabaseSnapshotRepositoryImpl } from '@/src/client/data/database/repository/database_snapshot_repository_impl';
 import { DatabaseResetRepositoryImpl } from '@/src/client/data/database/repository/database_reset_repository_impl';
 import { FaqRepositoryImpl } from '@/src/client/data/faq/repository/faq_repository_impl';
+import { AccountRepositoryImpl } from '@/src/client/data/account/repository/account_repository_impl';
 import { AccountAdminRepositoryImpl } from '@/src/client/data/account/repository/account_admin_repository_impl';
 import { ChangeLogRepositoryImpl } from '@/src/client/data/change-log/repository/change_log_repository_impl';
 import { DashboardRepositoryImpl } from '@/src/client/data/dashboard/repository/dashboard_repository_impl';
@@ -28,11 +29,14 @@ import { DatabaseResetUseCaseImpl } from '@/src/client/domain/database/usecase/d
 import { EnvironmentUseCaseImpl } from '@/src/client/domain/environment/usecase/environment_usecase_impl';
 import { FaqUseCaseImpl } from '@/src/client/domain/faq/usecase/faq_usecase_impl';
 import { ProjectUseCaseImpl } from '@/src/client/domain/project/usecase/project_usecase_impl';
+import { RequestScenarioUseCaseImpl } from '@/src/client/domain/request-scenario/usecase/request_scenario_usecase_impl';
+import { AccountUseCaseImpl } from '@/src/client/domain/account/usecase/account_usecase_impl';
 import { AccountAdminUseCaseImpl } from '@/src/client/domain/account/usecase/account_admin_usecase_impl';
 import { ChangeLogUseCaseImpl } from '@/src/client/domain/change-log/usecase/change_log_usecase_impl';
 import { DashboardUseCaseImpl } from '@/src/client/domain/dashboard/usecase/dashboard_usecase_impl';
 import { ScenarioFlowUseCaseImpl } from '@/src/client/domain/scenario-flow/usecase/scenario_flow_usecase_impl';
 import { DataSheetUseCaseImpl } from '@/src/client/domain/data-sheet/usecase/data_sheet_usecase_impl';
+
 
 import { CLIENT_DI_TOKENS } from './tokens';
 
@@ -83,6 +87,10 @@ appContainer.bindAll(
   {
     provide: CLIENT_DI_TOKENS.faqRepository,
     useFactory: () => new FaqRepositoryImpl(),
+  },
+  {
+    provide: CLIENT_DI_TOKENS.accountRepository,
+    useFactory: () => new AccountRepositoryImpl(),
   },
   {
     provide: CLIENT_DI_TOKENS.accountAdminRepository,
@@ -163,6 +171,16 @@ appContainer.bindAll(
       new ProjectUseCaseImpl(container.get(CLIENT_DI_TOKENS.projectRepository)),
   },
   {
+    provide: CLIENT_DI_TOKENS.requestScenarioUseCase,
+    useFactory: (container) =>
+      new RequestScenarioUseCaseImpl(container.get(CLIENT_DI_TOKENS.requestScenarioRepository)),
+  },
+  {
+    provide: CLIENT_DI_TOKENS.accountUseCase,
+    useFactory: (container) =>
+      new AccountUseCaseImpl(container.get(CLIENT_DI_TOKENS.accountRepository)),
+  },
+  {
     provide: CLIENT_DI_TOKENS.accountAdminUseCase,
     useFactory: (container) =>
       new AccountAdminUseCaseImpl(container.get(CLIENT_DI_TOKENS.accountAdminRepository)),
@@ -188,6 +206,7 @@ appContainer.bindAll(
       new DataSheetUseCaseImpl(container.get(CLIENT_DI_TOKENS.dataSheetRepository)),
   }
 );
+
 
 export function getService<T>(token: Token<T>): T {
   return appContainer.get(token);

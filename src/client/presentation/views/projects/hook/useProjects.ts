@@ -47,17 +47,16 @@ export function useProjects(customUseCase?: ProjectUseCase, initialProjects: Pro
   const loadAccounts = async () => {
     if (accounts.length > 0) return;
     try {
-      const res = await fetch('/api/accounts');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.accounts) {
-          setAccounts(data.accounts);
-        }
+      const accountUseCase = getService(CLIENT_DI_TOKENS.accountUseCase);
+      const list = await accountUseCase.getAll();
+      if (list && list.length > 0) {
+        setAccounts(list);
       }
     } catch {
       // ignore
     }
   };
+
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE' | 'DELETED'>('ALL');
