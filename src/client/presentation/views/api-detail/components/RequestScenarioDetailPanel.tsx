@@ -128,6 +128,7 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
 
         <div className="flex items-center gap-2">
           <button
+            id={API_DETAIL_SEMANTIC_ID.SCENARIO_ACTION_EDIT}
             type="button"
             onClick={onEdit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
@@ -135,6 +136,7 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
             <Edit2 className="w-3.5 h-3.5" /> {API_DETAIL_TEXT.ACTION_EDIT_RULE}
           </button>
           <button
+            id={API_DETAIL_SEMANTIC_ID.SCENARIO_ACTION_DUPLICATE}
             type="button"
             onClick={onDuplicate}
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg cursor-pointer"
@@ -143,6 +145,7 @@ export const RequestScenarioDetailPanel: React.FC<RequestScenarioDetailPanelProp
             <Copy className="w-4 h-4" />
           </button>
           <button
+            id={API_DETAIL_SEMANTIC_ID.SCENARIO_ACTION_DELETE}
             type="button"
             onClick={onDeleteRequest}
             className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg cursor-pointer"

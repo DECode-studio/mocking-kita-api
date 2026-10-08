@@ -91,6 +91,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
       <Tabs.Root value={activeMainTab} onValueChange={setActiveMainTab} className="space-y-4">
         <Tabs.List id={API_DETAIL_SEMANTIC_ID.MAIN_TABS} className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
           <Tabs.Trigger
+            id={API_DETAIL_SEMANTIC_ID.MAIN_TAB('scenarios')}
             value="scenarios"
             className={`pb-2.5 text-xs font-semibold transition-colors ${
               activeMainTab === 'scenarios'
@@ -102,6 +103,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
           </Tabs.Trigger>
 
           <Tabs.Trigger
+            id={API_DETAIL_SEMANTIC_ID.MAIN_TAB('overview')}
             value="overview"
             className={`pb-2.5 text-xs font-semibold transition-colors ${
               activeMainTab === 'overview'

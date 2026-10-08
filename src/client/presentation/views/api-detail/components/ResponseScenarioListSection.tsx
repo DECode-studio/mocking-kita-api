@@ -52,6 +52,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
           respScenarios.map((resp) => (
             <div
               key={resp.id}
+              id={API_DETAIL_SEMANTIC_ID.RESP_CARD(resp.id)}
               className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3 shadow-2xs"
             >
               <div className="flex items-center justify-between gap-3">
@@ -78,6 +79,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     size="sm"
                   />
                   <button
+                    id={API_DETAIL_SEMANTIC_ID.RESP_ACTION_EDIT(resp.id)}
                     type="button"
                     onClick={() => onEdit(resp)}
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
@@ -86,6 +88,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    id={API_DETAIL_SEMANTIC_ID.RESP_ACTION_DUPLICATE(resp.id)}
                     type="button"
                     onClick={() => onDuplicate(resp.id)}
                     className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
@@ -94,6 +97,7 @@ export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionPr
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    id={API_DETAIL_SEMANTIC_ID.RESP_ACTION_DELETE(resp.id)}
                     type="button"
                     onClick={() => onDeleteRequest(resp.id)}
                     className="p-1 text-rose-500 hover:text-rose-700"
