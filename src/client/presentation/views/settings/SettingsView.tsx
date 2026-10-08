@@ -10,6 +10,7 @@ import {
   DatabaseImportModal,
   OnboardingSettingsCard,
   AppInfoCard,
+  AiSettingsCard,
 } from './components';
 
 export const SettingsView: React.FC = () => {
@@ -58,6 +59,9 @@ export const SettingsView: React.FC = () => {
 
       {/* Theme Settings Card */}
       <ThemeSettingsCard theme={theme} onThemeChange={setTheme} />
+
+      {/* NVIDIA NIM & AI API Keys Settings Card */}
+      <AiSettingsCard />
 
       {/* Database Engine & Backup Settings Card */}
       <DatabaseSettingsCard
