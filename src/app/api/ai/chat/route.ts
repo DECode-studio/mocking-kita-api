@@ -8,13 +8,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const defaultModel = routerAiClient.getDefaultModel();
     const {
       messages = [],
-      model = DEFAULT_AI_MODEL,
+      model = defaultModel,
       temperature = 0.5,
       max_tokens = 4096,
       apiKey,
     } = body;
+
+    const resolvedModel =
+      model && model !== 'deepseek-ai/deepseek-v4.1-flash' ? model : defaultModel;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
 
         try {
           const generator = routerAiClient.streamChat({
-            model,
+            model: resolvedModel,
             messages: formattedMessages,
             temperature,
             max_tokens,

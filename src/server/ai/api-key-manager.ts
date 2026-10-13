@@ -1,6 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
 import { encryptApiKey, decryptApiKey, createKeyHint } from './encryption';
-import { DEFAULT_AI_MODEL } from '@/src/core/constants/ai-models';
 
 export interface DecryptedApiKeyRecord {
   id: string;

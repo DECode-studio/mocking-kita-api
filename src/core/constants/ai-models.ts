@@ -12,10 +12,20 @@ export interface AiModelDefinition {
 // Backward-compatibility alias
 export type NimModelDefinition = AiModelDefinition;
 
-export const DEFAULT_AI_MODEL = 'deepseek-ai/deepseek-v4.1-flash';
+export const DEFAULT_AI_MODEL = process.env.ROUTER_AI_COMBO || 'combo-gemini';
 export const DEFAULT_NIM_MODEL = DEFAULT_AI_MODEL;
 
 export const STATIC_AI_MODELS: Record<string, AiModelDefinition> = {
+  'combo-gemini': {
+    id: 'combo-gemini',
+    name: 'combo-gemini',
+    provider: 'Google / Router AI',
+    description: 'Model combo-gemini melalui Router AI gateway.',
+    contextWindow: 65536,
+    supportsReasoning: false,
+    recommendedFor: 'Tanya Jawab, Navigasi Fitur, & Analisis Cepat',
+    badge: '✨ Gemini',
+  },
   'deepseek-ai/deepseek-v4.1-flash': {
     id: 'deepseek-ai/deepseek-v4.1-flash',
     name: 'DeepSeek v4.1 Flash',
