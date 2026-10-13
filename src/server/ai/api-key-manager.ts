@@ -1,6 +1,6 @@
 import prisma from '@/src/core/db/prisma-client';
 import { encryptApiKey, decryptApiKey, createKeyHint } from './encryption';
-import { DEFAULT_NIM_MODEL } from '@/src/core/constants/ai-models';
+import { DEFAULT_AI_MODEL } from '@/src/core/constants/ai-models';
 
 export interface DecryptedApiKeyRecord {
   id: string;
@@ -14,13 +14,32 @@ export interface DecryptedApiKeyRecord {
 
 export class AiApiKeyManager {
   /**
-   * Retrieve all active API keys ordered by priority ASC, failureCount ASC
-   * Also appends process.env.NVIDIA_API_KEY as final fallback if present.
+   * Helper to get cleaned base URL of Router AI
    */
-  public async getActiveKeysWithFallback(provider = 'NVIDIA_NIM'): Promise<DecryptedApiKeyRecord[]> {
+  private getRouterBaseUrl(): string {
+    let raw = process.env.ROUTER_AI_BASE_URL || 'http://localhost:20127';
+    raw = raw.trim().replace(/\/+$/, '');
+    if (raw.endsWith('/v1')) {
+      raw = raw.slice(0, -3);
+    }
+    return raw;
+  }
+
+  /**
+   * Retrieve all active API keys ordered by priority ASC, failureCount ASC
+   * Supports both ROUTER_AI and previous NVIDIA_NIM keys.
+   * Also appends process.env.ROUTER_AI_API_KEY / process.env.NVIDIA_API_KEY as final fallback.
+   */
+  public async getActiveKeysWithFallback(provider = 'ROUTER_AI'): Promise<DecryptedApiKeyRecord[]> {
+    // If provider is ROUTER_AI, match both ROUTER_AI and legacy NVIDIA_NIM
+    const providerFilter =
+      provider === 'ROUTER_AI'
+        ? { in: ['ROUTER_AI', 'NVIDIA_NIM'] }
+        : { equals: provider };
+
     const records = await prisma.aiApiKey.findMany({
       where: {
-        provider,
+        provider: providerFilter,
         isActive: true,
       },
       orderBy: [
@@ -35,7 +54,7 @@ export class AiApiKeyManager {
     for (const rec of records) {
       try {
         const plainKey = decryptApiKey(rec.encryptedKey);
-        if (plainKey && plainKey.trim().length > 5) {
+        if (plainKey && plainKey.trim().length > 3) {
           decryptedList.push({
             id: rec.id,
             name: rec.name,
@@ -52,8 +71,8 @@ export class AiApiKeyManager {
     }
 
     // Append .env fallback key if present and not already in database
-    const envKey = process.env.NVIDIA_API_KEY?.trim();
-    if (envKey && envKey.length > 5 && !decryptedList.some((k) => k.key === envKey)) {
+    const envKey = (process.env.ROUTER_AI_API_KEY || process.env.NVIDIA_API_KEY)?.trim();
+    if (envKey && envKey.length > 3 && !decryptedList.some((k) => k.key === envKey)) {
       decryptedList.push({
         id: 'env-default-key',
         name: 'Environment (.env) Fallback Key',
@@ -72,7 +91,7 @@ export class AiApiKeyManager {
    * Record successful usage of an API key
    */
   public async recordSuccess(keyId: string): Promise<void> {
-    if (keyId === 'env-default-key') return;
+    if (keyId === 'env-default-key' || keyId === 'direct-router') return;
     try {
       await prisma.aiApiKey.update({
         where: { id: keyId },
@@ -91,7 +110,7 @@ export class AiApiKeyManager {
    * Record failure on an API key to facilitate automatic fallback
    */
   public async recordFailure(keyId: string, errorMsg: string): Promise<void> {
-    if (keyId === 'env-default-key') return;
+    if (keyId === 'env-default-key' || keyId === 'direct-router') return;
     try {
       await prisma.aiApiKey.update({
         where: { id: keyId },
@@ -109,10 +128,10 @@ export class AiApiKeyManager {
   /**
    * Add a new API key (stores encrypted in database)
    */
-  public async addKey(name: string, plainKey: string, priority = 1, provider = 'NVIDIA_NIM') {
+  public async addKey(name: string, plainKey: string, priority = 1, provider = 'ROUTER_AI') {
     const trimmed = plainKey.trim();
-    if (!trimmed || trimmed.length < 10) {
-      throw new Error('API Key minimal 10 karakter.');
+    if (!trimmed || trimmed.length < 3) {
+      throw new Error('API Key minimal 3 karakter.');
     }
 
     const encryptedKey = encryptApiKey(trimmed);
@@ -120,7 +139,7 @@ export class AiApiKeyManager {
 
     return await prisma.aiApiKey.create({
       data: {
-        name: name.trim() || 'NVIDIA NIM API Key',
+        name: name.trim() || 'Router AI API Key',
         provider,
         encryptedKey,
         keyHint,
@@ -139,7 +158,7 @@ export class AiApiKeyManager {
     if (data.priority !== undefined) updateData.priority = Number(data.priority);
     if (data.isActive !== undefined) updateData.isActive = Boolean(data.isActive);
 
-    if (data.plainKey && data.plainKey.trim().length >= 10) {
+    if (data.plainKey && data.plainKey.trim().length >= 3) {
       updateData.encryptedKey = encryptApiKey(data.plainKey.trim());
       updateData.keyHint = createKeyHint(data.plainKey.trim());
       updateData.failureCount = 0;
@@ -164,9 +183,14 @@ export class AiApiKeyManager {
   /**
    * List all stored keys (safe metadata with masked hints)
    */
-  public async listKeys(provider = 'NVIDIA_NIM') {
+  public async listKeys(provider = 'ROUTER_AI') {
+    const providerFilter =
+      provider === 'ROUTER_AI'
+        ? { in: ['ROUTER_AI', 'NVIDIA_NIM'] }
+        : { equals: provider };
+
     const keys = await prisma.aiApiKey.findMany({
-      where: { provider },
+      where: { provider: providerFilter },
       orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }],
       select: {
         id: true,
@@ -183,42 +207,81 @@ export class AiApiKeyManager {
       },
     });
 
-    const envKey = process.env.NVIDIA_API_KEY?.trim();
-    const hasEnvFallback = Boolean(envKey && envKey.length > 5);
+    const envKey = (process.env.ROUTER_AI_API_KEY || process.env.NVIDIA_API_KEY)?.trim();
+    const hasEnvFallback = Boolean(envKey && envKey.length > 3);
 
     return {
       keys,
       hasEnvFallback,
       envKeyHint: hasEnvFallback ? createKeyHint(envKey!) : null,
+      routerUrl: this.getRouterBaseUrl(),
     };
   }
 
   /**
-   * Test an API key by making a lightweight ping to NVIDIA NIM
+   * Test an API key or connection against Router AI
    */
-  public async testKey(plainKey: string): Promise<{ success: boolean; message: string }> {
+  public async testKey(plainKey?: string): Promise<{ success: boolean; message: string; routerUrl: string }> {
+    const baseUrl = this.getRouterBaseUrl();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (plainKey && plainKey.trim().length > 0) {
+      headers['Authorization'] = `Bearer ${plainKey.trim()}`;
+    }
+
     try {
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${plainKey.trim()}`,
-        },
-        body: JSON.stringify({
-          model: DEFAULT_NIM_MODEL,
-          messages: [{ role: 'user', content: 'Ping' }],
-          max_tokens: 5,
-        }),
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+      // First check GET /v1/models
+      const res = await fetch(`${baseUrl}/v1/models`, {
+        method: 'GET',
+        headers,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (res.ok) {
-        return { success: true, message: 'Koneksi ke NVIDIA NIM berhasil! API Key valid.' };
+        const data = await res.json().catch(() => null);
+        const count = Array.isArray(data?.data) ? data.data.length : 'beberapa';
+        return {
+          success: true,
+          message: `Koneksi ke Router AI (${baseUrl}) berhasil! Ditemukan ${count} model aktif.`,
+          routerUrl: baseUrl,
+        };
+      }
+
+      if (res.status === 401) {
+        return {
+          success: false,
+          message: `Router AI menolak otentikasi (HTTP 401 Unauthorized). Pastikan API Key yang dimasukkan sesuai dengan API_KEY_SECRET pada router-ai.`,
+          routerUrl: baseUrl,
+        };
       }
 
       const errText = await res.text();
-      return { success: false, message: `NVIDIA NIM menolak kunci (HTTP ${res.status}): ${errText.substring(0, 150)}` };
+      return {
+        success: false,
+        message: `Router AI merespons status HTTP ${res.status}: ${errText.substring(0, 150)}`,
+        routerUrl: baseUrl,
+      };
     } catch (err: any) {
-      return { success: false, message: `Gagal menghubungi server NVIDIA: ${err.message}` };
+      const isConnRefused =
+        err.code === 'ECONNREFUSED' ||
+        err.message?.includes('ECONNREFUSED') ||
+        err.message?.includes('fetch failed');
+
+      const message = isConnRefused
+        ? `Tidak dapat terhubung ke Router AI di "${baseUrl}". Pastikan server router-ai telah aktif (npm run local di port 20127).`
+        : `Gagal menghubungi server Router AI: ${err.message}`;
+
+      return {
+        success: false,
+        message,
+        routerUrl: baseUrl,
+      };
     }
   }
 }
