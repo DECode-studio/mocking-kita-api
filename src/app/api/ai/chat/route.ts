@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { nimClient, NimChatMessage, DEFAULT_NIM_MODEL } from '@/src/server/ai/nvidia-nim.client';
+import { routerAiClient, RouterChatMessage } from '@/src/server/ai/router-ai.client';
+import { DEFAULT_AI_MODEL } from '@/src/core/constants/ai-models';
 import { buildSystemPrompt } from '@/src/server/ai/system-prompt';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
       messages = [],
-      model = DEFAULT_NIM_MODEL,
+      model = DEFAULT_AI_MODEL,
       temperature = 0.5,
       max_tokens = 4096,
       apiKey,
@@ -22,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     // Build complete messages array with System Prompt at index 0
     const systemPrompt = buildSystemPrompt();
-    const formattedMessages: NimChatMessage[] = [
+    const formattedMessages: RouterChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...messages.map((m: any) => ({
         role: (m.role === 'assistant' || m.role === 'system' ? m.role : 'user') as 'system' | 'user' | 'assistant',
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
         };
 
         try {
-          const generator = nimClient.streamChat({
+          const generator = routerAiClient.streamChat({
             model,
             messages: formattedMessages,
             temperature,

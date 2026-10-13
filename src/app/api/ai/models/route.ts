@@ -1,13 +1,30 @@
 import { NextResponse } from 'next/server';
-import { NIM_MODELS, DEFAULT_NIM_MODEL, nimClient } from '@/src/server/ai/nvidia-nim.client';
+import { routerAiClient } from '@/src/server/ai/router-ai.client';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const models = Object.values(NIM_MODELS);
-  const isConfigured = nimClient.isConfigured();
+  try {
+    const result = await routerAiClient.getAvailableModels();
+    const isConfigured = await routerAiClient.isConfigured();
 
-  return NextResponse.json({
-    models,
-    defaultModel: DEFAULT_NIM_MODEL,
-    isConfigured,
-  });
+    return NextResponse.json({
+      models: result.models,
+      defaultModel: result.defaultModel,
+      isConfigured,
+      isOnline: result.isOnline,
+      routerUrl: result.routerUrl,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        models: [],
+        defaultModel: '',
+        isConfigured: false,
+        isOnline: false,
+        error: error?.message || 'Gagal memuat model dari Router AI',
+      },
+      { status: 500 }
+    );
+  }
 }
