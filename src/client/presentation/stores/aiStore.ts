@@ -2,7 +2,12 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { DEFAULT_NIM_MODEL } from '@/src/core/constants/ai-models';
+import {
+  DEFAULT_AI_MODEL,
+  AiModelDefinition,
+  STATIC_AI_MODELS,
+  inferModelMetadata,
+} from '@/src/core/constants/ai-models';
 
 export interface AttachedFileItem {
   name: string;
@@ -37,9 +42,14 @@ interface AIStoreState {
   closeDrawer: () => void;
   toggleDrawer: () => void;
 
-  // Selected Model
+  // Selected & Available Models
   selectedModel: string;
   setSelectedModel: (model: string) => void;
+  availableModels: AiModelDefinition[];
+  isModelsLoading: boolean;
+  isRouterOnline: boolean;
+  routerUrl: string;
+  loadAvailableModels: () => Promise<void>;
 
   // Active Session & History
   sessions: ChatSession[];
@@ -79,7 +89,7 @@ const INITIAL_GREETING: ChatMessageItem = {
 
 Ada yang bisa saya bantu sekarang?`,
   timestamp: Date.now(),
-  model: DEFAULT_NIM_MODEL,
+  model: DEFAULT_AI_MODEL,
 };
 
 export const useAIStore = create<AIStoreState>()(
@@ -90,8 +100,52 @@ export const useAIStore = create<AIStoreState>()(
       closeDrawer: () => set({ isDrawerOpen: false }),
       toggleDrawer: () => set((state) => ({ isDrawerOpen: !state.isDrawerOpen })),
 
-      selectedModel: DEFAULT_NIM_MODEL,
+      selectedModel: DEFAULT_AI_MODEL,
       setSelectedModel: (model: string) => set({ selectedModel: model }),
+
+      availableModels: Object.values(STATIC_AI_MODELS),
+      isModelsLoading: false,
+      isRouterOnline: false,
+      routerUrl: 'http://localhost:20127',
+
+      loadAvailableModels: async () => {
+        set({ isModelsLoading: true });
+        try {
+          const res = await fetch('/api/ai/models');
+          if (res.ok) {
+            const data = await res.json();
+            const models: AiModelDefinition[] =
+              Array.isArray(data.models) && data.models.length > 0
+                ? data.models
+                : Object.values(STATIC_AI_MODELS);
+
+            const isOnline = Boolean(data.isOnline);
+            const routerUrl = data.routerUrl || 'http://localhost:20127';
+
+            // Ensure current selectedModel is valid
+            const currentSelected = get().selectedModel;
+            const hasCurrent = models.some((m) => m.id === currentSelected);
+            const nextSelected = hasCurrent
+              ? currentSelected
+              : data.defaultModel || models[0]?.id || DEFAULT_AI_MODEL;
+
+            set({
+              availableModels: models,
+              isRouterOnline: isOnline,
+              routerUrl,
+              selectedModel: nextSelected,
+            });
+          }
+        } catch {
+          // Graceful fallback to static models
+          set({
+            availableModels: Object.values(STATIC_AI_MODELS),
+            isRouterOnline: false,
+          });
+        } finally {
+          set({ isModelsLoading: false });
+        }
+      },
 
       sessions: [
         {
@@ -257,8 +311,8 @@ export const useAIStore = create<AIStoreState>()(
           });
 
           if (!response.ok) {
-            const errData = await response.json().catch(() => ({ error: 'Gagal menghubungi AI Server' }));
-            throw new Error(errData.error || `HTTP ${response.status}: ${response.statusText}`);
+            const errorJson = await response.json().catch(() => ({}));
+            throw new Error(errorJson?.error || `HTTP ${response.status}: ${response.statusText}`);
           }
 
           if (!response.body) {
@@ -267,9 +321,9 @@ export const useAIStore = create<AIStoreState>()(
 
           const reader = response.body.getReader();
           const decoder = new TextDecoder('utf-8');
+          let buffer = '';
           let accumulatedContent = '';
           let accumulatedReasoning = '';
-          let buffer = '';
 
           while (true) {
             const { done, value } = await reader.read();
@@ -281,72 +335,86 @@ export const useAIStore = create<AIStoreState>()(
 
             for (const line of lines) {
               const trimmed = line.trim();
-              if (!trimmed || !trimmed.startsWith('data: ')) continue;
-
+              if (!trimmed.startsWith('data: ')) continue;
               const jsonStr = trimmed.substring(6);
+
               try {
-                const data = JSON.parse(jsonStr);
+                const eventData = JSON.parse(jsonStr);
 
-                if (data.type === 'reasoning' && data.text) {
-                  accumulatedReasoning += data.text;
-                } else if (data.type === 'content' && data.text) {
-                  accumulatedContent += data.text;
-                } else if (data.type === 'error' && data.text) {
-                  accumulatedContent += `\n\n⚠️ **Error**: ${data.text}`;
+                if (eventData.type === 'reasoning') {
+                  accumulatedReasoning += eventData.text || '';
+                  set((state) => ({
+                    sessions: state.sessions.map((s) =>
+                      s.id === currentSession!.id
+                        ? {
+                            ...s,
+                            messages: s.messages.map((m) =>
+                              m.id === assistantMsgId
+                                ? { ...m, reasoning: accumulatedReasoning }
+                                : m
+                            ),
+                          }
+                        : s
+                    ),
+                  }));
+                } else if (eventData.type === 'content') {
+                  accumulatedContent += eventData.text || '';
+                  set((state) => ({
+                    sessions: state.sessions.map((s) =>
+                      s.id === currentSession!.id
+                        ? {
+                            ...s,
+                            messages: s.messages.map((m) =>
+                              m.id === assistantMsgId
+                                ? { ...m, content: accumulatedContent }
+                                : m
+                            ),
+                          }
+                        : s
+                    ),
+                  }));
+                } else if (eventData.type === 'error') {
+                  throw new Error(eventData.text || 'Gagal memproses AI stream');
                 }
-
-                // Update assistant message in real-time
-                set((state) => ({
-                  sessions: state.sessions.map((s) =>
-                    s.id === currentSession!.id
-                      ? {
-                          ...s,
-                          messages: s.messages.map((m) =>
-                            m.id === assistantMsgId
-                              ? {
-                                  ...m,
-                                  content: accumulatedContent,
-                                  reasoning: accumulatedReasoning,
-                                }
-                              : m
-                          ),
-                        }
-                      : s
-                  ),
-                }));
-              } catch {
-                // Ignore parse errors on partial frames
+              } catch (e: any) {
+                if (e.message && e.message !== 'Unexpected end of JSON input') {
+                  throw e;
+                }
               }
             }
           }
         } catch (err: any) {
           if (err.name === 'AbortError') {
-            // Aborted by user
-          } else {
-            const errorText = `\n\n⚠️ **Gagal memproses**: ${err.message || 'Terjadi kesalahan'}`;
-            set((state) => ({
-              sessions: state.sessions.map((s) =>
-                s.id === currentSession!.id
-                  ? {
-                      ...s,
-                      messages: s.messages.map((m) =>
-                        m.id === assistantMsgId
-                          ? { ...m, content: m.content ? m.content + errorText : errorText, isError: true }
-                          : m
-                      ),
-                    }
-                  : s
-              ),
-            }));
+            return;
           }
+          const errorMessage = err?.message || 'Terjadi kesalahan pada AI chat';
+          set((state) => ({
+            sessions: state.sessions.map((s) =>
+              s.id === currentSession!.id
+                ? {
+                    ...s,
+                    messages: s.messages.map((m) =>
+                      m.id === assistantMsgId
+                        ? {
+                            ...m,
+                            content: m.content
+                              ? `${m.content}\n\n⚠️ *[Error: ${errorMessage}]*`
+                              : `⚠️ **Gagal mendapatkan respons:**\n${errorMessage}`,
+                            isError: true,
+                          }
+                        : m
+                    ),
+                  }
+                : s
+            ),
+          }));
         } finally {
           set({ isStreaming: false, abortController: null });
         }
       },
 
       retryLastMessage: async () => {
-        if (get().isStreaming) return;
-        const { activeSessionId, sessions } = get();
+        const { sessions, activeSessionId } = get();
         const currentSession = sessions.find((s) => s.id === activeSessionId);
         if (!currentSession) return;
 
