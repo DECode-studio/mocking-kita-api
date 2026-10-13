@@ -1,7 +1,7 @@
 export const ASSISTANT_TEXT = {
   TITLE: 'AI Assistant & Skill Studio',
   SUBTITLE: 'Tanya jawab cerdas seputar Mocking Kita, konversi tools/skill, dan simulasi flow otomatis.',
-  BADGE: 'NVIDIA NIM Powered',
+  BADGE: 'Router AI Powered',
   TABS: {
     CHAT: 'Chat Assistant',
     INSOMNIA: 'Insomnia Converter',

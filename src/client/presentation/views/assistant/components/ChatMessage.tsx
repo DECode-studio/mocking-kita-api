@@ -15,7 +15,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { ChatMessageItem, useAIStore } from '@/src/client/presentation/stores/aiStore';
-import { NIM_MODELS } from '@/src/core/constants/ai-models';
+import { inferModelMetadata } from '@/src/core/constants/ai-models';
 
 export const ChatMessage: React.FC<{
   message: ChatMessageItem;
@@ -24,9 +24,9 @@ export const ChatMessage: React.FC<{
   const isAssistant = message.role === 'assistant';
   const { retryLastMessage, sendMessage, isStreaming } = useAIStore();
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
-  const [isReasoningOpen, setIsReasoningOpen] = useState<boolean>(true);
+  const [isReasoningOpen, setIsReasoningOpen] = useState<boolean>(false);
 
-  const modelDef = message.model ? NIM_MODELS[message.model] : null;
+  const modelDef = message.model ? inferModelMetadata(message.model) : null;
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
