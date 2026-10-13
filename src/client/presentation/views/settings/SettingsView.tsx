@@ -60,7 +60,7 @@ export const SettingsView: React.FC = () => {
       {/* Theme Settings Card */}
       <ThemeSettingsCard theme={theme} onThemeChange={setTheme} />
 
-      {/* NVIDIA NIM & AI API Keys Settings Card */}
+      {/* Router AI Gateway & API Keys Settings Card */}
       <AiSettingsCard />
 
       {/* Database Engine & Backup Settings Card */}

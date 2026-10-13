@@ -17,6 +17,9 @@ import {
   AlertTriangle,
   ArrowUpDown,
   Lock,
+  Server,
+  Globe,
+  Radio,
 } from 'lucide-react';
 import { useUIStore } from '../../../stores/uiStore';
 
@@ -38,7 +41,10 @@ export const AiSettingsCard: React.FC = () => {
   const [keys, setKeys] = useState<StoredApiKey[]>([]);
   const [hasEnvFallback, setHasEnvFallback] = useState(false);
   const [envKeyHint, setEnvKeyHint] = useState<string | null>(null);
+  const [routerUrl, setRouterUrl] = useState<string>('http://localhost:20127');
+  const [isRouterOnline, setIsRouterOnline] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPingingRouter, setIsPingingRouter] = useState(false);
 
   // Add Key Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -60,16 +66,59 @@ export const AiSettingsCard: React.FC = () => {
         setKeys(data.keys || []);
         setHasEnvFallback(Boolean(data.hasEnvFallback));
         setEnvKeyHint(data.envKeyHint || null);
+        if (data.routerUrl) {
+          setRouterUrl(data.routerUrl);
+        }
       }
     } catch (err: any) {
-      addToast({ type: 'error', title: 'Gagal memuat daftar AI API Key', description: err.message });
+      addToast({ type: 'error', title: 'Gagal memuat konfigurasi Router AI', description: err.message });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const pingRouterAi = async () => {
+    setIsPingingRouter(true);
+    try {
+      const res = await fetch('/api/ai/keys/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testConnectionOnly: true, keyId: 'test-connection' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsRouterOnline(true);
+        addToast({
+          type: 'success',
+          title: 'Router AI Terhubung',
+          description: data.message || `Router AI aktif di ${routerUrl}`,
+        });
+      } else {
+        setIsRouterOnline(false);
+        addToast({
+          type: 'error',
+          title: 'Router AI Tidak Terhubung',
+          description: data.message || `Tidak dapat menghubungi Router AI di ${routerUrl}`,
+        });
+      }
+    } catch (err: any) {
+      setIsRouterOnline(false);
+      addToast({ type: 'error', title: 'Koneksi Gagal', description: err.message });
+    } finally {
+      setIsPingingRouter(false);
+    }
+  };
+
   useEffect(() => {
     fetchKeys();
+    // Run an initial silent ping
+    fetch('/api/ai/models')
+      .then((res) => res.json())
+      .then((data) => {
+        setIsRouterOnline(Boolean(data.isOnline));
+        if (data.routerUrl) setRouterUrl(data.routerUrl);
+      })
+      .catch(() => setIsRouterOnline(false));
   }, []);
 
   const handleAddKey = async (e: React.FormEvent) => {
@@ -85,7 +134,7 @@ export const AiSettingsCard: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: newKeyName.trim() || 'NVIDIA NIM Key',
+          name: newKeyName.trim() || 'Router AI Key',
           apiKey: newKeyValue.trim(),
           priority: Number(newKeyPriority) || 1,
         }),
@@ -117,7 +166,11 @@ export const AiSettingsCard: React.FC = () => {
         body: JSON.stringify({ isActive: !key.isActive }),
       });
       if (res.ok) {
-        addToast({ type: 'success', title: 'Status Diperbarui', description: `API Key ${key.name} ${!key.isActive ? 'diaktifkan' : 'dinonaktifkan'}.` });
+        addToast({
+          type: 'success',
+          title: 'Status Diperbarui',
+          description: `API Key ${key.name} ${!key.isActive ? 'diaktifkan' : 'dinonaktifkan'}.`,
+        });
         fetchKeys();
       }
     } catch (err: any) {
@@ -172,13 +225,13 @@ export const AiSettingsCard: React.FC = () => {
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <span>NVIDIA NIM & AI API Keys</span>
+              <span>Router AI Gateway Integration</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/20">
-                AES-256-GCM Encrypted
+                OpenAI-Compatible Router
               </span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Kelola beberapa API Key untuk sistem <strong>Auto-Fallback & Failover</strong> saat batas kuota/rate-limit tercapai.
+              Terhubung ke gateway <strong>Router AI</strong> untuk multi-provider routing (DeepSeek, Claude, GPT, combos) & failover.
             </p>
           </div>
         </div>
@@ -208,17 +261,87 @@ export const AiSettingsCard: React.FC = () => {
         </div>
       </div>
 
+      {/* Gateway Endpoint Banner */}
+      <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/20">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+              <Server className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Router AI Endpoint:
+                </span>
+                <code className="text-xs font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-purple-600 dark:text-purple-300 font-semibold">
+                  {routerUrl}
+                </code>
+                {isRouterOnline === true && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Online
+                  </span>
+                )}
+                {isRouterOnline === false && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    Offline / Standby
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                Endpoint dapat dikonfigurasi melalui environment variable <code className="font-mono text-purple-400">ROUTER_AI_BASE_URL</code> di file <code className="font-mono">.env</code>.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={pingRouterAi}
+            disabled={isPingingRouter}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all shrink-0"
+          >
+            <Radio className={`w-3.5 h-3.5 text-indigo-500 ${isPingingRouter ? 'animate-spin' : ''}`} />
+            <span>{isPingingRouter ? 'Memeriksa...' : 'Uji Koneksi Router AI'}</span>
+          </button>
+        </div>
+
+        {isRouterOnline === false && (
+          <div className="mt-3 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200 text-xs flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+            <div>
+              <p className="font-semibold">Router AI belum terdeteksi aktif di {routerUrl}</p>
+              <p className="text-[11px] opacity-80 mt-0.5">
+                Pastikan instance <strong>router-ai</strong> telah dijalankan (mis. jalankan <code className="font-mono bg-black/10 px-1 rounded">npm run local</code> di direktori router-ai).
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Body List */}
       <div className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Key className="w-4 h-4 text-purple-500" />
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+              Daftar API Key Router AI (Multi-Key Failover)
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-400 font-sans">
+            Enkripsi AES-256-GCM
+          </span>
+        </div>
+
         {keys.length === 0 && !hasEnvFallback ? (
           <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 p-8 text-center text-slate-400 space-y-3">
             <Lock className="w-10 h-10 mx-auto text-slate-500 stroke-1" />
             <div>
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Belum ada API Key tersimpan di database.
+                Belum ada API Key khusus tersimpan di database.
               </p>
               <p className="text-[11px] text-slate-500 mt-1 max-w-md mx-auto">
-                Tambahkan API Key NVIDIA NIM Anda agar Chat Assistant dan fitur AI dapat digunakan. Kunci Anda akan dienkripsi dengan standar AES-256-GCM.
+                Jika Router AI Anda tidak memerlukan API Key (mode lokal default), Anda sudah dapat langsung menggunakan AI Assistant. Jika router diproteksi, tambahkan API Key di sini.
               </p>
             </div>
             <button
@@ -227,7 +350,7 @@ export const AiSettingsCard: React.FC = () => {
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-semibold shadow-md shadow-purple-600/20 hover:bg-purple-500"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Kunci Pertama</span>
+              <span>Tambah API Key Router AI</span>
             </button>
           </div>
         ) : (
@@ -331,7 +454,7 @@ export const AiSettingsCard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-500" />
                   <span>
-                    Environment Fallback (<code className="font-mono text-purple-400">.env NVIDIA_API_KEY</code>):{' '}
+                    Environment Fallback (<code className="font-mono text-purple-400">.env ROUTER_AI_API_KEY</code>):{' '}
                     <strong className="font-mono">{envKeyHint}</strong>
                   </span>
                 </div>
@@ -352,7 +475,7 @@ export const AiSettingsCard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Key className="w-5 h-5 text-purple-500" />
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  Tambah NVIDIA NIM API Key
+                  Tambah Router AI API Key
                 </h3>
               </div>
               <button
@@ -373,21 +496,21 @@ export const AiSettingsCard: React.FC = () => {
                   type="text"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  placeholder="e.g. Primary NIM Key, Backup Team Account"
+                  placeholder="e.g. Primary Router Key, Local Gateway Key"
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  API Key Value (nvapi-...):
+                  API Key Value:
                 </label>
                 <div className="relative">
                   <input
                     type={showKeySecret ? 'text' : 'password'}
                     value={newKeyValue}
                     onChange={(e) => setNewKeyValue(e.target.value)}
-                    placeholder="nvapi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                    placeholder="Masukkan API Key Router AI..."
                     className="w-full px-3 py-2 pr-10 font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                   />
                   <button
