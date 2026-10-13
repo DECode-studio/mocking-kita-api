@@ -11,10 +11,19 @@ import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '@/src/core/constants/routes';
 import { OnboardingTour } from './OnboardingTour';
 import { FloatingAssistantButton, ChatAssistantDrawer } from '../../views/assistant';
+import { useAIStore } from '../../stores/aiStore';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { session, isAuthenticated, isInitialized, logout } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    if (session?.username) {
+      useAIStore.getState().syncUser(session.username);
+    } else if (!isAuthenticated) {
+      useAIStore.getState().syncUser(null);
+    }
+  }, [session?.username, isAuthenticated]);
 
   useEffect(() => {
     if (!isInitialized) return;
