@@ -1,6 +1,5 @@
 export * from './ChatMessage';
 export * from './ChatInput';
-export * from './ModelSelector';
 export * from './FloatingAssistantButton';
 export * from './ChatAssistantDrawer';
 export * from './converters/InsomniaConverterView';

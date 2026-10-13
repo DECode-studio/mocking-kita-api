@@ -44,6 +44,13 @@ export class RouterAiClient {
   }
 
   /**
+   * Get default model configured via ROUTER_AI_COMBO environment variable
+   */
+  public getDefaultModel(): string {
+    return (process.env.ROUTER_AI_COMBO || '').trim() || DEFAULT_AI_MODEL;
+  }
+
+  /**
    * Check if Router AI is reachable and online
    */
   public async checkHealth(): Promise<{ online: boolean; url: string; message?: string }> {
@@ -126,7 +133,7 @@ export class RouterAiClient {
         return {
           models: fallbackList,
           isOnline: false,
-          defaultModel: DEFAULT_AI_MODEL,
+          defaultModel: this.getDefaultModel(),
           routerUrl: baseUrl,
         };
       }
@@ -142,7 +149,7 @@ export class RouterAiClient {
         return {
           models: fallbackList,
           isOnline: true,
-          defaultModel: DEFAULT_AI_MODEL,
+          defaultModel: this.getDefaultModel(),
           routerUrl: baseUrl,
         };
       }
@@ -162,9 +169,10 @@ export class RouterAiClient {
         }
       }
 
-      const defaultModel = deduped.find((m) => m.id === DEFAULT_AI_MODEL)
-        ? DEFAULT_AI_MODEL
-        : deduped[0]?.id || DEFAULT_AI_MODEL;
+      const defaultCombo = this.getDefaultModel();
+      const defaultModel = deduped.find((m) => m.id === defaultCombo)
+        ? defaultCombo
+        : defaultCombo || DEFAULT_AI_MODEL;
 
       return {
         models: deduped,
@@ -176,7 +184,7 @@ export class RouterAiClient {
       return {
         models: fallbackList,
         isOnline: false,
-        defaultModel: DEFAULT_AI_MODEL,
+        defaultModel: this.getDefaultModel(),
         routerUrl: baseUrl,
       };
     }
@@ -192,7 +200,11 @@ export class RouterAiClient {
     keyName?: string;
   }> {
     const baseUrl = this.getBaseUrl();
-    const modelId = options.model || DEFAULT_AI_MODEL;
+    const defaultModel = this.getDefaultModel();
+    const modelId =
+      options.model && options.model !== 'deepseek-ai/deepseek-v4.1-flash'
+        ? options.model
+        : defaultModel;
     const modelDef = inferModelMetadata(modelId);
 
     // Determine candidate keys

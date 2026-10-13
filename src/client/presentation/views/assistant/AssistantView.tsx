@@ -17,7 +17,6 @@ import { ASSISTANT_TEXT, ASSISTANT_SEMANTIC_ID } from './constant';
 import {
   ChatMessage,
   ChatInput,
-  ModelSelector,
   InsomniaConverterView,
   OpenApiGeneratorView,
   VariableSimulatorView,
@@ -186,14 +185,6 @@ export const AssistantView: React.FC = () => {
                   </div>
                 );
               })}
-            </div>
-
-            {/* Model Selector Card at bottom of sessions */}
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 shrink-0 space-y-2">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                {ASSISTANT_TEXT.MODEL_SELECT_LABEL}
-              </span>
-              <ModelSelector placement="top" align="left" fullWidth />
             </div>
           </div>
 

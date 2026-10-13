@@ -11,7 +11,6 @@ import {
 import { useAIStore } from '@/src/client/presentation/stores/aiStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { ModelSelector } from './ModelSelector';
 import { ROUTES } from '@/src/core/constants/routes';
 import { ASSISTANT_SEMANTIC_ID } from '../constant';
 
@@ -22,6 +21,7 @@ export const ChatAssistantDrawer: React.FC = () => {
     sessions,
     activeSessionId,
     createNewSession,
+    loadAvailableModels,
   } = useAIStore();
 
   const [drawerWidth, setDrawerWidth] = React.useState<number>(512);
@@ -68,6 +68,12 @@ export const ChatAssistantDrawer: React.FC = () => {
       document.body.style.cursor = '';
     };
   }, [isResizing]);
+
+  useEffect(() => {
+    if (isDrawerOpen) {
+      loadAvailableModels();
+    }
+  }, [isDrawerOpen, loadAvailableModels]);
 
   const handleToggleExpand = () => {
     setDrawerWidth((prev) => (prev > 650 ? MIN_WIDTH : Math.min(window.innerWidth - 60, 880)));
@@ -161,11 +167,6 @@ export const ChatAssistantDrawer: React.FC = () => {
               <X className="w-4 h-4" />
             </button>
           </div>
-        </div>
-
-        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-800/60 bg-white/50 dark:bg-slate-900/50 flex items-center justify-between text-xs shrink-0">
-          <span className="text-[11px] text-slate-400 font-medium">Model Aktif:</span>
-          <ModelSelector placement="bottom" align="right" />
         </div>
 
         <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50 dark:bg-slate-950/40">

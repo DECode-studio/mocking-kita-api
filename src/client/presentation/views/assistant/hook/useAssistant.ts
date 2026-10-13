@@ -18,10 +18,15 @@ export const useAssistant = () => {
     isStreaming,
     sendMessage,
     stopStreaming,
+    loadAvailableModels,
   } = useAIStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
+
+  useEffect(() => {
+    loadAvailableModels();
+  }, [loadAvailableModels]);
 
   useEffect(() => {
     if (activeStudioTab === 'chat') {

@@ -257,7 +257,10 @@ export const useAIStore = create<AIStoreState>()(
         toggleDrawer: () => set((state) => ({ isDrawerOpen: !state.isDrawerOpen })),
 
         // Model state
-        selectedModel: initialLoaded.selectedModel || DEFAULT_AI_MODEL,
+        selectedModel:
+          initialLoaded.selectedModel && initialLoaded.selectedModel !== 'deepseek-ai/deepseek-v4.1-flash'
+            ? initialLoaded.selectedModel
+            : DEFAULT_AI_MODEL,
         setSelectedModel: (model: string) =>
           commitState(() => ({ selectedModel: model })),
 
@@ -279,12 +282,7 @@ export const useAIStore = create<AIStoreState>()(
 
               const isOnline = Boolean(data.isOnline);
               const routerUrl = data.routerUrl || 'http://localhost:20127';
-
-              const currentSelected = get().selectedModel;
-              const hasCurrent = models.some((m) => m.id === currentSelected);
-              const nextSelected = hasCurrent
-                ? currentSelected
-                : data.defaultModel || models[0]?.id || DEFAULT_AI_MODEL;
+              const nextSelected = data.defaultModel || DEFAULT_AI_MODEL;
 
               set({
                 availableModels: models,
