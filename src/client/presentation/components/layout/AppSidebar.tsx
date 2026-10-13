@@ -20,6 +20,7 @@ import {
   Server,
   Layers,
   Table2,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/src/core/utils/cn';
 import { ROUTES } from '@/src/core/constants/routes';
@@ -47,6 +48,13 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.DASHBOARD,
       icon: LayoutDashboard,
       isActive: pathname === ROUTES.DASHBOARD,
+    },
+    {
+      name: 'AI Assistant',
+      href: ROUTES.ASSISTANT,
+      icon: Sparkles,
+      isActive: pathname.startsWith(ROUTES.ASSISTANT),
+      badge: 'AI',
     },
     {
       name: 'Projects',

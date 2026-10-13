@@ -1,23 +1,24 @@
 # Mock API Studio - Core Skills Catalog
 
-Katalog skill ini berisi panduan komprehensif, arsitektur teknis, dan implementasi kode untuk pilar utama integrasi, parsing, dan automasi di **Mock API Studio**:
+Katalog skill ini berisi panduan komprehensif, arsitektur teknis, dan implementasi kode untuk pilar utama integrasi, parsing, automasi, serta **Product Knowledge** di **Mock API Studio (Mocking Kita Studio)**.
 
 ---
 
-## 📚 Daftar Skill
+## 📚 Daftar Skill & Bundle
 
-| No | Skill | Lokasi File | Deskripsi Singkat |
+| No | Skill / Bundle | Lokasi File | Deskripsi Singkat |
 |---|---|---|---|
-| 1 | **External API Integration** | [`external-api/SKILL.md`](./external-api/SKILL.md) | Panduan integrasi endpoint eksternal (`/api/v1/external/*`), autentikasi JWT & API Key, format respon envelope, dan operasi upsert API/Scenario. |
-| 2 | **OpenAPI & Swagger Parser** | [`openapi-parser/SKILL.md`](./openapi-parser/SKILL.md) | Panduan teknis parsing Swagger 2.0 / OpenAPI 3.x JSON, dereferensi `$ref` & `allOf`, sample generator, Matrix Environment, dan strategi merge database. |
-| 3 | **Scenario Flow Template & Runner Parser** | [`scenario-flow-parser/SKILL.md`](./scenario-flow-parser/SKILL.md) | Panduan skema template Scenario Flow v1, auto-provisioning API, mesin interpolasi variabel runtime (`{{var}}`), token generator dinamis, Data Sheet counter proxy, dan assertions. |
-| 4 | **Insomnia Collection to Scenario Flow Parser** | [`insomnia-parser/SKILL.md`](./insomnia-parser/SKILL.md) | Panduan konversi koleksi Insomnia (YAML/JSON v5) menjadi Scenario Flow Template JSON: mapping environment/subEnvironment, API/request/response scenario, `{% response ... %}` chaining, batasan script Insomnia, dan topological sort. |
+| 1 | **Mock API Studio Product Knowledge Bundle** | [`product-knowledge/SKILL.md`](./product-knowledge/SKILL.md) | Bundle lengkap panduan fungsional produk (Architecture, Projects, Mock Engine, Scenario Flows, Jobs, Data Sheets, Importers, External API, Database/Audit) dengan 9 sub-modul terpisah di [`product-knowledge/modules/`](./product-knowledge/modules/). |
+| 2 | **External API Integration** | [`external-api/SKILL.md`](./external-api/SKILL.md) | Panduan integrasi endpoint eksternal (`/api/v1/external/*`), autentikasi JWT & API Key, format respon envelope, dan operasi upsert API/Scenario. |
+| 3 | **OpenAPI & Swagger Parser** | [`openapi-parser/SKILL.md`](./openapi-parser/SKILL.md) | Panduan teknis parsing Swagger 2.0 / OpenAPI 3.x JSON, dereferensi `$ref` & `allOf`, sample generator, Matrix Environment, dan strategi merge database. |
+| 4 | **Scenario Flow Template & Runner Parser** | [`scenario-flow-parser/SKILL.md`](./scenario-flow-parser/SKILL.md) | Panduan skema template Scenario Flow v1, auto-provisioning API, mesin interpolasi variabel runtime (`{{var}}`), token generator dinamis, Data Sheet counter proxy, dan assertions. |
+| 5 | **Insomnia Collection to Scenario Flow Parser** | [`insomnia-parser/SKILL.md`](./insomnia-parser/SKILL.md) | Panduan konversi koleksi Insomnia (YAML/JSON v5) menjadi Scenario Flow Template JSON: mapping environment/subEnvironment, API/request/response scenario, `{% response ... %}` chaining, batasan script Insomnia, dan topological sort. |
 
 ---
 
 ## 🛠️ Cara Penggunaan Skill
 
 Setiap folder skill memiliki file `SKILL.md` dengan metadata frontmatter standar. Dokumen ini dapat diakses langsung oleh AI Agent (Antigravity IDE) maupun developer untuk:
-- Memahami implementasi dan aturan bisnis yang berlaku di codebase.
+- Memahami implementasi dan aturan bisnis yang berlaku di codebase tanpa membebani context window.
 - Menulis endpoint baru atau mengintegrasikan platform eksternal.
 - Men-debug masalah parsing dokumen OpenAPI, koleksi Insomnia, atau interpolasi template pada Scenario Flow.

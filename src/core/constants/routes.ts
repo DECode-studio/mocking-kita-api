@@ -20,4 +20,5 @@ export const ROUTES = {
   SCENARIO_FLOW_DETAIL_GLOBAL: (flowId: string) => `/scenario-flows/${flowId}`,
   DATA_SHEETS: '/data-sheets',
   PROJECT_DATA_SHEETS: (projectId: string) => `/projects/${projectId}/data-sheets`,
+  ASSISTANT: '/assistant',
 } as const;
