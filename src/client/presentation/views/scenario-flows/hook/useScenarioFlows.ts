@@ -24,6 +24,7 @@ export function useScenarioFlows(projectId?: string) {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isImportInsomniaModalOpen, setIsImportInsomniaModalOpen] = useState(false);
   const [runningFlowId, setRunningFlowId] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState<'flows' | 'jobs'>('flows');
 
   const addToast = useUIStore((state) => state.addToast);
 
@@ -205,6 +206,8 @@ export function useScenarioFlows(projectId?: string) {
     isImportInsomniaModalOpen,
     setIsImportInsomniaModalOpen,
     runningFlowId,
+    currentTab,
+    setCurrentTab,
     handleCreateFlow,
     handleImportSuccess,
     handleImportFlow,
