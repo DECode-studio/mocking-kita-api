@@ -14,11 +14,8 @@ import {
 } from 'lucide-react';
 import { ScenarioFlowExecution } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { formatDate } from '@/src/core/utils/date';
-import {
-  exportExecutionToMarkdown,
-  exportExecutionToCsv,
-} from '../utils/scenarioFlowLogExport';
 import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID, SCENARIO_FLOW_DETAIL_TEXT } from '../constant';
+
 
 interface ExecutionHistoryModalProps {
   isOpen: boolean;
@@ -130,11 +127,7 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (onExportExecution) {
-                              onExportExecution(exec, 'md');
-                            } else {
-                              exportExecutionToMarkdown(exec, flowName);
-                            }
+                            onExportExecution?.(exec, 'md');
                           }}
                           title={SCENARIO_FLOW_DETAIL_TEXT.HISTORY_EXPORT_MD_TITLE}
                           className="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"
@@ -147,11 +140,7 @@ export const ExecutionHistoryModal: React.FC<ExecutionHistoryModalProps> = ({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (onExportExecution) {
-                              onExportExecution(exec, 'csv');
-                            } else {
-                              exportExecutionToCsv(exec, flowName);
-                            }
+                            onExportExecution?.(exec, 'csv');
                           }}
                           title={SCENARIO_FLOW_DETAIL_TEXT.HISTORY_EXPORT_CSV_TITLE}
                           className="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1 cursor-pointer"

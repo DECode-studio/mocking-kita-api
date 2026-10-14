@@ -57,4 +57,6 @@ export interface ScenarioFlowUseCase {
   deleteJob(jobId: string): Promise<void>;
   toggleJobStatus(jobId: string): Promise<any>;
   runNowJob(jobId: string): Promise<any>;
+  getJobExecutions(params?: import('../entity/scenario_flow').GetJobExecutionsFilter): Promise<import('../entity/scenario_flow').JobExecutionsResult>;
 }
+

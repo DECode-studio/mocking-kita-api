@@ -52,9 +52,9 @@ export const ScenarioFlowsListView: React.FC<ScenarioFlowsListViewProps> = ({ pr
     handleDeleteFlow,
     handleQuickRun,
     handleExportFlow,
+    currentTab,
+    setCurrentTab,
   } = useScenarioFlows(projectId);
-
-  const [currentTab, setCurrentTab] = React.useState<'flows' | 'jobs'>('flows');
 
   return (
     <div id={SCENARIO_FLOWS_SEMANTIC_ID.CONTAINER} className="space-y-6">

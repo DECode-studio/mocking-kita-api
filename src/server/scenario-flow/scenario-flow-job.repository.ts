@@ -185,3 +185,105 @@ export async function deleteScenarioFlowJob(id: string, hardDelete = false) {
     },
   });
 }
+
+export interface GetJobExecutionsParams {
+  jobId?: string;
+  flowId?: string;
+  projectId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+export async function getJobExecutions(params: GetJobExecutionsParams) {
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.max(1, Math.min(1000, params.limit || 10));
+
+  const where: Prisma.ScenarioFlowExecutionWhereInput = {};
+
+  if (params.jobId) {
+    where.jobId = params.jobId;
+  } else {
+    // If no specific job is requested, match executions that have a jobId or are triggered by a job
+    where.OR = [
+      { jobId: { not: null } },
+      { triggerSource: 'SCHEDULED_JOB' },
+    ];
+  }
+
+  if (params.flowId) {
+    where.flowId = params.flowId;
+  }
+
+  if (params.projectId) {
+    where.flow = {
+      projectId: params.projectId,
+    };
+  }
+
+  if (params.status && params.status !== 'ALL') {
+    where.status = params.status;
+  }
+
+  if (params.startDate || params.endDate) {
+    where.createdAt = {};
+    if (params.startDate) {
+      where.createdAt.gte = new Date(params.startDate);
+    }
+    if (params.endDate) {
+      const end = new Date(params.endDate);
+      if (params.endDate.length <= 10) {
+        end.setHours(23, 59, 59, 999);
+      }
+      where.createdAt.lte = end;
+    }
+  }
+
+  const [total, items] = await Promise.all([
+    prisma.scenarioFlowExecution.count({ where }),
+    prisma.scenarioFlowExecution.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        job: {
+          select: {
+            id: true,
+            name: true,
+            scheduleType: true,
+            cronExpression: true,
+            intervalSeconds: true,
+          },
+        },
+        flow: {
+          select: {
+            id: true,
+            name: true,
+            projectId: true,
+          },
+        },
+        environment: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        steps: {
+          orderBy: { stepOrder: 'asc' },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    items,
+    total,
+    page,
+    pageSize: limit,
+    totalPages: Math.ceil(total / limit) || 1,
+  };
+}
+

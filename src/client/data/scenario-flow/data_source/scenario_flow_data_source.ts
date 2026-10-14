@@ -45,4 +45,6 @@ export interface ScenarioFlowRemoteDataSource {
   deleteJob(jobId: string): Promise<void>;
   toggleJobStatus(jobId: string): Promise<any>;
   runNowJob(jobId: string): Promise<any>;
+  getJobExecutions(params?: any): Promise<any>;
 }
+

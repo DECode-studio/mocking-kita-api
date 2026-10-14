@@ -8,9 +8,12 @@ import {
   createScenarioFlowJob,
   updateScenarioFlowJob,
   deleteScenarioFlowJob,
+  getJobExecutions,
 } from './scenario-flow-job.repository';
 import { flowJobScheduler } from './scenario-flow-job.scheduler';
 import { ScenarioFlowJobInput } from './scenario-flow-job.types';
+import { exportJobExecutionsReport } from './scenario-flow-job-export.service';
+
 
 const CreateJobSchema = z.object({
   flowId: z.string().min(1, 'Flow ID is required'),
@@ -187,3 +190,78 @@ export async function runNowJobHandler(request: Request, jobId: string) {
     return jsonUnknownError('Failed to run job now', error, 'Manual job trigger failed');
   }
 }
+
+/**
+ * GET /api/scenario-flows/jobs/executions
+ */
+export async function listJobExecutionsHandler(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get('jobId') || undefined;
+    const flowId = searchParams.get('flowId') || undefined;
+    const projectId = searchParams.get('projectId') || undefined;
+    const status = searchParams.get('status') || undefined;
+    const startDate = searchParams.get('startDate') || undefined;
+    const endDate = searchParams.get('endDate') || undefined;
+    const page = searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : 1;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 10;
+
+    const result = await getJobExecutions({
+      jobId,
+      flowId,
+      projectId,
+      status,
+      startDate,
+      endDate,
+      page,
+      limit,
+    });
+
+    return ok(result);
+  } catch (error) {
+    return jsonUnknownError('Failed to fetch job executions', error, 'Job executions fetch failed');
+  }
+}
+
+/**
+ * GET /api/scenario-flows/jobs/executions/export
+ */
+export async function exportJobExecutionsHandler(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const format = (searchParams.get('format') || 'md') as 'md' | 'csv';
+    const executionId = searchParams.get('executionId') || undefined;
+    const jobId = searchParams.get('jobId') || undefined;
+    const flowId = searchParams.get('flowId') || undefined;
+    const projectId = searchParams.get('projectId') || undefined;
+    const status = searchParams.get('status') || undefined;
+    const startDate = searchParams.get('startDate') || undefined;
+    const endDate = searchParams.get('endDate') || undefined;
+    const flowName = searchParams.get('flowName') || undefined;
+
+    const { content, filename, contentType } = await exportJobExecutionsReport({
+      format,
+      executionId,
+      jobId,
+      flowId,
+      projectId,
+      status,
+      startDate,
+      endDate,
+      flowName,
+    });
+
+    return new Response(content, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
+  } catch (error) {
+    return jsonUnknownError('Failed to export job executions report', error, 'Job execution export failed');
+  }
+}
+
+

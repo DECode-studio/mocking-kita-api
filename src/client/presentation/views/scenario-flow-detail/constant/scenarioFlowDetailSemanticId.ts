@@ -112,5 +112,23 @@ export const SCENARIO_FLOW_DETAIL_SEMANTIC_ID = {
   MODAL_JOB_BTN_SUBMIT: 'scenario-flow-job-btn-submit',
   MODAL_JOB_BTN_CANCEL: 'scenario-flow-job-btn-cancel',
   MODAL_JOB_BTN_CLOSE: 'scenario-flow-job-btn-close',
+  JOBS_SUBTAB_SCHEDULES: 'scenario-flow-jobs-subtab-schedules',
+  JOBS_SUBTAB_LOGS: 'scenario-flow-jobs-subtab-logs',
+  JOBS_CARD_VIEW_LOGS_PREFIX: (id: string) => `scenario-flow-job-view-logs-${id}`,
+  JOBS_LOGS_FILTER_FLOW: 'scenario-flow-jobs-logs-filter-flow',
+  JOBS_LOGS_FILTER_JOB: 'scenario-flow-jobs-logs-filter-job',
+  JOBS_LOGS_FILTER_STATUS: 'scenario-flow-jobs-logs-filter-status',
+  JOBS_LOGS_DATE_START: 'scenario-flow-jobs-logs-date-start',
+  JOBS_LOGS_DATE_END: 'scenario-flow-jobs-logs-date-end',
+  JOBS_LOGS_BTN_RESET: 'scenario-flow-jobs-logs-btn-reset',
+  JOBS_LOGS_BTN_REFRESH: 'scenario-flow-jobs-logs-btn-refresh',
+  JOBS_LOGS_BTN_EXPORT: 'scenario-flow-jobs-logs-btn-export',
+  JOBS_LOGS_TABLE: 'scenario-flow-jobs-logs-table',
+  JOBS_LOGS_ROW_PREFIX: (id: string) => `scenario-flow-jobs-logs-row-${id}`,
+  JOBS_LOGS_PAGINATION: 'scenario-flow-jobs-logs-pagination',
+  JOBS_LOGS_PAGINATION_PAGE_SIZE: 'scenario-flow-jobs-logs-pagination-page-size',
+  JOBS_LOGS_PAGINATION_PREV: 'scenario-flow-jobs-logs-pagination-prev',
+  JOBS_LOGS_PAGINATION_NEXT: 'scenario-flow-jobs-logs-pagination-next',
 } as const;
+
 

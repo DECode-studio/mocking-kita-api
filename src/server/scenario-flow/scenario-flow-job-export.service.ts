@@ -1,26 +1,36 @@
-import { ScenarioFlowExecution } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { formatDate } from '@/src/core/utils/date';
+import { getJobExecutions, GetJobExecutionsParams } from './scenario-flow-job.repository';
+import { getExecutionById } from './scenario-flow.repository';
 
 /**
- * Generates a clean Markdown (.md) report of a single Scenario Flow Execution
+ * Escapes values for standard CSV format
  */
-function generateSingleExecutionLogMarkdown(
-  execution: ScenarioFlowExecution,
-  flowName?: string
-): string {
+function escapeCsv(val: any): string {
+  if (val === undefined || val === null) return '""';
+  const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Generates Markdown report for a single execution
+ */
+export function generateSingleExecutionLogMarkdown(execution: any, flowName?: string): string {
   const isSuccess = execution.status === 'SUCCESS';
   const steps = execution.steps || [];
-  const title = flowName || 'Scenario Flow';
+  const title = execution.flow?.name || flowName || 'Scenario Flow';
   const envName = execution.environment?.name || 'Default';
+  const jobName = execution.job?.name || (execution.executedBy?.startsWith('Job: ') ? execution.executedBy.replace('Job: ', '') : undefined);
 
   let md = `# 🧪 Test Execution Report: ${title}\n\n`;
 
-  // Summary Metadata
   md += `| Attribute | Details |\n`;
   md += `| :--- | :--- |\n`;
   md += `| **Status** | ${isSuccess ? '✅ **PASSED**' : '❌ **FAILED**'} |\n`;
   md += `| **Execution ID** | \`${execution.id}\` |\n`;
   md += `| **Date** | ${formatDate(execution.createdAt)} |\n`;
+  if (jobName) {
+    md += `| **Job Name** | ${jobName} |\n`;
+  }
   md += `| **Environment** | ${envName} (${execution.targetMode || 'LIVE'}) |\n`;
   md += `| **Executed By** | ${execution.executedBy || 'User'} |\n`;
   md += `| **Duration** | ${execution.durationMs || 0} ms |\n`;
@@ -30,7 +40,6 @@ function generateSingleExecutionLogMarkdown(
     md += `> ⚠️ **Error Summary:** ${execution.errorSummary}\n\n`;
   }
 
-  // Steps Summary Table
   md += `## 📋 Steps Overview\n\n`;
   md += `| # | Step Name | Method | Endpoint URL | Status | HTTP Code | Duration |\n`;
   md += `| :-: | :--- | :--- | :--- | :-: | :-: | :-: |\n`;
@@ -42,8 +51,6 @@ function generateSingleExecutionLogMarkdown(
   }
 
   md += `\n---\n\n`;
-
-  // Detailed Step Breakdown
   md += `## 🔍 Step Details Breakdown\n\n`;
 
   for (const step of steps) {
@@ -57,7 +64,6 @@ function generateSingleExecutionLogMarkdown(
       md += `- **Error**: \`${step.errorMessage}\`\n`;
     }
 
-    // Request Snapshot
     if (step.requestSnapshot) {
       const req = step.requestSnapshot as any;
       md += `\n#### 📤 Request Sent\n`;
@@ -69,7 +75,6 @@ function generateSingleExecutionLogMarkdown(
       }
     }
 
-    // Response Snapshot
     if (step.responseSnapshot) {
       const resp = step.responseSnapshot as any;
       md += `\n#### 📥 Response Received\n`;
@@ -78,7 +83,6 @@ function generateSingleExecutionLogMarkdown(
       }
     }
 
-    // Assertions
     const assertions = (step.assertionResults as any[]) || [];
     if (assertions.length > 0) {
       md += `\n#### 🛡️ Assertions (${assertions.filter((a) => a.passed).length}/${assertions.length} passed)\n\n`;
@@ -91,7 +95,6 @@ function generateSingleExecutionLogMarkdown(
       }
     }
 
-    // Extracted Variables
     const extracted = (step.extractedVariables as Record<string, any>) || {};
     if (Object.keys(extracted).length > 0) {
       md += `\n#### 🔑 Extracted Variables\n\n`;
@@ -110,17 +113,14 @@ function generateSingleExecutionLogMarkdown(
 }
 
 /**
- * Generates a comprehensive Multi-Run Markdown (.md) report
+ * Generates Markdown report for multiple executions
  */
-function generateMultiRunLogMarkdown(
-  executions: ScenarioFlowExecution[],
-  flowName?: string
-): string {
+export function generateMultiRunLogMarkdown(executions: any[], flowName?: string): string {
   const totalRuns = executions.length;
-  const title = flowName || 'Scenario Flow';
+  const title = flowName || executions[0]?.flow?.name || 'Scenario Flow';
   const passedRuns = executions.filter((e) => e.status === 'SUCCESS').length;
   const failedRuns = totalRuns - passedRuns;
-  const passRate = Math.round((passedRuns / totalRuns) * 100);
+  const passRate = totalRuns > 0 ? Math.round((passedRuns / totalRuns) * 100) : 0;
   const totalDurationMs = executions.reduce((sum, e) => sum + (e.durationMs || 0), 0);
   const firstExec = executions[0];
   const envName = firstExec?.environment?.name || 'Default';
@@ -128,7 +128,6 @@ function generateMultiRunLogMarkdown(
 
   let md = `# 🧪 Multi-Run Test Execution Report: ${title} (${totalRuns} Iterations)\n\n`;
 
-  // Summary Metadata Table
   md += `## 📊 Multi-Run Executive Summary\n\n`;
   md += `| Attribute | Details |\n`;
   md += `| :--- | :--- |\n`;
@@ -138,21 +137,20 @@ function generateMultiRunLogMarkdown(
   md += `| **Date** | ${formatDate(firstExec?.createdAt || new Date().toISOString())} |\n`;
   md += `| **Environment** | ${envName} (${targetMode}) |\n`;
   md += `| **Executed By** | ${firstExec?.executedBy || 'User'} |\n`;
-  md += `| **Total Duration** | ${totalDurationMs} ms (avg ~${Math.round(totalDurationMs / totalRuns)} ms/run) |\n\n`;
+  md += `| **Total Duration** | ${totalDurationMs} ms (avg ~${totalRuns > 0 ? Math.round(totalDurationMs / totalRuns) : 0} ms/run) |\n\n`;
 
-  // Multi-Run Comparison Table
   md += `### 📈 Iteration Runs Summary Table\n\n`;
-  md += `| Run # | Status | Steps Passed / Total | Duration | Execution ID |\n`;
-  md += `| :-: | :--- | :-: | :-: | :--- |\n`;
+  md += `| Run # | Job / Source | Status | Steps Passed / Total | Duration | Date | Execution ID |\n`;
+  md += `| :-: | :--- | :-: | :-: | :-: | :--- | :--- |\n`;
   executions.forEach((exec, idx) => {
     const isSuccess = exec.status === 'SUCCESS';
     const statusIcon = isSuccess ? '✅ PASSED' : '❌ FAILED';
-    md += `| **Run #${idx + 1}** | ${statusIcon} | **${exec.passedSteps || 0}** / ${exec.totalSteps || (exec.steps?.length ?? 0)} | ${exec.durationMs || 0}ms | \`${exec.id}\` |\n`;
+    const jobName = exec.job?.name || (exec.executedBy?.startsWith('Job: ') ? exec.executedBy.replace('Job: ', '') : exec.executedBy || '-');
+    const dateStr = exec.createdAt ? formatDate(exec.createdAt) : '-';
+    md += `| **Run #${idx + 1}** | ${jobName} | ${statusIcon} | **${exec.passedSteps || 0}** / ${exec.totalSteps || (exec.steps?.length ?? 0)} | ${exec.durationMs || 0}ms | ${dateStr} | \`${exec.id}\` |\n`;
   });
 
   md += `\n---\n\n`;
-
-  // Detailed Step Breakdown for Each Run
   md += `## 🔍 Iteration Breakdown Details\n\n`;
 
   executions.forEach((exec, idx) => {
@@ -169,7 +167,6 @@ function generateMultiRunLogMarkdown(
       md += `> ⚠️ **Error Summary:** ${exec.errorSummary}\n\n`;
     }
 
-    // Steps Overview for this run
     md += `\n#### 📋 Steps Overview (Run #${idx + 1})\n\n`;
     md += `| # | Step Name | Method | Endpoint URL | Status | HTTP Code | Duration |\n`;
     md += `| :-: | :--- | :--- | :--- | :-: | :-: | :-: |\n`;
@@ -245,31 +242,10 @@ function generateMultiRunLogMarkdown(
 }
 
 /**
- * Generates a clean Markdown (.md) report of a Scenario Flow Execution or Multi-Run Executions
+ * Generates CSV report for a single execution
  */
-export function generateExecutionLogMarkdown(
-  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
-  flowName?: string
-): string {
-  if (Array.isArray(executionOrList)) {
-    if (executionOrList.length === 0) return '';
-    if (executionOrList.length === 1) {
-      return generateSingleExecutionLogMarkdown(executionOrList[0], flowName);
-    }
-    return generateMultiRunLogMarkdown(executionOrList, flowName);
-  }
-  return generateSingleExecutionLogMarkdown(executionOrList, flowName);
-}
-
-/**
- * Generates a clean CSV (.csv) report of a single Scenario Flow Execution
- */
-function generateSingleExecutionLogCsv(
-  execution: ScenarioFlowExecution,
-  _flowName?: string
-): string {
+export function generateSingleExecutionLogCsv(execution: any, _flowName?: string): string {
   const steps = execution.steps || [];
-
   const headers = [
     'Step Order',
     'Step Name',
@@ -284,12 +260,6 @@ function generateSingleExecutionLogCsv(
     'Assertions Failed',
     'Extracted Variables',
   ];
-
-  const escapeCsv = (val: any): string => {
-    if (val === undefined || val === null) return '""';
-    const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
-    return `"${str.replace(/"/g, '""')}"`;
-  };
 
   const rows: string[] = [];
   rows.push(headers.map((h) => `"${h}"`).join(','));
@@ -322,15 +292,16 @@ function generateSingleExecutionLogCsv(
 }
 
 /**
- * Generates a clean CSV (.csv) report for Multi-Run executions
+ * Generates CSV report for multiple executions
  */
-function generateMultiRunLogCsv(
-  executions: ScenarioFlowExecution[],
-  _flowName?: string
-): string {
+export function generateMultiRunLogCsv(executions: any[], _flowName?: string): string {
   const headers = [
     'Run #',
     'Execution ID',
+    'Job Name',
+    'Flow Name',
+    'Environment',
+    'Execution Time',
     'Step Order',
     'Step Name',
     'Method',
@@ -345,18 +316,42 @@ function generateMultiRunLogCsv(
     'Extracted Variables',
   ];
 
-  const escapeCsv = (val: any): string => {
-    if (val === undefined || val === null) return '""';
-    const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
-    return `"${str.replace(/"/g, '""')}"`;
-  };
-
   const rows: string[] = [];
   rows.push(headers.map((h) => `"${h}"`).join(','));
 
   executions.forEach((exec, execIdx) => {
     const runLabel = `Run #${execIdx + 1}`;
+    const jobName = exec.job?.name || (exec.executedBy?.startsWith('Job: ') ? exec.executedBy.replace('Job: ', '') : '-');
+    const flowName = exec.flow?.name || _flowName || '-';
+    const envName = exec.environment?.name || 'Default';
+    const execTime = exec.createdAt ? formatDate(exec.createdAt) : '-';
     const steps = exec.steps || [];
+
+    if (steps.length === 0) {
+      rows.push(
+        [
+          escapeCsv(runLabel),
+          escapeCsv(exec.id),
+          escapeCsv(jobName),
+          escapeCsv(flowName),
+          escapeCsv(envName),
+          escapeCsv(execTime),
+          escapeCsv('-'),
+          escapeCsv('No steps recorded'),
+          escapeCsv('-'),
+          escapeCsv('-'),
+          escapeCsv(exec.status),
+          escapeCsv(''),
+          escapeCsv(exec.durationMs || 0),
+          escapeCsv(exec.errorSummary || ''),
+          escapeCsv(0),
+          escapeCsv(0),
+          escapeCsv(0),
+          escapeCsv(''),
+        ].join(',')
+      );
+      return;
+    }
 
     for (const step of steps) {
       const assertions = (step.assertionResults as any[]) || [];
@@ -367,6 +362,10 @@ function generateMultiRunLogCsv(
       const row = [
         escapeCsv(runLabel),
         escapeCsv(exec.id),
+        escapeCsv(jobName),
+        escapeCsv(flowName),
+        escapeCsv(envName),
+        escapeCsv(execTime),
         escapeCsv(step.stepOrder),
         escapeCsv(step.stepName),
         escapeCsv(step.method),
@@ -389,75 +388,76 @@ function generateMultiRunLogCsv(
 }
 
 /**
- * Generates a clean CSV (.csv) report of a Scenario Flow Execution or Multi-Run Executions
+ * Server-side Orchestrator to export job executions as Markdown or CSV
  */
-export function generateExecutionLogCsv(
-  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
-  flowName?: string
-): string {
-  if (Array.isArray(executionOrList)) {
-    if (executionOrList.length === 0) return '';
-    if (executionOrList.length === 1) {
-      return generateSingleExecutionLogCsv(executionOrList[0], flowName);
+export async function exportJobExecutionsReport(params: {
+  format: 'md' | 'csv';
+  executionId?: string;
+  flowId?: string;
+  projectId?: string;
+  jobId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  flowName?: string;
+}) {
+  const format = params.format === 'csv' ? 'csv' : 'md';
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+  // Single execution export
+  if (params.executionId) {
+    const single = await getExecutionById(params.executionId);
+    if (!single) {
+      throw new Error(`Execution ${params.executionId} not found`);
     }
-    return generateMultiRunLogCsv(executionOrList, flowName);
+
+    const flowTitle = single.flow?.name || params.flowName || 'Scenario-Flow';
+    const safeTitle = flowTitle.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+    const filename = `${safeTitle}-execution-${params.executionId.slice(0, 8)}-${timestamp}.${format}`;
+
+    const content =
+      format === 'md'
+        ? generateSingleExecutionLogMarkdown(single, flowTitle)
+        : generateSingleExecutionLogCsv(single, flowTitle);
+
+    const contentType = format === 'md' ? 'text/markdown; charset=utf-8' : 'text/csv; charset=utf-8';
+    return { content, filename, contentType };
   }
-  return generateSingleExecutionLogCsv(executionOrList, flowName);
+
+  // Multi-run or filtered executions export
+  const queryParams: GetJobExecutionsParams = {
+    flowId: params.flowId,
+    projectId: params.projectId,
+    jobId: params.jobId,
+    status: params.status,
+    startDate: params.startDate,
+    endDate: params.endDate,
+    page: 1,
+    limit: 1000,
+  };
+
+  const { items } = await getJobExecutions(queryParams);
+
+  const flowTitle = params.flowName || items[0]?.flow?.name || 'Scenario-Flow';
+  const safeTitle = flowTitle.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  const filename = `${safeTitle}-${items.length}-runs-${timestamp}.${format}`;
+
+  let content = '';
+  if (items.length === 0) {
+    content = format === 'md' ? `# No Executions Found\n\nNo execution logs match the criteria.` : 'No executions found';
+  } else if (items.length === 1) {
+    content =
+      format === 'md'
+        ? generateSingleExecutionLogMarkdown(items[0], flowTitle)
+        : generateSingleExecutionLogCsv(items[0], flowTitle);
+  } else {
+    content =
+      format === 'md'
+        ? generateMultiRunLogMarkdown(items, flowTitle)
+        : generateMultiRunLogCsv(items, flowTitle);
+  }
+
+  const contentType = format === 'md' ? 'text/markdown; charset=utf-8' : 'text/csv; charset=utf-8';
+  return { content, filename, contentType };
 }
 
-/**
- * Client-side browser download helper
- */
-export function downloadFile(filename: string, content: string, mimeType: string) {
-  const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-/**
- * 1-Click Export to Markdown (.md)
- */
-export function exportExecutionToMarkdown(
-  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
-  flowName?: string
-) {
-  const executions = Array.isArray(executionOrList) ? executionOrList : [executionOrList];
-  if (executions.length === 0) return;
-
-  const content = generateExecutionLogMarkdown(executionOrList, flowName);
-  const safeName = (flowName || 'scenario-flow').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename =
-    executions.length > 1
-      ? `${safeName}-${executions.length}-runs-execution-${timestamp}.md`
-      : `${safeName}-execution-${timestamp}.md`;
-
-  downloadFile(filename, content, 'text/markdown');
-}
-
-/**
- * 1-Click Export to CSV (.csv)
- */
-export function exportExecutionToCsv(
-  executionOrList: ScenarioFlowExecution | ScenarioFlowExecution[],
-  flowName?: string
-) {
-  const executions = Array.isArray(executionOrList) ? executionOrList : [executionOrList];
-  if (executions.length === 0) return;
-
-  const content = generateExecutionLogCsv(executionOrList, flowName);
-  const safeName = (flowName || 'scenario-flow').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename =
-    executions.length > 1
-      ? `${safeName}-${executions.length}-runs-execution-${timestamp}.csv`
-      : `${safeName}-execution-${timestamp}.csv`;
-
-  downloadFile(filename, content, 'text/csv');
-}

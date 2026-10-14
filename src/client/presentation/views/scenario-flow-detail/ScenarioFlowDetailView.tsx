@@ -44,7 +44,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   flowId,
 }) => {
   const setBreadcrumbTitle = useUIStore((state) => state.setBreadcrumbTitle);
-  const [stepsPage, setStepsPage] = React.useState(1);
   const {
     flow,
     environments,
@@ -89,6 +88,12 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     loadScenariosForApi,
     handleSelectExecution,
     handleExportExecutionLog,
+    stepsPage,
+    setStepsPage,
+    STEPS_PAGE_SIZE,
+    totalStepsPages,
+    startStepIndex,
+    paginatedSteps,
   } = useScenarioFlowDetail(projectId, flowId);
 
   React.useEffect(() => {
@@ -101,22 +106,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
   }, [flow?.name, setBreadcrumbTitle]);
 
   const steps = flow?.steps || [];
-  const totalStepsPages = Math.max(1, Math.ceil(steps.length / STEPS_PAGE_SIZE));
-
-  React.useEffect(() => {
-    if (selectedStepIndex >= 0 && steps.length > 0) {
-      const pageForSelected = Math.floor(selectedStepIndex / STEPS_PAGE_SIZE) + 1;
-      if (pageForSelected <= totalStepsPages) {
-        setStepsPage(pageForSelected);
-      }
-    }
-  }, [selectedStepIndex, steps.length, totalStepsPages]);
-
-  React.useEffect(() => {
-    if (stepsPage > totalStepsPages) {
-      setStepsPage(totalStepsPages);
-    }
-  }, [stepsPage, totalStepsPages]);
 
   if (isLoading && !flow) {
     return (
@@ -153,9 +142,6 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
     (currentStep && latestExecution?.steps?.find((s) => s.flowStepId === currentStep.id)) ||
     latestExecution?.steps?.[selectedStepIndex] ||
     (latestExecution?.steps?.length === 1 ? latestExecution.steps[0] : null);
-
-  const startStepIndex = (stepsPage - 1) * STEPS_PAGE_SIZE;
-  const paginatedSteps = steps.slice(startStepIndex, startStepIndex + STEPS_PAGE_SIZE);
 
   return (
     <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.CONTAINER} className="space-y-6">
@@ -379,6 +365,7 @@ export const ScenarioFlowDetailView: React.FC<ScenarioFlowDetailViewProps> = ({
               isRunning={isRunning}
               elapsedMs={elapsedMs}
               onSelectStep={setSelectedStepIndex}
+              onExportExecution={handleExportExecutionLog}
             />
 
             <StepExecutionInspector step={activeExecutionStep} isRunning={isRunning} />
