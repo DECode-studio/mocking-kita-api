@@ -7,4 +7,6 @@ export * from './scenario-flow-job.types';
 export * from './scenario-flow-job.repository';
 export * from './scenario-flow-job.scheduler';
 export * from './scenario-flow-job.controller';
+export * from './scenario-flow-job-export.service';
+
 
