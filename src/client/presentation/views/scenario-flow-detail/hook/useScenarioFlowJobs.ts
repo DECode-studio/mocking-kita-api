@@ -6,9 +6,14 @@ import { CLIENT_DI_TOKENS } from '@/src/core/di/tokens';
 import { ScenarioFlowJob } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { DataSheet } from '@/src/client/domain/data-sheet/entity/data_sheet';
 
+import { SCENARIO_FLOW_DETAIL_TEXT } from '../constant';
+
 export function useScenarioFlowJobs(flowId?: string, projectId?: string) {
   const flowUseCase = getService(CLIENT_DI_TOKENS.scenarioFlowUseCase);
   const dataSheetUseCase = getService(CLIENT_DI_TOKENS.dataSheetUseCase);
+
+  const [activeSubTab, setActiveSubTab] = useState<'schedules' | 'logs'>('schedules');
+  const [selectedLogJobId, setSelectedLogJobId] = useState<string>('ALL');
 
   const [jobs, setJobs] = useState<ScenarioFlowJob[]>([]);
   const [dataSheets, setDataSheets] = useState<DataSheet[]>([]);
@@ -17,6 +22,7 @@ export function useScenarioFlowJobs(flowId?: string, projectId?: string) {
   const [editingJob, setEditingJob] = useState<ScenarioFlowJob | null>(null);
   const [runningJobId, setRunningJobId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
 
   const loadJobs = useCallback(async () => {
     try {
@@ -121,12 +127,57 @@ export function useScenarioFlowJobs(flowId?: string, projectId?: string) {
     }
   };
 
+  const handleViewJobLogs = useCallback((jobId: string) => {
+    setSelectedLogJobId(jobId);
+    setActiveSubTab('logs');
+  }, []);
+
+  const formatSchedule = useCallback((job: ScenarioFlowJob) => {
+    if (job.scheduleType === 'CRON') {
+      return `Cron: ${job.cronExpression}`;
+    }
+    if (job.scheduleType === 'INTERVAL') {
+      const sec = job.intervalSeconds || 0;
+      if (sec >= 3600) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_HOUR(sec / 3600);
+      if (sec >= 60) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_MIN(sec / 60);
+      return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_SEC(sec);
+    }
+    if (job.scheduleType === 'ONCE') {
+      return job.scheduledAt
+        ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_ONCE_AT(new Date(job.scheduledAt).toLocaleString())
+        : SCENARIO_FLOW_DETAIL_TEXT.JOBS_ONE_TIME_RUN;
+    }
+    return job.scheduleType;
+  }, []);
+
+  const formatNextRun = useCallback((dateStr?: string | null) => {
+    if (!dateStr) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_NO_UPCOMING;
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffSec = Math.round((date.getTime() - now.getTime()) / 1000);
+
+    if (diffSec <= 0) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_EXECUTING_SOON;
+    if (diffSec < 60) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_IN_SECONDS(diffSec, date.toLocaleTimeString());
+    if (diffSec < 3600) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_IN_MINUTES(Math.round(diffSec / 60), date.toLocaleTimeString());
+    return SCENARIO_FLOW_DETAIL_TEXT.JOBS_ON_DATE(
+      date.toLocaleDateString(),
+      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    );
+  }, []);
+
   const filteredJobs = jobs.filter((job) => {
     if (filterStatus === 'ALL') return true;
     return job.status === filterStatus;
   });
 
   return {
+    activeSubTab,
+    setActiveSubTab,
+    selectedLogJobId,
+    setSelectedLogJobId,
+    handleViewJobLogs,
+    formatSchedule,
+    formatNextRun,
     jobs: filteredJobs,
     allJobsCount: jobs.length,
     dataSheets,
@@ -146,3 +197,4 @@ export function useScenarioFlowJobs(flowId?: string, projectId?: string) {
     handleRunNow,
   };
 }
+

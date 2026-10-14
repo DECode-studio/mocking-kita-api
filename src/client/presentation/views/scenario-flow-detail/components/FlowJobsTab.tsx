@@ -18,9 +18,11 @@ import {
   ArrowRight,
   Flame,
   Activity,
+  FileText,
 } from 'lucide-react';
 import { ScenarioFlowJob } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { JobModal } from './JobModal';
+import { JobExecutionLogsSection } from './JobExecutionLogsSection';
 import { useScenarioFlowJobs } from '../hook/useScenarioFlowJobs';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 
@@ -45,6 +47,12 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
   onOpenHistory,
 }) => {
   const {
+    activeSubTab,
+    setActiveSubTab,
+    selectedLogJobId,
+    handleViewJobLogs,
+    formatSchedule,
+    formatNextRun,
     jobs,
     allJobsCount,
     dataSheets,
@@ -64,89 +72,102 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
     handleRunNow,
   } = useScenarioFlowJobs(flowId, projectId);
 
-  const formatSchedule = (job: ScenarioFlowJob) => {
-    if (job.scheduleType === 'CRON') {
-      return `Cron: ${job.cronExpression}`;
-    }
-    if (job.scheduleType === 'INTERVAL') {
-      const sec = job.intervalSeconds || 0;
-      if (sec >= 3600) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_HOUR(sec / 3600);
-      if (sec >= 60) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_MIN(sec / 60);
-      return SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_EVERY_SEC(sec);
-    }
-    if (job.scheduleType === 'ONCE') {
-      return job.scheduledAt
-        ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_ONCE_AT(new Date(job.scheduledAt).toLocaleString())
-        : SCENARIO_FLOW_DETAIL_TEXT.JOBS_ONE_TIME_RUN;
-    }
-    return job.scheduleType;
-  };
-
-  const formatNextRun = (dateStr?: string | null) => {
-    if (!dateStr) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_NO_UPCOMING;
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffSec = Math.round((date.getTime() - now.getTime()) / 1000);
-
-    if (diffSec <= 0) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_EXECUTING_SOON;
-    if (diffSec < 60) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_IN_SECONDS(diffSec, date.toLocaleTimeString());
-    if (diffSec < 3600) return SCENARIO_FLOW_DETAIL_TEXT.JOBS_IN_MINUTES(Math.round(diffSec / 60), date.toLocaleTimeString());
-    return SCENARIO_FLOW_DETAIL_TEXT.JOBS_ON_DATE(
-      date.toLocaleDateString(),
-      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    );
-  };
 
   return (
     <div id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_CONTAINER} className="space-y-6">
-      {/* Top Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_TITLE}</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 font-mono">
-                {jobs.length}
-              </span>
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {SCENARIO_FLOW_DETAIL_TEXT.JOBS_SUBTITLE}
-            </p>
-          </div>
-        </div>
+      {/* Sub Tabs: Configured Jobs vs Execution Log Reports */}
+      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-800 w-fit">
+        <button
+          type="button"
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_SUBTAB_SCHEDULES}
+          onClick={() => setActiveSubTab('schedules')}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeSubTab === 'schedules'
+              ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_TAB_SCHEDULES}</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-100 dark:bg-purple-950/60 font-mono">
+            {jobs.length}
+          </span>
+        </button>
 
-        <div className="flex items-center gap-2.5 shrink-0">
-          {/* Filter Status */}
-          <select
-            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_FILTER_STATUS}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
-          >
-            <option value="ALL">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_ALL}</option>
-            <option value="ACTIVE">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_ACTIVE}</option>
-            <option value="PAUSED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_PAUSED}</option>
-            <option value="COMPLETED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_COMPLETED}</option>
-            <option value="FAILED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_FAILED}</option>
-          </select>
-
-          <button
-            type="button"
-            id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_CREATE_BTN}
-            onClick={() => {
-              setEditingJob(null);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_CREATE_BTN}</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_SUBTAB_LOGS}
+          onClick={() => setActiveSubTab('logs')}
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeSubTab === 'logs'
+              ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_TAB_LOGS}</span>
+        </button>
       </div>
+
+      {activeSubTab === 'logs' ? (
+        <JobExecutionLogsSection
+          flowId={flowId}
+          flows={flows}
+          projectId={projectId}
+          jobs={jobs}
+          initialJobId={selectedLogJobId}
+        />
+      ) : (
+        <>
+          {/* Top Action Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_TITLE}</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 font-mono">
+                    {jobs.length}
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {SCENARIO_FLOW_DETAIL_TEXT.JOBS_SUBTITLE}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Filter Status */}
+              <select
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_FILTER_STATUS}
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="ALL">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_ALL}</option>
+                <option value="ACTIVE">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_ACTIVE}</option>
+                <option value="PAUSED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_PAUSED}</option>
+                <option value="COMPLETED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_COMPLETED}</option>
+                <option value="FAILED">{SCENARIO_FLOW_DETAIL_TEXT.JOBS_FILTER_FAILED}</option>
+              </select>
+
+              <button
+                type="button"
+                id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_CREATE_BTN}
+                onClick={() => {
+                  setEditingJob(null);
+                  setIsModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-md shadow-purple-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_CREATE_BTN}</span>
+              </button>
+            </div>
+          </div>
+
 
       {/* Loading state */}
       {isLoading && jobs.length === 0 ? (
@@ -319,31 +340,44 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
                     </div>
                   </div>
 
-                  {/* Run Now Button */}
+                  {/* Actions: View Logs & Run Now Button */}
                   <div className="flex items-center justify-between gap-2 pt-1">
-                    <div className="text-[11px] text-slate-400 truncate">
-                      {job.lastRunAt ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_LAST_RUN(new Date(job.lastRunAt).toLocaleTimeString()) : SCENARIO_FLOW_DETAIL_TEXT.JOBS_NEVER_EXECUTED}
-                    </div>
-
                     <button
                       type="button"
-                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_RUN_NOW_BTN_PREFIX(job.id)}
-                      disabled={isJobRunning}
-                      onClick={() => handleRunNow(job.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/80 transition-all cursor-pointer disabled:opacity-50"
+                      id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOBS_CARD_VIEW_LOGS_PREFIX(job.id)}
+                      onClick={() => handleViewJobLogs(job.id)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
+                      title={SCENARIO_FLOW_DETAIL_TEXT.JOBS_CARD_VIEW_LOGS}
                     >
-                      {isJobRunning ? (
-                        <>
-                          <RotateCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUNNING}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_NOW}</span>
-                        </>
-                      )}
+                      <FileText className="w-3.5 h-3.5 text-purple-500" />
+                      <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_CARD_VIEW_LOGS}</span>
                     </button>
+
+                    <div className="flex items-center gap-2">
+                      <div className="text-[11px] text-slate-400 hidden sm:block truncate max-w-[120px]">
+                        {job.lastRunAt ? SCENARIO_FLOW_DETAIL_TEXT.JOBS_LAST_RUN(new Date(job.lastRunAt).toLocaleTimeString()) : ''}
+                      </div>
+
+                      <button
+                        type="button"
+                        id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.JOB_RUN_NOW_BTN_PREFIX(job.id)}
+                        disabled={isJobRunning}
+                        onClick={() => handleRunNow(job.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/80 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isJobRunning ? (
+                          <>
+                            <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUNNING}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>{SCENARIO_FLOW_DETAIL_TEXT.JOBS_RUN_NOW}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -351,6 +385,9 @@ export const FlowJobsTab: React.FC<FlowJobsTabProps> = ({
           })}
         </div>
       )}
+      </>
+      )}
+
 
       {/* Create / Edit Modal */}
       <JobModal

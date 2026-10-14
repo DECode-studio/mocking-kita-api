@@ -10,4 +10,5 @@ export * from './ExecutionHistoryModal';
 export * from './EditFlowModal';
 export * from './JobModal';
 export * from './FlowJobsTab';
+export * from './JobExecutionLogsSection';
 
