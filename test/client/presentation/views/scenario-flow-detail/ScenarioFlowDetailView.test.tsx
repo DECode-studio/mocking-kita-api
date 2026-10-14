@@ -66,7 +66,23 @@ describe('ScenarioFlowDetailView Steps Pagination & Default View', () => {
       selectedStepIndex: 0,
       setSelectedStepIndex: vi.fn((idx: number) => {
         hookState.selectedStepIndex = idx;
+        const page = Math.floor(idx / 10) + 1;
+        hookState.setStepsPage(page);
       }),
+      stepsPage: 1,
+      setStepsPage: vi.fn((fnOrVal: any) => {
+        const next = typeof fnOrVal === 'function' ? fnOrVal(hookState.stepsPage) : fnOrVal;
+        hookState.stepsPage = next;
+        hookState.startStepIndex = (next - 1) * hookState.STEPS_PAGE_SIZE;
+        hookState.paginatedSteps = hookState.flow.steps.slice(
+          hookState.startStepIndex,
+          hookState.startStepIndex + hookState.STEPS_PAGE_SIZE
+        );
+      }),
+      STEPS_PAGE_SIZE: 10,
+      totalStepsPages: 3,
+      startStepIndex: 0,
+      paginatedSteps: mockSteps.slice(0, 10),
       viewMode: 'list',
       setViewMode: vi.fn(),
       stepPositions: {},
@@ -96,7 +112,29 @@ describe('ScenarioFlowDetailView Steps Pagination & Default View', () => {
       handleExportExecutionLog: vi.fn(),
     };
 
-    vi.spyOn(HookModule, 'useScenarioFlowDetail').mockImplementation(() => hookState);
+    vi.spyOn(HookModule, 'useScenarioFlowDetail').mockImplementation(() => {
+      const [stepsPage, setStepsPage] = React.useState(hookState.stepsPage || 1);
+
+      React.useEffect(() => {
+        if (hookState.selectedStepIndex >= 0) {
+          const page = Math.floor(hookState.selectedStepIndex / 10) + 1;
+          setStepsPage(page);
+        }
+      }, [hookState.selectedStepIndex]);
+
+      const startStepIndex = (stepsPage - 1) * 10;
+      const paginatedSteps = hookState.flow.steps.slice(startStepIndex, startStepIndex + 10);
+      return {
+        ...hookState,
+        stepsPage,
+        setStepsPage: (val: any) => {
+          hookState.setStepsPage(val);
+          setStepsPage(val);
+        },
+        startStepIndex,
+        paginatedSteps,
+      };
+    });
   });
 
   it('renders only 10 steps per page by default when there are 25 steps', () => {
@@ -169,6 +207,8 @@ describe('ScenarioFlowDetailView Steps Pagination & Default View', () => {
 
   it('does not render steps pagination bar if steps count is 10 or less', () => {
     hookState.flow.steps = Array.from({ length: 8 }, (_, i) => createMockStep(i + 1));
+    hookState.totalStepsPages = 1;
+    hookState.paginatedSteps = hookState.flow.steps;
     render(<ScenarioFlowDetailView flowId="flow-123" />);
 
     expect(
@@ -183,7 +223,7 @@ describe('ScenarioFlowDetailView Steps Pagination & Default View', () => {
     expect(screen.getByText('Step Name 1')).toBeTruthy();
 
     // Simulate selecting step at index 14 (page 2)
-    hookState.selectedStepIndex = 14;
+    hookState.setSelectedStepIndex(14);
     rerender(<ScenarioFlowDetailView flowId="flow-123" />);
 
     expect(screen.getByText('Step Name 15')).toBeTruthy();

@@ -11,10 +11,6 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { ScenarioFlowExecution } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
-import {
-  exportExecutionToMarkdown,
-  exportExecutionToCsv,
-} from '../utils/scenarioFlowLogExport';
 import { SCENARIO_FLOW_DETAIL_SEMANTIC_ID, SCENARIO_FLOW_DETAIL_TEXT } from '../constant';
 
 const METHOD_COLORS: Record<string, string> = {
@@ -35,6 +31,7 @@ interface FlowExecutionPanelProps {
   isRunning?: boolean;
   elapsedMs?: number;
   onSelectStep: (idx: number) => void;
+  onExportExecution?: (execution: ScenarioFlowExecution, format: 'md' | 'csv') => void;
 }
 
 export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
@@ -45,11 +42,17 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
   isRunning,
   elapsedMs,
   onSelectStep,
+  onExportExecution,
 }) => {
   const [currentPage, setCurrentPage] = React.useState(1);
-  const currentExecutions = executions && executions.length > 0 ? executions : execution ? [execution] : [];
   const steps = execution?.steps || [];
   const totalPages = Math.max(1, Math.ceil(steps.length / PAGE_SIZE));
+
+  const handleExport = (format: 'md' | 'csv') => {
+    if (onExportExecution && execution) {
+      onExportExecution(execution, format);
+    }
+  };
 
   React.useEffect(() => {
     if (selectedStepIndex >= 0 && steps.length > 0) {
@@ -155,7 +158,7 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
             <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200 dark:border-slate-800">
               <button
                 id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_EXPORT_MD}
-                onClick={() => exportExecutionToMarkdown(currentExecutions, flowName)}
+                onClick={() => handleExport('md')}
                 title="Download test execution log as Markdown (.md)"
                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors cursor-pointer"
               >
@@ -164,7 +167,7 @@ export const FlowExecutionPanel: React.FC<FlowExecutionPanelProps> = ({
               </button>
               <button
                 id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.EXECUTION_EXPORT_CSV}
-                onClick={() => exportExecutionToCsv(currentExecutions, flowName)}
+                onClick={() => handleExport('csv')}
                 title="Download test execution log as CSV (.csv)"
                 className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors cursor-pointer"
               >

@@ -102,24 +102,24 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
   );
 
   const handleExportExecutionLog = useCallback(
-    async (exec: ScenarioFlowExecution, format: 'md' | 'csv') => {
-      let full = exec;
-      try {
-        const res = await flowUseCase.getExecutionDetail(exec.id);
-        if (res) full = res;
-      } catch {
-        // fallback to exec
+    (exec: ScenarioFlowExecution, format: 'md' | 'csv') => {
+      const sp = new URLSearchParams({
+        executionId: exec.id,
+        format,
+      });
+      if (flow?.name) {
+        sp.set('flowName', flow.name);
       }
-      if (format === 'md') {
-        const { exportExecutionToMarkdown } = await import('../utils/scenarioFlowLogExport');
-        exportExecutionToMarkdown(full, flow?.name);
-      } else {
-        const { exportExecutionToCsv } = await import('../utils/scenarioFlowLogExport');
-        exportExecutionToCsv(full, flow?.name);
-      }
+      const link = document.createElement('a');
+      link.href = `/api/scenario-flows/jobs/executions/export?${sp.toString()}`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     },
-    [flowUseCase, flow?.name]
+    [flow?.name]
   );
+
 
   // Compute layout positions for steps
   const computeInitialPositions = useCallback(
@@ -511,6 +511,29 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     }
   };
 
+  // Steps Pagination State
+  const [stepsPage, setStepsPage] = useState(1);
+  const STEPS_PAGE_SIZE = 10;
+  const flowSteps = flow?.steps || [];
+  const totalStepsPages = Math.max(1, Math.ceil(flowSteps.length / STEPS_PAGE_SIZE));
+  const startStepIndex = (stepsPage - 1) * STEPS_PAGE_SIZE;
+  const paginatedSteps = flowSteps.slice(startStepIndex, startStepIndex + STEPS_PAGE_SIZE);
+
+  useEffect(() => {
+    if (selectedStepIndex >= 0 && flowSteps.length > 0) {
+      const pageForSelected = Math.floor(selectedStepIndex / STEPS_PAGE_SIZE) + 1;
+      if (pageForSelected <= totalStepsPages) {
+        setStepsPage(pageForSelected);
+      }
+    }
+  }, [selectedStepIndex, flowSteps.length, totalStepsPages]);
+
+  useEffect(() => {
+    if (stepsPage > totalStepsPages) {
+      setStepsPage(totalStepsPages);
+    }
+  }, [stepsPage, totalStepsPages]);
+
   return {
     flow,
     projects,
@@ -559,6 +582,12 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     loadScenariosForApi,
     handleSelectExecution,
     handleExportExecutionLog,
+    stepsPage,
+    setStepsPage,
+    STEPS_PAGE_SIZE,
+    totalStepsPages,
+    startStepIndex,
+    paginatedSteps,
     refresh: loadData,
   };
 }
