@@ -119,4 +119,9 @@ export class ScenarioFlowRepositoryImpl implements ScenarioFlowRepository {
   async runNowJob(jobId: string): Promise<any> {
     return this.dataSource.runNowJob(jobId);
   }
+
+  async getJobExecutions(params?: any): Promise<any> {
+    return this.dataSource.getJobExecutions(params);
+  }
 }
+

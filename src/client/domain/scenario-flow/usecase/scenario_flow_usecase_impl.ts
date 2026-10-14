@@ -131,4 +131,9 @@ export class ScenarioFlowUseCaseImpl implements ScenarioFlowUseCase {
   async runNowJob(jobId: string): Promise<any> {
     return this.repository.runNowJob(jobId);
   }
+
+  async getJobExecutions(params?: any): Promise<any> {
+    return this.repository.getJobExecutions(params);
+  }
 }
+

@@ -209,4 +209,23 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
       )
     );
   }
+
+  async getJobExecutions(params?: any): Promise<any> {
+    const sp = new URLSearchParams();
+    if (params?.jobId) sp.set('jobId', params.jobId);
+    if (params?.flowId) sp.set('flowId', params.flowId);
+    if (params?.projectId) sp.set('projectId', params.projectId);
+    if (params?.status) sp.set('status', params.status);
+    if (params?.startDate) sp.set('startDate', params.startDate);
+    if (params?.endDate) sp.set('endDate', params.endDate);
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+
+    const qs = sp.toString();
+    const url = `/api/scenario-flows/jobs/executions${qs ? `?${qs}` : ''}`;
+    return unwrapRemoteData(
+      await apiRequest<RemoteEnvelope<any>>(url, { method: 'GET' })
+    );
+  }
 }
+

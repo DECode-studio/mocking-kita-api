@@ -170,9 +170,36 @@ export interface ScenarioFlowExecution {
   job?: {
     id: string;
     name: string;
+    scheduleType?: string;
+    cronExpression?: string | null;
+  } | null;
+  flow?: {
+    id: string;
+    name: string;
+    projectId?: string | null;
   } | null;
   steps?: ScenarioFlowExecutionStep[];
 }
+
+export interface JobExecutionsResult {
+  items: ScenarioFlowExecution[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface GetJobExecutionsFilter {
+  jobId?: string;
+  flowId?: string;
+  projectId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 
 export interface ScenarioFlow {
   id: string;
