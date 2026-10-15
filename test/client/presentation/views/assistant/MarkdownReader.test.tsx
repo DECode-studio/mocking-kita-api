@@ -14,6 +14,41 @@ describe('MarkdownReader Component', () => {
     expect(screen.getByText('This is a paragraph.')).toBeDefined();
   });
 
+  it('renders heading immediately followed by list items without blank line', () => {
+    const md = `# 8. Data Sheets Engine
+- **Fungsi**: Menyediakan dataset tabular (berisi kolom-kolom seperti \`phone\`, \`email\`, \`username\`, \`nik\`, \`amount\`) untuk pengujian berulang (*data-driven testing*).
+- **Fitur**:
+  - Impor / Ekspor via CSV dan Excel (.xlsx).
+  - Skema data kolom fleksibel dengan validasi tipe.
+  - Proxy iterator terisolasi per sesi eksekusi scenario flow sehingga tidak terjadi race condition saat multi-eksekusi paralel.
+  - Token \`{{datasheet.SheetName.next.columnName}}\` otomatis mengambil baris record selanjutnya untuk setiap iterasi loop.`;
+
+    const { container } = render(<MarkdownReader content={md} />);
+
+    // Heading should be separate and not contain the list
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.textContent).toBe('8. Data Sheets Engine');
+    expect(h1.textContent).not.toContain('Fungsi');
+
+    // Bold tags
+    const strongs = container.querySelectorAll('strong');
+    const strongTexts = Array.from(strongs).map((s) => s.textContent);
+    expect(strongTexts).toContain('Fungsi');
+    expect(strongTexts).toContain('Fitur');
+
+    // Code tags
+    const codes = container.querySelectorAll('code');
+    const codeTexts = Array.from(codes).map((c) => c.textContent);
+    expect(codeTexts).toContain('phone');
+    expect(codeTexts).toContain('email');
+    expect(codeTexts).toContain('{{datasheet.SheetName.next.columnName}}');
+
+    // Italic tags
+    const ems = container.querySelectorAll('em');
+    const emTexts = Array.from(ems).map((e) => e.textContent);
+    expect(emTexts).toContain('data-driven testing');
+  });
+
   it('renders inline bold, italic, and code correctly', () => {
     const md = 'Hello **bold world** and *italic style* with `const x = 10`.';
     const { container } = render(<MarkdownReader content={md} />);
@@ -45,4 +80,3 @@ describe('MarkdownReader Component', () => {
     expect(screen.getByText('Sub Item 2.1')).toBeDefined();
   });
 });
-
