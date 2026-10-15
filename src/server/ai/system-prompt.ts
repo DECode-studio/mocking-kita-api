@@ -2,10 +2,15 @@
  * System Prompt Builder for Mocking Kita AI Assistant
  */
 
-import { getFullKnowledgeContext } from './knowledge/knowledge-base';
+import { assistantKnowledgeService } from '@/src/server/assistant-knowledge';
 
 export function buildSystemPrompt(): string {
-  const knowledgeContext = getFullKnowledgeContext();
+  let knowledgeContext = '';
+  try {
+    knowledgeContext = assistantKnowledgeService.getFullKnowledgeContext();
+  } catch (err) {
+    knowledgeContext = '';
+  }
 
   return `Kamu adalah "Mocking Kita AI Assistant" — asisten cerdas, interaktif, ramah, dan sangat ahli di dalam Mocking Kita Studio (Mock API Studio).
 
