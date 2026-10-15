@@ -71,30 +71,33 @@ export const KnowledgeBaseExplorer: React.FC = () => {
           {/* Action Buttons */}
           <button
             type="button"
+            id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_CREATE_BTN}
             onClick={openCreateModal}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Tambah Baru</span>
+            <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_ADD_NEW}</span>
           </button>
 
           <button
             type="button"
+            id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_IMPORT_BTN}
             onClick={() => setIsImportModalOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-purple-400 text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <UploadCloud className="w-3.5 h-3.5 text-purple-500" />
-            <span>Import</span>
+            <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_IMPORT}</span>
           </button>
 
           <button
             type="button"
+            id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_EXPORT_ALL_ZIP_BTN}
             onClick={handleExportAllSkillsZip}
             title="Download seluruh Skills dalam satu arsip ZIP"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer"
           >
             <FileArchive className="w-3.5 h-3.5" />
-            <span>Export Skills (.ZIP)</span>
+            <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_EXPORT_SKILLS_ZIP}</span>
           </button>
         </div>
       </div>
@@ -105,40 +108,43 @@ export const KnowledgeBaseExplorer: React.FC = () => {
         <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold w-full sm:w-auto">
           <button
             type="button"
+            id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_TAB_ALL}
             onClick={() => setActiveCategory('all')}
-            className={`px-3 py-1 rounded-xl transition-all ${
+            className={`px-3 py-1 rounded-xl transition-all cursor-pointer ${
               activeCategory === 'all'
                 ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            Semua ({items.length})
+            {ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TAB_ALL} ({items.length})
           </button>
 
           <button
             type="button"
+            id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_TAB_PRODUCT}
             onClick={() => setActiveCategory('product')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
               activeCategory === 'product'
                 ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Product Knowledge ({items.filter((i) => i.category === 'product').length})</span>
+            <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TAB_PRODUCT} ({items.filter((i) => i.category === 'product').length})</span>
           </button>
 
           <button
             type="button"
+            id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_TAB_SKILL}
             onClick={() => setActiveCategory('skill')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
               activeCategory === 'skill'
                 ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Skills ({items.filter((i) => i.category === 'skill').length})</span>
+            <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TAB_SKILL} ({items.filter((i) => i.category === 'skill').length})</span>
           </button>
         </div>
 
@@ -265,17 +271,19 @@ export const KnowledgeBaseExplorer: React.FC = () => {
 
                   <button
                     type="button"
+                    id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_EDIT_BTN}
                     onClick={() => openEditModal(selectedSection)}
                     title="Edit konten dan metadata modul ini"
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer"
                   >
                     <Edit3 className="w-3.5 h-3.5 text-purple-500" />
-                    <span>Edit</span>
+                    <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_EDIT}</span>
                   </button>
 
                   {/* Export raw button */}
                   <button
                     type="button"
+                    id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_EXPORT_RAW_BTN}
                     onClick={() => handleExportSingle(selectedSection, false)}
                     title={`Export sebagai .${selectedSection.format}`}
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer"
@@ -288,6 +296,7 @@ export const KnowledgeBaseExplorer: React.FC = () => {
                   {selectedSection.category === 'skill' && (
                     <button
                       type="button"
+                      id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_EXPORT_ZIP_BTN}
                       onClick={() => handleExportSingle(selectedSection, true)}
                       title="Export skill ini sebagai .ZIP"
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold transition-all cursor-pointer"
@@ -300,8 +309,9 @@ export const KnowledgeBaseExplorer: React.FC = () => {
                   {/* Delete button */}
                   <button
                     type="button"
+                    id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_DELETE_BTN}
                     onClick={() => handleDeleteItem(selectedSection)}
-                    title="Hapus modul ini"
+                    title={ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_DELETE}
                     className="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-500/10 text-rose-500 transition-all cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -317,7 +327,7 @@ export const KnowledgeBaseExplorer: React.FC = () => {
           ) : (
             <div className="flex flex-col items-center justify-center p-12 text-slate-400 space-y-2">
               <BookOpen className="w-8 h-8 opacity-40" />
-              <p className="text-xs">Pilih salah satu modul di sebelah kiri untuk melihat detailnya</p>
+              <p className="text-xs">{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_SELECT_PROMPT}</p>
             </div>
           )}
         </div>

@@ -47,4 +47,31 @@ export const ASSISTANT_SEMANTIC_ID = {
   KNOWLEDGE_CONTAINER: 'assistant-knowledge-container',
   KNOWLEDGE_SEARCH_INPUT: 'assistant-knowledge-search-input',
   KNOWLEDGE_ASK_AI_BTN: 'assistant-knowledge-ask-ai-btn',
+  KNOWLEDGE_TAB_ALL: 'assistant-knowledge-tab-all',
+  KNOWLEDGE_TAB_PRODUCT: 'assistant-knowledge-tab-product',
+  KNOWLEDGE_TAB_SKILL: 'assistant-knowledge-tab-skill',
+  KNOWLEDGE_CREATE_BTN: 'assistant-knowledge-create-btn',
+  KNOWLEDGE_IMPORT_BTN: 'assistant-knowledge-import-btn',
+  KNOWLEDGE_EXPORT_ALL_ZIP_BTN: 'assistant-knowledge-export-all-zip-btn',
+  KNOWLEDGE_EDIT_BTN: 'assistant-knowledge-edit-btn',
+  KNOWLEDGE_DELETE_BTN: 'assistant-knowledge-delete-btn',
+  KNOWLEDGE_EXPORT_RAW_BTN: 'assistant-knowledge-export-raw-btn',
+  KNOWLEDGE_EXPORT_ZIP_BTN: 'assistant-knowledge-export-zip-btn',
+
+  // Knowledge Edit Modal
+  KNOWLEDGE_EDIT_MODAL: 'assistant-knowledge-edit-modal',
+  KNOWLEDGE_EDIT_TITLE_INPUT: 'assistant-knowledge-edit-title-input',
+  KNOWLEDGE_EDIT_SUMMARY_INPUT: 'assistant-knowledge-edit-summary-input',
+  KNOWLEDGE_EDIT_CONTENT_INPUT: 'assistant-knowledge-edit-content-input',
+  KNOWLEDGE_EDIT_SAVE_BTN: 'assistant-knowledge-edit-save-btn',
+  KNOWLEDGE_EDIT_CANCEL_BTN: 'assistant-knowledge-edit-cancel-btn',
+  KNOWLEDGE_EDIT_TAB_WRITE: 'assistant-knowledge-edit-tab-write',
+  KNOWLEDGE_EDIT_TAB_PREVIEW: 'assistant-knowledge-edit-tab-preview',
+
+  // Knowledge Import Modal
+  KNOWLEDGE_IMPORT_MODAL: 'assistant-knowledge-import-modal',
+  KNOWLEDGE_IMPORT_FILE_INPUT: 'assistant-knowledge-import-file-input',
+  KNOWLEDGE_IMPORT_SUBMIT_BTN: 'assistant-knowledge-import-submit-btn',
+  KNOWLEDGE_IMPORT_CANCEL_BTN: 'assistant-knowledge-import-cancel-btn',
 };
+
