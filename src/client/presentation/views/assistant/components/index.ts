@@ -2,7 +2,12 @@ export * from './ChatMessage';
 export * from './ChatInput';
 export * from './FloatingAssistantButton';
 export * from './ChatAssistantDrawer';
-export * from './converters/InsomniaConverterView';
-export * from './converters/OpenApiGeneratorView';
-export * from './converters/VariableSimulatorView';
-export * from './converters/KnowledgeBaseExplorerView';
+export * from './OpenApiGenerator';
+export * from './InsomniaConverter';
+export * from './VariableSimulator';
+export * from './KnowledgeBaseExplorer';
+export * from './KnowledgeEditModal';
+export * from './KnowledgeImportModal';
+export * from './MarkdownReader';
+
+

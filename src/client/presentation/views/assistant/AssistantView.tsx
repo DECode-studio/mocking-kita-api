@@ -17,10 +17,10 @@ import { ASSISTANT_TEXT, ASSISTANT_SEMANTIC_ID } from './constant';
 import {
   ChatMessage,
   ChatInput,
-  InsomniaConverterView,
-  OpenApiGeneratorView,
-  VariableSimulatorView,
-  KnowledgeBaseExplorerView,
+  InsomniaConverter,
+  OpenApiGenerator,
+  VariableSimulator,
+  KnowledgeBaseExplorer,
 } from './components';
 
 export const AssistantView: React.FC = () => {
@@ -204,10 +204,10 @@ export const AssistantView: React.FC = () => {
         </div>
       )}
 
-      {activeStudioTab === 'insomnia' && <InsomniaConverterView />}
-      {activeStudioTab === 'openapi' && <OpenApiGeneratorView />}
-      {activeStudioTab === 'simulator' && <VariableSimulatorView />}
-      {activeStudioTab === 'knowledge' && <KnowledgeBaseExplorerView />}
+      {activeStudioTab === 'insomnia' && <InsomniaConverter />}
+      {activeStudioTab === 'openapi' && <OpenApiGenerator />}
+      {activeStudioTab === 'simulator' && <VariableSimulator />}
+      {activeStudioTab === 'knowledge' && <KnowledgeBaseExplorer />}
     </div>
   );
 };

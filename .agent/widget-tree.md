@@ -225,6 +225,25 @@ mock-api-studio/
           constant/
           utils/
 
+        assistant/
+          AssistantView.tsx
+          hook/
+            useAssistant.ts
+            useOpenApiGenerator.ts
+            useInsomniaConverter.ts
+            useVariableSimulator.ts
+            useKnowledgeBaseExplorer.ts
+          components/
+            ChatMessage.tsx
+            ChatInput.tsx
+            FloatingAssistantButton.tsx
+            ChatAssistantDrawer.tsx
+            OpenApiGenerator.tsx
+            InsomniaConverter.tsx
+            VariableSimulator.tsx
+            KnowledgeBaseExplorer.tsx
+          constant/
+
       components/
         layout/
         shared/
