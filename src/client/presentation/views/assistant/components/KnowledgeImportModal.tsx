@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, UploadCloud, FileText, FileArchive, Loader2, BookOpen, Sparkles, AlertCircle } from 'lucide-react';
+import { useKnowledgeImportModal } from '../hook/useKnowledgeImportModal';
+import { ASSISTANT_TEXT, ASSISTANT_SEMANTIC_ID } from '../constant';
 
 interface KnowledgeImportModalProps {
   isOpen: boolean;
@@ -17,66 +19,31 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
   defaultCategory,
   onImport,
 }) => {
-  const [category, setCategory] = useState<'product' | 'skill'>(defaultCategory);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Sync default category when opened
-  React.useEffect(() => {
-    if (isOpen) {
-      setCategory(defaultCategory);
-      setSelectedFile(null);
-      setError(null);
-    }
-  }, [isOpen, defaultCategory]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      if (category === 'product' && ext !== 'md' && ext !== 'json') {
-        setError('Untuk Product Knowledge, pilih file .md atau .json');
-        setSelectedFile(null);
-        return;
-      }
-      if (category === 'skill' && ext !== 'md' && ext !== 'json' && ext !== 'zip') {
-        setError('Untuk Skills, pilih file .md, .json, atau .zip');
-        setSelectedFile(null);
-        return;
-      }
-      setError(null);
-      setSelectedFile(file);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) {
-      setError('Pilih file yang ingin diimpor');
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setError(null);
-      await onImport(category, selectedFile);
-      onClose();
-    } catch (err: any) {
-      setError(err?.message || 'Gagal mengimpor file');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const acceptedExtensions = category === 'skill' ? '.md,.json,.zip' : '.md,.json';
+  const {
+    category,
+    selectCategory,
+    selectedFile,
+    isSubmitting,
+    error,
+    fileInputRef,
+    acceptedExtensions,
+    handleFileChange,
+    handleSubmit,
+  } = useKnowledgeImportModal({
+    isOpen,
+    defaultCategory,
+    onImport,
+    onClose,
+  });
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 animate-in fade-in duration-200" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <Dialog.Content
+          id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_IMPORT_MODAL}
+          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 shrink-0">
             <div className="flex items-center gap-3">
@@ -85,17 +52,18 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
               </div>
               <div>
                 <Dialog.Title className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  Import Knowledge / Skill
+                  {ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_IMPORT_MODAL_TITLE}
                 </Dialog.Title>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Unggah file langsung ke direktori penyimpanan
+                  {ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_IMPORT_MODAL_DESC}
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_IMPORT_CANCEL_BTN}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -117,35 +85,27 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setCategory('product');
-                    setSelectedFile(null);
-                    setError(null);
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold transition-all ${
+                  onClick={() => selectCategory('product')}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold transition-all cursor-pointer ${
                     category === 'product'
                       ? 'bg-purple-500/15 border-purple-500/40 text-purple-600 dark:text-purple-300'
                       : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  <span>Product Knowledge</span>
+                  <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TAB_PRODUCT}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setCategory('skill');
-                    setSelectedFile(null);
-                    setError(null);
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold transition-all ${
+                  onClick={() => selectCategory('skill')}
+                  className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border font-semibold transition-all cursor-pointer ${
                     category === 'skill'
                       ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-600 dark:text-indigo-300'
                       : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Skill (Support .ZIP)</span>
+                  <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TAB_SKILL} (.ZIP)</span>
                 </button>
               </div>
             </div>
@@ -161,6 +121,7 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
               >
                 <input
                   ref={fileInputRef}
+                  id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_IMPORT_FILE_INPUT}
                   type="file"
                   accept={acceptedExtensions}
                   onChange={handleFileChange}
@@ -192,8 +153,8 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
                     </span>
                     <p className="text-[11px] text-slate-400 max-w-xs">
                       {category === 'skill'
-                        ? 'Mendukung file dokumen .md, .json, atau arsip .zip berisi folder skill'
-                        : 'Mendukung dokumen .md atau .json'}
+                        ? 'Mendukung dokumen .md, .json, atau paket arsip .zip berisikan folder skill'
+                        : 'Mendukung file dokumen .md atau .json'}
                     </p>
                   </div>
                 )}
@@ -205,14 +166,15 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold transition-all"
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-semibold transition-all cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="submit"
+                id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_IMPORT_SUBMIT_BTN}
                 disabled={!selectedFile || isSubmitting}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold shadow-md shadow-purple-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold shadow-md shadow-purple-500/20 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -233,4 +195,3 @@ export const KnowledgeImportModal: React.FC<KnowledgeImportModalProps> = ({
     </Dialog.Root>
   );
 };
-
