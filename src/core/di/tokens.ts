@@ -54,6 +54,7 @@ export const CLIENT_DI_TOKENS = {
   dashboardRepository: new InjectionToken<DashboardRepository>("DashboardRepository"),
   scenarioFlowRepository: new InjectionToken<ScenarioFlowRepository>("ScenarioFlowRepository"),
   dataSheetRepository: new InjectionToken<DataSheetRepository>("DataSheetRepository"),
+  knowledgeRepository: new InjectionToken<import("@/src/client/domain/assistant-knowledge/repository/knowledge_repository").KnowledgeRepository>("KnowledgeRepository"),
 
   // UseCases
   apiUseCase: new InjectionToken<ApiUseCase>("ApiUseCase"),
@@ -72,5 +73,6 @@ export const CLIENT_DI_TOKENS = {
   dashboardUseCase: new InjectionToken<DashboardUseCase>("DashboardUseCase"),
   scenarioFlowUseCase: new InjectionToken<ScenarioFlowUseCase>("ScenarioFlowUseCase"),
   dataSheetUseCase: new InjectionToken<DataSheetUseCase>("DataSheetUseCase"),
+  knowledgeUseCase: new InjectionToken<import("@/src/client/domain/assistant-knowledge/usecase/knowledge_usecase").KnowledgeUseCase>("KnowledgeUseCase"),
 } as const;
 
