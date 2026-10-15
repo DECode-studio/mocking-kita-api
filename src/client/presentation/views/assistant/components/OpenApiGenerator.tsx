@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Code2,
   Sparkles,
@@ -9,131 +9,46 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { convertOpenApiToMockStudio, OpenApiConvertResult } from '@/src/core/ai/openapi-to-mock';
+import { useOpenApiGenerator } from '../hook/useOpenApiGenerator';
+import { ASSISTANT_TEXT, ASSISTANT_SEMANTIC_ID } from '../constant';
 
-const SAMPLE_OPENAPI_PAYLOAD = `{
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Payment & Order Gateway",
-    "version": "1.0.0"
-  },
-  "servers": [
-    { "url": "https://api.mockingkita.com/v1" }
-  ],
-  "paths": {
-    "/orders": {
-      "post": {
-        "tags": ["Orders"],
-        "summary": "Create new order transaction",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "amount": { "type": "integer", "example": 150000 },
-                  "customerEmail": { "type": "string", "format": "email" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Order created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "orderId": { "type": "string", "format": "uuid" },
-                    "status": { "type": "string", "enum": ["PENDING", "PAID"] },
-                    "createdAt": { "type": "string", "format": "date-time" }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": ["Orders"],
-        "summary": "List customer orders",
-        "responses": {
-          "200": {
-            "description": "List of orders",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "orderId": { "type": "string", "format": "uuid" },
-                      "amount": { "type": "integer" }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}`;
-
-export const OpenApiGeneratorView: React.FC = () => {
-  const [rawInput, setRawInput] = useState(SAMPLE_OPENAPI_PAYLOAD);
-  const [result, setResult] = useState<OpenApiConvertResult | null>(null);
-  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
-
-  const handleConvert = () => {
-    const res = convertOpenApiToMockStudio(rawInput);
-    setResult(res);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        setRawInput(content);
-        const res = convertOpenApiToMockStudio(content);
-        setResult(res);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const copySampleJson = (body: any, idx: number) => {
-    navigator.clipboard.writeText(JSON.stringify(body, null, 2));
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2000);
-  };
+export const OpenApiGenerator: React.FC = () => {
+  const {
+    rawInput,
+    setRawInput,
+    result,
+    copiedIdx,
+    handleConvert,
+    handleFileUpload,
+    handleResetSample,
+    copySampleJson,
+  } = useOpenApiGenerator();
 
   return (
-    <div className="space-y-6">
+    <div id={ASSISTANT_SEMANTIC_ID.CONVERTER_OPENAPI_CONTAINER} className="space-y-6">
       <div className="p-5 rounded-2xl bg-linear-to-r from-emerald-900/20 via-teal-900/20 to-slate-900/40 border border-emerald-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <Code2 className="w-5 h-5 text-emerald-400" />
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              OpenAPI / Swagger → Mock API & Scenario Generator
+              {ASSISTANT_TEXT.CONVERTERS.OPENAPI_TITLE}
             </h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-            Parse dokumen Swagger 2.0 / OpenAPI 3.x (JSON atau YAML) menjadi daftar endpoint terstruktur, sample mock response payload otomatis, dan pengelompokan koleksi.
+            {ASSISTANT_TEXT.CONVERTERS.OPENAPI_DESC}
           </p>
         </div>
 
         <label className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/30 cursor-pointer transition-all shrink-0">
           <Upload className="w-4 h-4" />
-          <span>Upload File OpenAPI</span>
-          <input type="file" accept=".json,.yaml,.yml" onChange={handleFileUpload} className="hidden" />
+          <span>{ASSISTANT_TEXT.CONVERTERS.OPENAPI_UPLOAD_BTN}</span>
+          <input
+            id={ASSISTANT_SEMANTIC_ID.CONVERTER_OPENAPI_UPLOAD_INPUT}
+            type="file"
+            accept=".json,.yaml,.yml"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </label>
       </div>
 
@@ -141,45 +56,48 @@ export const OpenApiGeneratorView: React.FC = () => {
         <div className="flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Paste OpenAPI / Swagger Document (JSON / YAML):
+              {ASSISTANT_TEXT.CONVERTERS.OPENAPI_PASTE_LABEL}
             </span>
             <button
+              id={ASSISTANT_SEMANTIC_ID.CONVERTER_OPENAPI_RESET_BTN}
               type="button"
-              onClick={() => setRawInput(SAMPLE_OPENAPI_PAYLOAD)}
+              onClick={handleResetSample}
               className="text-xs text-emerald-500 hover:text-emerald-400 underline"
             >
-              Muat Contoh
+              {ASSISTANT_TEXT.CONVERTERS.INSOMNIA_LOAD_SAMPLE}
             </button>
           </div>
 
           <textarea
+            id={ASSISTANT_SEMANTIC_ID.CONVERTER_OPENAPI_INPUT}
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
             rows={16}
-            placeholder="Paste spesifikasi OpenAPI 3.x atau Swagger 2.0 di sini..."
+            placeholder={ASSISTANT_TEXT.CONVERTERS.OPENAPI_PLACEHOLDER}
             className="w-full font-mono text-xs p-4 rounded-2xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 resize-none leading-relaxed shadow-inner"
           />
 
           <button
+            id={ASSISTANT_SEMANTIC_ID.CONVERTER_OPENAPI_GENERATE_BTN}
             type="button"
             onClick={handleConvert}
             className="w-full py-2.5 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Generate Mock APIs</span>
+            <span>{ASSISTANT_TEXT.CONVERTERS.OPENAPI_GENERATE_BTN}</span>
           </button>
         </div>
 
         <div className="flex flex-col space-y-3">
           <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Daftar Endpoint & Sample Mock Payload:
+            {ASSISTANT_TEXT.CONVERTERS.OPENAPI_RESULT_LABEL}
           </span>
 
           {result?.error ? (
             <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold">Gagal Parsing:</span>
+                <span className="font-bold">{ASSISTANT_TEXT.CONVERTERS.OPENAPI_ERROR_TITLE}</span>
                 <p className="mt-1 font-mono">{result.error}</p>
               </div>
             </div>
@@ -243,7 +161,7 @@ export const OpenApiGeneratorView: React.FC = () => {
                             ) : (
                               <Copy className="w-3 h-3" />
                             )}
-                            <span className="text-[10px]">Salin Mock</span>
+                            <span className="text-[10px]">{ASSISTANT_TEXT.CONVERTERS.OPENAPI_COPY_MOCK}</span>
                           </button>
                         </div>
                         <pre className="text-slate-300 text-[11px] max-h-24 overflow-auto pt-1">
@@ -258,7 +176,7 @@ export const OpenApiGeneratorView: React.FC = () => {
           ) : (
             <div className="flex-1 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 flex flex-col items-center justify-center p-8 text-center text-slate-400">
               <Code2 className="w-10 h-10 text-slate-500 mb-2 stroke-1" />
-              <p className="text-xs font-medium">Klik "Generate Mock APIs" untuk mem-parse endpoint dan membuat sample mock body.</p>
+              <p className="text-xs font-medium">{ASSISTANT_TEXT.CONVERTERS.OPENAPI_EMPTY_HINT}</p>
             </div>
           )}
         </div>
@@ -266,3 +184,6 @@ export const OpenApiGeneratorView: React.FC = () => {
     </div>
   );
 };
+
+export const OpenApiGeneratorView = OpenApiGenerator;
+

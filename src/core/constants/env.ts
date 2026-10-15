@@ -21,6 +21,18 @@ export const ENV = {
     return val ? val : '.data/uploads';
   },
 
+  /** Skills directory path */
+  get SKILLS_PATH(): string {
+    const val = process.env.SKILLS_PATH?.trim();
+    return val ? val : '.data/skills';
+  },
+
+  /** Product Knowledge directory path */
+  get PRODUCT_KNOWLEDGE_PATH(): string {
+    const val = process.env.PRODUCT_KNOWLEDGE_PATH?.trim();
+    return val ? val : '.data/knowledge';
+  },
+
   /** Admin account username */
   get APP_USERNAME(): string {
     return process.env.APP_USERNAME?.trim() || '';

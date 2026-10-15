@@ -17,4 +17,61 @@ export const ASSISTANT_SEMANTIC_ID = {
   MODEL_SELECTOR: 'assistant-model-selector',
   FLOATING_BTN: 'assistant-floating-btn',
   DRAWER_CONTAINER: 'assistant-drawer-container',
+
+  // Converter Semantic IDs
+  CONVERTER_INSOMNIA_CONTAINER: 'assistant-converter-insomnia-container',
+  CONVERTER_INSOMNIA_INPUT: 'assistant-converter-insomnia-input',
+  CONVERTER_INSOMNIA_CONVERT_BTN: 'assistant-converter-insomnia-convert-btn',
+  CONVERTER_INSOMNIA_UPLOAD_INPUT: 'assistant-converter-insomnia-upload-input',
+  CONVERTER_INSOMNIA_COPY_BTN: 'assistant-converter-insomnia-copy-btn',
+  CONVERTER_INSOMNIA_DOWNLOAD_BTN: 'assistant-converter-insomnia-download-btn',
+  CONVERTER_INSOMNIA_RESET_BTN: 'assistant-converter-insomnia-reset-btn',
+
+  CONVERTER_OPENAPI_CONTAINER: 'assistant-converter-openapi-container',
+  CONVERTER_OPENAPI_INPUT: 'assistant-converter-openapi-input',
+  CONVERTER_OPENAPI_GENERATE_BTN: 'assistant-converter-openapi-generate-btn',
+  CONVERTER_OPENAPI_UPLOAD_INPUT: 'assistant-converter-openapi-upload-input',
+  CONVERTER_OPENAPI_RESET_BTN: 'assistant-converter-openapi-reset-btn',
+
+  SIMULATOR_CONTAINER: 'assistant-simulator-container',
+  SIMULATOR_TEMPLATE_INPUT: 'assistant-simulator-template-input',
+  SIMULATOR_VARS_INPUT: 'assistant-simulator-vars-input',
+  SIMULATOR_DATASHEET_INPUT: 'assistant-simulator-datasheet-input',
+  SIMULATOR_RUN_BTN: 'assistant-simulator-run-btn',
+  SIMULATOR_RESET_BTN: 'assistant-simulator-reset-btn',
+  SIMULATOR_STATUS_INPUT: 'assistant-simulator-status-input',
+  SIMULATOR_LATENCY_INPUT: 'assistant-simulator-latency-input',
+  SIMULATOR_BODY_INPUT: 'assistant-simulator-body-input',
+  SIMULATOR_ASSERTION_BTN: 'assistant-simulator-assertion-btn',
+
+  KNOWLEDGE_CONTAINER: 'assistant-knowledge-container',
+  KNOWLEDGE_SEARCH_INPUT: 'assistant-knowledge-search-input',
+  KNOWLEDGE_ASK_AI_BTN: 'assistant-knowledge-ask-ai-btn',
+  KNOWLEDGE_TAB_ALL: 'assistant-knowledge-tab-all',
+  KNOWLEDGE_TAB_PRODUCT: 'assistant-knowledge-tab-product',
+  KNOWLEDGE_TAB_SKILL: 'assistant-knowledge-tab-skill',
+  KNOWLEDGE_CREATE_BTN: 'assistant-knowledge-create-btn',
+  KNOWLEDGE_IMPORT_BTN: 'assistant-knowledge-import-btn',
+  KNOWLEDGE_EXPORT_ALL_ZIP_BTN: 'assistant-knowledge-export-all-zip-btn',
+  KNOWLEDGE_EDIT_BTN: 'assistant-knowledge-edit-btn',
+  KNOWLEDGE_DELETE_BTN: 'assistant-knowledge-delete-btn',
+  KNOWLEDGE_EXPORT_RAW_BTN: 'assistant-knowledge-export-raw-btn',
+  KNOWLEDGE_EXPORT_ZIP_BTN: 'assistant-knowledge-export-zip-btn',
+
+  // Knowledge Edit Modal
+  KNOWLEDGE_EDIT_MODAL: 'assistant-knowledge-edit-modal',
+  KNOWLEDGE_EDIT_TITLE_INPUT: 'assistant-knowledge-edit-title-input',
+  KNOWLEDGE_EDIT_SUMMARY_INPUT: 'assistant-knowledge-edit-summary-input',
+  KNOWLEDGE_EDIT_CONTENT_INPUT: 'assistant-knowledge-edit-content-input',
+  KNOWLEDGE_EDIT_SAVE_BTN: 'assistant-knowledge-edit-save-btn',
+  KNOWLEDGE_EDIT_CANCEL_BTN: 'assistant-knowledge-edit-cancel-btn',
+  KNOWLEDGE_EDIT_TAB_WRITE: 'assistant-knowledge-edit-tab-write',
+  KNOWLEDGE_EDIT_TAB_PREVIEW: 'assistant-knowledge-edit-tab-preview',
+
+  // Knowledge Import Modal
+  KNOWLEDGE_IMPORT_MODAL: 'assistant-knowledge-import-modal',
+  KNOWLEDGE_IMPORT_FILE_INPUT: 'assistant-knowledge-import-file-input',
+  KNOWLEDGE_IMPORT_SUBMIT_BTN: 'assistant-knowledge-import-submit-btn',
+  KNOWLEDGE_IMPORT_CANCEL_BTN: 'assistant-knowledge-import-cancel-btn',
 };
+
