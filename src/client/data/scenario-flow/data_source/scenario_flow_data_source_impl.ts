@@ -3,6 +3,11 @@ import {
   ScenarioFlow,
   ScenarioFlowStep,
   ScenarioFlowExecution,
+  ScenarioFlowExecutionStep,
+  ScenarioFlowJob,
+  FlowExportTemplate,
+  GetJobExecutionsFilter,
+  JobExecutionsResult,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { RemoteEnvelope, unwrapRemoteData } from '@/src/client/data/common/remote-response';
 import { ScenarioFlowRemoteDataSource } from './scenario_flow_data_source';
@@ -108,17 +113,23 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
       environmentId?: string | null;
       environmentType?: string | null;
       targetMode?: 'LIVE' | 'MOCK';
-      initialVariables?: Record<string, any>;
+      initialVariables?: Record<string, unknown>;
       executedBy?: string;
       stepId?: string | null;
     }
   ): Promise<{
     execution: ScenarioFlowExecution;
-    steps: any[];
-    finalVariables: Record<string, any>;
+    steps: ScenarioFlowExecutionStep[];
+    finalVariables: Record<string, unknown>;
   }> {
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(
+      await apiRequest<
+        RemoteEnvelope<{
+          execution: ScenarioFlowExecution;
+          steps: ScenarioFlowExecutionStep[];
+          finalVariables: Record<string, unknown>;
+        }>
+      >(
         `/api/scenario-flows/${encodeURIComponent(flowId)}/run`,
         { method: 'POST', body: options || {} }
       )
@@ -133,7 +144,10 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
     );
   }
 
-  async importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult> {
+  async importTemplate(
+    projectId: string,
+    templateJson: FlowExportTemplate | Record<string, unknown>
+  ): Promise<ImportFlowResult> {
     return unwrapRemoteData(
       await apiRequest<RemoteEnvelope<ImportFlowResult>>(
         `/api/projects/${encodeURIComponent(projectId)}/scenario-flows/import`,
@@ -142,41 +156,41 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
     );
   }
 
-  async exportTemplate(flowId: string): Promise<any> {
+  async exportTemplate(flowId: string): Promise<FlowExportTemplate> {
     const res = await fetch(`/api/scenario-flows/${encodeURIComponent(flowId)}/export`);
     if (!res.ok) {
       throw new Error(`Failed to export scenario flow: ${res.statusText}`);
     }
-    return res.json();
+    return res.json() as Promise<FlowExportTemplate>;
   }
 
-  async getJobs(flowId?: string, projectId?: string): Promise<any[]> {
+  async getJobs(flowId?: string, projectId?: string): Promise<ScenarioFlowJob[]> {
     const query = new URLSearchParams();
     if (flowId) query.set('flowId', flowId);
     if (projectId) query.set('projectId', projectId);
     const queryString = query.toString();
     const url = queryString ? `/api/scenario-flows/jobs?${queryString}` : '/api/scenario-flows/jobs';
-    return unwrapRemoteData(await apiRequest<RemoteEnvelope<any[]>>(url));
+    return unwrapRemoteData(await apiRequest<RemoteEnvelope<ScenarioFlowJob[]>>(url));
   }
 
-  async getJobById(jobId: string): Promise<any> {
+  async getJobById(jobId: string): Promise<ScenarioFlowJob | null> {
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(`/api/scenario-flows/jobs/${encodeURIComponent(jobId)}`)
+      await apiRequest<RemoteEnvelope<ScenarioFlowJob | null>>(`/api/scenario-flows/jobs/${encodeURIComponent(jobId)}`)
     );
   }
 
-  async createJob(input: any): Promise<any> {
+  async createJob(input: Partial<ScenarioFlowJob> & { flowId: string; name: string }): Promise<ScenarioFlowJob> {
     const url = input.flowId
       ? `/api/scenario-flows/${encodeURIComponent(input.flowId)}/jobs`
       : '/api/scenario-flows/jobs';
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(url, { method: 'POST', body: input })
+      await apiRequest<RemoteEnvelope<ScenarioFlowJob>>(url, { method: 'POST', body: input })
     );
   }
 
-  async updateJob(jobId: string, input: any): Promise<any> {
+  async updateJob(jobId: string, input: Partial<ScenarioFlowJob>): Promise<ScenarioFlowJob> {
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(
+      await apiRequest<RemoteEnvelope<ScenarioFlowJob>>(
         `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}`,
         { method: 'PUT', body: input }
       )
@@ -192,25 +206,25 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
     );
   }
 
-  async toggleJobStatus(jobId: string): Promise<any> {
+  async toggleJobStatus(jobId: string): Promise<ScenarioFlowJob> {
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(
+      await apiRequest<RemoteEnvelope<ScenarioFlowJob>>(
         `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}/toggle`,
         { method: 'POST' }
       )
     );
   }
 
-  async runNowJob(jobId: string): Promise<any> {
+  async runNowJob(jobId: string): Promise<ScenarioFlowJob> {
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(
+      await apiRequest<RemoteEnvelope<ScenarioFlowJob>>(
         `/api/scenario-flows/jobs/${encodeURIComponent(jobId)}/run-now`,
         { method: 'POST' }
       )
     );
   }
 
-  async getJobExecutions(params?: any): Promise<any> {
+  async getJobExecutions(params?: GetJobExecutionsFilter): Promise<JobExecutionsResult> {
     const sp = new URLSearchParams();
     if (params?.jobId) sp.set('jobId', params.jobId);
     if (params?.flowId) sp.set('flowId', params.flowId);
@@ -224,7 +238,7 @@ export class ScenarioFlowRemoteDataSourceImpl implements ScenarioFlowRemoteDataS
     const qs = sp.toString();
     const url = `/api/scenario-flows/jobs/executions${qs ? `?${qs}` : ''}`;
     return unwrapRemoteData(
-      await apiRequest<RemoteEnvelope<any>>(url, { method: 'GET' })
+      await apiRequest<RemoteEnvelope<JobExecutionsResult>>(url, { method: 'GET' })
     );
   }
 }

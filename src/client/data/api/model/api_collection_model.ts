@@ -1,3 +1,4 @@
+import { Account } from '@/src/client/domain/account/entity/account';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { toBoolean } from '@/src/core/utils/db-converter';
 
@@ -11,7 +12,7 @@ export type ApiRow = {
   method_request: string | null;
   pic_ids?: string[];
   pic_id?: string | null;
-  pics?: any[];
+  pics?: Account[];
   status: number | null;
   created_at: string | null;
   updated_at: string | null;

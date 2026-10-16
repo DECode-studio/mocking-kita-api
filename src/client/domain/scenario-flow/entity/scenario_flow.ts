@@ -10,13 +10,13 @@ export interface AssertionRule {
   type: 'statusCode' | 'bodyPath' | 'header' | 'responseTime';
   path?: string;
   operator: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'exists' | 'notExists' | 'greaterThan' | 'lessThan' | 'in_datasheet';
-  expected?: any;
+  expected?: unknown;
 }
 
 export interface AssertionResult {
   rule: AssertionRule;
   passed: boolean;
-  actual: any;
+  actual: unknown;
   message?: string;
 }
 
@@ -36,7 +36,7 @@ export interface ScenarioFlowStep {
   headersOverride?: Record<string, string> | null;
   queryParamsOverride?: Record<string, string> | null;
   pathParamsOverride?: Record<string, string> | null;
-  bodyOverride?: any;
+  bodyOverride?: unknown;
   bodyType?: string | null;
   extractors?: VariableExtractor[] | null;
   assertions?: AssertionRule[] | null;
@@ -61,9 +61,25 @@ export interface ScenarioFlowStep {
     headers?: Record<string, string> | null;
     queryParams?: Record<string, string> | null;
     pathParams?: Record<string, string> | null;
-    body?: any;
+    body?: unknown;
     bodyType?: string;
   } | null;
+}
+
+export interface RequestSnapshot {
+  method?: string;
+  url?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  bodyType?: string;
+}
+
+export interface ResponseSnapshot {
+  status?: number;
+  statusText?: string;
+  headers?: Record<string, string>;
+  body?: unknown;
+  responseTimeMs?: number;
 }
 
 export interface ScenarioFlowExecutionStep {
@@ -74,26 +90,15 @@ export interface ScenarioFlowExecutionStep {
   stepName: string;
   method: string;
   url: string;
-  status: 'SUCCESS' | 'FAILED' | 'SKIPPED';
+  status: 'SUCCESS' | 'FAILED' | 'SKIPPED' | string;
   httpStatusCode?: number | null;
   durationMs: number;
-  requestSnapshot?: {
-    method: string;
-    url: string;
-    headers: Record<string, string>;
-    body: any;
-  } | null;
-  responseSnapshot?: {
-    status: number;
-    statusText: string;
-    headers: Record<string, string>;
-    body: any;
-    responseTimeMs: number;
-  } | null;
-  extractedVariables?: Record<string, any> | null;
+  requestSnapshot?: RequestSnapshot | null;
+  responseSnapshot?: ResponseSnapshot | null;
+  extractedVariables?: Record<string, unknown> | null;
   assertionResults?: AssertionResult[] | null;
   errorMessage?: string | null;
-  createdAt: string;
+  createdAt: string | Date;
 }
 
 export interface ScenarioFlowJob {
@@ -117,7 +122,7 @@ export interface ScenarioFlowJob {
   dataSheetId?: string | null;
   dataIterationMode: 'PER_TICK' | 'BATCH_ALL';
   dataSheetCurrentIndex: number;
-  customVariables?: Record<string, any> | null;
+  customVariables?: Record<string, unknown> | null;
   lastRunAt?: string | null;
   nextRunAt?: string | null;
   lastStatus?: string | null;
@@ -148,23 +153,23 @@ export interface ScenarioFlowExecution {
   flowId: string;
   environmentId?: string | null;
   jobId?: string | null;
-  status: 'RUNNING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+  status: 'RUNNING' | 'SUCCESS' | 'FAILED' | 'CANCELLED' | string;
   triggerSource: string;
-  targetMode: 'LIVE' | 'MOCK';
+  targetMode: 'LIVE' | 'MOCK' | string;
   totalSteps: number;
   passedSteps: number;
   failedSteps: number;
   durationMs: number;
-  initialVariables?: Record<string, any> | null;
-  finalVariables?: Record<string, any> | null;
+  initialVariables?: unknown;
+  finalVariables?: unknown;
   executedBy?: string | null;
   errorSummary?: string | null;
-  createdAt: string;
+  createdAt: string | Date;
   environment?: {
     id: string;
     name: string;
-    environmentType: string;
-    variables?: any;
+    environmentType?: string;
+    variables?: unknown;
     baseUrl?: string | null;
   } | null;
   job?: {
@@ -210,7 +215,7 @@ export interface ScenarioFlow {
   status: boolean;
   defaultEnvironmentId?: string | null;
   stopOnFailure: boolean;
-  variables?: Record<string, any> | null;
+  variables?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -219,7 +224,7 @@ export interface ScenarioFlow {
     id: string;
     name: string;
     environmentType: string;
-    variables?: any;
+    variables?: unknown;
     baseUrl?: string | null;
   } | null;
 
@@ -227,4 +232,70 @@ export interface ScenarioFlow {
   executions?: ScenarioFlowExecution[];
   jobs?: ScenarioFlowJob[];
 }
+
+export interface FlowExportTemplate {
+  $schema?: string;
+  version?: string;
+  exportedAt?: string;
+  environments?: Array<{
+    id?: string;
+    name: string;
+    isBaseUrl?: boolean;
+    values?: Partial<Record<'LOCAL' | 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING', string | null>>;
+    environmentType?: 'LOCAL' | 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING';
+    baseUrl?: string;
+    variables?: unknown[];
+    isDefault?: boolean;
+  }>;
+  flow: {
+    name: string;
+    description?: string | null;
+    stopOnFailure: boolean;
+    variables?: Record<string, unknown>;
+  };
+  steps: Array<{
+    order: number;
+    name: string;
+    description?: string | null;
+    enabled: boolean;
+    delayMs?: number;
+    continueOnError?: boolean;
+    api: {
+      method: string;
+      path: string;
+      name?: string;
+      collection?: string | null;
+      description?: string | null;
+      targetEnvironment?: string | null;
+      environmentIds?: string[];
+      environments?: string[];
+    };
+    requestScenario?: {
+      name: string;
+      description?: string | null;
+      headers?: Record<string, string>;
+      queryParams?: Record<string, string>;
+      pathParams?: Record<string, string>;
+      body?: unknown;
+      bodyType?: string;
+    };
+    expectedResponseScenario?: {
+      name?: string;
+      statusCode?: number;
+      headers?: Record<string, string>;
+      body?: unknown;
+    };
+    overrides?: {
+      method?: string | null;
+      path?: string | null;
+      headers?: Record<string, string> | null;
+      queryParams?: Record<string, string> | null;
+      pathParams?: Record<string, string> | null;
+      body?: unknown;
+    };
+    extractors?: VariableExtractor[];
+    assertions?: AssertionRule[];
+  }>;
+}
+
 

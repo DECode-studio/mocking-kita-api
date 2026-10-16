@@ -2,7 +2,9 @@ import {
   ScenarioFlow,
   ScenarioFlowStep,
   ScenarioFlowExecution,
+  ScenarioFlowExecutionStep,
   ScenarioFlowJob,
+  FlowExportTemplate,
 } from '../entity/scenario_flow';
 
 export interface ImportFlowResult {
@@ -36,20 +38,20 @@ export interface ScenarioFlowRepository {
       environmentId?: string | null;
       environmentType?: string | null;
       targetMode?: 'LIVE' | 'MOCK';
-      initialVariables?: Record<string, any>;
+      initialVariables?: Record<string, unknown>;
       executedBy?: string;
       stepId?: string | null;
     }
   ): Promise<{
     execution: ScenarioFlowExecution;
-    steps: any[];
-    finalVariables: Record<string, any>;
+    steps: ScenarioFlowExecutionStep[];
+    finalVariables: Record<string, unknown>;
   }>;
   getExecutionDetail(executionId: string): Promise<ScenarioFlowExecution | null>;
 
   // Import / Export
-  importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult>;
-  exportTemplate(flowId: string): Promise<any>;
+  importTemplate(projectId: string, templateJson: FlowExportTemplate | Record<string, unknown>): Promise<ImportFlowResult>;
+  exportTemplate(flowId: string): Promise<FlowExportTemplate>;
 
   // Scheduled Jobs
   getJobs(flowId?: string, projectId?: string): Promise<ScenarioFlowJob[]>;

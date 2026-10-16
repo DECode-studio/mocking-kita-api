@@ -1,4 +1,5 @@
 export type DataSheetFormat = 'LIST' | 'TABLE';
+export type DataSheetRow = Record<string, unknown> | string | number | boolean;
 
 export interface DataSheet {
   id: string;
@@ -8,7 +9,7 @@ export interface DataSheet {
   category?: string | null;
   description?: string | null;
   format: DataSheetFormat;
-  data: any[];
+  data: unknown[];
   status: boolean;
   createdAt: string;
   updatedAt: string;

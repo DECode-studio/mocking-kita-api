@@ -2,6 +2,11 @@ import {
   ScenarioFlow,
   ScenarioFlowStep,
   ScenarioFlowExecution,
+  ScenarioFlowExecutionStep,
+  ScenarioFlowJob,
+  FlowExportTemplate,
+  GetJobExecutionsFilter,
+  JobExecutionsResult,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { ImportFlowResult } from '@/src/client/domain/scenario-flow/repository/scenario_flow_repository';
 
@@ -24,27 +29,27 @@ export interface ScenarioFlowRemoteDataSource {
       environmentId?: string | null;
       environmentType?: string | null;
       targetMode?: 'LIVE' | 'MOCK';
-      initialVariables?: Record<string, any>;
+      initialVariables?: Record<string, unknown>;
       executedBy?: string;
       stepId?: string | null;
     }
   ): Promise<{
     execution: ScenarioFlowExecution;
-    steps: any[];
-    finalVariables: Record<string, any>;
+    steps: ScenarioFlowExecutionStep[];
+    finalVariables: Record<string, unknown>;
   }>;
   getExecutionDetail(executionId: string): Promise<ScenarioFlowExecution | null>;
 
-  importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult>;
-  exportTemplate(flowId: string): Promise<any>;
+  importTemplate(projectId: string, templateJson: FlowExportTemplate | Record<string, unknown>): Promise<ImportFlowResult>;
+  exportTemplate(flowId: string): Promise<FlowExportTemplate>;
 
-  getJobs(flowId?: string, projectId?: string): Promise<any[]>;
-  getJobById(jobId: string): Promise<any>;
-  createJob(input: any): Promise<any>;
-  updateJob(jobId: string, input: any): Promise<any>;
+  getJobs(flowId?: string, projectId?: string): Promise<ScenarioFlowJob[]>;
+  getJobById(jobId: string): Promise<ScenarioFlowJob | null>;
+  createJob(input: Partial<ScenarioFlowJob> & { flowId: string; name: string }): Promise<ScenarioFlowJob>;
+  updateJob(jobId: string, input: Partial<ScenarioFlowJob>): Promise<ScenarioFlowJob>;
   deleteJob(jobId: string): Promise<void>;
-  toggleJobStatus(jobId: string): Promise<any>;
-  runNowJob(jobId: string): Promise<any>;
-  getJobExecutions(params?: any): Promise<any>;
+  toggleJobStatus(jobId: string): Promise<ScenarioFlowJob>;
+  runNowJob(jobId: string): Promise<ScenarioFlowJob>;
+  getJobExecutions(params?: GetJobExecutionsFilter): Promise<JobExecutionsResult>;
 }
 

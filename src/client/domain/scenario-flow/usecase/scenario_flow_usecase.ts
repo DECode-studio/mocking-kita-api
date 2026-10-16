@@ -2,6 +2,9 @@ import {
   ScenarioFlow,
   ScenarioFlowStep,
   ScenarioFlowExecution,
+  ScenarioFlowExecutionStep,
+  ScenarioFlowJob,
+  FlowExportTemplate,
 } from '../entity/scenario_flow';
 import { ImportFlowResult } from '../repository/scenario_flow_repository';
 
@@ -15,7 +18,7 @@ export interface ScenarioFlowUseCase {
     description?: string | null;
     defaultEnvironmentId?: string | null;
     stopOnFailure?: boolean;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
   }): Promise<ScenarioFlow>;
   update(id: string, input: Partial<ScenarioFlow>): Promise<ScenarioFlow>;
   softDelete(id: string): Promise<void>;
@@ -34,29 +37,29 @@ export interface ScenarioFlowUseCase {
       environmentId?: string | null;
       environmentType?: string | null;
       targetMode?: 'LIVE' | 'MOCK';
-      initialVariables?: Record<string, any>;
+      initialVariables?: Record<string, unknown>;
       executedBy?: string;
       stepId?: string | null;
     }
   ): Promise<{
     execution: ScenarioFlowExecution;
-    steps: any[];
-    finalVariables: Record<string, any>;
+    steps: ScenarioFlowExecutionStep[];
+    finalVariables: Record<string, unknown>;
   }>;
   getExecutionDetail(executionId: string): Promise<ScenarioFlowExecution | null>;
 
   // Import / Export
-  importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult>;
-  exportTemplate(flowId: string): Promise<any>;
+  importTemplate(projectId: string, templateJson: FlowExportTemplate | Record<string, unknown>): Promise<ImportFlowResult>;
+  exportTemplate(flowId: string): Promise<FlowExportTemplate>;
 
   // Scheduled Jobs
-  getJobs(flowId?: string, projectId?: string): Promise<any[]>;
-  getJobById(jobId: string): Promise<any>;
-  createJob(input: any): Promise<any>;
-  updateJob(jobId: string, input: any): Promise<any>;
+  getJobs(flowId?: string, projectId?: string): Promise<ScenarioFlowJob[]>;
+  getJobById(jobId: string): Promise<ScenarioFlowJob | null>;
+  createJob(input: Partial<ScenarioFlowJob> & { flowId: string; name: string }): Promise<ScenarioFlowJob>;
+  updateJob(jobId: string, input: Partial<ScenarioFlowJob>): Promise<ScenarioFlowJob>;
   deleteJob(jobId: string): Promise<void>;
-  toggleJobStatus(jobId: string): Promise<any>;
-  runNowJob(jobId: string): Promise<any>;
+  toggleJobStatus(jobId: string): Promise<ScenarioFlowJob>;
+  runNowJob(jobId: string): Promise<ScenarioFlowJob>;
   getJobExecutions(params?: import('../entity/scenario_flow').GetJobExecutionsFilter): Promise<import('../entity/scenario_flow').JobExecutionsResult>;
 }
 

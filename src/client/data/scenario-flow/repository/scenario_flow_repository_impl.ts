@@ -2,6 +2,11 @@ import {
   ScenarioFlow,
   ScenarioFlowStep,
   ScenarioFlowExecution,
+  ScenarioFlowExecutionStep,
+  ScenarioFlowJob,
+  FlowExportTemplate,
+  GetJobExecutionsFilter,
+  JobExecutionsResult,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import {
   ScenarioFlowRepository,
@@ -68,14 +73,14 @@ export class ScenarioFlowRepositoryImpl implements ScenarioFlowRepository {
       environmentId?: string | null;
       environmentType?: string | null;
       targetMode?: 'LIVE' | 'MOCK';
-      initialVariables?: Record<string, any>;
+      initialVariables?: Record<string, unknown>;
       executedBy?: string;
       stepId?: string | null;
     }
   ): Promise<{
     execution: ScenarioFlowExecution;
-    steps: any[];
-    finalVariables: Record<string, any>;
+    steps: ScenarioFlowExecutionStep[];
+    finalVariables: Record<string, unknown>;
   }> {
     return this.dataSource.runFlow(flowId, options);
   }
@@ -84,27 +89,30 @@ export class ScenarioFlowRepositoryImpl implements ScenarioFlowRepository {
     return this.dataSource.getExecutionDetail(executionId);
   }
 
-  async importTemplate(projectId: string, templateJson: any): Promise<ImportFlowResult> {
+  async importTemplate(
+    projectId: string,
+    templateJson: FlowExportTemplate | Record<string, unknown>
+  ): Promise<ImportFlowResult> {
     return this.dataSource.importTemplate(projectId, templateJson);
   }
 
-  async exportTemplate(flowId: string): Promise<any> {
+  async exportTemplate(flowId: string): Promise<FlowExportTemplate> {
     return this.dataSource.exportTemplate(flowId);
   }
 
-  async getJobs(flowId?: string, projectId?: string): Promise<any[]> {
+  async getJobs(flowId?: string, projectId?: string): Promise<ScenarioFlowJob[]> {
     return this.dataSource.getJobs(flowId, projectId);
   }
 
-  async getJobById(jobId: string): Promise<any> {
+  async getJobById(jobId: string): Promise<ScenarioFlowJob | null> {
     return this.dataSource.getJobById(jobId);
   }
 
-  async createJob(input: any): Promise<any> {
+  async createJob(input: Partial<ScenarioFlowJob> & { flowId: string; name: string }): Promise<ScenarioFlowJob> {
     return this.dataSource.createJob(input);
   }
 
-  async updateJob(jobId: string, input: any): Promise<any> {
+  async updateJob(jobId: string, input: Partial<ScenarioFlowJob>): Promise<ScenarioFlowJob> {
     return this.dataSource.updateJob(jobId, input);
   }
 
@@ -112,15 +120,15 @@ export class ScenarioFlowRepositoryImpl implements ScenarioFlowRepository {
     return this.dataSource.deleteJob(jobId);
   }
 
-  async toggleJobStatus(jobId: string): Promise<any> {
+  async toggleJobStatus(jobId: string): Promise<ScenarioFlowJob> {
     return this.dataSource.toggleJobStatus(jobId);
   }
 
-  async runNowJob(jobId: string): Promise<any> {
+  async runNowJob(jobId: string): Promise<ScenarioFlowJob> {
     return this.dataSource.runNowJob(jobId);
   }
 
-  async getJobExecutions(params?: any): Promise<any> {
+  async getJobExecutions(params?: GetJobExecutionsFilter): Promise<JobExecutionsResult> {
     return this.dataSource.getJobExecutions(params);
   }
 }

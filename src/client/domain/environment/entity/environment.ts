@@ -1,4 +1,5 @@
 import { EnvironmentType } from '@/src/core/utils/types';
+export type { EnvironmentType };
 
 export const ALL_ENVIRONMENT_TYPES: EnvironmentType[] = [
   'LOCAL',
@@ -39,22 +40,22 @@ export interface Environment {
  * Enforces rule: if isBaseUrl is true, LOCAL value is always null.
  */
 export function normalizeEnvironmentValues(
-  rawValues: any,
+  rawValues: unknown,
   isBaseUrl: boolean = true
 ): EnvironmentValuesMap {
-  let parsed: Record<string, any> = {};
+  let parsed: Record<string, unknown> = {};
 
   if (typeof rawValues === 'string') {
     try {
       const obj = JSON.parse(rawValues);
       if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-        parsed = obj;
+        parsed = obj as Record<string, unknown>;
       }
     } catch {
       parsed = {};
     }
   } else if (rawValues && typeof rawValues === 'object' && !Array.isArray(rawValues)) {
-    parsed = rawValues;
+    parsed = rawValues as Record<string, unknown>;
   }
 
   const result: EnvironmentValuesMap = {};
@@ -75,12 +76,12 @@ export function normalizeEnvironmentValues(
   return result;
 }
 
-export function parseRawVariables(raw: any): EnvironmentVariable[] {
+export function parseRawVariables(raw: unknown): EnvironmentVariable[] {
   if (Array.isArray(raw)) {
     return raw
-      .filter((item) => item && typeof item === 'object')
+      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
       .map((item) => ({
-        id: item.id || item.key || 'var-' + Math.random().toString(36).substring(2, 9),
+        id: String(item.id || item.key || 'var-' + Math.random().toString(36).substring(2, 9)),
         key: String(item.key || ''),
         value: typeof item.value === 'object' ? JSON.stringify(item.value) : String(item.value ?? ''),
         type: (item.type === 'secret' ? 'secret' : 'plain') as 'plain' | 'secret',
@@ -101,7 +102,7 @@ export function parseRawVariables(raw: any): EnvironmentVariable[] {
     }
   }
   if (raw && typeof raw === 'object') {
-    return Object.entries(raw)
+    return Object.entries(raw as Record<string, unknown>)
       .filter(([k]) => k && k.trim().length > 0)
       .map(([k, v]) => ({
         id: k,
@@ -118,12 +119,12 @@ export function parseRawVariables(raw: any): EnvironmentVariable[] {
  * Gets value for a specific stage from an environment.
  */
 export function getEnvironmentValue(
-  env?: { values?: any; environmentType?: string | null; baseUrl?: string | null; variables?: any } | null,
+  env?: { values?: unknown; isBaseUrl?: boolean; environmentType?: string | null; baseUrl?: string | null; variables?: unknown } | null,
   targetStage?: EnvironmentType | string | null
 ): string {
   if (!env) return '';
 
-  const isBaseUrl = (env as any).isBaseUrl !== false;
+  const isBaseUrl = env.isBaseUrl !== false;
   const values = normalizeEnvironmentValues(env.values, isBaseUrl);
 
   if (targetStage && targetStage in values) {
@@ -150,7 +151,7 @@ export function getEnvironmentValue(
  * If targetStage is omitted, returns the first populated base URL (priority: DEV, STAGING, TESTING, PROD).
  */
 export function getEnvironmentBaseUrl(
-  env?: { values?: any; isBaseUrl?: boolean; environmentType?: string | null; variables?: any; baseUrl?: string | null } | null,
+  env?: { values?: unknown; isBaseUrl?: boolean; environmentType?: string | null; variables?: unknown; baseUrl?: string | null } | null,
   targetStage?: EnvironmentType | string | null
 ): string {
   if (!env) return '';
@@ -210,7 +211,7 @@ export function getEnvironmentBaseUrl(
  * Helper to convert environment variables array to a key-value record.
  */
 export function getEnvironmentVariablesMap(
-  env?: { values?: any; isBaseUrl?: boolean; name?: string; variables?: any } | null,
+  env?: { values?: unknown; isBaseUrl?: boolean; name?: string; variables?: unknown } | null,
   targetStage?: EnvironmentType | string | null
 ): Record<string, string> {
   if (!env) return {};
