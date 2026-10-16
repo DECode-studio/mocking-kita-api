@@ -7,7 +7,7 @@ export class AssistantKnowledgeController {
     try {
       const { searchParams } = new URL(req.url);
       const category = searchParams.get('category') as 'product' | 'skill' | null;
-      const items = assistantKnowledgeService.getAllItems(category || undefined);
+      const items = await assistantKnowledgeService.getAllItems(category || undefined);
 
       return NextResponse.json({
         error: false,
@@ -36,7 +36,7 @@ export class AssistantKnowledgeController {
         );
       }
 
-      const item = assistantKnowledgeService.getItemById(type, id);
+      const item = await assistantKnowledgeService.getItemById(type, id);
       if (!item) {
         return NextResponse.json(
           { error: true, code: 404, message: 'Item not found' },
@@ -68,7 +68,7 @@ export class AssistantKnowledgeController {
         );
       }
 
-      const saved = assistantKnowledgeService.saveItem(body.category, body);
+      const saved = await assistantKnowledgeService.saveItem(body.category, body);
       return NextResponse.json({
         error: false,
         code: 200,
@@ -96,7 +96,7 @@ export class AssistantKnowledgeController {
         );
       }
 
-      const deleted = assistantKnowledgeService.deleteItem(type, id);
+      const deleted = await assistantKnowledgeService.deleteItem(type, id);
       if (!deleted) {
         return NextResponse.json(
           { error: true, code: 404, message: 'Item not found or could not be deleted' },
@@ -123,8 +123,8 @@ export class AssistantKnowledgeController {
       const allSkillsZip = searchParams.get('allSkillsZip') === 'true';
 
       if (allSkillsZip) {
-        const result = assistantKnowledgeService.exportAllSkillsZip();
-        return new Response(result.buffer, {
+        const result = await assistantKnowledgeService.exportAllSkillsZip();
+        return new Response(result.buffer as any, {
           headers: {
             'Content-Type': result.contentType,
             'Content-Disposition': `attachment; filename="${result.filename}"`,
@@ -143,7 +143,7 @@ export class AssistantKnowledgeController {
         );
       }
 
-      const result = assistantKnowledgeService.exportItem(type, id, asZip);
+      const result = await assistantKnowledgeService.exportItem(type, id, asZip);
       if (!result) {
         return NextResponse.json(
           { error: true, code: 404, message: 'Item not found for export' },
@@ -151,7 +151,7 @@ export class AssistantKnowledgeController {
         );
       }
 
-      return new Response(result.buffer, {
+      return new Response(result.buffer as any, {
         headers: {
           'Content-Type': result.contentType,
           'Content-Disposition': `attachment; filename="${result.filename}"`,
@@ -181,7 +181,7 @@ export class AssistantKnowledgeController {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
 
-      const result = assistantKnowledgeService.importFile(type, {
+      const result = await assistantKnowledgeService.importFile(type, {
         name: file.name,
         buffer,
       });
@@ -202,4 +202,3 @@ export class AssistantKnowledgeController {
 }
 
 export const assistantKnowledgeController = new AssistantKnowledgeController();
-

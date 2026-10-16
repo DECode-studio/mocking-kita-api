@@ -5,6 +5,9 @@ export interface AssistantKnowledgeItem {
   summary: string;
   content: string;
   format: 'md' | 'json';
+  keywords?: string[];
+  source?: string;
+  projectId?: string;
   isFolder?: boolean;
   updatedAt?: string;
 }
@@ -16,5 +19,8 @@ export interface SaveKnowledgeInput {
   content: string;
   category: 'product' | 'skill';
   format?: 'md' | 'json';
+  keywords?: string[];
+  source?: string;
+  projectId?: string;
 }
 
