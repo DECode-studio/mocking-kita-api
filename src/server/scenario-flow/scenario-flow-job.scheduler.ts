@@ -187,10 +187,10 @@ class ScenarioFlowJobScheduler {
     let nextIndex = job.dataSheetCurrentIndex;
     const newIterationCount = job.currentIteration + 1;
 
-    const handleFlowExecutionResult = async (result: any) => {
+    const handleFlowExecutionResult = async (result: Awaited<ReturnType<typeof executeScenarioFlow>>) => {
       if (result?.execution?.status === 'FAILED') {
         isSuccess = false;
-        const failedStep = result.steps?.find((s: any) => s.status === 'FAILED');
+        const failedStep = result.steps?.find((s) => s.status === 'FAILED');
         const errText = result.execution.errorSummary || failedStep?.errorMessage || 'Step execution or assertion failed';
         if (!errorMessage) {
           errorMessage = errText;
@@ -206,9 +206,9 @@ class ScenarioFlowJobScheduler {
             environmentName: job.environment?.name || undefined,
             iteration: newIterationCount,
             totalIterations: job.maxIterations || undefined,
-            failedStepName: failedStep?.stepName || failedStep?.name || undefined,
+            failedStepName: (failedStep && 'stepName' in failedStep ? (failedStep as { stepName?: string }).stepName : undefined) || (failedStep && 'name' in failedStep ? (failedStep as { name?: string }).name : undefined),
             failedStepOrder: failedStep?.stepOrder || undefined,
-            failedStepUrl: failedStep?.resolvedUrl || failedStep?.url || undefined,
+            failedStepUrl: failedStep && 'url' in failedStep ? (failedStep as { url?: string }).url : undefined,
             failedStepMethod: failedStep?.method || undefined,
             httpStatusCode: failedStep?.httpStatusCode || undefined,
             errorMessage: errText,
@@ -229,7 +229,7 @@ class ScenarioFlowJobScheduler {
           where: { id: job.dataSheetId },
         });
 
-        const rows = (Array.isArray(datasheet?.data) ? datasheet.data : []) as any[];
+        const rows = (Array.isArray(datasheet?.data) ? datasheet.data : []) as unknown[];
 
         if (rows.length === 0) {
           if (job.stopCondition === 'DATASHEET_EXHAUSTED') {
@@ -245,16 +245,16 @@ class ScenarioFlowJobScheduler {
             jobId: job.id,
             triggerSource: 'SCHEDULED_JOB',
             executedBy: `Job: ${job.name}`,
-            initialVariables: (job.customVariables as Record<string, any>) || {},
+            initialVariables: (job.customVariables as Record<string, unknown>) || {},
           });
           await handleFlowExecutionResult(result);
         } else if (job.dataIterationMode === 'BATCH_ALL') {
           // Execute flow for every row in data sheet
           for (let r = 0; r < rows.length; r++) {
             const rowData = rows[r];
-            const rowVariables = {
-              ...(job.customVariables as Record<string, any> || {}),
-              ...(typeof rowData === 'object' && rowData !== null ? rowData : { item: rowData }),
+            const rowVariables: Record<string, unknown> = {
+              ...((job.customVariables as Record<string, unknown>) || {}),
+              ...(typeof rowData === 'object' && rowData !== null ? (rowData as Record<string, unknown>) : { item: rowData }),
               _rowIndex: r,
             };
             const result = await executeScenarioFlow(job.flowId, {
@@ -271,9 +271,9 @@ class ScenarioFlowJobScheduler {
           // PER_TICK: Execute 1 row per tick
           const currentIndex = job.dataSheetCurrentIndex % rows.length;
           const rowData = rows[currentIndex];
-          const rowVariables = {
-            ...(job.customVariables as Record<string, any> || {}),
-            ...(typeof rowData === 'object' && rowData !== null ? rowData : { item: rowData }),
+          const rowVariables: Record<string, unknown> = {
+            ...((job.customVariables as Record<string, unknown>) || {}),
+            ...(typeof rowData === 'object' && rowData !== null ? (rowData as Record<string, unknown>) : { item: rowData }),
             _rowIndex: currentIndex,
           };
 
@@ -310,7 +310,7 @@ class ScenarioFlowJobScheduler {
         }
       } else {
         // STATIC or NONE
-        const initialVars = (job.customVariables as Record<string, any>) || {};
+        const initialVars = (job.customVariables as Record<string, unknown>) || {};
         const result = await executeScenarioFlow(job.flowId, {
           environmentId: job.environmentId || undefined,
           targetMode: job.targetMode,
@@ -321,9 +321,9 @@ class ScenarioFlowJobScheduler {
         });
         await handleFlowExecutionResult(result);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       isSuccess = false;
-      errorMessage = err?.message || 'Unknown error occurred during job run';
+      errorMessage = err instanceof Error ? err.message : 'Unknown error occurred during job run';
       console.error(`[ScenarioFlowJobScheduler] Error executing job '${job.name}':`, err);
 
       try {

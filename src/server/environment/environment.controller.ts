@@ -90,7 +90,7 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     const input = EnvironmentUpdateSchema.parse(raw);
     const { id } = IdParamsSchema.parse(await context.params);
     const before = await getEnvironmentById(id);
-    const environment = await updateEnvironment(id, input as any);
+    const environment = await updateEnvironment(id, input);
     await logChange({
       action: 'UPDATE',
       entityType: 'environment',

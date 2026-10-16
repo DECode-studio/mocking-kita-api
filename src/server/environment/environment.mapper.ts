@@ -10,9 +10,9 @@ export function toEnvironmentDomain(env: {
   projectId: string;
   name: string;
   isBaseUrl?: boolean;
-  values?: any;
+  values?: unknown;
   environmentType?: string | null;
-  variables?: any;
+  variables?: unknown;
   status: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -31,7 +31,7 @@ export function toEnvironmentDomain(env: {
       if (Array.isArray(parsed)) {
         parsedVariables = parsed;
       } else if (parsed && typeof parsed === 'object') {
-        parsedVariables = Object.entries(parsed).map(([k, v]) => ({
+        parsedVariables = Object.entries(parsed as Record<string, unknown>).map(([k, v]) => ({
           id: k,
           key: k,
           value: String(v),
@@ -43,7 +43,7 @@ export function toEnvironmentDomain(env: {
       parsedVariables = [];
     }
   } else if (env.variables && typeof env.variables === 'object') {
-    parsedVariables = Object.entries(env.variables).map(([k, v]) => ({
+    parsedVariables = Object.entries(env.variables as Record<string, unknown>).map(([k, v]) => ({
       id: k,
       key: k,
       value: String(v),
@@ -65,7 +65,7 @@ export function toEnvironmentDomain(env: {
     name: env.name,
     isBaseUrl,
     values,
-    environmentType: (env.environmentType as any) || null,
+    environmentType: (env.environmentType as Environment['environmentType']) || null,
     variables: parsedVariables,
     baseUrl,
     status: env.status,

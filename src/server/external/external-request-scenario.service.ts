@@ -1,4 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
+import { Prisma } from '@prisma/client';
 import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cache';
 
 export interface UpsertRequestScenarioInput {
@@ -6,14 +7,14 @@ export interface UpsertRequestScenarioInput {
   apiId: string;
   name: string;
   description?: string | null;
-  headers?: any;
-  queryParams?: any;
-  pathParams?: any;
-  body?: any;
+  headers?: Prisma.InputJsonValue;
+  queryParams?: Prisma.InputJsonValue;
+  pathParams?: Prisma.InputJsonValue;
+  body?: Prisma.InputJsonValue;
   bodyType?: string;
   matchType?: string;
   matchStrategy?: string;
-  bodyRules?: any;
+  bodyRules?: Prisma.InputJsonValue;
   strictBodyStructure?: boolean;
   priority?: number;
   status?: boolean;
@@ -61,14 +62,14 @@ export async function upsertExternalRequestScenario(input: UpsertRequestScenario
         apiId: input.apiId,
         name: input.name,
         description: input.description !== undefined ? input.description : existingRecord.description,
-        headers: input.headers !== undefined ? input.headers : existingRecord.headers,
-        queryParams: input.queryParams !== undefined ? input.queryParams : existingRecord.queryParams,
-        pathParams: input.pathParams !== undefined ? input.pathParams : existingRecord.pathParams,
-        body: input.body !== undefined ? input.body : existingRecord.body,
+        headers: input.headers !== undefined ? input.headers : (existingRecord.headers as Prisma.InputJsonValue),
+        queryParams: input.queryParams !== undefined ? input.queryParams : (existingRecord.queryParams as Prisma.InputJsonValue),
+        pathParams: input.pathParams !== undefined ? input.pathParams : (existingRecord.pathParams as Prisma.InputJsonValue),
+        body: input.body !== undefined ? input.body : (existingRecord.body as Prisma.InputJsonValue),
         bodyType: input.bodyType || existingRecord.bodyType,
         matchType: input.matchType || existingRecord.matchType,
         matchStrategy: input.matchStrategy || existingRecord.matchStrategy,
-        bodyRules: input.bodyRules !== undefined ? input.bodyRules : existingRecord.bodyRules,
+        bodyRules: input.bodyRules !== undefined ? input.bodyRules : (existingRecord.bodyRules as Prisma.InputJsonValue),
         strictBodyStructure: input.strictBodyStructure !== undefined ? input.strictBodyStructure : existingRecord.strictBodyStructure,
         priority: input.priority !== undefined ? input.priority : existingRecord.priority,
         status: input.status !== undefined ? input.status : existingRecord.status,

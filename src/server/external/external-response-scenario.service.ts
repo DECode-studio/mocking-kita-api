@@ -1,4 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
+import { Prisma } from '@prisma/client';
 import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cache';
 
 export interface UpsertResponseScenarioInput {
@@ -7,8 +8,8 @@ export interface UpsertResponseScenarioInput {
   name: string;
   description?: string | null;
   statusCode?: number;
-  headers?: any;
-  body?: any;
+  headers?: Prisma.InputJsonValue;
+  body?: Prisma.InputJsonValue;
   responseType?: string;
   filePath?: string | null;
   fileName?: string | null;
@@ -61,8 +62,8 @@ export async function upsertExternalResponseScenario(input: UpsertResponseScenar
         name: input.name,
         description: input.description !== undefined ? input.description : existingRecord.description,
         statusCode: input.statusCode !== undefined ? input.statusCode : existingRecord.statusCode,
-        headers: input.headers !== undefined ? input.headers : existingRecord.headers,
-        body: input.body !== undefined ? input.body : existingRecord.body,
+        headers: input.headers !== undefined ? input.headers : (existingRecord.headers as Prisma.InputJsonValue),
+        body: input.body !== undefined ? input.body : (existingRecord.body as Prisma.InputJsonValue),
         responseType: input.responseType || existingRecord.responseType,
         filePath: input.filePath !== undefined ? input.filePath : existingRecord.filePath,
         fileName: input.fileName !== undefined ? input.fileName : existingRecord.fileName,

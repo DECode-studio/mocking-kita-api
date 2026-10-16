@@ -33,6 +33,31 @@ export interface StreamChatOptions {
   signal?: AbortSignal;
 }
 
+export interface RouterAiSkill {
+  id: string;
+  name: string;
+  description?: string;
+  content: string;
+  keywords?: string[];
+  enabled?: boolean;
+  projectId?: string;
+  type?: string;
+  updatedAt?: string | Date;
+  createdAt?: string | Date;
+  [key: string]: unknown;
+}
+
+export interface RouterAiKnowledge {
+  id: string | number;
+  title: string;
+  content?: string;
+  source?: string;
+  projectId?: string;
+  updatedAt?: string | Date;
+  createdAt?: string | Date;
+  [key: string]: unknown;
+}
+
 export class RouterAiClient {
   /**
    * Get clean base URL without trailing slash or /v1 suffix
@@ -79,11 +104,12 @@ export class RouterAiClient {
         return { online: true, url: baseUrl };
       }
       return { online: false, url: baseUrl, message: `HTTP status ${res?.status || 'Unknown'}` };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err instanceof Error ? err : null;
       return {
         online: false,
         url: baseUrl,
-        message: err.name === 'AbortError' ? 'Koneksi timeout (2.5s)' : err.message,
+        message: errorObj?.name === 'AbortError' ? 'Koneksi timeout (2.5s)' : (errorObj?.message || String(err)),
       };
     }
   }
@@ -157,8 +183,10 @@ export class RouterAiClient {
         };
       }
 
-      const mappedModels: AiModelDefinition[] = modelItems.map((item: any) => {
-        const id = typeof item === 'string' ? item : item.id;
+      const mappedModels: AiModelDefinition[] = modelItems.map((item: unknown) => {
+        const id = typeof item === 'string'
+          ? item
+          : (item && typeof item === 'object' && 'id' in item ? String((item as Record<string, unknown>).id) : '');
         return inferModelMetadata(id);
       });
 
@@ -225,7 +253,7 @@ export class RouterAiClient {
 
     const projectId = options.projectId || this.getProjectId();
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       model: modelId,
       messages: options.messages,
       temperature: options.temperature ?? 0.5,
@@ -364,27 +392,31 @@ export class RouterAiClient {
         } finally {
           reader.releaseLock();
         }
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
+      } catch (err: unknown) {
+        const errorObj = err instanceof Error ? err : (err && typeof err === 'object' ? (err as Record<string, unknown>) : null);
+        const errName = errorObj && 'name' in errorObj ? String(errorObj.name) : '';
+        const errMsg = errorObj && 'message' in errorObj && typeof errorObj.message === 'string' ? errorObj.message : String(err);
+        const code = errorObj && 'code' in errorObj ? String(errorObj.code) : '';
+
+        if (errName === 'AbortError') {
           return;
         }
         if (candidate.id !== 'direct-router') {
-          await apiKeyManager.recordFailure(candidate.id, err.message);
+          await apiKeyManager.recordFailure(candidate.id, errMsg);
         }
-        lastErrorMsg = err.message;
+        lastErrorMsg = errMsg;
         if (i < candidateKeys.length - 1) {
           continue;
         }
 
         const isConnRefused =
-          err.code === 'ECONNREFUSED' ||
-          err.message?.includes('ECONNREFUSED') ||
-          err.message?.includes('fetch failed');
+          code === 'ECONNREFUSED' ||
+          errMsg.includes('ECONNREFUSED') ||
+          errMsg.includes('fetch failed');
 
         const message = isConnRefused
           ? `Tidak dapat terhubung ke Router AI di "${baseUrl}". Pastikan server router-ai telah dijalankan (mis. port 20127) atau atur ROUTER_AI_BASE_URL yang sesuai di .env.`
           : `Gagal memproses request ke Router AI: ${lastErrorMsg}`;
-
         yield { type: 'error', text: message, model: modelId };
         return;
       }
@@ -407,7 +439,7 @@ export class RouterAiClient {
     };
   }
 
-  public async getSkills(projectId = this.getProjectId()): Promise<any[]> {
+  public async getSkills(projectId = this.getProjectId()): Promise<RouterAiSkill[]> {
     const baseUrl = this.getBaseUrl();
     const url = projectId
       ? `${baseUrl}/api/agent-skill?projectId=${encodeURIComponent(projectId)}`
@@ -422,12 +454,12 @@ export class RouterAiClient {
       throw new Error(err.error || `Gagal memuat skills dari Router AI (${res.status})`);
     }
     const data = await res.json();
-    return Array.isArray(data.skills) ? data.skills : [];
+    return Array.isArray(data.skills) ? (data.skills as RouterAiSkill[]) : [];
   }
 
-  public async getSkill(id: string): Promise<any | null> {
+  public async getSkill(id: string): Promise<RouterAiSkill | null> {
     const skills = await this.getSkills();
-    return skills.find((s: any) => s.id === id) || null;
+    return skills.find((s) => s.id === id) || null;
   }
 
   public async saveSkill(input: {
@@ -438,7 +470,7 @@ export class RouterAiClient {
     keywords?: string[];
     enabled?: boolean;
     projectId?: string;
-  }): Promise<any> {
+  }): Promise<RouterAiSkill> {
     const baseUrl = this.getBaseUrl();
     const isUpdate = !!input.id;
     const url = isUpdate
@@ -474,7 +506,7 @@ export class RouterAiClient {
     return res.ok;
   }
 
-  public async getKnowledge(projectId = this.getProjectId()): Promise<any[]> {
+  public async getKnowledge(projectId = this.getProjectId()): Promise<RouterAiKnowledge[]> {
     const baseUrl = this.getBaseUrl();
     const url = projectId
       ? `${baseUrl}/api/agent-skill/knowledge?projectId=${encodeURIComponent(projectId)}`
@@ -489,10 +521,10 @@ export class RouterAiClient {
       throw new Error(err.error || `Gagal memuat product knowledge dari Router AI (${res.status})`);
     }
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    return Array.isArray(data) ? (data as RouterAiKnowledge[]) : [];
   }
 
-  public async getKnowledgeItem(id: string): Promise<any | null> {
+  public async getKnowledgeItem(id: string): Promise<RouterAiKnowledge | null> {
     const baseUrl = this.getBaseUrl();
     const res = await fetch(`${baseUrl}/api/agent-skill/knowledge/${encodeURIComponent(id)}`, {
       method: 'GET',
@@ -509,7 +541,7 @@ export class RouterAiClient {
     content: string;
     source?: string;
     projectId?: string;
-  }): Promise<any> {
+  }): Promise<RouterAiKnowledge> {
     const baseUrl = this.getBaseUrl();
     const isUpdate = !!input.id;
     const url = isUpdate
@@ -542,7 +574,7 @@ export class RouterAiClient {
     return res.ok;
   }
 
-  public async importSkills(formData: FormData): Promise<any> {
+  public async importSkills(formData: FormData): Promise<Record<string, unknown>> {
     const baseUrl = this.getBaseUrl();
     const projectId = this.getProjectId();
     if (!formData.has('projectId')) {

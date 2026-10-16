@@ -73,6 +73,7 @@ export async function getScenarioFlowById(id: string) {
             select: {
               id: true,
               name: true,
+              description: true,
               methodRequest: true,
               path: true,
               projectId: true,
@@ -273,7 +274,7 @@ export async function createExecutionRecord(data: {
   triggerSource?: string;
   targetMode: 'LIVE' | 'MOCK';
   totalSteps: number;
-  initialVariables?: any;
+  initialVariables?: Prisma.InputJsonValue;
   executedBy?: string;
 }) {
   return prisma.scenarioFlowExecution.create({
@@ -298,7 +299,7 @@ export async function updateExecutionRecord(
     passedSteps: number;
     failedSteps: number;
     durationMs: number;
-    finalVariables?: any;
+    finalVariables?: Prisma.InputJsonValue;
     errorSummary?: string | null;
   }
 ) {
@@ -325,10 +326,10 @@ export async function createExecutionStepRecord(data: {
   status: 'SUCCESS' | 'FAILED' | 'SKIPPED';
   httpStatusCode?: number | null;
   durationMs: number;
-  requestSnapshot?: any;
-  responseSnapshot?: any;
-  extractedVariables?: any;
-  assertionResults?: any;
+  requestSnapshot?: Prisma.InputJsonValue;
+  responseSnapshot?: Prisma.InputJsonValue;
+  extractedVariables?: Prisma.InputJsonValue;
+  assertionResults?: Prisma.InputJsonValue;
   errorMessage?: string | null;
 }) {
   return prisma.scenarioFlowExecutionStep.create({

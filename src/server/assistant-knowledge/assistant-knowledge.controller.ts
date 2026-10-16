@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { assistantKnowledgeService } from './assistant-knowledge.service';
 import { SaveKnowledgeInput } from './assistant-knowledge.types';
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === 'object' && 'message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+    return String((error as Record<string, unknown>).message);
+  }
+  return fallback;
+}
+
 export class AssistantKnowledgeController {
   public async getItems(req: NextRequest): Promise<NextResponse> {
     try {
@@ -15,9 +23,9 @@ export class AssistantKnowledgeController {
         message: 'Knowledge items retrieved successfully',
         data: items,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: true, code: 500, message: error?.message || 'Failed to retrieve knowledge items' },
+        { error: true, code: 500, message: getErrorMessage(error, 'Failed to retrieve knowledge items') },
         { status: 500 }
       );
     }
@@ -50,9 +58,9 @@ export class AssistantKnowledgeController {
         message: 'Item retrieved successfully',
         data: item,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: true, code: 500, message: error?.message || 'Failed to retrieve item' },
+        { error: true, code: 500, message: getErrorMessage(error, 'Failed to retrieve item') },
         { status: 500 }
       );
     }
@@ -75,9 +83,9 @@ export class AssistantKnowledgeController {
         message: 'Knowledge item saved successfully',
         data: saved,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: true, code: 500, message: error?.message || 'Failed to save item' },
+        { error: true, code: 500, message: getErrorMessage(error, 'Failed to save item') },
         { status: 500 }
       );
     }
@@ -109,9 +117,9 @@ export class AssistantKnowledgeController {
         code: 200,
         message: 'Item deleted successfully',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: true, code: 500, message: error?.message || 'Failed to delete item' },
+        { error: true, code: 500, message: getErrorMessage(error, 'Failed to delete item') },
         { status: 500 }
       );
     }
@@ -124,7 +132,7 @@ export class AssistantKnowledgeController {
 
       if (allSkillsZip) {
         const result = await assistantKnowledgeService.exportAllSkillsZip();
-        return new Response(result.buffer as any, {
+        return new Response(new Uint8Array(result.buffer), {
           headers: {
             'Content-Type': result.contentType,
             'Content-Disposition': `attachment; filename="${result.filename}"`,
@@ -151,15 +159,15 @@ export class AssistantKnowledgeController {
         );
       }
 
-      return new Response(result.buffer as any, {
+      return new Response(new Uint8Array(result.buffer), {
         headers: {
           'Content-Type': result.contentType,
           'Content-Disposition': `attachment; filename="${result.filename}"`,
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: true, code: 500, message: error?.message || 'Failed to export item' },
+        { error: true, code: 500, message: getErrorMessage(error, 'Failed to export item') },
         { status: 500 }
       );
     }
@@ -192,9 +200,9 @@ export class AssistantKnowledgeController {
         message: result.message,
         data: result,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       return NextResponse.json(
-        { error: true, code: 500, message: error?.message || 'Failed to import file' },
+        { error: true, code: 500, message: getErrorMessage(error, 'Failed to import file') },
         { status: 500 }
       );
     }

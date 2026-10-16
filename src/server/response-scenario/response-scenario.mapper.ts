@@ -6,8 +6,8 @@ export function toResponseScenarioDomain(r: {
   name: string;
   description: string | null;
   statusCode: number | null;
-  headers: any;
-  body: any;
+  headers: unknown;
+  body: unknown;
   responseType: string;
   filePath: string | null;
   fileName: string | null;
@@ -25,9 +25,9 @@ export function toResponseScenarioDomain(r: {
     name: r.name,
     description: r.description ?? undefined,
     statusCode: r.statusCode ?? 200,
-    headers: r.headers ?? {},
+    headers: (r.headers as Record<string, unknown>) ?? {},
     body: r.body ?? {},
-    responseType: r.responseType as any,
+    responseType: (r.responseType as ResponseScenario['responseType']) || 'JSON',
     filePath: r.filePath ?? undefined,
     fileName: r.fileName ?? undefined,
     delayMs: r.delayMs,

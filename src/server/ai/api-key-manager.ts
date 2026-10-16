@@ -1,4 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
+import { Prisma } from '@prisma/client';
 import { encryptApiKey, decryptApiKey, createKeyHint } from './encryption';
 
 export interface DecryptedApiKeyRecord {
@@ -152,7 +153,7 @@ export class AiApiKeyManager {
    * Update existing API key metadata or key value
    */
   public async updateKey(id: string, data: { name?: string; priority?: number; isActive?: boolean; plainKey?: string }) {
-    const updateData: any = {};
+    const updateData: Prisma.AiApiKeyUpdateInput = {};
     if (data.name !== undefined) updateData.name = data.name.trim();
     if (data.priority !== undefined) updateData.priority = Number(data.priority);
     if (data.isActive !== undefined) updateData.isActive = Boolean(data.isActive);
@@ -266,15 +267,18 @@ export class AiApiKeyManager {
         message: `Router AI merespons status HTTP ${res.status}: ${errText.substring(0, 150)}`,
         routerUrl: baseUrl,
       };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err instanceof Error ? err : (err && typeof err === 'object' ? (err as Record<string, unknown>) : null);
+      const code = errorObj && 'code' in errorObj ? String(errorObj.code) : '';
+      const errMsg = errorObj && 'message' in errorObj && typeof errorObj.message === 'string' ? errorObj.message : String(err);
       const isConnRefused =
-        err.code === 'ECONNREFUSED' ||
-        err.message?.includes('ECONNREFUSED') ||
-        err.message?.includes('fetch failed');
+        code === 'ECONNREFUSED' ||
+        errMsg.includes('ECONNREFUSED') ||
+        errMsg.includes('fetch failed');
 
       const message = isConnRefused
         ? `Tidak dapat terhubung ke Router AI di "${baseUrl}". Pastikan server router-ai telah aktif (npm run local di port 20127).`
-        : `Gagal menghubungi server Router AI: ${err.message}`;
+        : `Gagal menghubungi server Router AI: ${errMsg}`;
 
       return {
         success: false,

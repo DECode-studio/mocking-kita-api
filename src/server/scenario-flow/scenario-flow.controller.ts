@@ -154,8 +154,9 @@ export async function importScenarioFlowRoute(
     });
 
     return ok(result);
-  } catch (error: any) {
-    return fail(error.message || 'Failed to import scenario flow template', 400, 'IMPORT_FAILED');
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Failed to import scenario flow template';
+    return fail(msg, 400, 'IMPORT_FAILED');
   }
 }
 
@@ -185,8 +186,9 @@ export async function importScenarioFlowGlobalRoute(request: Request) {
     });
 
     return ok(result);
-  } catch (error: any) {
-    return fail(error.message || 'Failed to import scenario flow template', 400, 'IMPORT_FAILED');
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Failed to import scenario flow template';
+    return fail(msg, 400, 'IMPORT_FAILED');
   }
 }
 
@@ -408,8 +410,9 @@ export async function runScenarioFlowRoute(
     });
 
     return ok(result);
-  } catch (error: any) {
-    return fail(error.message || 'Execution error', 500, 'EXECUTION_FAILED');
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Execution error';
+    return fail(msg, 500, 'EXECUTION_FAILED');
   }
 }
 
@@ -431,8 +434,9 @@ export async function exportScenarioFlowRoute(
         'Content-Disposition': `attachment; filename="${template.flow.name.toLowerCase().replace(/[^a-z0-9]/g, '_')}_scenario_flow.json"`,
       },
     });
-  } catch (error: any) {
-    return fail(error.message || 'Failed to export scenario flow', 500, 'EXPORT_FAILED');
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Failed to export scenario flow';
+    return fail(msg, 500, 'EXPORT_FAILED');
   }
 }
 

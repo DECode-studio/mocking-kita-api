@@ -1,11 +1,16 @@
 import { formatDate } from '@/src/core/utils/date';
+import {
+  ScenarioFlowExecution,
+  ScenarioFlowExecutionStep,
+  AssertionResult,
+} from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { getJobExecutions, GetJobExecutionsParams } from './scenario-flow-job.repository';
 import { getExecutionById } from './scenario-flow.repository';
 
 /**
  * Escapes values for standard CSV format
  */
-function escapeCsv(val: any): string {
+function escapeCsv(val: unknown): string {
   if (val === undefined || val === null) return '""';
   const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
   return `"${str.replace(/"/g, '""')}"`;
@@ -14,7 +19,7 @@ function escapeCsv(val: any): string {
 /**
  * Generates Markdown report for a single execution
  */
-export function generateSingleExecutionLogMarkdown(execution: any, flowName?: string): string {
+export function generateSingleExecutionLogMarkdown(execution: ScenarioFlowExecution, flowName?: string): string {
   const isSuccess = execution.status === 'SUCCESS';
   const steps = execution.steps || [];
   const title = execution.flow?.name || flowName || 'Scenario Flow';
@@ -65,7 +70,7 @@ export function generateSingleExecutionLogMarkdown(execution: any, flowName?: st
     }
 
     if (step.requestSnapshot) {
-      const req = step.requestSnapshot as any;
+      const req = step.requestSnapshot;
       md += `\n#### 📤 Request Sent\n`;
       if (req.headers && Object.keys(req.headers).length > 0) {
         md += `**Headers:**\n\`\`\`json\n${JSON.stringify(req.headers, null, 2)}\n\`\`\`\n`;
@@ -76,14 +81,14 @@ export function generateSingleExecutionLogMarkdown(execution: any, flowName?: st
     }
 
     if (step.responseSnapshot) {
-      const resp = step.responseSnapshot as any;
+      const resp = step.responseSnapshot;
       md += `\n#### 📥 Response Received\n`;
       if (resp.body !== undefined && resp.body !== null) {
         md += `\`\`\`json\n${typeof resp.body === 'object' ? JSON.stringify(resp.body, null, 2) : resp.body}\n\`\`\`\n`;
       }
     }
 
-    const assertions = (step.assertionResults as any[]) || [];
+    const assertions = (step.assertionResults as AssertionResult[]) || [];
     if (assertions.length > 0) {
       md += `\n#### 🛡️ Assertions (${assertions.filter((a) => a.passed).length}/${assertions.length} passed)\n\n`;
       md += `| Rule | Operator | Expected | Actual | Result |\n`;
@@ -95,7 +100,7 @@ export function generateSingleExecutionLogMarkdown(execution: any, flowName?: st
       }
     }
 
-    const extracted = (step.extractedVariables as Record<string, any>) || {};
+    const extracted = (step.extractedVariables as Record<string, unknown>) || {};
     if (Object.keys(extracted).length > 0) {
       md += `\n#### 🔑 Extracted Variables\n\n`;
       md += `| Variable | Extracted Value |\n`;
@@ -115,7 +120,7 @@ export function generateSingleExecutionLogMarkdown(execution: any, flowName?: st
 /**
  * Generates Markdown report for multiple executions
  */
-export function generateMultiRunLogMarkdown(executions: any[], flowName?: string): string {
+export function generateMultiRunLogMarkdown(executions: ScenarioFlowExecution[], flowName?: string): string {
   const totalRuns = executions.length;
   const title = flowName || executions[0]?.flow?.name || 'Scenario Flow';
   const passedRuns = executions.filter((e) => e.status === 'SUCCESS').length;
@@ -191,7 +196,7 @@ export function generateMultiRunLogMarkdown(executions: any[], flowName?: string
       }
 
       if (step.requestSnapshot) {
-        const req = step.requestSnapshot as any;
+        const req = step.requestSnapshot;
         md += `\n###### 📤 Request Sent\n`;
         if (req.headers && Object.keys(req.headers).length > 0) {
           md += `**Headers:**\n\`\`\`json\n${JSON.stringify(req.headers, null, 2)}\n\`\`\`\n`;
@@ -202,14 +207,14 @@ export function generateMultiRunLogMarkdown(executions: any[], flowName?: string
       }
 
       if (step.responseSnapshot) {
-        const resp = step.responseSnapshot as any;
+        const resp = step.responseSnapshot;
         md += `\n###### 📥 Response Received\n`;
         if (resp.body !== undefined && resp.body !== null) {
           md += `\`\`\`json\n${typeof resp.body === 'object' ? JSON.stringify(resp.body, null, 2) : resp.body}\n\`\`\`\n`;
         }
       }
 
-      const assertions = (step.assertionResults as any[]) || [];
+      const assertions = (step.assertionResults as AssertionResult[]) || [];
       if (assertions.length > 0) {
         md += `\n###### 🛡️ Assertions (${assertions.filter((a) => a.passed).length}/${assertions.length} passed)\n\n`;
         md += `| Rule | Operator | Expected | Actual | Result |\n`;
@@ -221,7 +226,7 @@ export function generateMultiRunLogMarkdown(executions: any[], flowName?: string
         }
       }
 
-      const extracted = (step.extractedVariables as Record<string, any>) || {};
+      const extracted = (step.extractedVariables as Record<string, unknown>) || {};
       if (Object.keys(extracted).length > 0) {
         md += `\n###### 🔑 Extracted Variables\n\n`;
         md += `| Variable | Extracted Value |\n`;
@@ -244,7 +249,7 @@ export function generateMultiRunLogMarkdown(executions: any[], flowName?: string
 /**
  * Generates CSV report for a single execution
  */
-export function generateSingleExecutionLogCsv(execution: any, _flowName?: string): string {
+export function generateSingleExecutionLogCsv(execution: ScenarioFlowExecution, _flowName?: string): string {
   const steps = execution.steps || [];
   const headers = [
     'Step Order',
@@ -265,7 +270,7 @@ export function generateSingleExecutionLogCsv(execution: any, _flowName?: string
   rows.push(headers.map((h) => `"${h}"`).join(','));
 
   for (const step of steps) {
-    const assertions = (step.assertionResults as any[]) || [];
+    const assertions = (step.assertionResults as AssertionResult[]) || [];
     const passedAssertions = assertions.filter((a) => a.passed).length;
     const failedAssertions = assertions.length - passedAssertions;
     const extracted = step.extractedVariables ? JSON.stringify(step.extractedVariables) : '';
@@ -294,7 +299,7 @@ export function generateSingleExecutionLogCsv(execution: any, _flowName?: string
 /**
  * Generates CSV report for multiple executions
  */
-export function generateMultiRunLogCsv(executions: any[], _flowName?: string): string {
+export function generateMultiRunLogCsv(executions: ScenarioFlowExecution[], _flowName?: string): string {
   const headers = [
     'Run #',
     'Execution ID',
@@ -354,7 +359,7 @@ export function generateMultiRunLogCsv(executions: any[], _flowName?: string): s
     }
 
     for (const step of steps) {
-      const assertions = (step.assertionResults as any[]) || [];
+      const assertions = (step.assertionResults as AssertionResult[]) || [];
       const passedAssertions = assertions.filter((a) => a.passed).length;
       const failedAssertions = assertions.length - passedAssertions;
       const extracted = step.extractedVariables ? JSON.stringify(step.extractedVariables) : '';
@@ -417,8 +422,8 @@ export async function exportJobExecutionsReport(params: {
 
     const content =
       format === 'md'
-        ? generateSingleExecutionLogMarkdown(single, flowTitle)
-        : generateSingleExecutionLogCsv(single, flowTitle);
+        ? generateSingleExecutionLogMarkdown(single as unknown as ScenarioFlowExecution, flowTitle)
+        : generateSingleExecutionLogCsv(single as unknown as ScenarioFlowExecution, flowTitle);
 
     const contentType = format === 'md' ? 'text/markdown; charset=utf-8' : 'text/csv; charset=utf-8';
     return { content, filename, contentType };
@@ -448,13 +453,13 @@ export async function exportJobExecutionsReport(params: {
   } else if (items.length === 1) {
     content =
       format === 'md'
-        ? generateSingleExecutionLogMarkdown(items[0], flowTitle)
-        : generateSingleExecutionLogCsv(items[0], flowTitle);
+        ? generateSingleExecutionLogMarkdown(items[0] as unknown as ScenarioFlowExecution, flowTitle)
+        : generateSingleExecutionLogCsv(items[0] as unknown as ScenarioFlowExecution, flowTitle);
   } else {
     content =
       format === 'md'
-        ? generateMultiRunLogMarkdown(items, flowTitle)
-        : generateMultiRunLogCsv(items, flowTitle);
+        ? generateMultiRunLogMarkdown(items as unknown as ScenarioFlowExecution[], flowTitle)
+        : generateMultiRunLogCsv(items as unknown as ScenarioFlowExecution[], flowTitle);
   }
 
   const contentType = format === 'md' ? 'text/markdown; charset=utf-8' : 'text/csv; charset=utf-8';

@@ -1,4 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
+import { Prisma } from '@prisma/client';
 import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cache';
 
 export interface UpsertApiInput {
@@ -124,7 +125,7 @@ export async function listExternalApis(params: {
   const limit = Math.max(1, Math.min(100, params.limit || 20));
   const skip = (page - 1) * limit;
 
-  const whereCondition: any = {
+  const whereCondition: Prisma.ApiWhereInput = {
     projectId: params.projectId,
     deletedAt: null,
   };
