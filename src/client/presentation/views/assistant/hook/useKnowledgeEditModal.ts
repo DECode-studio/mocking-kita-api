@@ -21,6 +21,7 @@ export const useKnowledgeEditModal = ({
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'product' | 'skill'>('product');
   const [summary, setSummary] = useState('');
+  const [keywordsInput, setKeywordsInput] = useState('');
   const [content, setContent] = useState('');
   const [format, setFormat] = useState<'md' | 'json'>('md');
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
@@ -34,13 +35,15 @@ export const useKnowledgeEditModal = ({
       if (item) {
         setTitle(item.title);
         setCategory(item.category);
-        setSummary(item.summary || '');
+        setSummary(item.summary || item.source || '');
+        setKeywordsInput(Array.isArray(item.keywords) ? item.keywords.join(', ') : '');
         setContent(item.content || '');
         setFormat(item.format || 'md');
       } else {
         setTitle('');
         setCategory(defaultCategory);
         setSummary('');
+        setKeywordsInput('');
         setContent('');
         setFormat('md');
       }
@@ -105,6 +108,12 @@ export const useKnowledgeEditModal = ({
     try {
       setIsSubmitting(true);
       setError(null);
+
+      const parsedKeywords = keywordsInput
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean);
+
       await onSave({
         id: item?.id,
         title: title.trim(),
@@ -112,6 +121,8 @@ export const useKnowledgeEditModal = ({
         summary: summary.trim(),
         content: content.trim(),
         format,
+        keywords: parsedKeywords,
+        source: summary.trim() || 'Product Knowledge',
       });
       onClose();
     } catch (err: any) {
@@ -128,6 +139,8 @@ export const useKnowledgeEditModal = ({
     setCategory,
     summary,
     setSummary,
+    keywordsInput,
+    setKeywordsInput,
     content,
     setContent,
     format,

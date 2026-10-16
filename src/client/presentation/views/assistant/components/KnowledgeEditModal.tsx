@@ -52,6 +52,8 @@ export const KnowledgeEditModal: React.FC<KnowledgeEditModalProps> = ({
     setCategory,
     summary,
     setSummary,
+    keywordsInput,
+    setKeywordsInput,
     content,
     setContent,
     format,
@@ -203,17 +205,36 @@ export const KnowledgeEditModal: React.FC<KnowledgeEditModalProps> = ({
             {/* Summary Input */}
             <div>
               <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Ringkasan / Summary
+                {category === 'skill' ? 'Deskripsi Skill' : 'Sumber / Source Dokumen'}
               </label>
               <input
                 id={ASSISTANT_SEMANTIC_ID.KNOWLEDGE_EDIT_SUMMARY_INPUT}
                 type="text"
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
-                placeholder="Deskripsi singkat modul untuk indexing dan pencarian AI..."
+                placeholder={category === 'skill' ? 'Deskripsi kegunaan skill untuk Router AI...' : 'Contoh: Architecture Guide v1 / API Docs'}
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
               />
             </div>
+
+            {/* Keywords Trigger Input (Skills only) */}
+            {category === 'skill' && (
+              <div>
+                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Kata Kunci Trigger / Keywords (Pisahkan dengan koma)
+                </label>
+                <input
+                  type="text"
+                  value={keywordsInput}
+                  onChange={(e) => setKeywordsInput(e.target.value)}
+                  placeholder="Contoh: insomnia, converter, flow, scenario, transform"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Router AI akan otomatis menginjeksi instruksi skill ini jika user menyebut kata kunci di atas atau mengetik @{title || 'skill'}.
+                </p>
+              </div>
+            )}
 
             {/* Markdown Editor with Toolbar & Tab Switcher */}
             <div className="space-y-2 pt-1">

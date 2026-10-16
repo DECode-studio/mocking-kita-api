@@ -58,12 +58,15 @@ export const KnowledgeBaseExplorer: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-purple-400" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              {ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TITLE}
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <span>{ASSISTANT_TEXT.CONVERTERS.KNOWLEDGE_TITLE}</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                Router AI
+              </span>
             </h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Kelola Product Knowledge dan Skills (.md, .json, .zip) yang tersimpan di direktori lokal server.
+            Tersinkronisasi langsung dengan Router AI Gateway (Project: <code className="font-mono text-purple-600 dark:text-purple-400">mock-api-studio</code>) dengan Vector RAG & Project Skills.
           </p>
         </div>
 
@@ -254,6 +257,19 @@ export const KnowledgeBaseExplorer: React.FC = () => {
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {selectedSection.summary}
                   </p>
+                  {selectedSection.keywords && selectedSection.keywords.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1 mt-2">
+                      <span className="text-[10px] font-semibold text-slate-400">Triggers:</span>
+                      {selectedSection.keywords.map((kw, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
+                        >
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Toolbar for selected item */}
