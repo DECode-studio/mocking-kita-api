@@ -77,6 +77,11 @@ export const ENV = {
     return process.env.NODE_ENV || 'development';
   },
 
+  /** Router AI active project ID or slug */
+  get ROUTER_AI_PROJECT_ID(): string {
+    return (process.env.ROUTER_AI_PROJECT_ID || 'mock-api-studio').trim();
+  },
+
   /** Whether the environment is production */
   get IS_PRODUCTION(): boolean {
     return process.env.NODE_ENV === 'production';

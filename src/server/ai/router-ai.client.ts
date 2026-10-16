@@ -25,6 +25,9 @@ export interface StreamChatOptions {
   top_p?: number;
   max_tokens?: number;
   apiKey?: string;
+  projectId?: string;
+  userRole?: string;
+  userName?: string;
   onReasoning?: (delta: string) => void;
   onContent?: (delta: string) => void;
   signal?: AbortSignal;
@@ -220,6 +223,8 @@ export class RouterAiClient {
       candidateKeys = [{ id: 'direct-router', name: 'Router AI (Direct)', key: '' }];
     }
 
+    const projectId = options.projectId || this.getProjectId();
+
     const payload: Record<string, any> = {
       model: modelId,
       messages: options.messages,
@@ -227,6 +232,7 @@ export class RouterAiClient {
       top_p: options.top_p ?? 0.95,
       max_tokens: options.max_tokens ?? 4096,
       stream: true,
+      projectId,
     };
 
     if (modelDef.supportsReasoning) {
@@ -244,7 +250,10 @@ export class RouterAiClient {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
+        'x-project-id': projectId,
       };
+      if (options.userRole) headers['x-user-role'] = options.userRole;
+      if (options.userName) headers['x-user-name'] = options.userName;
       if (candidate.key) {
         headers['Authorization'] = `Bearer ${candidate.key}`;
       }
@@ -380,6 +389,179 @@ export class RouterAiClient {
         return;
       }
     }
+  }
+
+  // ─── Project, Skill & Knowledge Management Methods ────────────────────────
+
+  public getProjectId(): string {
+    return (process.env.ROUTER_AI_PROJECT_ID || 'mock-api-studio').trim();
+  }
+
+  public getAuthHeaders(userRole = 'Administrator', userName = 'mock-api-studio'): Record<string, string> {
+    const projectId = this.getProjectId();
+    return {
+      'x-project-id': projectId,
+      'x-user-role': userRole,
+      'x-user-name': userName,
+      'Content-Type': 'application/json',
+    };
+  }
+
+  public async getSkills(projectId = this.getProjectId()): Promise<any[]> {
+    const baseUrl = this.getBaseUrl();
+    const url = projectId
+      ? `${baseUrl}/api/agent-skill?projectId=${encodeURIComponent(projectId)}`
+      : `${baseUrl}/api/agent-skill`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Gagal memuat skills dari Router AI (${res.status})`);
+    }
+    const data = await res.json();
+    return Array.isArray(data.skills) ? data.skills : [];
+  }
+
+  public async getSkill(id: string): Promise<any | null> {
+    const skills = await this.getSkills();
+    return skills.find((s: any) => s.id === id) || null;
+  }
+
+  public async saveSkill(input: {
+    id?: string;
+    name: string;
+    description?: string;
+    content: string;
+    keywords?: string[];
+    enabled?: boolean;
+    projectId?: string;
+  }): Promise<any> {
+    const baseUrl = this.getBaseUrl();
+    const isUpdate = !!input.id;
+    const url = isUpdate
+      ? `${baseUrl}/api/agent-skill/${encodeURIComponent(input.id!)}`
+      : `${baseUrl}/api/agent-skill`;
+    const payload = {
+      type: 'skill',
+      name: input.name,
+      description: input.description || '',
+      content: input.content,
+      keywords: input.keywords || [],
+      enabled: input.enabled !== false,
+      projectId: input.projectId || this.getProjectId(),
+    };
+    const res = await fetch(url, {
+      method: isUpdate ? 'PUT' : 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Gagal menyimpan skill ke Router AI (${res.status})`);
+    }
+    return await res.json();
+  }
+
+  public async deleteSkill(id: string): Promise<boolean> {
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/agent-skill/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+    return res.ok;
+  }
+
+  public async getKnowledge(projectId = this.getProjectId()): Promise<any[]> {
+    const baseUrl = this.getBaseUrl();
+    const url = projectId
+      ? `${baseUrl}/api/agent-skill/knowledge?projectId=${encodeURIComponent(projectId)}`
+      : `${baseUrl}/api/agent-skill/knowledge`;
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Gagal memuat product knowledge dari Router AI (${res.status})`);
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  public async getKnowledgeItem(id: string): Promise<any | null> {
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/agent-skill/knowledge/${encodeURIComponent(id)}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  }
+
+  public async saveKnowledge(input: {
+    id?: string;
+    title: string;
+    content: string;
+    source?: string;
+    projectId?: string;
+  }): Promise<any> {
+    const baseUrl = this.getBaseUrl();
+    const isUpdate = !!input.id;
+    const url = isUpdate
+      ? `${baseUrl}/api/agent-skill/knowledge/${encodeURIComponent(input.id!)}`
+      : `${baseUrl}/api/agent-skill/knowledge`;
+    const payload = {
+      projectId: input.projectId || this.getProjectId(),
+      title: input.title,
+      content: input.content,
+      source: input.source || 'Product Knowledge',
+    };
+    const res = await fetch(url, {
+      method: isUpdate ? 'PUT' : 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Gagal menyimpan product knowledge ke Router AI (${res.status})`);
+    }
+    return await res.json();
+  }
+
+  public async deleteKnowledge(id: string): Promise<boolean> {
+    const baseUrl = this.getBaseUrl();
+    const res = await fetch(`${baseUrl}/api/agent-skill/knowledge/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+    return res.ok;
+  }
+
+  public async importSkills(formData: FormData): Promise<any> {
+    const baseUrl = this.getBaseUrl();
+    const projectId = this.getProjectId();
+    if (!formData.has('projectId')) {
+      formData.append('projectId', projectId);
+    }
+    const res = await fetch(`${baseUrl}/api/agent-skill/import`, {
+      method: 'POST',
+      headers: {
+        'x-project-id': projectId,
+        'x-user-role': 'Administrator',
+        'x-user-name': 'mock-api-studio',
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Gagal import ke Router AI (${res.status})`);
+    }
+    return await res.json();
   }
 }
 
