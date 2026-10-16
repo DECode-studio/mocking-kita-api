@@ -96,7 +96,7 @@ describe('useKnowledgeEditModal Hook', () => {
     });
 
     await act(async () => {
-      await result.current.handleSubmit({ preventDefault: vi.fn() } as any);
+      await result.current.handleSubmit({ preventDefault: vi.fn() } as unknown as React.FormEvent);
     });
 
     expect(result.current.error).toBeNull();
@@ -107,6 +107,8 @@ describe('useKnowledgeEditModal Hook', () => {
       summary: '',
       content: '# Some documentation',
       format: 'md',
+      keywords: [],
+      source: 'Product Knowledge',
     });
     expect(onClose).toHaveBeenCalled();
   });

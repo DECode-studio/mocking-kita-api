@@ -72,9 +72,9 @@ describe('Phase 6: End-to-End Data Sheet Integration Flow', () => {
 
     const counters: Record<string, number> = {};
 
-    const resolvedUrl = interpolateVariables(stepUrlTemplate, runtimeVariables, counters);
-    const resolvedHeaders = interpolateVariables(stepHeadersTemplate, runtimeVariables, counters);
-    const resolvedBody = interpolateVariables(stepBodyTemplate, runtimeVariables, counters);
+    const resolvedUrl = interpolateVariables(stepUrlTemplate, runtimeVariables, counters) as string;
+    const resolvedHeaders = interpolateVariables(stepHeadersTemplate, runtimeVariables, counters) as Record<string, string>;
+    const resolvedBody = interpolateVariables(stepBodyTemplate, runtimeVariables, counters) as Record<string, unknown>;
 
     expect(resolvedUrl).toBe('/api/v1/customers/customer1@acme.com');
     expect(resolvedHeaders['X-Target-User']).toBe('alice');

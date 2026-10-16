@@ -53,7 +53,21 @@ describe('useApiDetail', () => {
     const { result } = renderHook(() => useApiDetail(mockApiDetailUseCase, initialDetailSnapshot));
 
     await act(async () => {
-      const created = await result.current.createRequestScenario({ name: 'New Req' });
+      const created = await result.current.createRequestScenario({
+        apiId: 'api-1',
+        name: 'New Req',
+        description: '',
+        matchType: 'EXACT',
+        matchStrategy: 'ALL',
+        priority: 100,
+        status: true,
+        headers: {},
+        queryParams: {},
+        pathParams: {},
+        body: {},
+        bodyType: 'JSON',
+        bodyRules: [],
+      });
       expect(created.id).toBe('req-2');
     });
 
