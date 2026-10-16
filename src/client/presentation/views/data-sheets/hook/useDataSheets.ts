@@ -89,7 +89,7 @@ export function useDataSheets(projectId?: string) {
     category?: string | null;
     description?: string | null;
     format: 'LIST' | 'TABLE';
-    data: any[];
+    data: unknown[];
     status?: boolean;
   }) => {
     try {

@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getService } from '@/src/core/di/container';
 import { CLIENT_DI_TOKENS } from '@/src/core/di/tokens';
-import { ScenarioFlowExecution, ScenarioFlowJob } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import {
+  ScenarioFlowExecution,
+  ScenarioFlowJob,
+  ScenarioFlowExecutionStep,
+} from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 
 interface UseJobExecutionLogsParams {
   flowId?: string;
@@ -38,7 +42,7 @@ export function useJobExecutionLogs({
   const [isExporting, setIsExporting] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [selectedExecution, setSelectedExecution] = useState<ScenarioFlowExecution | null>(null);
-  const [selectedInspectStep, setSelectedInspectStep] = useState<any | null>(null);
+  const [selectedInspectStep, setSelectedInspectStep] = useState<ScenarioFlowExecutionStep | null>(null);
 
   // Synchronize when flowId changes
   useEffect(() => {

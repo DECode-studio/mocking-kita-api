@@ -150,7 +150,8 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
 
       // Initialize step positions from flow.variables._canvasLayout
       if (flowData?.steps) {
-        const savedLayout = (flowData.variables as any)?._canvasLayout as
+        const flowVars = flowData.variables as Record<string, unknown> | null | undefined;
+        const savedLayout = flowVars?._canvasLayout as
           | Record<string, { x: number; y: number }>
           | undefined;
         setStepPositions(computeInitialPositions(flowData.steps, savedLayout));
@@ -435,7 +436,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
         environmentId: matchedEnv?.id || selectedEnvironmentId || undefined,
         targetMode,
         stepId: step.id,
-        initialVariables: latestExecution?.finalVariables || undefined,
+        initialVariables: (latestExecution?.finalVariables as Record<string, unknown>) || undefined,
       });
 
       const fullExec = await flowUseCase.getExecutionDetail(result.execution.id);
@@ -469,7 +470,7 @@ export function useScenarioFlowDetail(projectId: string | undefined, flowId: str
     description?: string;
     defaultEnvironmentId?: string;
     stopOnFailure: boolean;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
   }) => {
     if (!flow) return;
     try {

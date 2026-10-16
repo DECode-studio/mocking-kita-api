@@ -25,6 +25,11 @@ import {
   SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
 } from '../constant';
 
+export type JobModalSavePayload = Partial<ScenarioFlowJob> & {
+  flowId: string;
+  name: string;
+};
+
 interface JobModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,7 +39,7 @@ interface JobModalProps {
   environments: Environment[];
   dataSheets: DataSheet[];
   editingJob: ScenarioFlowJob | null;
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: JobModalSavePayload) => Promise<void>;
 }
 
 const CRON_PRESETS = [
@@ -156,14 +161,14 @@ export const JobModal: React.FC<JobModalProps> = ({
       return;
     }
 
-    let parsedCustomVariables: any = null;
+    let parsedCustomVariables: Record<string, unknown> | null = null;
     if (dataSourceType === 'STATIC' || customVariablesJson.trim() !== '{\n  \n}') {
       try {
         if (customVariablesJson.trim()) {
-          parsedCustomVariables = JSON.parse(customVariablesJson);
+          parsedCustomVariables = JSON.parse(customVariablesJson) as Record<string, unknown>;
         }
-      } catch (err: any) {
-        setJsonError('Invalid JSON format: ' + err.message);
+      } catch (err: unknown) {
+        setJsonError('Invalid JSON format: ' + (err instanceof Error ? err.message : String(err)));
         return;
       }
     }
@@ -432,7 +437,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                     <select
                       id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_INTERVAL_UNIT}
                       value={intervalUnit}
-                      onChange={(e) => setIntervalUnit(e.target.value as any)}
+                      onChange={(e) => setIntervalUnit(e.target.value as 'seconds' | 'minutes' | 'hours')}
                       className="px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                     >
                       <option value="seconds">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_SECONDS}</option>
@@ -522,7 +527,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                       <select
                         id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_ITERATION_MODE}
                         value={dataIterationMode}
-                        onChange={(e) => setDataIterationMode(e.target.value as any)}
+                        onChange={(e) => setDataIterationMode(e.target.value as 'PER_TICK' | 'BATCH_ALL')}
                         className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                       >
                         <option value="PER_TICK">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_ITERATION_PER_TICK}</option>
@@ -579,7 +584,7 @@ export const JobModal: React.FC<JobModalProps> = ({
                   <select
                     id={SCENARIO_FLOW_DETAIL_SEMANTIC_ID.MODAL_JOB_SELECT_STOP_COND}
                     value={stopCondition}
-                    onChange={(e) => setStopCondition(e.target.value as any)}
+                    onChange={(e) => setStopCondition(e.target.value as ScenarioFlowJob['stopCondition'])}
                     className="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer"
                   >
                     <option value="FOREVER">{SCENARIO_FLOW_DETAIL_TEXT.JOB_MODAL_STOP_FOREVER}</option>

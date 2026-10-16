@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ScenarioFlow } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { ScenarioFlow, FlowExportTemplate } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { ImportFlowResult } from '@/src/client/domain/scenario-flow/repository/scenario_flow_repository';
 import { Environment } from '@/src/client/domain/environment/entity/environment';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
@@ -90,7 +91,7 @@ export function useScenarioFlows(projectId?: string) {
     description?: string;
     defaultEnvironmentId?: string;
     stopOnFailure: boolean;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
   }) => {
     try {
       const targetProjectId = data.projectId || projectId || undefined;
@@ -121,7 +122,7 @@ export function useScenarioFlows(projectId?: string) {
     }
   };
 
-  const handleImportSuccess = (result: any) => {
+  const handleImportSuccess = (result: ImportFlowResult) => {
     addToast({
       title: `Flow '${result.flowName}' imported (${result.stepsCount} steps, ${result.apisCreated} new APIs created)`,
       type: 'success',
@@ -185,7 +186,10 @@ export function useScenarioFlows(projectId?: string) {
     window.open(`/api/scenario-flows/${encodeURIComponent(flowId)}/export`, '_blank');
   };
 
-  const handleImportFlow = async (targetProjectId: string, template: any) => {
+  const handleImportFlow = async (
+    targetProjectId: string,
+    template: FlowExportTemplate | Record<string, unknown>
+  ) => {
     return flowUseCase.importTemplate(targetProjectId, template);
   };
 

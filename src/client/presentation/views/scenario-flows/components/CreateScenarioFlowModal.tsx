@@ -23,7 +23,7 @@ interface CreateScenarioFlowModalProps {
     description?: string;
     defaultEnvironmentId?: string;
     stopOnFailure: boolean;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
   }) => Promise<void>;
 }
 

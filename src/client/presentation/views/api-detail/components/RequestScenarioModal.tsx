@@ -5,7 +5,7 @@ import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
-import { RequestBodyType } from '@/src/core/utils/types';
+import { BodyPathRule, MatchStrategy, RequestBodyType } from '@/src/core/utils/types';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 import { useRequestScenarioModal } from '../hook/useRequestScenarioModal';
 import { KeyValueOrJsonEditor } from './KeyValueOrJsonEditor';
@@ -18,12 +18,12 @@ interface RequestScenarioModalProps {
   onSubmit: (data: {
     name: string;
     priority: number;
-    matchStrategy: any;
+    matchStrategy: MatchStrategy;
     queryParams: string;
     headers: string;
     body: string;
     bodyType: RequestBodyType;
-    bodyRules: any[];
+    bodyRules: BodyPathRule[];
     status: boolean;
   }) => void;
 }
@@ -123,7 +123,7 @@ export const RequestScenarioModal: React.FC<RequestScenarioModalProps> = ({
               <select
                 id={`${API_DETAIL_SEMANTIC_ID.REQ_MODAL}-match-strategy`}
                 value={matchStrategy}
-                onChange={(e) => setMatchStrategy(e.target.value as any)}
+                onChange={(e) => setMatchStrategy(e.target.value as MatchStrategy)}
                 className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 cursor-pointer"
               >
                 <option value="ALL">Match ALL Parameters (AND - Semua parameter harus cocok)</option>

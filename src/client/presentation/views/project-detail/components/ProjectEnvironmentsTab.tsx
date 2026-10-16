@@ -256,7 +256,7 @@ export const ProjectEnvironmentsTab: React.FC<ProjectEnvironmentsTabProps> = ({ 
         }}
         onSave={handleSaveEnvironment}
         editingEnvironment={editingEnvironment}
-        projects={projectList as any}
+        projects={projectList}
         defaultProjectId={projectId}
       />
 

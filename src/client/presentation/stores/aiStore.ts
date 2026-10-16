@@ -511,18 +511,20 @@ export const useAIStore = create<AIStoreState>()(
                   } else if (eventData.type === 'error') {
                     throw new Error(eventData.text || 'Gagal memproses AI stream');
                   }
-                } catch (e: any) {
-                  if (e.message && e.message !== 'Unexpected end of JSON input') {
+                } catch (e: unknown) {
+                  const errorObj = e instanceof Error ? e : null;
+                  if (errorObj?.message && errorObj.message !== 'Unexpected end of JSON input') {
                     throw e;
                   }
                 }
               }
             }
-          } catch (err: any) {
-            if (err.name === 'AbortError') {
+          } catch (err: unknown) {
+            const errorObj = err instanceof Error ? err : null;
+            if (errorObj?.name === 'AbortError') {
               return;
             }
-            const errorMessage = err?.message || 'Terjadi kesalahan pada AI chat';
+            const errorMessage = errorObj?.message || (typeof err === 'string' ? err : 'Terjadi kesalahan pada AI chat');
             commitState((state) => ({
               sessions: state.sessions.map((s) =>
                 s.id === currentSession!.id

@@ -8,7 +8,6 @@ import { StatusBadge } from '@/src/client/presentation/components/shared/StatusB
 import { StatusSwitch } from '@/src/client/presentation/components/shared/StatusSwitch';
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ResponseScenarioListSectionProps {
   respScenarios: ResponseScenario[];
   onAddClick: () => void;
@@ -16,7 +15,7 @@ interface ResponseScenarioListSectionProps {
   onDuplicate: (id: string) => void;
   onDeleteRequest: (id: string) => void;
   onToggleStatus: (id: string) => void;
-  onUpdateScenario?: any;
+  onUpdateScenario?: (updated: ResponseScenario) => void;
 }
 
 export const ResponseScenarioListSection: React.FC<ResponseScenarioListSectionProps> = ({

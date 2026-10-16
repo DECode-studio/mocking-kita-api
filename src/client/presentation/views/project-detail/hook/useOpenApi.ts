@@ -59,8 +59,8 @@ export function useOpenApi({
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
           setSuccessMsg('OpenAPI specification downloaded successfully.');
-        } catch (err: any) {
-          setErrorMsg(err?.message || 'Error exporting OpenAPI file.');
+        } catch (err: unknown) {
+          setErrorMsg(err instanceof Error ? err.message : 'Error exporting OpenAPI file.');
         } finally {
           setLoading(false);
         }
@@ -110,8 +110,8 @@ export function useOpenApi({
             router.refresh();
             onClose();
           }, 1200);
-        } catch (err: any) {
-          setErrorMsg(err?.message || 'Invalid OpenAPI JSON or import failed.');
+        } catch (err: unknown) {
+          setErrorMsg(err instanceof Error ? err.message : 'Invalid OpenAPI JSON or import failed.');
         } finally {
           setLoading(false);
         }

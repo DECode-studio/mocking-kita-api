@@ -163,7 +163,7 @@ export const ApiDetailView: React.FC<ApiDetailViewProps> = ({ initialDetail }) =
                     onDuplicate={duplicateResponseScenario}
                     onDeleteRequest={(id) => setDeletingRespId(id)}
                     onToggleStatus={toggleResponseScenarioStatus}
-                    onUpdateScenario={updateResponseScenario}
+                    onUpdateScenario={(updated) => updateResponseScenario(updated.id, updated)}
                   />
                 </RequestScenarioDetailPanel>
               )}

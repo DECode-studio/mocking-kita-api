@@ -42,7 +42,7 @@ export const DataSheetPreviewModal: React.FC<DataSheetPreviewModalProps> = ({
 
   if (!sheet) return null;
 
-  const handleCopyRow = (val: any, idx: number) => {
+  const handleCopyRow = (val: unknown, idx: number) => {
     const text = typeof val === 'object' ? JSON.stringify(val, null, 2) : String(val);
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);

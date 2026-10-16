@@ -15,7 +15,7 @@ export function usePlaygroundModal(
   const [isLoading, setIsLoading] = useState(false);
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
   const [responseTimeMs, setResponseTimeMs] = useState<number | null>(null);
-  const [responseData, setResponseData] = useState<any>(null);
+  const [responseData, setResponseData] = useState<unknown>(null);
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
 
@@ -102,18 +102,20 @@ export function usePlaygroundModal(
       setResponseTimeMs(Math.round(endTime - startTime));
       setResponseStatus(res.status);
 
-      const json = await res.json().catch(() => ({}));
+      const json: unknown = await res.json().catch(() => ({}));
       setResponseData(json);
 
       // Auto capture Bearer token if this was signin call
-      if (spec.id === 'auth-signin' && json.success && json.data?.accessToken) {
-        onAuthTokenChange(json.data.accessToken);
+      const jsonRecord = json && typeof json === 'object' ? (json as Record<string, unknown>) : null;
+      const jsonData = jsonRecord && typeof jsonRecord.data === 'object' ? (jsonRecord.data as Record<string, unknown>) : null;
+      if (spec.id === 'auth-signin' && jsonRecord?.success && jsonData?.accessToken && typeof jsonData.accessToken === 'string') {
+        onAuthTokenChange(jsonData.accessToken);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const endTime = performance.now();
       setResponseTimeMs(Math.round(endTime - startTime));
       setResponseStatus(500);
-      setResponseData({ success: false, error: { message: err?.message || 'Network error occurred' } });
+      setResponseData({ success: false, error: { message: err instanceof Error ? err.message : 'Network error occurred' } });
     } finally {
       setIsLoading(false);
     }

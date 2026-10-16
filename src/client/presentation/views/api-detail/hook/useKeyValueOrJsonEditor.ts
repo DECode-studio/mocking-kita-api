@@ -186,10 +186,10 @@ export function useKeyValueOrJsonEditor(
 
   const updateLeaf = (path: (string | number)[], update: LeafRuleUpdate) => {
     let currentVal: unknown;
-    let curr: any = parsedData;
+    let curr: unknown = parsedData;
     for (const seg of path) {
-      if (curr == null) break;
-      curr = curr[seg];
+      if (curr == null || typeof curr !== 'object') break;
+      curr = (curr as Record<string | number, unknown>)[seg];
     }
     currentVal = curr;
 
@@ -200,7 +200,7 @@ export function useKeyValueOrJsonEditor(
 
     if (supportFiles && currentVal && typeof currentVal === 'object' && 'filename' in currentVal) {
       isFile = true;
-      val = (currentVal as any).filename;
+      val = (currentVal as Record<string, unknown>).filename;
     } else if (isParamRule(currentVal)) {
       const rule = extractParamRule(currentVal);
       op = rule.operator;

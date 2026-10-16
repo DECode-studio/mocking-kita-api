@@ -71,8 +71,8 @@ export function useAdminChangeLogs() {
       });
       setChangeLogs(res.changeLogs);
       setTotalCount(res.totalCount);
-    } catch (err: any) {
-      setError(err?.message || CHANGE_LOGS_ADMIN_TEXT.ERROR_LOAD_LOGS);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : CHANGE_LOGS_ADMIN_TEXT.ERROR_LOAD_LOGS);
     } finally {
       setLoading(false);
     }

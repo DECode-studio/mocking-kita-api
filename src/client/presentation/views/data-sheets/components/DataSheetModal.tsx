@@ -22,7 +22,7 @@ interface DataSheetModalProps {
     category?: string | null;
     description?: string | null;
     format: 'LIST' | 'TABLE';
-    data: any[];
+    data: unknown[];
     status?: boolean;
   }) => Promise<void>;
 }

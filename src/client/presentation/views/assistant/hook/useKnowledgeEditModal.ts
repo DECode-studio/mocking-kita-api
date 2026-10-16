@@ -125,8 +125,8 @@ export const useKnowledgeEditModal = ({
         source: summary.trim() || 'Product Knowledge',
       });
       onClose();
-    } catch (err: any) {
-      setError(err?.message || 'Gagal menyimpan data');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal menyimpan data');
     } finally {
       setIsSubmitting(false);
     }

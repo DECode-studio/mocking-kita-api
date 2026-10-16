@@ -16,7 +16,7 @@ const signInSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
-type SignInFormValues = z.infer<typeof signInSchema>;
+export type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function useSignIn() {
   const { isAuthenticated, login, checkAuth } = useAuthStore();

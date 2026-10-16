@@ -24,6 +24,8 @@ import {
 import {
   ScenarioFlowExecution,
   ScenarioFlowJob,
+  ScenarioFlowExecutionStep,
+  AssertionResult,
 } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 import { formatDate } from '@/src/core/utils/date';
 import { useJobExecutionLogs } from '../hook/useJobExecutionLogs';
@@ -603,7 +605,7 @@ export const JobExecutionLogsSection: React.FC<JobExecutionLogsSectionProps> = (
               </h4>
 
               <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                {(selectedExecution.steps || []).map((step: any) => {
+                {(selectedExecution.steps || []).map((step: ScenarioFlowExecutionStep) => {
                   const stepSuccess = step.status === 'SUCCESS';
                   const isExpanded = selectedInspectStep?.id === step.id;
 
@@ -669,10 +671,10 @@ export const JobExecutionLogsSection: React.FC<JobExecutionLogsSectionProps> = (
                           {step.assertionResults && step.assertionResults.length > 0 && (
                             <div className="space-y-1">
                               <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                {SCENARIO_FLOW_DETAIL_TEXT.JOBS_LOGS_INSPECT_ASSERTIONS} ({step.assertionResults.filter((a: any) => a.passed).length}/{step.assertionResults.length})
+                                {SCENARIO_FLOW_DETAIL_TEXT.JOBS_LOGS_INSPECT_ASSERTIONS} ({(step.assertionResults || []).filter((a: AssertionResult) => a.passed).length}/{(step.assertionResults || []).length})
                               </div>
                               <div className="space-y-1 font-mono text-[11px]">
-                                {step.assertionResults.map((a: any, i: number) => (
+                                {(step.assertionResults || []).map((a: AssertionResult, i: number) => (
                                   <div
                                     key={i}
                                     className={`p-1.5 rounded-lg flex items-center justify-between ${

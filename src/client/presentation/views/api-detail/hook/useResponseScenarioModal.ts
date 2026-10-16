@@ -83,8 +83,8 @@ export function useResponseScenarioModal({
       const data = await onUploadFile(file);
       setFilePath(data.filePath);
       setFileName(data.fileName);
-    } catch (err: any) {
-      alert(err.message || 'Upload failed');
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       isUploadingRef.current = false;
       setIsUploading(false);

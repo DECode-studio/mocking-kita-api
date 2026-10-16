@@ -124,7 +124,7 @@ export const BodyPathRulesEditor: React.FC<BodyPathRulesEditorProps> = ({
                 {/* Operator selector */}
                 <select
                   id={`${idPrefix}-row-${index}-operator`}
-                  value={rule.operator === ('regex_i' as any) ? 'regex' : rule.operator}
+                  value={(rule.operator as string) === 'regex_i' ? 'regex' : rule.operator}
                   disabled={!rule.enabled}
                   onChange={(e) => updateRule(index, { operator: e.target.value as ParamMatchOperator })}
                   className="px-1.5 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md text-[11px] font-mono font-medium text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer shrink-0"

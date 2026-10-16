@@ -10,6 +10,7 @@ import { RequestBodyType } from '@/src/core/utils/types';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { Environment, getEnvironmentBaseUrl } from '@/src/client/domain/environment/entity/environment';
+import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ROUTES } from '@/src/core/constants/routes';
 import { SCENARIO_FLOW_DETAIL_TEXT } from '../constant';
 
@@ -92,7 +93,7 @@ export interface UseAddStepModalProps {
   stepCount: number;
   projectId?: string;
   onSave: (stepData: Partial<ScenarioFlowStep> & { name: string; stepOrder: number }) => Promise<void>;
-  onLoadScenarios?: (apiId: string) => Promise<any[]>;
+  onLoadScenarios?: (apiId: string) => Promise<RequestScenario[]>;
 }
 
 export const useAddStepModal = ({
@@ -136,7 +137,7 @@ export const useAddStepModal = ({
   const [assertions, setAssertions] = useState<AssertionRule[]>([]);
 
   // Scenarios loaded for the selected API
-  const [availableScenarios, setAvailableScenarios] = useState<any[]>([]);
+  const [availableScenarios, setAvailableScenarios] = useState<RequestScenario[]>([]);
   const [isLoadingScenarios, setIsLoadingScenarios] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -305,8 +306,12 @@ export const useAddStepModal = ({
 
       setExtractors((editingStep.extractors as VariableExtractor[]) || []);
       setAssertions((editingStep.assertions as AssertionRule[]) || []);
-      setTargetEnvironmentType(editingStep.targetEnvironmentType === 'LOCAL' ? 'LOCAL' : 'DEFAULT');
-      setTargetEnvironment(editingStep.targetEnvironment || (editingStep.api as any)?.targetEnvironment || '');
+      setTargetEnvironment(
+        editingStep.targetEnvironment ||
+        (editingStep.api && 'targetEnvironment' in editingStep.api && typeof (editingStep.api as Record<string, unknown>).targetEnvironment === 'string'
+          ? ((editingStep.api as Record<string, unknown>).targetEnvironment as string)
+          : '')
+      );
 
       if (editingStep.apiId) {
         loadScenariosForApi(editingStep.apiId);
@@ -490,7 +495,7 @@ export const useAddStepModal = ({
     setExtractors((prev) => prev.filter((_, i) => i !== idx));
   }, []);
 
-  const updateExtractor = useCallback((idx: number, field: keyof VariableExtractor, val: any) => {
+  const updateExtractor = useCallback(<K extends keyof VariableExtractor>(idx: number, field: K, val: VariableExtractor[K]) => {
     setExtractors((prev) => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [field]: val };
@@ -510,7 +515,7 @@ export const useAddStepModal = ({
     setAssertions((prev) => prev.filter((_, i) => i !== idx));
   }, []);
 
-  const updateAssertion = useCallback((idx: number, field: keyof AssertionRule, val: any) => {
+  const updateAssertion = useCallback(<K extends keyof AssertionRule>(idx: number, field: K, val: AssertionRule[K]) => {
     setAssertions((prev) => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [field]: val };

@@ -62,11 +62,11 @@ export function useScenarioFlowJobs(flowId?: string, projectId?: string) {
     return () => clearInterval(interval);
   }, [jobs, loadJobs]);
 
-  const handleCreateJob = async (input: any) => {
+  const handleCreateJob = async (input: Partial<ScenarioFlowJob> & { flowId?: string; name: string }) => {
     try {
       const payload = {
         ...input,
-        flowId: input.flowId || flowId,
+        flowId: input.flowId || flowId || '',
         projectId: projectId || null,
       };
       await flowUseCase.createJob(payload);
@@ -79,7 +79,7 @@ export function useScenarioFlowJobs(flowId?: string, projectId?: string) {
     }
   };
 
-  const handleUpdateJob = async (jobId: string, input: any) => {
+  const handleUpdateJob = async (jobId: string, input: Partial<ScenarioFlowJob>) => {
     try {
       await flowUseCase.updateJob(jobId, input);
       await loadJobs();
