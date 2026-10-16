@@ -9,9 +9,18 @@ export interface NotificationPayload {
   userId?: string | null;
   operator?: string | null;
   description?: string | null;
-  beforeState?: any;
-  afterState?: any;
-  metadata?: any;
+  beforeState?: unknown;
+  afterState?: unknown;
+  metadata?: unknown;
+}
+
+export interface GoogleCardWidget {
+  decoratedText?: {
+    topLabel?: string;
+    text: string;
+    startIcon?: { knownIcon: string };
+  };
+  [key: string]: unknown;
 }
 
 const ICONS = {
@@ -29,16 +38,18 @@ const ICONS = {
   DATA_SHEET: 'https://cdn-icons-png.flaticon.com/512/2965/2965300.png',
 };
 
-function isImageResponse(state: any): boolean {
-  if (!state) return false;
-  if (state.responseType !== 'FILE') return false;
-  const target = (state.fileName || state.filePath || '').toLowerCase();
+function isImageResponse(state: unknown): boolean {
+  if (!state || typeof state !== 'object') return false;
+  const s = state as Record<string, unknown>;
+  if (s.responseType !== 'FILE') return false;
+  const target = (typeof s.fileName === 'string' ? s.fileName : typeof s.filePath === 'string' ? s.filePath : '').toLowerCase();
   const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp', '.ico', '.tiff', '.avif'];
   if (imageExtensions.some((ext) => target.endsWith(ext))) {
     return true;
   }
-  if (state.headers && typeof state.headers === 'object') {
-    const contentType = (state.headers['content-type'] || state.headers['Content-Type'] || '') as string;
+  if (s.headers && typeof s.headers === 'object') {
+    const headers = s.headers as Record<string, unknown>;
+    const contentType = (headers['content-type'] || headers['Content-Type'] || '') as string;
     if (typeof contentType === 'string' && contentType.toLowerCase().startsWith('image/')) {
       return true;
     }
@@ -96,16 +107,18 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   }
 
   // Extract Entity Target Name / Info
-  const state = afterState || beforeState || {};
-  let targetInfo = state.name || '';
+  const state = (afterState || beforeState || {}) as Record<string, unknown>;
+  const beforeObj = beforeState && typeof beforeState === 'object' ? (beforeState as Record<string, unknown>) : null;
+  const metaObj = metadata && typeof metadata === 'object' ? (metadata as Record<string, unknown>) : null;
+  let targetInfo = typeof state.name === 'string' ? state.name : '';
   if (entityType === 'api') {
-    const method = state.methodRequest || '';
-    const path = state.path || '';
+    const method = typeof state.methodRequest === 'string' ? state.methodRequest : '';
+    const path = typeof state.path === 'string' ? state.path : '';
     if (method || path) {
       targetInfo = `${targetInfo ? `${targetInfo} ` : ''}(\`${method} ${path}\`)`.trim();
     }
   } else if (entityType === 'response_scenario' && state.statusCode) {
-    targetInfo = `${targetInfo ? `${targetInfo} ` : ''}(HTTP ${state.statusCode})`.trim();
+    targetInfo = `${targetInfo ? `${targetInfo} ` : ''}(HTTP ${String(state.statusCode)})`.trim();
   }
 
   // Friendly Entity Type Label & Card Header Icon
@@ -159,13 +172,13 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     case 'database':
       entityLabel = 'Database';
       cardHeaderImageUrl = ICONS.DATABASE;
-      targetInfo = targetInfo || metadata?.fileName || metadata?.format || 'Database';
+      targetInfo = targetInfo || (typeof metaObj?.fileName === 'string' ? metaObj.fileName : '') || (typeof metaObj?.format === 'string' ? metaObj.format : '') || 'Database';
       break;
   }
 
   // Resolve Project Name if available
   let projectName = '';
-  const resolvedProjectId = projectId || state.projectId;
+  const resolvedProjectId = projectId || (typeof state.projectId === 'string' ? state.projectId : undefined);
   if (resolvedProjectId) {
     try {
       const proj = await prisma.project.findUnique({
@@ -229,7 +242,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
 
   const picMap = new Map<string, PicUser>();
 
-  const resolvePicFromAccount = async (picIdOrAcc: string | any, source: 'Project' | 'API') => {
+  const resolvePicFromAccount = async (picIdOrAcc: unknown, source: 'Project' | 'API') => {
     if (!picIdOrAcc) return;
     if (Array.isArray(picIdOrAcc)) {
       for (const item of picIdOrAcc) {
@@ -237,16 +250,20 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
       }
       return;
     }
-    if (typeof picIdOrAcc === 'object' && (picIdOrAcc.id || picIdOrAcc.account)) {
-      const acc = picIdOrAcc.account || picIdOrAcc;
-      if (acc && acc.id) {
-        picMap.set(acc.id, {
-          id: acc.id,
-          name: acc.name || acc.username,
-          username: acc.username,
-          googleId: acc.googleId || null,
-          source,
-        });
+    if (typeof picIdOrAcc === 'object' && picIdOrAcc !== null) {
+      const obj = picIdOrAcc as Record<string, unknown>;
+      const rawAcc = obj.account || obj;
+      if (rawAcc && typeof rawAcc === 'object') {
+        const acc = rawAcc as Record<string, unknown>;
+        if (typeof acc.id === 'string') {
+          picMap.set(acc.id, {
+            id: acc.id,
+            name: (acc.name as string) || (acc.username as string) || '',
+            username: (acc.username as string) || '',
+            googleId: (acc.googleId as string) || null,
+            source,
+          });
+        }
       }
       return;
     }
@@ -273,7 +290,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
 
   // 1. If entity is Project
   if (entityType === 'project') {
-    const picTargets = state.pics || state.picIds || (beforeState && (beforeState.pics || beforeState.picIds));
+    const picTargets = state.pics || state.picIds || (beforeObj && (beforeObj.pics || beforeObj.picIds));
     if (picTargets && (Array.isArray(picTargets) ? picTargets.length > 0 : true)) {
       await resolvePicFromAccount(picTargets, 'Project');
     } else if (entityId || resolvedProjectId) {
@@ -294,7 +311,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   // 2. If entity is API (or scenario belonging to an API)
   if (entityType === 'api' || entityType === 'request_scenario' || entityType === 'response_scenario') {
     // Check API PIC
-    const apiPicTargets = state.pics || state.picIds || (beforeState && (beforeState.pics || beforeState.picIds));
+    const apiPicTargets = state.pics || state.picIds || (beforeObj && (beforeObj.pics || beforeObj.picIds));
     if (apiPicTargets && (Array.isArray(apiPicTargets) ? apiPicTargets.length > 0 : true)) {
       await resolvePicFromAccount(apiPicTargets, 'API');
     } else if (entityType === 'api' && entityId) {
@@ -368,7 +385,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   const cardHeaderSubtitle = `Executed by ${userName}${userHandle ? ` (@${userHandle})` : ''}`;
 
   // Build Card v2 Payload for Google Space UI (Pure Card Layout)
-  const cardWidgets: any[] = [
+  const cardWidgets: GoogleCardWidget[] = [
     {
       decoratedText: {
         topLabel: 'ENTITY',
@@ -388,9 +405,9 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     });
   }
 
-  if (entityType === 'response_scenario' && state.responseType === 'FILE') {
+  if (entityType === 'response_scenario' && (state as Record<string, unknown>).responseType === 'FILE') {
     const isImage = isImageResponse(state);
-    const attachmentName = state.fileName || state.filePath;
+    const attachmentName = ((state as Record<string, unknown>).fileName || (state as Record<string, unknown>).filePath) as string | undefined;
     if (attachmentName) {
       cardWidgets.push({
         decoratedText: {
@@ -468,7 +485,7 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
   ];
 
   try {
-    const requestBody: Record<string, any> = {
+    const requestBody: Record<string, unknown> = {
       cardsV2: cardsV2,
     };
 
@@ -489,8 +506,9 @@ export async function sendGoogleSpaceNotification(payload: NotificationPayload):
     if (!response.ok) {
       console.error(`[GoogleSpaceNotifier] Webhook returned status ${response.status}`);
     }
-  } catch (error: any) {
-    console.error('[GoogleSpaceNotifier] Failed to send notification to Google Space:', error?.message || error);
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[GoogleSpaceNotifier] Failed to send notification to Google Space:', errorMsg);
   }
 }
 
@@ -615,7 +633,7 @@ export async function sendJobFailureGoogleSpaceNotification(
   const cardHeaderSubtitle = `Job "${jobName}" failed at iteration #${iteration}`;
   const alertIconUrl = 'https://cdn-icons-png.flaticon.com/512/564/564619.png';
 
-  const cardWidgets: any[] = [
+  const cardWidgets: GoogleCardWidget[] = [
     {
       decoratedText: {
         topLabel: 'FLOW & JOB',
@@ -712,7 +730,7 @@ export async function sendJobFailureGoogleSpaceNotification(
   ];
 
   try {
-    const requestBody: Record<string, any> = {
+    const requestBody: Record<string, unknown> = {
       cardsV2,
     };
 
@@ -728,8 +746,9 @@ export async function sendJobFailureGoogleSpaceNotification(
     if (!response.ok) {
       console.error(`[GoogleSpaceNotifier] Job failure webhook returned status ${response.status}`);
     }
-  } catch (error: any) {
-    console.error('[GoogleSpaceNotifier] Failed to send job failure alert to Google Space:', error?.message || error);
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error('[GoogleSpaceNotifier] Failed to send job failure alert to Google Space:', errorMsg);
   }
 }
 

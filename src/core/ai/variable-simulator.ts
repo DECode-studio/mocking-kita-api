@@ -5,15 +5,15 @@
  */
 
 export interface SimulationVariableContext {
-  variables: Record<string, any>;
-  dataSheetValues?: Record<string, any>;
+  variables: Record<string, unknown>;
+  dataSheetValues?: Record<string, unknown>;
 }
 
-export interface SimulationResult {
-  interpolated: any;
+export interface SimulationResult<T = unknown> {
+  interpolated: T;
   replacedTokens: Array<{
     token: string;
-    resolvedValue: any;
+    resolvedValue: unknown;
     type: 'generator' | 'variable' | 'datasheet';
   }>;
 }
@@ -21,7 +21,7 @@ export interface SimulationResult {
 export interface AssertionSimulationInput {
   actualStatusCode: number;
   actualResponseTime: number;
-  actualBody: any;
+  actualBody: unknown;
   assertions: Array<{
     type: 'STATUS_CODE' | 'RESPONSE_TIME' | 'JSON_PATH';
     property?: string;
@@ -36,18 +36,18 @@ export interface AssertionSimulationResult {
   results: Array<{
     assertionIndex: number;
     passed: boolean;
-    actualValue: any;
-    expectedValue: any;
+    actualValue: unknown;
+    expectedValue: unknown;
     operator: string;
     message: string;
   }>;
 }
 
-export function simulateVariableInterpolation(
-  input: any,
+export function simulateVariableInterpolation<T = unknown>(
+  input: T,
   context: SimulationVariableContext = { variables: {} }
-): SimulationResult {
-  const replacedTokens: SimulationResult['replacedTokens'] = [];
+): SimulationResult<T> {
+  const replacedTokens: SimulationResult<T>['replacedTokens'] = [];
 
   function interpolateString(str: string): string {
     const tokenRegex = /\{\{([^}]+)\}\}/g;
@@ -103,7 +103,7 @@ export function simulateVariableInterpolation(
     });
   }
 
-  function walk(val: any): any {
+  function walk(val: unknown): unknown {
     if (typeof val === 'string') {
       return interpolateString(val);
     }
@@ -111,7 +111,7 @@ export function simulateVariableInterpolation(
       return val.map(walk);
     }
     if (val !== null && typeof val === 'object') {
-      const res: Record<string, any> = {};
+      const res: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(val)) {
         res[interpolateString(k)] = walk(v);
       }
@@ -120,7 +120,7 @@ export function simulateVariableInterpolation(
     return val;
   }
 
-  const interpolated = walk(input);
+  const interpolated = walk(input) as T;
   return { interpolated, replacedTokens };
 }
 
@@ -129,7 +129,7 @@ export function simulateAssertions(input: AssertionSimulationInput): AssertionSi
   let allPassed = true;
 
   input.assertions.forEach((ast, index) => {
-    let actualVal: any = null;
+    let actualVal: unknown = null;
     let passed = false;
 
     if (ast.type === 'STATUS_CODE') {
@@ -137,9 +137,10 @@ export function simulateAssertions(input: AssertionSimulationInput): AssertionSi
       const exp = parseInt(ast.expectedValue, 10);
       passed = ast.operator === 'NOT_EQUALS' ? actualVal !== exp : actualVal === exp;
     } else if (ast.type === 'RESPONSE_TIME') {
-      actualVal = input.actualResponseTime;
+      const actualTime = typeof input.actualResponseTime === 'number' ? input.actualResponseTime : Number(input.actualResponseTime || 0);
+      actualVal = actualTime;
       const exp = parseInt(ast.expectedValue, 10);
-      passed = ast.operator === 'GREATER_THAN' ? actualVal > exp : actualVal <= exp;
+      passed = ast.operator === 'GREATER_THAN' ? actualTime > exp : actualTime <= exp;
     } else {
       // JSON_PATH
       const path = ast.property || '$.code';
@@ -189,14 +190,14 @@ export function simulateAssertions(input: AssertionSimulationInput): AssertionSi
   return { passed: allPassed, results };
 }
 
-function extractJsonPath(obj: any, path: string): any {
+function extractJsonPath(obj: unknown, path: string): unknown {
   if (!obj || typeof obj !== 'object') return undefined;
   const cleanPath = path.replace(/^\$\.?/, '');
   const keys = cleanPath.split('.');
-  let curr = obj;
+  let curr: unknown = obj;
   for (const k of keys) {
-    if (curr === undefined || curr === null) return undefined;
-    curr = curr[k];
+    if (curr === undefined || curr === null || typeof curr !== 'object') return undefined;
+    curr = (curr as Record<string, unknown>)[k];
   }
   return curr;
 }

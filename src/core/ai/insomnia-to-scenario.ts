@@ -4,10 +4,11 @@
  */
 
 import YAML from 'yaml';
+import { FlowExportTemplate } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 
 export interface InsomniaConvertResult {
   success: boolean;
-  template?: Record<string, any>;
+  template?: FlowExportTemplate;
   summary?: {
     flowName: string;
     totalSteps: number;
@@ -21,7 +22,7 @@ export interface InsomniaConvertResult {
 
 export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConvertResult {
   const warnings: string[] = [];
-  let data: any = null;
+  let data: unknown = null;
 
   try {
     const trimmed = rawContent.trim();
@@ -30,10 +31,11 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     } else {
       data = YAML.parse(trimmed);
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
-      error: `Gagal membaca format Insomnia (bukan JSON/YAML yang valid): ${err.message}`,
+      error: `Gagal membaca format Insomnia (bukan JSON/YAML yang valid): ${errMsg}`,
     };
   }
 
@@ -41,40 +43,46 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     return { success: false, error: 'Konten file Insomnia kosong atau tidak valid.' };
   }
 
-  const resources: any[] = Array.isArray(data.resources) ? data.resources : [];
+  const dataObj = data as Record<string, unknown>;
+  const resources: Array<Record<string, unknown>> = Array.isArray(dataObj.resources) ? (dataObj.resources as Array<Record<string, unknown>>) : [];
   if (resources.length === 0) {
     return { success: false, error: 'Tidak ditemukan resources pada file Insomnia ini.' };
   }
 
   // 1. Identify Workspace & Meta
   const workspace = resources.find((r) => r._type === 'workspace') || { name: 'Converted Insomnia Flow' };
-  const flowName = workspace.name || 'Converted Insomnia Scenario Flow';
+  const flowName = (typeof workspace.name === 'string' ? workspace.name : '') || 'Converted Insomnia Scenario Flow';
 
   // 2. Identify Environments
-  const baseEnv = resources.find((r) => r._type === 'environment' && !r.parentId?.startsWith('env_')) || null;
-  const subEnvs = resources.filter((r) => r._type === 'environment' && r.parentId?.startsWith('env_'));
+  const baseEnv = resources.find((r) => r._type === 'environment' && (!r.parentId || typeof r.parentId !== 'string' || !r.parentId.startsWith('env_'))) || null;
+  const subEnvs = resources.filter((r) => r._type === 'environment' && typeof r.parentId === 'string' && r.parentId.startsWith('env_'));
 
-  const environments: any[] = [];
-  const globalVariables: Record<string, any> = {};
+  const environments: NonNullable<FlowExportTemplate['environments']> = [];
+  const globalVariables: Record<string, unknown> = {};
 
-  if (baseEnv && typeof baseEnv.data === 'object') {
+  if (baseEnv && typeof baseEnv.data === 'object' && baseEnv.data !== null) {
     Object.assign(globalVariables, baseEnv.data);
   }
+
+  const extractBaseUrl = (data: Record<string, unknown>, fallback: string): string => {
+    const url = data.baseUrl ?? data.base_url;
+    return typeof url === 'string' && url.trim() ? url : fallback;
+  };
 
   // Build standard environments
   const defaultEnvId = 'gateway-dev';
   environments.push({
     id: defaultEnvId,
-    name: baseEnv?.name || 'Default Environment',
+    name: typeof baseEnv?.name === 'string' ? baseEnv.name : 'Default Environment',
     environmentType: 'DEVELOPMENT',
     values: {
       LOCAL: null,
-      DEVELOPMENT: globalVariables.baseUrl || globalVariables.base_url || 'https://api-dev.example.com',
+      DEVELOPMENT: extractBaseUrl(globalVariables, 'https://api-dev.example.com'),
       TESTING: null,
       STAGING: null,
       PRODUCTION: null,
     },
-    baseUrl: globalVariables.baseUrl || globalVariables.base_url || 'https://api-dev.example.com',
+    baseUrl: extractBaseUrl(globalVariables, 'https://api-dev.example.com'),
     variables: Object.entries(globalVariables).map(([key, val]) => ({
       key,
       value: String(val),
@@ -83,19 +91,20 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
   });
 
   for (const sub of subEnvs) {
-    const subValues = typeof sub.data === 'object' ? sub.data : {};
+    const subValues = (typeof sub.data === 'object' && sub.data !== null ? sub.data : {}) as Record<string, unknown>;
+    const testingUrl = extractBaseUrl(subValues, 'https://api-test.example.com');
     environments.push({
       id: `env-${sub._id || Math.random().toString(36).substring(2, 8)}`,
-      name: sub.name || 'Sub Environment',
+      name: typeof sub.name === 'string' ? sub.name : 'Sub Environment',
       environmentType: 'TESTING',
       values: {
         LOCAL: null,
         DEVELOPMENT: null,
-        TESTING: subValues.baseUrl || subValues.base_url || 'https://api-test.example.com',
+        TESTING: testingUrl,
         STAGING: null,
         PRODUCTION: null,
       },
-      baseUrl: subValues.baseUrl || subValues.base_url || 'https://api-test.example.com',
+      baseUrl: testingUrl,
       variables: Object.entries(subValues).map(([key, val]) => ({
         key,
         value: String(val),
@@ -108,7 +117,10 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
   const folderMap = new Map<string, string>();
   for (const r of resources) {
     if (r._type === 'request_group') {
-      folderMap.set(r._id, r.name || 'General');
+      const folderId = typeof r._id === 'string' ? r._id : '';
+      if (folderId) {
+        folderMap.set(folderId, typeof r.name === 'string' ? r.name : 'General');
+      }
     }
   }
 
@@ -131,12 +143,12 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     path: string;
     collection: string;
     headers: Record<string, string>;
-    body: any;
+    body: unknown;
     bodyType: string;
     queryParams: Record<string, string>;
     dependsOn: string[]; // IDs of other requests
     extractVariables: Record<string, string>;
-    raw: any;
+    raw: Record<string, unknown>;
   }
 
   const nodes: StepNode[] = [];
@@ -144,7 +156,8 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
 
   for (let i = 0; i < rawRequests.length; i++) {
     const req = rawRequests[i];
-    const collectionName = req.parentId && folderMap.has(req.parentId) ? folderMap.get(req.parentId)! : 'General';
+    const parentId = typeof req.parentId === 'string' ? req.parentId : '';
+    const collectionName = parentId && folderMap.has(parentId) ? folderMap.get(parentId)! : 'General';
 
     // Parse URL & Path
     let rawUrl = String(req.url || '/');
@@ -165,9 +178,9 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     // Convert Headers
     const headers: Record<string, string> = {};
     if (Array.isArray(req.headers)) {
-      for (const h of req.headers) {
+      for (const h of req.headers as Array<Record<string, unknown>>) {
         if (h.name && h.value && !h.disabled) {
-          headers[h.name] = h.value;
+          headers[String(h.name)] = String(h.value);
         }
       }
     }
@@ -175,22 +188,23 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     // Convert Query Parameters
     const queryParams: Record<string, string> = {};
     if (Array.isArray(req.parameters)) {
-      for (const p of req.parameters) {
+      for (const p of req.parameters as Array<Record<string, unknown>>) {
         if (p.name && !p.disabled) {
-          queryParams[p.name] = p.value || '';
+          queryParams[String(p.name)] = String(p.value || '');
         }
       }
     }
 
     // Convert Body
-    let body: any = null;
+    let body: unknown = null;
     let bodyType = 'NONE';
-    if (req.body && req.body.text) {
+    const reqBody = req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : null;
+    if (reqBody && reqBody.text) {
       bodyType = 'JSON';
       try {
-        body = JSON.parse(req.body.text);
+        body = JSON.parse(String(reqBody.text));
       } catch {
-        body = req.body.text;
+        body = reqBody.text;
       }
     }
 
@@ -239,12 +253,15 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
       }
     }
 
+    const reqId = typeof req._id === 'string' ? req._id : `step_${i + 1}`;
+    const reqName = typeof req.name === 'string' ? req.name : `Request ${i + 1}`;
+    const reqMethod = typeof req.method === 'string' ? req.method.toUpperCase() : 'GET';
     const node: StepNode = {
-      id: req._id || `step_${i + 1}`,
-      insomniaId: req._id,
+      id: reqId,
+      insomniaId: reqId,
       order: i + 1,
-      name: req.name || `Request ${i + 1}`,
-      method: (req.method || 'GET').toUpperCase(),
+      name: reqName,
+      method: reqMethod,
       path: parsedPath || '/',
       collection: collectionName,
       headers,
@@ -257,7 +274,7 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     };
 
     nodes.push(node);
-    reqIdToNodeMap.set(req._id, node);
+    reqIdToNodeMap.set(reqId, node);
   }
 
   // 5. Populate extractVariables for producer steps based on chaining
@@ -313,11 +330,10 @@ export function convertInsomniaToScenarioFlow(rawContent: string): InsomniaConve
     assertions: [
       {
         id: `ast_${idx + 1}`,
-        type: 'STATUS_CODE',
-        property: 'status',
-        operator: 'EQUALS',
-        expectedValue: '200',
-        message: `Step ${idx + 1} (${n.name}) harus return HTTP 200`,
+        type: 'statusCode' as const,
+        path: 'status',
+        operator: 'equals' as const,
+        expected: 200,
       },
     ],
   }));

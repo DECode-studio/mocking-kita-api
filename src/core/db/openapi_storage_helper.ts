@@ -7,7 +7,13 @@ import { RequestScenario } from '@/src/client/domain/request-scenario/entity/req
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { generateId } from '@/src/core/utils/uuid';
 import { Prisma } from '@prisma/client';
-import { getEnvironmentBaseUrl, parseRawVariables } from '@/src/client/domain/environment/entity/environment';
+import {
+  EnvironmentVariable,
+  EnvironmentType,
+  getEnvironmentBaseUrl,
+  parseRawVariables,
+} from '@/src/client/domain/environment/entity/environment';
+import { RequestBodyType, MatchType } from '@/src/core/utils/types';
 
 /**
  * Export all endpoints, collections, and scenarios belonging strictly to a single project into OpenAPI 3.0 spec.
@@ -38,12 +44,12 @@ export async function exportProjectOpenApi(projectId: string): Promise<OpenApiSp
       apiId: r.apiId,
       name: r.name,
       description: r.description ?? undefined,
-      headers: (r.headers as any) ?? {},
-      queryParams: (r.queryParams as any) ?? {},
-      pathParams: (r.pathParams as any) ?? {},
-      body: (r.body as any) ?? {},
-      bodyType: r.bodyType as any,
-      matchType: r.matchType as any,
+      headers: (r.headers as Record<string, unknown>) ?? {},
+      queryParams: (r.queryParams as Record<string, unknown>) ?? {},
+      pathParams: (r.pathParams as Record<string, unknown>) ?? {},
+      body: r.body,
+      bodyType: r.bodyType as RequestBodyType,
+      matchType: r.matchType as MatchType,
       priority: r.priority,
       status: r.status,
       createdAt: r.createdAt.toISOString(),
@@ -66,9 +72,9 @@ export async function exportProjectOpenApi(projectId: string): Promise<OpenApiSp
         name: resp.name,
         description: resp.description ?? undefined,
         statusCode: resp.statusCode ?? 200,
-        headers: (resp.headers as any) ?? {},
-        body: (resp.body as any) ?? {},
-        responseType: resp.responseType as any,
+        headers: (resp.headers as Record<string, unknown>) ?? {},
+        body: resp.body,
+        responseType: resp.responseType as 'JSON' | 'FILE',
         filePath: resp.filePath ?? undefined,
         fileName: resp.fileName ?? undefined,
         delayMs: resp.delayMs,
@@ -90,9 +96,9 @@ export async function exportProjectOpenApi(projectId: string): Promise<OpenApiSp
     projectId: e.projectId,
     name: e.name,
     isBaseUrl: e.isBaseUrl,
-    values: (e.values as any) || {},
-    environmentType: e.environmentType as any,
-    variables: (e.variables as any) || [],
+    values: (e.values as Record<string, unknown>) || {},
+    environmentType: (e.environmentType as EnvironmentType) || null,
+    variables: (e.variables as unknown as EnvironmentVariable[]) || [],
     status: e.status,
     createdAt: e.createdAt.toISOString(),
     updatedAt: e.updatedAt.toISOString(),
@@ -142,18 +148,24 @@ type MergePlan = {
   updatedApiCount: number;
 };
 
+type ExistingCol = { id: string; name: string; description: string | null; status: boolean };
+type ExistingEnv = { id: string; name: string; isBaseUrl: boolean; values: Prisma.JsonValue; environmentType: EnvironmentType | null; variables: Prisma.JsonValue; status: boolean };
+type ExistingApi = { id: string; collectionId: string | null; methodRequest: string; path: string; name: string; description: string | null; status: boolean };
+type ExistingReqScenario = { id: string; apiId: string; name: string; description: string | null; headers: Prisma.JsonValue; queryParams: Prisma.JsonValue; pathParams: Prisma.JsonValue; body: Prisma.JsonValue; bodyType: string; matchType: string; priority: number; status: boolean };
+type ExistingRespScenario = { id: string; requestScenarioId: string; name: string; description: string | null; statusCode: number | null; headers: Prisma.JsonValue; body: Prisma.JsonValue; responseType: string; filePath: string | null; fileName: string | null; delayMs: number; weight: number; priority: number; status: boolean };
+
 function buildMergePlan(
   projectId: string,
   extracted: ReturnType<typeof parseOpenApiSpecToProjectData>,
-  existingCols: Array<{ id: string; name: string; description: string | null; status: boolean }>,
-  existingEnvs: Array<{ id: string; name: string; isBaseUrl?: boolean; values?: any; environmentType: string | null; variables: unknown; status: boolean }>,
-  existingApis: Array<{ id: string; collectionId: string | null; methodRequest: string; path: string; name: string; description: string | null; status: boolean }>,
-  existingReqScenarios: Array<{ id: string; apiId: string; name: string; description: string | null; headers: unknown; queryParams: unknown; pathParams: unknown; body: unknown; bodyType: string; matchType: string; priority: number; status: boolean }>,
-  existingRespScenarios: Array<{ id: string; requestScenarioId: string; name: string; description: string | null; statusCode: number | null; headers: unknown; body: unknown; responseType: string; filePath: string | null; fileName: string | null; delayMs: number; weight: number; priority: number; status: boolean }>
+  existingCols: ExistingCol[],
+  existingEnvs: ExistingEnv[],
+  existingApis: ExistingApi[],
+  existingReqScenarios: ExistingReqScenario[],
+  existingRespScenarios: ExistingRespScenario[]
 ): MergePlan {
   const now = new Date();
 
-  const colByNameMap = new Map<string, (typeof existingCols)[number]>();
+  const colByNameMap = new Map<string, ExistingCol>();
   existingCols.forEach((c) => colByNameMap.set(c.name.toLowerCase(), c));
 
   const collectionIdRemap = new Map<string, string>();
@@ -173,7 +185,7 @@ function buildMergePlan(
         },
       });
     } else {
-      colByNameMap.set(col.name.toLowerCase(), { id: col.id, name: col.name } as any);
+      colByNameMap.set(col.name.toLowerCase(), { id: col.id, name: col.name, description: col.description ?? null, status: col.status ?? true });
       colsToCreate.push({
         id: col.id,
         projectId,
@@ -186,7 +198,7 @@ function buildMergePlan(
     }
   }
 
-  const envByNameMap = new Map<string, (typeof existingEnvs)[number]>();
+  const envByNameMap = new Map<string, ExistingEnv>();
   existingEnvs.forEach((e) => envByNameMap.set(e.name.toLowerCase(), e));
 
   const envsToCreate: Array<Prisma.EnvironmentCreateManyInput> = [];
@@ -195,10 +207,10 @@ function buildMergePlan(
   for (const env of extracted.environments) {
     const existing =
       envByNameMap.get(env.name.toLowerCase()) ||
-      existingEnvs.find((e) => env.baseUrl && getEnvironmentBaseUrl(e as any) === env.baseUrl);
+      existingEnvs.find((e) => env.baseUrl && getEnvironmentBaseUrl({ values: (e.values as Record<string, unknown>) || {}, isBaseUrl: e.isBaseUrl !== false }) === env.baseUrl);
 
-    const isBaseUrl = (env as any).isBaseUrl !== false;
-    const values = (env.values as any) || {};
+    const isBaseUrl = env.isBaseUrl !== false;
+    const values = env.values || {};
     const incomingVars = parseRawVariables(env.variables);
 
     if (env.baseUrl && !incomingVars.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
@@ -223,8 +235,9 @@ function buildMergePlan(
         }
       }
 
+      const existingValues = existing.values && typeof existing.values === 'object' ? (existing.values as Record<string, unknown>) : {};
       const mergedValues = {
-        ...(((existing as any).values as any) || {}),
+        ...existingValues,
         ...values,
       };
       envsToUpdate.push({
@@ -232,23 +245,23 @@ function buildMergePlan(
         data: {
           isBaseUrl,
           values: mergedValues,
-          environmentType: (env.environmentType as any) ?? existing.environmentType,
-          variables: mergedVars as any,
+          environmentType: (env.environmentType as EnvironmentType) ?? existing.environmentType,
+          variables: mergedVars as unknown as Prisma.InputJsonValue,
           status: env.status ?? true,
           updatedAt: now,
         },
       });
     } else {
       const envId = env.id || generateId();
-      envByNameMap.set(env.name.toLowerCase(), { id: envId, name: env.name } as any);
+      envByNameMap.set(env.name.toLowerCase(), { id: envId, name: env.name, isBaseUrl, values: values as unknown as Prisma.JsonValue, environmentType: env.environmentType || null, variables: incomingVars as unknown as Prisma.JsonValue, status: env.status ?? true });
       envsToCreate.push({
         id: envId,
         projectId,
         name: env.name,
         isBaseUrl,
-        values,
-        environmentType: (env.environmentType as any) || null,
-        variables: incomingVars as any,
+        values: values as unknown as Prisma.InputJsonValue,
+        environmentType: (env.environmentType as EnvironmentType) || null,
+        variables: incomingVars as unknown as Prisma.InputJsonValue,
         status: env.status ?? true,
         createdAt: now,
         updatedAt: now,
@@ -509,7 +522,7 @@ function buildMergePlan(
  */
 export async function importProjectOpenApi(
   projectId: string,
-  rawSpec: any,
+  rawSpec: unknown,
   mode: 'upsert' | 'merge' | 'replace' = 'upsert'
 ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
   const project = await getProjectById(projectId);
@@ -591,10 +604,10 @@ export async function importProjectOpenApi(
               id: env.id || generateId(),
               projectId,
               name: env.name,
-              isBaseUrl: (env as any).isBaseUrl !== false,
-              values: (env as any).values || {},
-              environmentType: env.environmentType as any,
-              variables: incomingVars as any,
+              isBaseUrl: env.isBaseUrl !== false,
+              values: (env.values as unknown as Prisma.InputJsonValue) || {},
+              environmentType: (env.environmentType as EnvironmentType) || null,
+              variables: incomingVars as unknown as Prisma.InputJsonValue,
               status: env.status ?? true,
               createdAt: now,
               updatedAt: now,
@@ -728,7 +741,7 @@ export async function importProjectOpenApi(
           })
         : [];
 
-    const plan = buildMergePlan(projectId, extracted, existingCols as any, existingEnvs as any, existingApis as any, existingReqScenarios as any, existingRespScenarios as any);
+    const plan = buildMergePlan(projectId, extracted, existingCols, existingEnvs, existingApis, existingReqScenarios, existingRespScenarios);
     importedApiCount = plan.importedApiCount;
     updatedApiCount = plan.updatedApiCount;
 

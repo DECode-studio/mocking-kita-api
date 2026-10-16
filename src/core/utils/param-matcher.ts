@@ -6,9 +6,9 @@ export function hasHighRiskRegexPattern(pattern: string): boolean {
   return /(\([^)]*[+*][^)]*\)[+*?])|(\[[^\]]+\][+*?][+*?])|(\.\*[+*?])/.test(pattern);
 }
 
-let dataSheetLookupFn: ((code: string) => any[] | undefined) | null = null;
+let dataSheetLookupFn: ((code: string) => unknown[] | undefined) | null = null;
 
-export function registerDataSheetLookup(fn: ((code: string) => any[] | undefined) | null): void {
+export function registerDataSheetLookup(fn: ((code: string) => unknown[] | undefined) | null): void {
   dataSheetLookupFn = fn;
 }
 
@@ -17,7 +17,7 @@ export function isParamRule(val: unknown): val is ParamRule {
     return false;
   }
   const obj = val as Record<string, unknown>;
-  const op = obj.$operator ?? (obj.$rule || obj.__rule || 'operator' in obj ? obj.operator : undefined);
+  const op = obj.$operator ?? (obj.$rule || obj.__rule ? obj.operator : undefined);
   return (
     typeof op === 'string' &&
     ['equal', 'regex', 'regex_i', 'null', 'empty_array', 'in_datasheet'].includes(op)
@@ -81,7 +81,7 @@ export function isBinaryFilePlaceholder(value: unknown): boolean {
   return false;
 }
 
-function matchValueInPool(pool: any[], actualValue: unknown, modifier?: string): boolean {
+function matchValueInPool(pool: unknown[], actualValue: unknown, modifier?: string): boolean {
   if (!Array.isArray(pool) || pool.length === 0) return false;
   if (modifier) {
     const idxMatch = modifier.match(/^\[(\d+)\]$/);
@@ -100,7 +100,7 @@ function matchValueInPool(pool: any[], actualValue: unknown, modifier?: string):
 }
 
 export function evaluateParamOperator(
-  operator: ParamMatchOperator,
+  operator: ParamMatchOperator | 'regex_i',
   expectedValue: unknown,
   actualValue: unknown,
   looseScalars = false
@@ -142,7 +142,7 @@ export function evaluateParamOperator(
     }
 
     case 'regex':
-    case 'regex_i' as any: {
+    case 'regex_i': {
       const pattern = String(expectedValue ?? '');
       if (!pattern || pattern.length > MAX_REGEX_PATTERN_LENGTH || hasHighRiskRegexPattern(pattern)) {
         return false;
@@ -597,7 +597,7 @@ export function getValueByPath(data: unknown, path: string): unknown {
     .replace(/^\./, '');
 
   const segments = normalizedPath.split('.').filter(Boolean);
-  let current: any = resolvedData;
+  let current: unknown = resolvedData;
 
   for (const segment of segments) {
     if (current == null) return undefined;
@@ -606,11 +606,11 @@ export function getValueByPath(data: unknown, path: string): unknown {
       current = extractParamRule(current).value;
     }
 
-    if (typeof current === 'object') {
+    if (typeof current === 'object' && current !== null) {
       if (Array.isArray(current) && !isNaN(Number(segment))) {
         current = current[Number(segment)];
-      } else if (segment in current) {
-        current = current[segment];
+      } else if (segment in (current as Record<string, unknown>)) {
+        current = (current as Record<string, unknown>)[segment];
       } else {
         return undefined;
       }
