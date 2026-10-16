@@ -5,7 +5,7 @@ import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cach
 export interface UpsertOpenApiInput {
   projectId: string;
   mode?: 'upsert' | 'merge' | 'replace';
-  openApiJson: any;
+  openApiJson: unknown;
 }
 
 export async function upsertExternalOpenApi(input: UpsertOpenApiInput) {
@@ -50,12 +50,12 @@ export async function upsertExternalOpenApi(input: UpsertOpenApiInput) {
         details: result,
       },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       success: false,
       status: 400,
       code: 'OPENAPI_IMPORT_FAILED',
-      message: error?.message || 'Failed to import OpenAPI specification',
+      message: error instanceof Error ? error.message : 'Failed to import OpenAPI specification',
     };
   }
 }

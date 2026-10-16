@@ -5,16 +5,18 @@ import React from 'react';
 import { ShieldAlert, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { SIGN_IN_TEXT, SIGN_IN_SEMANTIC_ID } from '../constant';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { UseFormRegister, UseFormHandleSubmit, FieldErrors } from 'react-hook-form';
+import type { SignInFormValues } from '../hook/useSignIn';
+
 interface SignInFormCardProps {
   authError: string | null;
   showPassword: boolean;
   onToggleShowPassword: () => void;
-  register: any;
-  handleSubmit: any;
-  errors: any;
+  register: UseFormRegister<SignInFormValues>;
+  handleSubmit: UseFormHandleSubmit<SignInFormValues>;
+  errors: FieldErrors<SignInFormValues>;
   isSubmitting: boolean;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: SignInFormValues) => void;
   onGoogleSsoClick: () => void;
 }
 

@@ -34,10 +34,13 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt();
     const formattedMessages: RouterChatMessage[] = [
       { role: 'system', content: systemPrompt },
-      ...messages.map((m: any) => ({
-        role: (m.role === 'assistant' || m.role === 'system' ? m.role : 'user') as 'system' | 'user' | 'assistant',
-        content: String(m.content || ''),
-      })),
+      ...messages.map((m: unknown) => {
+        const msg = m && typeof m === 'object' ? (m as Record<string, unknown>) : {};
+        return {
+          role: (msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user') as 'system' | 'user' | 'assistant',
+          content: String(msg.content || ''),
+        };
+      }),
     ];
 
     // Create ReadableStream for SSE
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         const encoder = new TextEncoder();
 
-        const sendEvent = (data: Record<string, any>) => {
+        const sendEvent = (data: Record<string, unknown>) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         };
 
@@ -73,8 +76,8 @@ export async function POST(req: NextRequest) {
               sendEvent({ type: 'done' });
             }
           }
-        } catch (err: any) {
-          sendEvent({ type: 'error', text: err?.message || 'Terjadi kesalahan saat memproses streaming chat' });
+        } catch (err: unknown) {
+          sendEvent({ type: 'error', text: err instanceof Error ? err.message : 'Terjadi kesalahan saat memproses streaming chat' });
         } finally {
           controller.close();
         }
@@ -88,9 +91,9 @@ export async function POST(req: NextRequest) {
         Connection: 'keep-alive',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error?.message || 'Internal Server Error' },
+      { error: error instanceof Error ? error.message : 'Internal Server Error' },
       { status: 500 }
     );
   }

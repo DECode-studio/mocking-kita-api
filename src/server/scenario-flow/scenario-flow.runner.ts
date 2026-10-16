@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { generateId } from '@/src/core/utils/uuid';
+import { Prisma } from '@prisma/client';
 import {
   AssertionRule,
   AssertionResult,
@@ -17,22 +18,29 @@ import {
   getEnvironmentBaseUrl,
   getEnvironmentValue,
   getEnvironmentVariablesMap,
+  normalizeEnvironmentValues,
+  Environment,
 } from '@/src/client/domain/environment/entity/environment';
+import { ScenarioFlowExecutionStep } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
 
 /**
  * Extract nested value by dot or bracket notation, e.g. "data.users[0].id"
  */
-export function getNestedValue(obj: any, path: string): any {
+export function getNestedValue(obj: unknown, path: string): unknown {
   if (obj === null || obj === undefined || !path) return undefined;
   
   // Normalise array bracket access: "items[0].id" -> "items.0.id"
   const normalizedPath = path.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
   const parts = normalizedPath.split('.');
   
-  let current = obj;
+  let current: unknown = obj;
   for (const part of parts) {
     if (current === null || current === undefined) return undefined;
-    current = current[part];
+    if (typeof current === 'object') {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
   }
   return current;
 }
@@ -40,7 +48,7 @@ export function getNestedValue(obj: any, path: string): any {
 /**
  * Handle dynamic generator helpers like {{$uuid}}, {{$timestamp}}, {{$randomInt}}
  */
-function resolveDynamicGenerator(token: string): any {
+function resolveDynamicGenerator(token: string): string | number | null {
   switch (token.toLowerCase()) {
     case '$uuid':
       return generateId();
@@ -62,23 +70,24 @@ function resolveDynamicGenerator(token: string): any {
  */
 function resolveDataSheetToken(
   varKey: string,
-  variables: Record<string, any>,
+  variables: Record<string, unknown>,
   counters?: Record<string, number>
-): any {
+): unknown {
   if (!varKey.startsWith('datasheet.')) return undefined;
 
   const normalized = varKey.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
   const parts = normalized.split('.');
   // parts[0] is 'datasheet'
   const sheetCode = parts[1];
-  const pool = variables.datasheet?.[sheetCode];
+  const pools = variables.datasheet as Record<string, unknown[]> | undefined;
+  const pool = pools?.[sheetCode];
   if (!Array.isArray(pool) || pool.length === 0) {
     return undefined;
   }
 
   const modifier = parts[2];
-  let selectedItem: any;
-  let remainingStartIdx = 3;
+  let selectedItem: unknown;
+  const remainingStartIdx = 3;
 
   if (modifier === 'random' || modifier === '$random') {
     const randomIndex = Math.floor(Math.random() * pool.length);
@@ -133,10 +142,10 @@ function resolveDataSheetToken(
  * Interpolates string or objects with variable values, dynamic generators, and data sheet tokens
  */
 export function interpolateVariables(
-  template: any,
-  variables: Record<string, any>,
+  template: unknown,
+  variables: Record<string, unknown>,
   counters?: Record<string, number>
-): any {
+): unknown {
   if (typeof template === 'string') {
     // Check if entire string is single variable substitution e.g. "{{count}}" or "{{datasheet.emails.random}}"
     const exactMatch = template.match(/^\{\{\s*([^\}]+?)\s*\}\}$/);
@@ -173,7 +182,7 @@ export function interpolateVariables(
   }
 
   if (template !== null && typeof template === 'object') {
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(template)) {
       result[key] = interpolateVariables(value, variables, counters);
     }
@@ -248,13 +257,13 @@ export function createStepDataSheetCounters(masterCounters: Record<string, numbe
 export function buildNormalizedHeaders(
   scenarioHeaders: Record<string, string> | undefined | null,
   overrideHeaders: Record<string, string> | undefined | null,
-  variables: Record<string, any>,
+  variables: Record<string, unknown>,
   counters?: Record<string, number>,
   bodyType?: string
 ): Record<string, string> {
   const normalized: Record<string, string> = {};
 
-  const setHeader = (headerKey: string, headerValue: any) => {
+  const setHeader = (headerKey: string, headerValue: unknown) => {
     if (headerValue === undefined || headerValue === null || headerValue === '') return;
     // Find existing key case-insensitively and remove so casing is unified
     const lower = headerKey.toLowerCase();
@@ -350,13 +359,13 @@ export function evaluateAssertion(
   response: {
     status: number;
     headers: Record<string, string>;
-    body: any;
+    body: unknown;
     responseTimeMs: number;
   },
-  variables?: Record<string, any>,
+  variables?: Record<string, unknown>,
   counters?: Record<string, number>
 ): AssertionResult {
-  let actual: any;
+  let actual: unknown;
   let passed = false;
 
   switch (rule.type) {
@@ -430,9 +439,10 @@ export function evaluateAssertion(
         .replace(/\s*\}\}$/, '')
         .replace(/^datasheet\./, '')
         .trim();
+      const pools = variables?.datasheet as Record<string, unknown[]> | undefined;
       const pool =
-        variables?.datasheet && Array.isArray(variables.datasheet[targetCode])
-          ? variables.datasheet[targetCode]
+        pools && Array.isArray(pools[targetCode])
+          ? pools[targetCode]
           : [];
       passed = pool.some((item) => {
         if (typeof item === 'object') {
@@ -464,14 +474,14 @@ export function extractVariables(
   response: {
     status: number;
     headers: Record<string, string>;
-    body: any;
+    body: unknown;
   }
-): Record<string, any> {
-  const extracted: Record<string, any> = {};
+): Record<string, unknown> {
+  const extracted: Record<string, unknown> = {};
   if (!extractors || !Array.isArray(extractors)) return extracted;
 
   for (const ext of extractors) {
-    let val: any;
+    let val: unknown;
     if (ext.from === 'status') {
       val = response.status;
     } else if (ext.from === 'headers') {
@@ -494,6 +504,37 @@ export function extractVariables(
   return extracted;
 }
 
+export interface StepEnvironment {
+  id?: string;
+  name?: string;
+  status?: boolean;
+  environmentType?: string | null;
+  values?: unknown;
+  variables?: unknown;
+  baseUrl?: string | null;
+  isBaseUrl?: boolean;
+}
+
+export interface StepApiEnvironmentRelation {
+  enabled?: boolean;
+  environmentId?: string;
+  environment?: StepEnvironment | null;
+}
+
+export interface StepApiTarget {
+  name?: string | null;
+  description?: string | null;
+  targetEnvironment?: string | null;
+  targetEnvironmentType?: string | null;
+  apiEnvironments?: StepApiEnvironmentRelation[];
+}
+
+export interface StepBaseUrlTarget {
+  targetEnvironmentType?: string | null;
+  targetEnvironment?: string | null;
+  api?: StepApiTarget | null;
+}
+
 /**
  * Resolves the effective base URL for a step:
  * - If step.targetEnvironmentType === 'LOCAL', overrides to local APP_URL.
@@ -503,12 +544,12 @@ export function extractVariables(
  *   3. Falls back to variables.baseUrl
  */
 export function resolveStepBaseUrl(
-  step: { targetEnvironmentType?: string | null; targetEnvironment?: string | null; api?: any },
+  step: StepBaseUrlTarget,
   targetEnvType: string,
-  projectEnvironments: Array<any> = [],
-  currentVariables: Record<string, any> = {}
+  projectEnvironments: Array<StepEnvironment> = [],
+  currentVariables: Record<string, unknown> = {}
 ): string {
-  const isStepLocal = (step as any).targetEnvironmentType === 'LOCAL';
+  const isStepLocal = step.targetEnvironmentType === 'LOCAL';
   const effectiveStepEnvType = isStepLocal ? 'LOCAL' : targetEnvType;
 
   if (effectiveStepEnvType === 'LOCAL') {
@@ -517,9 +558,9 @@ export function resolveStepBaseUrl(
   }
 
   // Check explicit targetEnvironment if specified on step or step.api (can be ID, name, or slug)
-  const apiEnvs = (step.api as any)?.apiEnvironments || [];
+  const apiEnvs = step.api?.apiEnvironments || [];
   const explicitTarget = String(
-    (step as any).targetEnvironment || (step.api as any)?.targetEnvironment || ''
+    step.targetEnvironment || step.api?.targetEnvironment || ''
   ).trim();
 
   if (explicitTarget) {
@@ -527,7 +568,7 @@ export function resolveStepBaseUrl(
     const explicitSlug = explicitTargetLower.replace(/[^a-z0-9]+/g, '-');
 
     // 1. Check in step.api.apiEnvironments
-    const matchedByTargetInApi = apiEnvs.find((ae: any) => {
+    const matchedByTargetInApi = apiEnvs.find((ae) => {
       const env = ae.environment;
       if (!env || env.status === false || ae.enabled === false) return false;
       const envName = (env.name || '').toLowerCase();
@@ -541,7 +582,8 @@ export function resolveStepBaseUrl(
         explicitSlug.includes(envSlug);
       if (!matchesTarget) return false;
       if (env.environmentType && env.environmentType !== effectiveStepEnvType) {
-        if (!env.values || !env.values[effectiveStepEnvType]) return false;
+        const envVals = normalizeEnvironmentValues(env.values, env.isBaseUrl !== false);
+        if (!envVals[effectiveStepEnvType as keyof typeof envVals]) return false;
       }
       return true;
     });
@@ -552,7 +594,7 @@ export function resolveStepBaseUrl(
     }
 
     // 2. Check in projectEnvironments
-    const matchedByTargetInProj = projectEnvironments.find((e: any) => {
+    const matchedByTargetInProj = projectEnvironments.find((e) => {
       if (e.status === false) return false;
       const envName = (e.name || '').toLowerCase();
       const envSlug = envName.replace(/[^a-z0-9]+/g, '-');
@@ -564,7 +606,8 @@ export function resolveStepBaseUrl(
         explicitSlug.includes(envSlug);
       if (!matchesTarget) return false;
       if (e.environmentType && e.environmentType !== effectiveStepEnvType) {
-        if (!e.values || !e.values[effectiveStepEnvType]) return false;
+        const envVals = normalizeEnvironmentValues(e.values, e.isBaseUrl !== false);
+        if (!envVals[effectiveStepEnvType as keyof typeof envVals]) return false;
       }
       return true;
     });
@@ -577,7 +620,7 @@ export function resolveStepBaseUrl(
 
   // Option A: Check step.api.apiEnvironments (first enabled Base URL environment)
   for (const ae of apiEnvs) {
-    if (ae.enabled !== false && ae.environment && ae.environment.status !== false) {
+    if (ae.enabled !== false && ae.environment && (ae.environment as { status?: boolean }).status !== false) {
       const url = getEnvironmentBaseUrl(ae.environment, effectiveStepEnvType);
       if (url) return url.replace(/\/+$/, '');
     }
@@ -585,7 +628,7 @@ export function resolveStepBaseUrl(
 
   // Fallback: Check projectEnvironments (first Base URL environment with a URL for effectiveStepEnvType)
   for (const pe of projectEnvironments) {
-    if (pe.status !== false) {
+    if ((pe as { status?: boolean }).status !== false) {
       const url = getEnvironmentBaseUrl(pe, effectiveStepEnvType);
       if (url) return url.replace(/\/+$/, '');
     }
@@ -694,8 +737,8 @@ export async function executeScenarioFlow(
 
   // Initialize runtime variables
   // Priority: Active Env Variables -> Flow Variables -> Runtime Invocation Variables
-  const initialFlowVars = (flow.variables as Record<string, any>) || {};
-  const currentVariables: Record<string, any> = {
+  const initialFlowVars = (flow.variables as Record<string, unknown>) || {};
+  const currentVariables: Record<string, unknown> = {
     ...activeEnvVars,
     env: activeEnvVars, // makes both {{API_KEY}} and {{env.API_KEY}} available
     ...initialFlowVars,
@@ -715,7 +758,7 @@ export async function executeScenarioFlow(
       },
     });
 
-    const datasheetPools: Record<string, any[]> = {};
+    const datasheetPools: Record<string, unknown[]> = {};
     for (const ds of activeDataSheets) {
       datasheetPools[ds.code] = Array.isArray(ds.data) ? ds.data : [];
     }
@@ -726,7 +769,7 @@ export async function executeScenarioFlow(
 
   // Load persistent counters: from DB flow.variables._dataSheetCounters, overlaid with in-memory persistentFlowCounters
   const flowSavedCounters =
-    ((flow.variables as Record<string, any>)?._dataSheetCounters as Record<string, number>) || {};
+    ((flow.variables as Record<string, unknown>)?._dataSheetCounters as Record<string, number>) || {};
 
   const dataSheetCounters: Record<string, number> = {
     ...flowSavedCounters,
@@ -752,11 +795,11 @@ export async function executeScenarioFlow(
     triggerSource: options.triggerSource || (options.jobId ? 'SCHEDULED_JOB' : 'MANUAL'),
     targetMode: options.targetMode || 'LIVE',
     totalSteps: stepsToRun.length,
-    initialVariables: currentVariables,
+    initialVariables: currentVariables as unknown as Prisma.InputJsonValue,
     executedBy: options.executedBy || (options.jobId ? 'Scheduler' : 'User'),
   });
 
-  const stepExecutionResults: any[] = [];
+  const stepExecutionResults: unknown[] = [];
   let passedCount = 0;
   let failedCount = 0;
   let hasFailed = false;
@@ -811,7 +854,7 @@ export async function executeScenarioFlow(
     }
 
     // Interpolate any remaining {{variables}} directly in the URL path
-    interpolatedPath = interpolateVariables(interpolatedPath, currentVariables, stepCounters);
+    interpolatedPath = String(interpolateVariables(interpolatedPath, currentVariables, stepCounters));
 
     // Resolve Step Base URL (handles LOCAL override vs global targetEnvType)
     const stepBaseUrl = resolveStepBaseUrl(step, targetEnvType, projectEnvironments, currentVariables);
@@ -831,7 +874,7 @@ export async function executeScenarioFlow(
       ...((step.requestScenario?.queryParams as Record<string, string>) || {}),
       ...((step.queryParamsOverride as Record<string, string>) || {}),
     };
-    const interpolatedQuery = interpolateVariables(queryParamsObj, currentVariables, stepCounters);
+    const interpolatedQuery = (interpolateVariables(queryParamsObj, currentVariables, stepCounters) as Record<string, unknown>) || {};
     const queryParts: string[] = [];
     for (const [k, v] of Object.entries(interpolatedQuery)) {
       if (v !== undefined && v !== null && v !== '') {
@@ -855,11 +898,11 @@ export async function executeScenarioFlow(
     );
 
     // Body
-    let rawBody = step.bodyOverride !== undefined && step.bodyOverride !== null
+    const rawBody = step.bodyOverride !== undefined && step.bodyOverride !== null
       ? step.bodyOverride
       : step.requestScenario?.body;
 
-    let finalBody: any = undefined;
+    let finalBody: unknown = undefined;
     if (effectiveBodyType !== 'NONE' && rawBody !== undefined && rawBody !== null && rawMethod !== 'GET' && rawMethod !== 'HEAD') {
       finalBody = interpolateVariables(rawBody, currentVariables, stepCounters);
     }
@@ -879,9 +922,15 @@ export async function executeScenarioFlow(
     const stepStartTime = Date.now();
     let stepStatus: 'SUCCESS' | 'FAILED' = 'SUCCESS';
     let stepError: string | null = null;
-    let responseSnapshot: any = null;
+    let responseSnapshot: {
+      status: number;
+      statusText: string;
+      headers: Record<string, string>;
+      body: unknown;
+      responseTimeMs: number;
+    } | null = null;
     let assertionResults: AssertionResult[] = [];
-    let extractedVars: Record<string, any> = {};
+    let extractedVars: Record<string, unknown> = {};
 
     try {
       if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
@@ -906,8 +955,9 @@ export async function executeScenarioFlow(
             for (const [k, v] of Object.entries(finalBody)) {
               if (v !== undefined && v !== null) {
                 if (typeof v === 'object' && v !== null && 'filename' in v) {
-                  const blob = new Blob([String((v as any).content || '')], { type: (v as any).type || 'application/octet-stream' });
-                  formData.append(k, blob, String((v as any).filename));
+                  const fileObj = v as { content?: string; type?: string; filename?: string };
+                  const blob = new Blob([String(fileObj.content || '')], { type: fileObj.type || 'application/octet-stream' });
+                  formData.append(k, blob, String(fileObj.filename));
                 } else if (typeof v === 'object') {
                   formData.append(k, JSON.stringify(v));
                 } else {
@@ -945,7 +995,7 @@ export async function executeScenarioFlow(
         respHeaders[key] = value;
       });
 
-      let parsedBody: any = null;
+      let parsedBody: unknown = null;
       const responseText = await res.text();
       try {
         parsedBody = JSON.parse(responseText);
@@ -999,9 +1049,10 @@ export async function executeScenarioFlow(
           stepError = `HTTP ${res.status} ${res.statusText}`;
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
       stepStatus = 'FAILED';
-      stepError = err.name === 'AbortError' ? 'Request timed out after 30s' : err.message || 'Unknown network error';
+      stepError = errorObj.name === 'AbortError' ? 'Request timed out after 30s' : errorObj.message || 'Unknown network error';
       responseSnapshot = {
         status: 0,
         statusText: 'Network Error',
@@ -1033,10 +1084,10 @@ export async function executeScenarioFlow(
       status: stepStatus,
       httpStatusCode: responseSnapshot?.status || 0,
       durationMs: stepDurationMs,
-      requestSnapshot,
-      responseSnapshot,
-      extractedVariables: extractedVars,
-      assertionResults,
+      requestSnapshot: requestSnapshot as unknown as Prisma.InputJsonValue,
+      responseSnapshot: responseSnapshot as unknown as Prisma.InputJsonValue,
+      extractedVariables: extractedVars as unknown as Prisma.InputJsonValue,
+      assertionResults: assertionResults as unknown as Prisma.InputJsonValue,
       errorMessage: stepError,
     });
 
@@ -1054,7 +1105,7 @@ export async function executeScenarioFlow(
 
   // Persist updated counters into database ScenarioFlow.variables._dataSheetCounters
   try {
-    const currentDbVars = (flow.variables as Record<string, any>) || {};
+    const currentDbVars = (flow.variables as Record<string, unknown>) || {};
     await prisma.scenarioFlow.update({
       where: { id: flow.id },
       data: {
@@ -1075,13 +1126,13 @@ export async function executeScenarioFlow(
     passedSteps: passedCount,
     failedSteps: failedCount,
     durationMs: totalDurationMs,
-    finalVariables: currentVariables,
+    finalVariables: currentVariables as unknown as Prisma.InputJsonValue,
     errorSummary,
   });
 
   return {
     execution: updatedExecution,
-    steps: stepExecutionResults,
+    steps: stepExecutionResults as ScenarioFlowExecutionStep[],
     finalVariables: currentVariables,
   };
 }

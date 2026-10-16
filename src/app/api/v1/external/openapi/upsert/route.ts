@@ -35,13 +35,13 @@ export async function POST(request: NextRequest) {
       },
       { status: result.status }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         success: false,
         error: {
           code: 'SERVER_ERROR',
-          message: error?.message || 'An internal server error occurred',
+          message: error instanceof Error ? error.message : 'An internal server error occurred',
         },
       },
       { status: 500 }

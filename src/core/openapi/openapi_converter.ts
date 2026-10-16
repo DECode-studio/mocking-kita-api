@@ -287,7 +287,7 @@ export function exportProjectToOpenApiSpec(
   };
 }
 
-function resolveRef(refStr: string, rootSpec: any, visitedRefs: Set<string> = new Set()): any {
+function resolveRef(refStr: string, rootSpec: unknown, visitedRefs: Set<string> = new Set()): unknown {
   if (!refStr || typeof refStr !== 'string' || !rootSpec || typeof rootSpec !== 'object') {
     return null;
   }
@@ -301,49 +301,50 @@ function resolveRef(refStr: string, rootSpec: any, visitedRefs: Set<string> = ne
     .split('/')
     .map((p) => p.replace(/~1/g, '/').replace(/~0/g, '~'));
 
-  let curr = rootSpec;
+  let curr: unknown = rootSpec;
   for (const part of parts) {
-    if (curr && typeof curr === 'object' && part in curr) {
-      curr = curr[part];
+    if (curr && typeof curr === 'object' && part in (curr as Record<string, unknown>)) {
+      curr = (curr as Record<string, unknown>)[part];
     } else {
       return null;
     }
   }
 
-  if (curr && typeof curr === 'object' && typeof curr.$ref === 'string') {
-    return resolveRef(curr.$ref, rootSpec, visitedRefs);
+  if (curr && typeof curr === 'object' && typeof (curr as Record<string, unknown>).$ref === 'string') {
+    return resolveRef((curr as Record<string, unknown>).$ref as string, rootSpec, visitedRefs);
   }
   return curr;
 }
 
-function resolveSchema(schema: any, rootSpec: any, visitedRefs: Set<string> = new Set()): any {
+function resolveSchema(schema: unknown, rootSpec: unknown, visitedRefs: Set<string> = new Set()): unknown {
   if (!schema || typeof schema !== 'object') return schema;
 
-  let current = schema;
+  let current = schema as Record<string, unknown>;
   if (typeof current.$ref === 'string') {
     const deref = resolveRef(current.$ref, rootSpec, new Set(visitedRefs));
     if (deref && typeof deref === 'object') {
       const { $ref, ...rest } = current;
-      current = { ...deref, ...rest };
+      current = { ...(deref as Record<string, unknown>), ...rest };
     }
   }
 
   if (Array.isArray(current.allOf) && current.allOf.length > 0) {
-    let mergedProps: Record<string, any> = {};
+    let mergedProps: Record<string, unknown> = {};
     let mergedType = current.type;
     let mergedExample = current.example;
 
     for (const sub of current.allOf) {
       const resSub = resolveSchema(sub, rootSpec, visitedRefs);
       if (resSub && typeof resSub === 'object') {
-        if (resSub.properties && typeof resSub.properties === 'object') {
-          mergedProps = { ...mergedProps, ...resSub.properties };
+        const resSubObj = resSub as Record<string, unknown>;
+        if (resSubObj.properties && typeof resSubObj.properties === 'object') {
+          mergedProps = { ...mergedProps, ...(resSubObj.properties as Record<string, unknown>) };
         }
-        if (resSub.type && !mergedType) {
-          mergedType = resSub.type;
+        if (resSubObj.type && !mergedType) {
+          mergedType = resSubObj.type;
         }
-        if (resSub.example !== undefined && mergedExample === undefined) {
-          mergedExample = resSub.example;
+        if (resSubObj.example !== undefined && mergedExample === undefined) {
+          mergedExample = resSubObj.example;
         }
       }
     }
@@ -352,7 +353,7 @@ function resolveSchema(schema: any, rootSpec: any, visitedRefs: Set<string> = ne
     current = {
       ...rest,
       type: mergedType || (Object.keys(mergedProps).length > 0 ? 'object' : rest.type),
-      properties: { ...mergedProps, ...(current.properties || {}) },
+      properties: { ...mergedProps, ...((current.properties as Record<string, unknown>) || {}) },
       example: mergedExample,
     };
   }
@@ -360,9 +361,10 @@ function resolveSchema(schema: any, rootSpec: any, visitedRefs: Set<string> = ne
   return current;
 }
 
-function generateSampleFromSchema(schema: any, rootSpec: any, visitedRefs: Set<string> = new Set()): any {
-  const s = resolveSchema(schema, rootSpec, visitedRefs);
-  if (!s || typeof s !== 'object') return s;
+function generateSampleFromSchema(schema: unknown, rootSpec: unknown, visitedRefs: Set<string> = new Set()): unknown {
+  const resolved = resolveSchema(schema, rootSpec, visitedRefs);
+  if (!resolved || typeof resolved !== 'object') return resolved;
+  const s = resolved as Record<string, unknown>;
 
   if (s.example !== undefined) return s.example;
   if (s.default !== undefined) return s.default;
@@ -381,8 +383,8 @@ function generateSampleFromSchema(schema: any, rootSpec: any, visitedRefs: Set<s
 
   if (s.type === 'object' || s.properties || (!s.type && !s.items)) {
     if (s.properties && typeof s.properties === 'object') {
-      const obj: Record<string, any> = {};
-      for (const [propName, propSchema] of Object.entries(s.properties)) {
+      const obj: Record<string, unknown> = {};
+      for (const [propName, propSchema] of Object.entries(s.properties as Record<string, unknown>)) {
         obj[propName] = generateSampleFromSchema(propSchema, rootSpec, visitedRefs);
       }
       return obj;
@@ -409,12 +411,12 @@ function generateSampleFromSchema(schema: any, rootSpec: any, visitedRefs: Set<s
   return {};
 }
 
-function extractParamExample(param: any, rawSpec: any): unknown {
+function extractParamExample(param: Record<string, unknown>, rawSpec: unknown): unknown {
   if (param.example !== undefined) return param.example;
   if (param.default !== undefined) return param.default;
   if (param.schema) {
     const sample = generateSampleFromSchema(param.schema, rawSpec);
-    if (sample !== undefined && (typeof sample !== 'object' || Object.keys(sample).length > 0)) {
+    if (sample !== undefined && (typeof sample !== 'object' || (sample !== null && Object.keys(sample).length > 0))) {
       return sample;
     }
   }
@@ -442,14 +444,11 @@ function extractParamExample(param: any, rawSpec: any): unknown {
  */
 export function parseOpenApiSpecToProjectData(
   projectId: string,
-  rawSpec: any,
+  rawSpec: unknown,
   existingCollections: Collection[] = []
 ): ExtractedProjectData {
-  if (!rawSpec || typeof rawSpec !== 'object') {
-    throw new Error('Invalid OpenAPI JSON format: root must be an object.');
-  }
-
-  const pathsObj = rawSpec.paths || {};
+  const spec = rawSpec as Record<string, unknown>;
+  const pathsObj = (spec.paths as Record<string, unknown>) || {};
   const collectionsMap = new Map<string, string>(); // collectionName -> collectionId
 
   existingCollections.forEach((c) => {
@@ -473,19 +472,20 @@ export function parseOpenApiSpecToProjectData(
   }
 
   // Parse OpenAPI servers / Swagger host -> Environments (Matrix Model)
-  const explicitEnvs = rawSpec['x-environments'] || rawSpec.environments;
+  const explicitEnvs = (spec['x-environments'] || spec.environments) as Array<Record<string, unknown>> | undefined;
 
   // Extract any top-level custom variables (e.g. from extensions, securitySchemes, or parameters)
   const topLevelCustomVars: EnvironmentVariable[] = [];
-  const rawTopVars = rawSpec['x-variables'] || rawSpec['x-environment-variables'] || rawSpec.variables;
+  const rawTopVars = spec['x-variables'] || spec['x-environment-variables'] || spec.variables;
   if (rawTopVars) {
     topLevelCustomVars.push(...parseRawVariables(rawTopVars));
   }
 
   // Extract security schemes (OpenAPI 3 components.securitySchemes or Swagger 2 securityDefinitions)
-  const securitySchemes = rawSpec.components?.securitySchemes || rawSpec.securityDefinitions || {};
+  const components = (spec.components || {}) as Record<string, unknown>;
+  const securitySchemes = (components.securitySchemes || spec.securityDefinitions || {}) as Record<string, unknown>;
   if (securitySchemes && typeof securitySchemes === 'object') {
-    for (const [schemeKey, rawScheme] of Object.entries(securitySchemes as Record<string, any>)) {
+    for (const [schemeKey, rawScheme] of Object.entries(securitySchemes as Record<string, Record<string, unknown>>)) {
       if (!rawScheme || typeof rawScheme !== 'object') continue;
       const type = String(rawScheme.type || '').toLowerCase();
       const scheme = String(rawScheme.scheme || '').toLowerCase();
@@ -542,9 +542,9 @@ export function parseOpenApiSpecToProjectData(
   }
 
   // Extract common header parameters defined at root (OpenAPI 3 components.parameters or Swagger 2 parameters)
-  const rootParams = rawSpec.components?.parameters || rawSpec.parameters || {};
+  const rootParams = (components.parameters || spec.parameters || {}) as Record<string, Record<string, unknown>>;
   if (rootParams && typeof rootParams === 'object') {
-    for (const [, p] of Object.entries(rootParams as Record<string, any>)) {
+    for (const [, p] of Object.entries(rootParams as Record<string, Record<string, unknown>>)) {
       if (p && typeof p === 'object' && p.in === 'header' && p.name) {
         const hName = String(p.name);
         if (!topLevelCustomVars.some((v) => v.key.toLowerCase() === hName.toLowerCase())) {
@@ -572,10 +572,10 @@ export function parseOpenApiSpecToProjectData(
     for (let i = 0; i < explicitEnvs.length; i++) {
       const rawEnv = explicitEnvs[i];
       if (!rawEnv || typeof rawEnv !== 'object') continue;
-      const envName = rawEnv.name || `Environment ${i + 1}`;
+      const envName = (typeof rawEnv.name === 'string' ? rawEnv.name : '') || `Environment ${i + 1}`;
       const isBaseUrl = rawEnv.isBaseUrl !== false;
       const cleanBaseUrl = rawEnv.baseUrl ? String(rawEnv.baseUrl).trim() : '';
-      const values = normalizeEnvironmentValues(rawEnv.values, isBaseUrl);
+      const values = normalizeEnvironmentValues(rawEnv.values as Record<string, unknown> | undefined, isBaseUrl);
       const parsedVars = parseRawVariables(rawEnv.variables);
 
       if (cleanBaseUrl && !parsedVars.some((v) => v.key.toLowerCase() === 'baseurl' || v.key.toLowerCase() === 'base_url')) {
@@ -596,19 +596,21 @@ export function parseOpenApiSpecToProjectData(
       }
 
       environmentsToCreate.push({
-        id: rawEnv.id || generateId(),
+        id: (typeof rawEnv.id === 'string' ? rawEnv.id : '') || generateId(),
         projectId,
         name: envName,
         isBaseUrl,
         values,
-        environmentType: (rawEnv.environmentType as any) || 'DEVELOPMENT',
+        environmentType: (rawEnv.environmentType as EnvironmentType) || 'DEVELOPMENT',
         variables: parsedVars,
-        baseUrl: cleanBaseUrl || getEnvironmentBaseUrl({ values, isBaseUrl } as any),
+        baseUrl: cleanBaseUrl || getEnvironmentBaseUrl({ values, isBaseUrl }),
         status: rawEnv.status !== false,
       });
     }
-  } else if (Array.isArray(rawSpec.servers) && rawSpec.servers.length > 0) {
-    const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
+  } else if (Array.isArray(spec.servers) && spec.servers.length > 0) {
+    const serversList = spec.servers as Array<Record<string, unknown>>;
+    const infoObj = spec.info as Record<string, unknown> | undefined;
+    const serviceName = (infoObj?.title ? String(infoObj.title).trim() : '') || 'API Service';
     const values: Partial<Record<EnvironmentType, string | null>> = {
       LOCAL: null,
       DEVELOPMENT: null,
@@ -620,8 +622,8 @@ export function parseOpenApiSpecToProjectData(
     let firstUrl = '';
     const serverCustomVars: EnvironmentVariable[] = [...topLevelCustomVars];
 
-    for (let i = 0; i < rawSpec.servers.length; i++) {
-      const serverObj = rawSpec.servers[i];
+    for (let i = 0; i < serversList.length; i++) {
+      const serverObj = serversList[i];
       if (serverObj && typeof serverObj.url === 'string' && serverObj.url.trim()) {
         const url = serverObj.url.trim();
         if (!firstUrl) firstUrl = url;
@@ -633,7 +635,7 @@ export function parseOpenApiSpecToProjectData(
 
         // OpenAPI 3 Server Variables support: servers[i].variables
         if (serverObj.variables && typeof serverObj.variables === 'object') {
-          for (const [varKey, varData] of Object.entries(serverObj.variables as Record<string, any>)) {
+          for (const [varKey, varData] of Object.entries(serverObj.variables as Record<string, { default?: unknown; enum?: unknown[]; description?: string }>)) {
             if (!serverCustomVars.some((v) => v.key === varKey)) {
               serverCustomVars.push({
                 id: generateId(),
@@ -675,12 +677,13 @@ export function parseOpenApiSpecToProjectData(
       baseUrl: firstUrl,
       status: true,
     });
-  } else if (rawSpec.host && typeof rawSpec.host === 'string' && rawSpec.host.trim()) {
-    const scheme = Array.isArray(rawSpec.schemes) && rawSpec.schemes.length > 0 ? rawSpec.schemes[0] : 'https';
-    const basePath = typeof rawSpec.basePath === 'string' ? rawSpec.basePath : '';
-    const fullUrl = `${scheme}://${rawSpec.host.trim()}${basePath}`;
+  } else if (spec.host && typeof spec.host === 'string' && spec.host.trim()) {
+    const scheme = Array.isArray(spec.schemes) && spec.schemes.length > 0 ? spec.schemes[0] : 'https';
+    const basePath = typeof spec.basePath === 'string' ? spec.basePath : '';
+    const fullUrl = `${scheme}://${spec.host.trim()}${basePath}`;
     const envType = inferEnvType(fullUrl);
-    const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
+    const infoObj = spec.info as Record<string, unknown> | undefined;
+    const serviceName = (infoObj?.title ? String(infoObj.title).trim() : '') || 'API Service';
     const envId = generateId();
 
     const values: Partial<Record<EnvironmentType, string | null>> = {
@@ -713,7 +716,8 @@ export function parseOpenApiSpecToProjectData(
       status: true,
     });
   } else if (topLevelCustomVars.length > 0) {
-    const serviceName = (rawSpec.info?.title ? String(rawSpec.info.title).trim() : '') || 'API Service';
+    const infoObj = spec.info as Record<string, unknown> | undefined;
+    const serviceName = (infoObj?.title ? String(infoObj.title).trim() : '') || 'API Service';
     const envId = generateId();
     environmentsToCreate.push({
       id: envId,
@@ -735,8 +739,8 @@ export function parseOpenApiSpecToProjectData(
   }
 
   // Parse OpenAPI tags -> collections
-  if (Array.isArray(rawSpec.tags)) {
-    for (const tagObj of rawSpec.tags) {
+  if (Array.isArray(spec.tags)) {
+    for (const tagObj of spec.tags as Array<Record<string, unknown>>) {
       if (tagObj && tagObj.name) {
         const tagName = String(tagObj.name).trim();
         const lowerName = tagName.toLowerCase();
@@ -764,16 +768,18 @@ export function parseOpenApiSpecToProjectData(
     // Convert path template if needed (OpenAPI uses /users/{id} -> /users/:id)
     const normalizedPath = sanitizeImportedPath(pathStr).replace(/\{([^}]+)\}/g, ':$1');
 
-    for (const methodKey of Object.keys(pathItem)) {
+    const pathItemObj = pathItem as Record<string, unknown>;
+
+    for (const methodKey of Object.keys(pathItemObj)) {
       const lowerMethod = methodKey.toLowerCase();
       if (!supportedMethods.includes(lowerMethod)) continue;
 
-      const operation = (pathItem as any)[methodKey];
+      const operation = pathItemObj[methodKey] as Record<string, unknown> | undefined;
       if (!operation || typeof operation !== 'object') continue;
 
       const methodRequest = lowerMethod.toUpperCase() as MethodRequest;
-      const apiName = operation.summary || operation.operationId || `${methodRequest} ${normalizedPath}`;
-      const apiDescription = operation.description || undefined;
+      const apiName = (operation.summary as string) || (operation.operationId as string) || `${methodRequest} ${normalizedPath}`;
+      const apiDescription = (operation.description as string) || undefined;
 
       // Tag handling -> Collection mapping
       let collectionId: string | null = null;
@@ -817,28 +823,29 @@ export function parseOpenApiSpecToProjectData(
       let bodyType: RequestBodyType = 'NONE';
 
       const consumes = Array.isArray(operation.consumes) ? operation.consumes : [];
-      const isUrlEncoded = consumes.some((c: string) => typeof c === 'string' && c.toLowerCase().includes('x-www-form-urlencoded'));
+      const isUrlEncoded = consumes.some((c: unknown) => typeof c === 'string' && c.toLowerCase().includes('x-www-form-urlencoded'));
 
-      const parametersList: any[] = [];
-      if (Array.isArray((pathItem as any).parameters)) {
-        parametersList.push(...(pathItem as any).parameters);
+      const parametersList: Array<Record<string, unknown>> = [];
+      const pathItemParams = pathItemObj.parameters;
+      if (Array.isArray(pathItemParams)) {
+        parametersList.push(...(pathItemParams as Array<Record<string, unknown>>));
       }
       if (Array.isArray(operation.parameters)) {
-        parametersList.push(...operation.parameters);
+        parametersList.push(...(operation.parameters as Array<Record<string, unknown>>));
       }
 
       for (let param of parametersList) {
         if (!param) continue;
         if (typeof param === 'object' && typeof param.$ref === 'string') {
           const resolved = resolveRef(param.$ref, rawSpec);
-          if (resolved) param = resolved;
+          if (resolved && typeof resolved === 'object') param = resolved as Record<string, unknown>;
         }
         if (!param || !param.name) continue;
         const pName = String(param.name);
         const pIn = String(param.in || 'query').toLowerCase();
         let pExample = extractParamExample(param, rawSpec);
 
-        if (typeof pExample === 'object' && pExample !== null && (pExample as any).$ref) {
+        if (typeof pExample === 'object' && pExample !== null && '$ref' in pExample) {
           pExample = generateSampleFromSchema(pExample, rawSpec);
         }
 
@@ -864,8 +871,9 @@ export function parseOpenApiSpecToProjectData(
         }
       }
 
-      if (operation.requestBody && operation.requestBody.content) {
-        const contentObj = operation.requestBody.content;
+      const reqBodyObj = operation.requestBody && typeof operation.requestBody === 'object' ? (operation.requestBody as Record<string, unknown>) : null;
+      if (reqBodyObj && reqBodyObj.content && typeof reqBodyObj.content === 'object') {
+        const contentObj = reqBodyObj.content as Record<string, { example?: unknown; schema?: unknown }>;
         const jsonContent = contentObj['application/json'] || contentObj['*/*'];
         const multipartContent = contentObj['multipart/form-data'];
         const urlEncodedContent = contentObj['application/x-www-form-urlencoded'];
@@ -937,12 +945,13 @@ export function parseOpenApiSpecToProjectData(
       } else {
         for (const [codeKey, respVal] of responseEntries) {
           const statusCode = parseInt(codeKey, 10) || 200;
-          const respObj = (respVal as any) || {};
-          const respName = respObj.description || `${statusCode} Response`;
+          const respObj = (respVal && typeof respVal === 'object' ? (respVal as Record<string, unknown>) : {});
+          const respName = (typeof respObj.description === 'string' ? respObj.description : '') || `${statusCode} Response`;
 
           let respBody: unknown = { message: respName };
-          if (respObj.content && (respObj.content['application/json'] || respObj.content['*/*'])) {
-            const jsonResp = respObj.content['application/json'] || respObj.content['*/*'];
+          const content = respObj.content as Record<string, { example?: unknown; examples?: Record<string, { value?: unknown }>; schema?: unknown }> | undefined;
+          if (content && (content['application/json'] || content['*/*'])) {
+            const jsonResp = content['application/json'] || content['*/*'];
             if (jsonResp.example !== undefined) {
               respBody = jsonResp.example;
             } else if (jsonResp.examples && typeof jsonResp.examples === 'object') {
@@ -953,12 +962,13 @@ export function parseOpenApiSpecToProjectData(
               respBody = generateSampleFromSchema(jsonResp.schema, rawSpec);
             }
           } else if (respObj.schema) {
-            if (respObj.example !== undefined) {
-              respBody = respObj.example;
-            } else if (respObj.examples && respObj.examples['application/json']) {
-              respBody = respObj.examples['application/json'];
+            const schemaObj = respObj as { schema?: unknown; example?: unknown; examples?: Record<string, unknown> };
+            if (schemaObj.example !== undefined) {
+              respBody = schemaObj.example;
+            } else if (schemaObj.examples && schemaObj.examples['application/json']) {
+              respBody = schemaObj.examples['application/json'];
             } else {
-              respBody = generateSampleFromSchema(respObj.schema, rawSpec);
+              respBody = generateSampleFromSchema(schemaObj.schema, rawSpec);
             }
           }
 
@@ -966,7 +976,7 @@ export function parseOpenApiSpecToProjectData(
             try {
               respBody = JSON.parse(respBody);
             } catch {}
-          } else if (typeof respBody === 'object' && respBody !== null && (respBody as any).$ref) {
+          } else if (typeof respBody === 'object' && respBody !== null && '$ref' in respBody) {
             respBody = generateSampleFromSchema(respBody, rawSpec);
           }
 

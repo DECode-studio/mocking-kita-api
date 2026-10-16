@@ -45,11 +45,11 @@ export const useKnowledgeBaseExplorer = () => {
       } else {
         setSelectedSection(null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       addToast({
         type: 'error',
         title: 'Gagal Memuat Knowledge',
-        description: err?.message || 'Terjadi kesalahan saat memuat data',
+        description: err instanceof Error ? err.message : 'Terjadi kesalahan saat memuat data',
       });
     } finally {
       setLoading(false);
@@ -123,11 +123,11 @@ export const useKnowledgeBaseExplorer = () => {
         });
         await loadItems();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       addToast({
         type: 'error',
         title: 'Gagal Menghapus',
-        description: err?.message || 'Tidak dapat menghapus item',
+        description: err instanceof Error ? err.message : 'Tidak dapat menghapus item',
       });
     }
   };

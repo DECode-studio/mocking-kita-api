@@ -3,6 +3,8 @@
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, UploadCloud, FileJson, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FlowExportTemplate } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { ImportFlowResult } from '@/src/client/domain/scenario-flow/repository/scenario_flow_repository';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { SCENARIO_FLOWS_SEMANTIC_ID, SCENARIO_FLOWS_TEXT } from '../constant';
 import { useImportScenarioFlowModal } from '../hook';
@@ -12,8 +14,8 @@ interface ImportScenarioFlowModalProps {
   onClose: () => void;
   projectId?: string;
   projects?: Project[];
-  onSuccess: (result: any) => void;
-  onImportFlow?: (targetProjectId: string, template: any) => Promise<any>;
+  onSuccess: (result: ImportFlowResult) => void;
+  onImportFlow?: (targetProjectId: string, template: FlowExportTemplate | Record<string, unknown>) => Promise<ImportFlowResult>;
 }
 
 export const ImportScenarioFlowModal: React.FC<ImportScenarioFlowModalProps> = ({

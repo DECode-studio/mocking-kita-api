@@ -14,11 +14,11 @@ export interface ExternalEndpointSpec {
     defaultValue?: string;
     example?: string;
   }>;
-  requestBodyExample?: Record<string, any>;
+  requestBodyExample?: Record<string, unknown>;
   responseExamples: Array<{
     status: number;
     title: string;
-    body: Record<string, any>;
+    body: Record<string, unknown>;
   }>;
 }
 

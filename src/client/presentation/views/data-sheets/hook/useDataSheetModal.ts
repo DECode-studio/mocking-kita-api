@@ -16,7 +16,7 @@ interface UseDataSheetModalProps {
     category?: string | null;
     description?: string | null;
     format: 'LIST' | 'TABLE';
-    data: any[];
+    data: unknown[];
     status?: boolean;
   }) => Promise<void>;
   onClose: () => void;
@@ -91,7 +91,7 @@ export const useDataSheetModal = ({
     }
   }, [editingSheet, code, name, slugify]);
 
-  const getParsedData = useCallback((): any[] => {
+  const getParsedData = useCallback((): unknown[] => {
     if (inputMode === 'lines' && format === 'LIST') {
       return linesText
         .split('\n')
@@ -137,7 +137,7 @@ export const useDataSheetModal = ({
             const headers = rawLines[0].split(',').map((h) => h.trim().replace(/^["']|["']$/g, ''));
             const records = rawLines.slice(1).map((line) => {
               const vals = line.split(',').map((v) => v.trim().replace(/^["']|["']$/g, ''));
-              const row: Record<string, any> = {};
+              const row: Record<string, unknown> = {};
               headers.forEach((h, i) => {
                 row[h] = vals[i] ?? '';
               });
@@ -150,8 +150,8 @@ export const useDataSheetModal = ({
           }
         }
         setErrorMessage(null);
-      } catch (err: any) {
-        setErrorMessage(err.message || DATA_SHEET_TEXT.ERR_FAILED_FILE_READ);
+      } catch (err: unknown) {
+        setErrorMessage(err instanceof Error ? err.message : DATA_SHEET_TEXT.ERR_FAILED_FILE_READ);
       }
       if (e.target) e.target.value = '';
     };
@@ -209,8 +209,8 @@ export const useDataSheetModal = ({
           setErrorMessage(DATA_SHEET_TEXT.REMOVED_DUPLICATES(removed));
           setTimeout(() => setErrorMessage(null), 3000);
         }
-      } catch (err: any) {
-        setErrorMessage(err.message || DATA_SHEET_TEXT.ERR_INVALID_JSON);
+      } catch (err: unknown) {
+        setErrorMessage(err instanceof Error ? err.message : DATA_SHEET_TEXT.ERR_INVALID_JSON);
       }
     }
   }, [inputMode, format, linesText, jsonText]);
@@ -220,8 +220,8 @@ export const useDataSheetModal = ({
       const parsed = JSON.parse(jsonText.trim() || '[]');
       setJsonText(JSON.stringify(parsed, null, 2));
       setErrorMessage(null);
-    } catch (err: any) {
-      setErrorMessage(DATA_SHEET_TEXT.ERR_INVALID_JSON + ': ' + err.message);
+    } catch (err: unknown) {
+      setErrorMessage(DATA_SHEET_TEXT.ERR_INVALID_JSON + ': ' + (err instanceof Error ? err.message : String(err)));
     }
   }, [jsonText]);
 
@@ -250,11 +250,11 @@ export const useDataSheetModal = ({
       return;
     }
 
-    let parsedData: any[] = [];
+    let parsedData: unknown[] = [];
     try {
       parsedData = getParsedData();
-    } catch (err: any) {
-      setErrorMessage(err.message || DATA_SHEET_TEXT.ERR_INVALID_DATA_FORMAT);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : DATA_SHEET_TEXT.ERR_INVALID_DATA_FORMAT);
       return;
     }
 
@@ -272,8 +272,8 @@ export const useDataSheetModal = ({
         status: editingSheet?.status ?? true,
       });
       onClose();
-    } catch (err: any) {
-      setErrorMessage(err.message || DATA_SHEET_TEXT.ERR_FAILED_SAVE);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : DATA_SHEET_TEXT.ERR_FAILED_SAVE);
     } finally {
       setIsSubmitting(false);
     }

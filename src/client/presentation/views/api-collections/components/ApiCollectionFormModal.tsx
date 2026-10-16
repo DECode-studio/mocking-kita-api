@@ -10,14 +10,14 @@ import { Collection } from '@/src/client/domain/collection/entity/collection';
 import { Account } from '@/src/client/domain/account/entity/account';
 import { API_COLLECTIONS_TEXT, API_COLLECTIONS_SEMANTIC_ID } from '../constant';
 import { PicSelectField } from '@/src/client/presentation/components/shared/PicSelectField';
+import { ApiFormValues } from '../hook/useApiCollections';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface ApiCollectionFormModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   editingApi: ApiCollection | null;
-  form: UseFormReturn<any>;
-  onSubmit: (data: any) => void;
+  form: UseFormReturn<ApiFormValues>;
+  onSubmit: (data: ApiFormValues) => void;
   collections: Collection[];
   accounts?: Account[];
 }

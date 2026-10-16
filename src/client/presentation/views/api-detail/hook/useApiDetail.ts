@@ -7,7 +7,12 @@ import { useUIStore } from '@/src/client/presentation/stores/uiStore';
 import { usePageLoadingOverlay } from '@/src/client/presentation/components/shared/PageLoadingOverlay';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
-import { ApiDetailSnapshot, ApiDetailUseCase } from '@/src/client/domain/api/usecase/api_detail_usecase';
+import {
+  ApiDetailSnapshot,
+  ApiDetailUseCase,
+  CreateRequestScenarioInput,
+  CreateResponseScenarioInput,
+} from '@/src/client/domain/api/usecase/api_detail_usecase';
 import { useRequestScenarioActions } from './useRequestScenarioActions';
 import { useResponseScenarioActions } from './useResponseScenarioActions';
 
@@ -97,7 +102,7 @@ export function useApiDetail(
     );
   };
 
-  const createRequestScenario = async (input: any): Promise<any> => {
+  const createRequestScenario = async (input: CreateRequestScenarioInput): Promise<RequestScenario> => {
     return pageLoading.run(
       {
         title: `Membuat skenario request "${input.name || 'baru'}"`,
@@ -111,7 +116,7 @@ export function useApiDetail(
     );
   };
 
-  const updateRequestScenario = async (id: string, input: any): Promise<any> => {
+  const updateRequestScenario = async (id: string, input: Partial<RequestScenario>): Promise<RequestScenario> => {
     return pageLoading.run(
       {
         title: `Menyimpan skenario request "${input.name || 'ini'}"`,
@@ -125,7 +130,7 @@ export function useApiDetail(
     );
   };
 
-  const createResponseScenario = async (input: any): Promise<any> => {
+  const createResponseScenario = async (input: CreateResponseScenarioInput): Promise<ResponseScenario> => {
     return pageLoading.run(
       {
         title: `Membuat respons "${input.name || 'baru'}"`,
@@ -139,7 +144,7 @@ export function useApiDetail(
     );
   };
 
-  const updateResponseScenario = async (id: string, input: any): Promise<any> => {
+  const updateResponseScenario = async (id: string, input: Partial<ResponseScenario>): Promise<ResponseScenario> => {
     return pageLoading.run(
       {
         title: `Menyimpan respons "${input.name || 'ini'}"`,

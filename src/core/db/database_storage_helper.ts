@@ -1,7 +1,15 @@
 import prisma from '@/src/core/db/prisma-client';
 import { MockApiDatabase } from '@/src/client/domain/database/entity/mock_api_database';
 import { Prisma } from '@prisma/client';
-import { getEnvironmentBaseUrl, parseRawVariables, normalizeEnvironmentValues } from '@/src/client/domain/environment/entity/environment';
+import {
+  EnvironmentVariable,
+  EnvironmentType,
+  getEnvironmentBaseUrl,
+  parseRawVariables,
+  normalizeEnvironmentValues,
+} from '@/src/client/domain/environment/entity/environment';
+import { MethodRequest, RequestBodyType, MatchType, MatchStrategy, BodyPathRule } from '@/src/core/utils/types';
+import { DataSheetFormat } from '@/src/client/domain/data-sheet/entity/data_sheet';
 import { generateId } from '@/src/core/utils/uuid';
 
 export async function readDatabase(): Promise<MockApiDatabase> {
@@ -48,10 +56,10 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       projectId: e.projectId,
       name: e.name,
       isBaseUrl: e.isBaseUrl !== false,
-      values: (e.values as any) || {},
-      environmentType: e.environmentType as any,
-      variables: (e.variables as any) ?? [],
-      baseUrl: getEnvironmentBaseUrl(e as any) || undefined,
+      values: (e.values as Record<string, unknown>) || {},
+      environmentType: (e.environmentType as EnvironmentType) || null,
+      variables: (e.variables as unknown as EnvironmentVariable[]) ?? [],
+      baseUrl: getEnvironmentBaseUrl({ values: (e.values as Record<string, unknown>) || {}, isBaseUrl: e.isBaseUrl !== false }) || undefined,
       status: e.status,
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),
@@ -74,7 +82,7 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       name: a.name,
       description: a.description ?? undefined,
       path: a.path,
-      methodRequest: a.methodRequest as any,
+      methodRequest: a.methodRequest as MethodRequest,
       status: a.status,
       createdAt: a.createdAt.toISOString(),
       updatedAt: a.updatedAt.toISOString(),
@@ -94,15 +102,15 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       apiId: r.apiId,
       name: r.name,
       description: r.description ?? undefined,
-      headers: (r.headers as any) ?? {},
-      queryParams: (r.queryParams as any) ?? {},
-      pathParams: (r.pathParams as any) ?? {},
-      body: (r.body as any) ?? {},
-      bodyType: r.bodyType as any,
-      matchType: r.matchType as any,
-      matchStrategy: (r.matchStrategy as any) || 'ALL',
-      bodyRules: (r.bodyRules as any) ?? undefined,
-      strictBodyStructure: (r as any).strictBodyStructure !== undefined ? (r as any).strictBodyStructure : true,
+      headers: (r.headers as Record<string, unknown>) ?? {},
+      queryParams: (r.queryParams as Record<string, unknown>) ?? {},
+      pathParams: (r.pathParams as Record<string, unknown>) ?? {},
+      body: r.body,
+      bodyType: r.bodyType as RequestBodyType,
+      matchType: r.matchType as MatchType,
+      matchStrategy: (r.matchStrategy as MatchStrategy) || 'ALL',
+      bodyRules: (r.bodyRules as unknown as BodyPathRule[]) ?? undefined,
+      strictBodyStructure: r.strictBodyStructure !== undefined ? r.strictBodyStructure : true,
       priority: r.priority,
       status: r.status,
       createdAt: r.createdAt.toISOString(),
@@ -115,9 +123,9 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       name: r.name,
       description: r.description ?? undefined,
       statusCode: r.statusCode ?? 200,
-      headers: (r.headers as any) ?? {},
-      body: (r.body as any) ?? {},
-      responseType: r.responseType as any,
+      headers: (r.headers as Record<string, unknown>) ?? {},
+      body: r.body,
+      responseType: r.responseType as 'JSON' | 'FILE',
       filePath: r.filePath ?? undefined,
       fileName: r.fileName ?? undefined,
       delayMs: r.delayMs,
@@ -135,8 +143,8 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       code: ds.code,
       category: ds.category ?? undefined,
       description: ds.description ?? undefined,
-      format: ds.format as any,
-      data: Array.isArray(ds.data) ? ds.data : [],
+      format: ds.format as DataSheetFormat,
+      data: Array.isArray(ds.data) ? (ds.data as unknown[]) : [],
       status: ds.status,
       createdAt: ds.createdAt.toISOString(),
       updatedAt: ds.updatedAt.toISOString(),
@@ -185,7 +193,7 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
       if (data.environments && data.environments.length > 0) {
         for (const chunk of chunkArray(data.environments, CHUNK_SIZE)) {
           await tx.environment.createMany({
-            data: chunk.map((item: any) => {
+            data: chunk.map((item) => {
               const isBaseUrl = item.isBaseUrl !== false;
               const cleanBaseUrl = item.baseUrl ? String(item.baseUrl).trim() : '';
               const values = normalizeEnvironmentValues(item.values, isBaseUrl);
@@ -198,9 +206,9 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
                 projectId: item.projectId,
                 name: item.name,
                 isBaseUrl,
-                values: values as any,
+                values: values as unknown as Prisma.InputJsonValue,
                 environmentType: item.environmentType,
-                variables: vars as any,
+                variables: vars as unknown as Prisma.InputJsonValue,
                 status: item.status !== false,
                 createdAt: new Date(item.createdAt),
                 updatedAt: new Date(item.updatedAt),

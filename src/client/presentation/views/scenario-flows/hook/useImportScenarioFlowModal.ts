@@ -3,13 +3,15 @@
 import { useState, useRef, useEffect, useCallback, ChangeEvent } from 'react';
 import { getErrorMessage } from '@/src/core/utils/error';
 import { usePageLoadingOverlay } from '@/src/client/presentation/components/shared/PageLoadingOverlay';
+import { FlowExportTemplate } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { ImportFlowResult } from '@/src/client/domain/scenario-flow/repository/scenario_flow_repository';
 import { SCENARIO_FLOWS_TEXT } from '../constant';
 
 interface UseImportScenarioFlowModalProps {
   isOpen: boolean;
   projectId?: string;
-  onSuccess: (result: any) => void;
-  onImportFlow?: (targetProjectId: string, template: any) => Promise<any>;
+  onSuccess: (result: ImportFlowResult) => void;
+  onImportFlow?: (targetProjectId: string, template: FlowExportTemplate | Record<string, unknown>) => Promise<ImportFlowResult>;
   onClose: () => void;
 }
 
@@ -72,9 +74,9 @@ export const useImportScenarioFlowModal = ({
       return;
     }
 
-    let parsed: any;
+    let parsed: FlowExportTemplate;
     try {
-      parsed = JSON.parse(jsonText);
+      parsed = JSON.parse(jsonText) as FlowExportTemplate;
     } catch {
       setError(SCENARIO_FLOWS_TEXT.MODAL_IMPORT_ERR_SYNTAX);
       return;

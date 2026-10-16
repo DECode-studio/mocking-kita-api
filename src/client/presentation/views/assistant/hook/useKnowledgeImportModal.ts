@@ -60,8 +60,8 @@ export const useKnowledgeImportModal = ({
       setError(null);
       await onImport(category, selectedFile);
       onClose();
-    } catch (err: any) {
-      setError(err?.message || 'Gagal mengimpor file');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal mengimpor file');
     } finally {
       setIsSubmitting(false);
     }

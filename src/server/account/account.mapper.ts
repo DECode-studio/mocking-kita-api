@@ -13,7 +13,7 @@ export function toAccountDomain(acc: {
   return {
     id: acc.id,
     username: acc.username,
-    role: acc.role as any,
+    role: acc.role,
     name: acc.name,
     googleId: acc.googleId || null,
     hasCustomPassword: Boolean(acc.hasCustomPassword),

@@ -120,7 +120,7 @@ type ProxyConfig = {
   apiEnvironmentsByApiId: Map<string, ApiEnvironment[]>;
   requestScenariosByApiId: Map<string, RequestScenario[]>;
   responseScenariosByRequestScenarioId: Map<string, ResponseScenario[]>;
-  dataSheetsByCode: Map<string, any[]>;
+  dataSheetsByCode: Map<string, unknown[]>;
 };
 
 function normalizePath(value: string): string {

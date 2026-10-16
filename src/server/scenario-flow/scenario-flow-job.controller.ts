@@ -33,7 +33,7 @@ const CreateJobSchema = z.object({
   dataSourceType: z.enum(['NONE', 'STATIC', 'DATASHEET']),
   dataSheetId: z.string().nullable().optional(),
   dataIterationMode: z.enum(['PER_TICK', 'BATCH_ALL']).optional(),
-  customVariables: z.record(z.string(), z.any()).nullable().optional(),
+  customVariables: z.record(z.string(), z.unknown()).nullable().optional(),
 });
 
 /**

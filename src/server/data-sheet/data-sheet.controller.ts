@@ -17,7 +17,7 @@ const CreateDataSheetSchema = z.object({
   category: z.string().trim().nullable().optional(),
   description: z.string().trim().nullable().optional(),
   format: z.enum(['LIST', 'TABLE']).default('LIST'),
-  data: z.array(z.any()).default([]),
+  data: z.array(z.unknown()).default([]),
   status: z.boolean().default(true),
 });
 
@@ -27,7 +27,7 @@ const UpdateDataSheetSchema = z.object({
   category: z.string().trim().nullable().optional(),
   description: z.string().trim().nullable().optional(),
   format: z.enum(['LIST', 'TABLE']).optional(),
-  data: z.array(z.any()).optional(),
+  data: z.array(z.unknown()).optional(),
   status: z.boolean().optional(),
 });
 
@@ -105,8 +105,8 @@ export async function createDataSheetHandler(request: Request) {
     });
 
     return ok(sheet);
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === 'P2002') {
       return fail('Data sheet with this code already exists for this project', 409, 'DUPLICATE_CODE');
     }
     return jsonUnknownError('Failed to create data sheet', error, 'Data sheet creation failed');
@@ -149,8 +149,8 @@ export async function updateDataSheetHandler(request: Request, context: { params
     });
 
     return ok(updated);
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
+  } catch (error: unknown) {
+    if ((error as { code?: string })?.code === 'P2002') {
       return fail('Data sheet with this code already exists for this project', 409, 'DUPLICATE_CODE');
     }
     return jsonUnknownError('Failed to update data sheet', error, 'Data sheet update failed');

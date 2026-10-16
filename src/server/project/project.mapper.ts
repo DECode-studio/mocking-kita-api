@@ -1,11 +1,13 @@
+import { Account } from '@/src/client/domain/account/entity/account';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { toAccountDomain } from '@/src/server/account/account.mapper';
+import { RawPicRelationItem } from '@/src/server/api/api.mapper';
 
 export function toProjectDomain(p: {
   id: string;
   name: string;
   description: string | null;
-  pics?: any[];
+  pics?: RawPicRelationItem[];
   status: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -14,13 +16,15 @@ export function toProjectDomain(p: {
   const pics = (p.pics || [])
     .map((item) => {
       const rawAcc = item.account || item;
-      return rawAcc?.id ? toAccountDomain(rawAcc) : null;
+      return rawAcc && typeof rawAcc === 'object' && 'id' in rawAcc && rawAcc.id
+        ? toAccountDomain(rawAcc as Parameters<typeof toAccountDomain>[0])
+        : null;
     })
-    .filter(Boolean) as any[];
+    .filter((acc): acc is Account => Boolean(acc));
 
   const picIds = (p.pics || [])
     .map((item) => item.accountId || item.account?.id || item.id)
-    .filter(Boolean);
+    .filter((id): id is string => Boolean(id));
 
   return {
     id: p.id,

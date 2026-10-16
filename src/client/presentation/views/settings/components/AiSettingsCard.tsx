@@ -22,6 +22,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { useUIStore } from '../../../stores/uiStore';
+import { getErrorMessage } from '@/src/core/utils/error';
 
 interface StoredApiKey {
   id: string;
@@ -70,8 +71,8 @@ export const AiSettingsCard: React.FC = () => {
           setRouterUrl(data.routerUrl);
         }
       }
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Gagal memuat konfigurasi Router AI', description: err.message });
+    } catch (err: unknown) {
+      addToast({ type: 'error', title: 'Gagal memuat konfigurasi Router AI', description: getErrorMessage(err) });
     } finally {
       setIsLoading(false);
     }
@@ -101,9 +102,9 @@ export const AiSettingsCard: React.FC = () => {
           description: data.message || `Tidak dapat menghubungi Router AI di ${routerUrl}`,
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsRouterOnline(false);
-      addToast({ type: 'error', title: 'Koneksi Gagal', description: err.message });
+      addToast({ type: 'error', title: 'Koneksi Gagal', description: getErrorMessage(err) });
     } finally {
       setIsPingingRouter(false);
     }
@@ -151,8 +152,8 @@ export const AiSettingsCard: React.FC = () => {
       setNewKeyValue('');
       setNewKeyPriority(keys.length + 1);
       fetchKeys();
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Gagal Menyimpan', description: err.message });
+    } catch (err: unknown) {
+      addToast({ type: 'error', title: 'Gagal Menyimpan', description: getErrorMessage(err) });
     } finally {
       setIsSaving(false);
     }
@@ -173,8 +174,8 @@ export const AiSettingsCard: React.FC = () => {
         });
         fetchKeys();
       }
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Gagal Memperbarui', description: err.message });
+    } catch (err: unknown) {
+      addToast({ type: 'error', title: 'Gagal Memperbarui', description: getErrorMessage(err) });
     }
   };
 
@@ -188,8 +189,8 @@ export const AiSettingsCard: React.FC = () => {
         addToast({ type: 'success', title: 'Terhapus', description: `API Key "${name}" berhasil dihapus.` });
         fetchKeys();
       }
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Gagal Menghapus', description: err.message });
+    } catch (err: unknown) {
+      addToast({ type: 'error', title: 'Gagal Menghapus', description: getErrorMessage(err) });
     }
   };
 
@@ -208,8 +209,8 @@ export const AiSettingsCard: React.FC = () => {
         addToast({ type: 'error', title: 'Tes Koneksi Gagal', description: data.message });
       }
       fetchKeys();
-    } catch (err: any) {
-      addToast({ type: 'error', title: 'Gagal Menguji Kunci', description: err.message });
+    } catch (err: unknown) {
+      addToast({ type: 'error', title: 'Gagal Menguji Kunci', description: getErrorMessage(err) });
     } finally {
       setTestingKeyId(null);
     }

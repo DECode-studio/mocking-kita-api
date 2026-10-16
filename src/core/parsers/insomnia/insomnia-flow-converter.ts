@@ -35,7 +35,7 @@ function stageFor(name: string): StageType {
   return 'DEVELOPMENT';
 }
 
-function isBaseUrlKey(key: string, value: any): boolean {
+function isBaseUrlKey(key: string, value: unknown): boolean {
   const keyStr = String(key || '');
   const valStr = String(value || '');
   return (
@@ -44,7 +44,7 @@ function isBaseUrlKey(key: string, value: any): boolean {
   );
 }
 
-export function normalizeJsonPath(path: any): string {
+export function normalizeJsonPath(path: unknown): string {
   let result = String(path || '');
   result = result.replace(/^\$\./, '');
   result = result.replace(/^\$/, '');
@@ -79,7 +79,9 @@ export function generateVariableName(sourceReqId: string, jsonPath: string): str
   return cleaned.replace(/_$/, '');
 }
 
-export function replaceInsomniaTokens(value: any): any {
+export function replaceInsomniaTokens(value: string): string;
+export function replaceInsomniaTokens(value: unknown): unknown;
+export function replaceInsomniaTokens(value: unknown): unknown {
   if (typeof value !== 'string') {
     return value;
   }
@@ -95,21 +97,22 @@ export function replaceInsomniaTokens(value: any): any {
   return replaced.replace(/\{\{\s*_\.([a-zA-Z0-9_-]+)\s*\}\}/g, '{{$1}}');
 }
 
-function normalizeListToMap(items: any): Record<string, string> {
+function normalizeListToMap(items: unknown): Record<string, string> {
   const result: Record<string, string> = {};
   if (!Array.isArray(items)) return result;
 
   for (const item of items) {
     if (!item || typeof item !== 'object') continue;
-    if (item.disabled || !item.name) continue;
-    result[String(item.name)] = String(replaceInsomniaTokens(String(item.value || '')));
+    const itemObj = item as Record<string, unknown>;
+    if (itemObj.disabled || !itemObj.name) continue;
+    result[String(itemObj.name)] = String(replaceInsomniaTokens(String(itemObj.value || '')));
   }
   return result;
 }
 
-function parseBody(req: any): { body: any; bodyType: string } {
-  const body = req?.body;
-  if (!body || typeof body !== 'object') {
+function parseBody(req: Record<string, unknown> | null | undefined): { body: unknown; bodyType: string } {
+  const body = req?.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : null;
+  if (!body) {
     return { body: {}, bodyType: 'NONE' };
   }
 
@@ -119,7 +122,7 @@ function parseBody(req: any): { body: any; bodyType: string } {
   }
 
   const contentType = String(body.mimeType || '').toLowerCase();
-  const cleanText = replaceInsomniaTokens(String(text));
+  const cleanText = String(replaceInsomniaTokens(String(text)));
 
   if (contentType.includes('x-www-form-urlencoded')) {
     return { body: cleanText, bodyType: 'URL_ENCODED' };
@@ -137,14 +140,14 @@ function parseBody(req: any): { body: any; bodyType: string } {
 
 interface TraversedRequest {
   id: string;
-  req: any;
+  req: Record<string, unknown>;
   folderPath: string;
   traversalOrder: number;
   sortKey: number;
 }
 
 function traverseCollection(
-  items: any,
+  items: unknown,
   parentPath: string[] = [],
   requests: TraversedRequest[] = [],
   order = { value: 0 }
@@ -174,7 +177,7 @@ function traverseCollection(
   return requests;
 }
 
-function extractAfterResponse(script: any): VariableExtractor[] {
+function extractAfterResponse(script: unknown): VariableExtractor[] {
   const extractors: VariableExtractor[] = [];
   const text = String(script || '');
   const pattern = /insomnia\.environment\.set\(\s*['"]([^'"]+)['"]\s*,\s*response\.([a-zA-Z0-9_.\[\]]+)\s*\)/g;
@@ -190,7 +193,7 @@ function extractAfterResponse(script: any): VariableExtractor[] {
   return extractors;
 }
 
-function extractScriptEnvironmentRefs(script: any): { reads: Set<string>; writes: Set<string> } {
+function extractScriptEnvironmentRefs(script: unknown): { reads: Set<string>; writes: Set<string> } {
   const text = String(script || '');
   const reads = new Set<string>();
   const writes = new Set<string>();
@@ -226,15 +229,15 @@ function isSecretKey(key: string): boolean {
 }
 
 function buildEnvironmentTemplate(
-  parsed: any,
+  parsed: Record<string, unknown> | null | undefined,
   warnings: string[],
   scriptEnvReads = new Set<string>(),
   scriptEnvWrites = new Set<string>()
-): { environments: NonNullable<FlowExportTemplate['environments']>; flowVariables: Record<string, any> } {
-  const envRoot = parsed?.environments && typeof parsed.environments === 'object' ? parsed.environments : {};
-  const stageData: Record<string, Record<string, any>> = {};
+): { environments: NonNullable<FlowExportTemplate['environments']>; flowVariables: Record<string, unknown> } {
+  const envRoot = parsed?.environments && typeof parsed.environments === 'object' ? (parsed.environments as Record<string, unknown>) : {};
+  const stageData: Record<string, Record<string, unknown>> = {};
 
-  const baseData = envRoot.data && typeof envRoot.data === 'object' ? envRoot.data : {};
+  const baseData = envRoot.data && typeof envRoot.data === 'object' ? (envRoot.data as Record<string, unknown>) : {};
   if (Object.keys(baseData).length > 0) {
     stageData['DEVELOPMENT'] = { ...baseData };
   }
@@ -279,7 +282,7 @@ function buildEnvironmentTemplate(
 
   // Extract non-baseUrl variables (headers, tokens, keys, secrets)
   const envVariables = sortedVariableKeys.map((key) => {
-    let rawVal: any = undefined;
+    let rawVal: unknown = undefined;
     if (preferredStage && stageData[preferredStage] && stageData[preferredStage][key] !== undefined) {
       rawVal = stageData[preferredStage][key];
     } else {
@@ -411,7 +414,7 @@ function buildEnvironmentTemplate(
     });
   }
 
-  const flowVariables: Record<string, any> = {};
+  const flowVariables: Record<string, unknown> = {};
   if (preferredStage && stageData[preferredStage]) {
     for (const key of sortedVariableKeys) {
       const val = stageData[preferredStage][key];
@@ -498,9 +501,9 @@ function sortRequests(
   return sortedItems;
 }
 
-export function parseInsomniaContent(content: string | object): any {
+export function parseInsomniaContent(content: string | object): Record<string, unknown> | unknown[] {
   if (typeof content === 'object' && content !== null) {
-    return content;
+    return content as Record<string, unknown> | unknown[];
   }
   const raw = String(content || '').trim();
   if (raw.startsWith('{') || raw.startsWith('[')) {
@@ -525,8 +528,9 @@ export function convertInsomniaToScenarioFlow(
     throw new Error('Invalid Insomnia collection format. Root must be a YAML or JSON object.');
   }
 
+  const parsedObj = (Array.isArray(parsed) ? {} : parsed) as Record<string, unknown>;
   const warnings: string[] = [];
-  const rawCollection = parsed.collection || (Array.isArray(parsed) ? parsed : []);
+  const rawCollection = parsedObj.collection || (Array.isArray(parsed) ? parsed : []);
   const requests = traverseCollection(rawCollection);
   const byId = new Map(requests.map((r) => [r.id, r]));
 
@@ -573,7 +577,7 @@ export function convertInsomniaToScenarioFlow(
       }
     }
 
-    const scripts = req.scripts && typeof req.scripts === 'object' ? req.scripts : {};
+    const scripts = req.scripts && typeof req.scripts === 'object' ? (req.scripts as Record<string, unknown>) : {};
     const afterScript = String(scripts.afterResponse || '');
     for (const ext of extractAfterResponse(afterScript)) {
       if (!extractorsByReq.has(item.id)) {
@@ -598,7 +602,7 @@ export function convertInsomniaToScenarioFlow(
   }
 
   const { environments, flowVariables } = buildEnvironmentTemplate(
-    parsed,
+    parsedObj,
     warnings,
     scriptEnvReads,
     scriptEnvWrites
@@ -608,7 +612,8 @@ export function convertInsomniaToScenarioFlow(
 
   const steps: FlowExportTemplate['steps'] = sortedRequests.map((item, index) => {
     const req = item.req;
-    const description = replaceInsomniaTokens(String(req.meta?.description || ''));
+    const reqMeta = req.meta && typeof req.meta === 'object' ? (req.meta as Record<string, unknown>) : null;
+    const description = replaceInsomniaTokens(String(reqMeta?.description || ''));
     const rawUrl = String(req.url || '');
     let targetEnvironment: string | null = null;
     let path = rawUrl;
@@ -692,8 +697,8 @@ export function convertInsomniaToScenarioFlow(
     exportedAt: new Date().toISOString(),
     environments,
     flow: {
-      name: String(parsed.name || 'Imported Insomnia Flow'),
-      description: String(parsed.meta?.description || 'Converted from Insomnia collection'),
+      name: String(parsedObj.name || 'Imported Insomnia Flow'),
+      description: String((parsedObj.meta as Record<string, unknown> | undefined)?.description || 'Converted from Insomnia collection'),
       stopOnFailure: true,
       variables: flowVariables,
     },

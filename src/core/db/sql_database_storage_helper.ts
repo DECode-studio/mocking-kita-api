@@ -98,10 +98,10 @@ export async function generateDatabaseSqlDump(mode: 'upsert' | 'replace' = 'upse
         `INSERT INTO "tblEnvironment" ("id", "project_id", "name", "is_base_url", "values", "environment_type", "variables", "status", "created_at", "updated_at", "deleted_at") VALUES (${escapeSqlString(
           e.id
         )}, ${escapeSqlString(e.projectId)}, ${escapeSqlString(e.name)}, ${escapeSqlBoolean(
-          (e as any).isBaseUrl !== false
-        )}, ${escapeSqlJson((e as any).values || {})}, ${escapeSqlString(
+          e.isBaseUrl !== false
+        )}, ${escapeSqlJson(e.values || {})}, ${escapeSqlString(
           e.environmentType
-        )}, ${escapeSqlJson((e as any).variables || [])}, ${escapeSqlBoolean(
+        )}, ${escapeSqlJson(e.variables || [])}, ${escapeSqlBoolean(
           e.status
         )}, ${escapeSqlDate(e.createdAt)}, ${escapeSqlDate(e.updatedAt)}, ${escapeSqlDate(
           e.deletedAt

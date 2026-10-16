@@ -1,3 +1,5 @@
+import { EnvironmentVariable, EnvironmentType, EnvironmentValuesMap } from '@/src/client/domain/environment/entity/environment';
+
 export interface VariableExtractor {
   variable: string;
   from: 'body' | 'headers' | 'status';
@@ -10,13 +12,13 @@ export interface AssertionRule {
   type: 'statusCode' | 'bodyPath' | 'header' | 'responseTime';
   path?: string; // for bodyPath (e.g. "data.items[0].id") or header name
   operator: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'exists' | 'notExists' | 'greaterThan' | 'lessThan' | 'in_datasheet';
-  expected?: any;
+  expected?: unknown;
 }
 
 export interface AssertionResult {
   rule: AssertionRule;
   passed: boolean;
-  actual: any;
+  actual: unknown;
   message?: string;
 }
 
@@ -36,7 +38,7 @@ export interface ScenarioFlowStepInput {
   headersOverride?: Record<string, string> | null;
   queryParamsOverride?: Record<string, string> | null;
   pathParamsOverride?: Record<string, string> | null;
-  bodyOverride?: any;
+  bodyOverride?: unknown;
   bodyType?: string | null;
   extractors?: VariableExtractor[] | null;
   assertions?: AssertionRule[] | null;
@@ -52,14 +54,14 @@ export interface ScenarioFlowInput {
   status?: boolean;
   defaultEnvironmentId?: string | null;
   stopOnFailure?: boolean;
-  variables?: Record<string, any> | null;
+  variables?: Record<string, unknown> | null;
 }
 
 export interface FlowRunOptions {
   environmentId?: string | null;
   environmentType?: string | null;
   targetMode?: 'LIVE' | 'MOCK';
-  initialVariables?: Record<string, any>;
+  initialVariables?: Record<string, unknown>;
   executedBy?: string;
   stepId?: string | null;
   jobId?: string | null;
@@ -67,24 +69,24 @@ export interface FlowRunOptions {
 }
 
 export interface FlowExportTemplate {
-  $schema: string;
-  version: string;
-  exportedAt: string;
+  $schema?: string;
+  version?: string;
+  exportedAt?: string;
   environments?: Array<{
     id?: string;
     name: string;
     isBaseUrl?: boolean;
-    values?: Partial<Record<'LOCAL' | 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING', string | null>>;
-    environmentType?: 'LOCAL' | 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING';
+    values?: EnvironmentValuesMap;
+    environmentType?: EnvironmentType;
     baseUrl?: string;
-    variables?: any[];
+    variables?: EnvironmentVariable[];
     isDefault?: boolean;
   }>;
   flow: {
     name: string;
     description?: string | null;
     stopOnFailure: boolean;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
   };
   steps: Array<{
     order: number;
@@ -96,12 +98,13 @@ export interface FlowExportTemplate {
     api: {
       method: string;
       path: string;
-      name?: string;
+      name?: string | null;
       collection?: string | null;
       description?: string | null;
       targetEnvironment?: string | null;
       environmentIds?: string[];
       environments?: string[];
+      targetEnvironmentType?: string;
     };
     requestScenario?: {
       name: string;
@@ -109,14 +112,14 @@ export interface FlowExportTemplate {
       headers?: Record<string, string>;
       queryParams?: Record<string, string>;
       pathParams?: Record<string, string>;
-      body?: any;
+      body?: unknown;
       bodyType?: string;
     };
     expectedResponseScenario?: {
       name?: string;
       statusCode?: number;
       headers?: Record<string, string>;
-      body?: any;
+      body?: unknown;
     };
     overrides?: {
       method?: string | null;
@@ -124,7 +127,8 @@ export interface FlowExportTemplate {
       headers?: Record<string, string> | null;
       queryParams?: Record<string, string> | null;
       pathParams?: Record<string, string> | null;
-      body?: any;
+      body?: unknown;
+      bodyType?: string | null;
     };
     extractors?: VariableExtractor[];
     assertions?: AssertionRule[];

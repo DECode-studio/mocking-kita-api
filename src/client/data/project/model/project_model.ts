@@ -1,3 +1,4 @@
+import { Account } from '@/src/client/domain/account/entity/account';
 import { Project } from '@/src/client/domain/project/entity/project';
 import { toBoolean } from '@/src/core/utils/db-converter';
 
@@ -7,7 +8,7 @@ export type ProjectRow = {
   description: string | null;
   pic_ids?: string[];
   pic_id?: string | null;
-  pics?: any[];
+  pics?: Account[];
   status: number | null;
   created_at: string | null;
   updated_at: string | null;

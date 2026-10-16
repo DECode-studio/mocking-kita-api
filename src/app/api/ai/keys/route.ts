@@ -7,9 +7,9 @@ export async function GET() {
   try {
     const data = await apiKeyManager.listKeys('ROUTER_AI');
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error?.message || 'Gagal mengambil daftar API Key' },
+      { error: error instanceof Error ? error.message : 'Gagal mengambil daftar API Key' },
       { status: 500 }
     );
   }
@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
         isActive: created.isActive,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error?.message || 'Gagal menyimpan API Key' },
+      { error: error instanceof Error ? error.message : 'Gagal menyimpan API Key' },
       { status: 500 }
     );
   }

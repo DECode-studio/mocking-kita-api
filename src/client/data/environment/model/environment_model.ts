@@ -12,10 +12,10 @@ export type EnvironmentRow = {
   project_id: string;
   name: string | null;
   is_base_url?: boolean | null;
-  values?: any;
+  values?: unknown;
   environment_type?: string | null;
   base_url?: string | null;
-  variables?: any;
+  variables?: unknown;
   status: number | boolean | null;
   created_at: string | null;
   updated_at: string | null;

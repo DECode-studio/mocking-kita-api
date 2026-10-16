@@ -1,4 +1,5 @@
 import prisma from '@/src/core/db/prisma-client';
+import { Prisma } from '@prisma/client';
 import { generateId } from '@/src/core/utils/uuid';
 import { UserSession } from '@/src/client/domain/auth/entity/user_session';
 import { sendGoogleSpaceNotification } from '@/src/core/notification/google_space_notifier';
@@ -24,9 +25,9 @@ export interface ChangeLogInput {
   userId?: string | null;
   operator?: string | null;
   description?: string | null;
-  beforeState?: any;
-  afterState?: any;
-  metadata?: any;
+  beforeState?: unknown;
+  afterState?: unknown;
+  metadata?: unknown;
 }
 
 export async function getCurrentSession(): Promise<UserSession | null> {
@@ -67,7 +68,9 @@ export async function logChange(input: ChangeLogInput) {
   // Auto-generate description if not provided
   let description = input.description;
   if (!description) {
-    const entityName = input.afterState?.name || input.beforeState?.name || '';
+    const afterObj = input.afterState && typeof input.afterState === 'object' ? (input.afterState as Record<string, unknown>) : null;
+    const beforeObj = input.beforeState && typeof input.beforeState === 'object' ? (input.beforeState as Record<string, unknown>) : null;
+    const entityName = (typeof afterObj?.name === 'string' ? afterObj.name : '') || (typeof beforeObj?.name === 'string' ? beforeObj.name : '');
     const nameStr = entityName ? ` '${entityName}'` : '';
 
     switch (input.action) {
@@ -107,9 +110,9 @@ export async function logChange(input: ChangeLogInput) {
       userId,
       operator,
       description,
-      beforeState: input.beforeState ?? undefined,
-      afterState: input.afterState ?? undefined,
-      metadata: input.metadata ?? undefined,
+      beforeState: (input.beforeState ?? undefined) as Prisma.InputJsonValue | undefined,
+      afterState: (input.afterState ?? undefined) as Prisma.InputJsonValue | undefined,
+      metadata: (input.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
     },
   });
 

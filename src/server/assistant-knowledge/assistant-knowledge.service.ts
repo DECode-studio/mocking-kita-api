@@ -3,6 +3,11 @@ import AdmZip from 'adm-zip';
 import { routerAiClient } from '@/src/server/ai/router-ai.client';
 import { AssistantKnowledgeItem, SaveKnowledgeInput } from './assistant-knowledge.types';
 
+function formatIsoDate(val?: string | Date | null): string | undefined {
+  if (!val) return undefined;
+  return typeof val === 'string' ? val : val.toISOString();
+}
+
 export class AssistantKnowledgeService {
   private static instance: AssistantKnowledgeService;
 
@@ -33,11 +38,11 @@ export class AssistantKnowledgeService {
             format: 'md',
             source: doc.source || 'Product Knowledge',
             projectId: doc.projectId,
-            updatedAt: doc.updatedAt || doc.createdAt,
+            updatedAt: formatIsoDate(doc.updatedAt || doc.createdAt),
           });
         }
-      } catch (err: any) {
-        console.warn('[AssistantKnowledgeService] Gagal memuat product knowledge dari Router AI:', err.message);
+      } catch (err: unknown) {
+        console.warn('[AssistantKnowledgeService] Gagal memuat product knowledge dari Router AI:', err instanceof Error ? err.message : String(err));
       }
     }
 
@@ -55,11 +60,11 @@ export class AssistantKnowledgeService {
             format: 'md',
             keywords: Array.isArray(skill.keywords) ? skill.keywords : [],
             projectId: skill.projectId,
-            updatedAt: skill.updatedAt || skill.createdAt,
+            updatedAt: formatIsoDate(skill.updatedAt || skill.createdAt),
           });
         }
-      } catch (err: any) {
-        console.warn('[AssistantKnowledgeService] Gagal memuat skills dari Router AI:', err.message);
+      } catch (err: unknown) {
+        console.warn('[AssistantKnowledgeService] Gagal memuat skills dari Router AI:', err instanceof Error ? err.message : String(err));
       }
     }
 
@@ -85,7 +90,7 @@ export class AssistantKnowledgeService {
         format: 'md',
         keywords: Array.isArray(skill.keywords) ? skill.keywords : [],
         projectId: skill.projectId,
-        updatedAt: skill.updatedAt || skill.createdAt,
+        updatedAt: formatIsoDate(skill.updatedAt || skill.createdAt),
       };
     } else {
       const doc = await routerAiClient.getKnowledgeItem(id);
@@ -99,7 +104,7 @@ export class AssistantKnowledgeService {
         format: 'md',
         source: doc.source || 'Product Knowledge',
         projectId: doc.projectId,
-        updatedAt: doc.updatedAt || doc.createdAt,
+        updatedAt: formatIsoDate(doc.updatedAt || doc.createdAt),
       };
     }
   }
@@ -130,7 +135,7 @@ export class AssistantKnowledgeService {
         format: 'md',
         keywords: Array.isArray(saved.keywords) ? saved.keywords : [],
         projectId: saved.projectId,
-        updatedAt: saved.updatedAt || saved.createdAt,
+        updatedAt: formatIsoDate(saved.updatedAt || saved.createdAt),
       };
     } else {
       const saved = await routerAiClient.saveKnowledge({
@@ -150,7 +155,7 @@ export class AssistantKnowledgeService {
         format: 'md',
         source: saved.source || 'Product Knowledge',
         projectId: saved.projectId,
-        updatedAt: saved.updatedAt || saved.createdAt,
+        updatedAt: formatIsoDate(saved.updatedAt || saved.createdAt),
       };
     }
   }
@@ -177,7 +182,7 @@ export class AssistantKnowledgeService {
     const item = await this.getItemById(type, id);
     if (!item) return null;
 
-    const frontmatter: Record<string, any> = {
+    const frontmatter: Record<string, unknown> = {
       id: item.id,
       title: item.title,
       category: item.category,
@@ -219,7 +224,7 @@ export class AssistantKnowledgeService {
     const zip = new AdmZip();
 
     for (const skill of skills) {
-      const frontmatter: Record<string, any> = {
+      const frontmatter: Record<string, unknown> = {
         id: skill.id,
         title: skill.title,
         category: 'skill',
@@ -244,7 +249,7 @@ export class AssistantKnowledgeService {
   /**
    * Helper to parse frontmatter from markdown text
    */
-  private parseFrontmatter(text: string): { meta: Record<string, any>; body: string } {
+  private parseFrontmatter(text: string): { meta: Record<string, unknown>; body: string } {
     const lines = text.split(/\r?\n/);
     if (!lines[0] || lines[0].trim() !== '---') {
       return { meta: {}, body: text.trim() };
@@ -254,7 +259,7 @@ export class AssistantKnowledgeService {
 
     try {
       const rawBlock = lines.slice(1, endIdx + 1).join('\n');
-      const meta = YAML.parse(rawBlock) || {};
+      const meta = (YAML.parse(rawBlock) as Record<string, unknown>) || {};
       const body = lines.slice(endIdx + 2).join('\n').trim();
       return { meta, body };
     } catch {

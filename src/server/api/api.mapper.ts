@@ -1,6 +1,14 @@
+import { Account } from '@/src/client/domain/account/entity/account';
 import { ApiCollection } from '@/src/client/domain/api/entity/api_collection';
 import { ApiEnvironment } from '@/src/client/domain/api/entity/api_environment';
+import { MethodRequest } from '@/src/core/utils/types';
 import { toAccountDomain } from '@/src/server/account/account.mapper';
+
+export interface RawPicRelationItem {
+  id?: string;
+  accountId?: string;
+  account?: Parameters<typeof toAccountDomain>[0] | null;
+}
 
 export function toApiDomain(api: {
   id: string;
@@ -10,7 +18,7 @@ export function toApiDomain(api: {
   description: string | null;
   path: string;
   methodRequest: string;
-  pics?: any[];
+  pics?: RawPicRelationItem[];
   status: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -19,13 +27,15 @@ export function toApiDomain(api: {
   const pics = (api.pics || [])
     .map((item) => {
       const rawAcc = item.account || item;
-      return rawAcc?.id ? toAccountDomain(rawAcc) : null;
+      return rawAcc && typeof rawAcc === 'object' && 'id' in rawAcc && rawAcc.id
+        ? toAccountDomain(rawAcc as Parameters<typeof toAccountDomain>[0])
+        : null;
     })
-    .filter(Boolean) as any[];
+    .filter((acc): acc is Account => Boolean(acc));
 
   const picIds = (api.pics || [])
     .map((item) => item.accountId || item.account?.id || item.id)
-    .filter(Boolean);
+    .filter((id): id is string => Boolean(id));
 
   return {
     id: api.id,
@@ -34,7 +44,7 @@ export function toApiDomain(api: {
     name: api.name,
     description: api.description ?? undefined,
     path: api.path,
-    methodRequest: api.methodRequest as any,
+    methodRequest: api.methodRequest as MethodRequest,
     picIds,
     pics,
     status: api.status,

@@ -20,7 +20,7 @@ export interface OpenApiEndpointSummary {
   responses: Array<{
     statusCode: number;
     description: string;
-    sampleBody: any;
+    sampleBody: unknown;
   }>;
 }
 
@@ -36,7 +36,7 @@ export interface OpenApiConvertResult {
 }
 
 export function convertOpenApiToMockStudio(rawContent: string): OpenApiConvertResult {
-  let doc: any = null;
+  let doc: unknown = null;
 
   try {
     const trimmed = rawContent.trim();
@@ -45,10 +45,11 @@ export function convertOpenApiToMockStudio(rawContent: string): OpenApiConvertRe
     } else {
       doc = YAML.parse(trimmed);
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
-      error: `Gagal membaca format OpenAPI/Swagger (bukan JSON/YAML yang valid): ${err.message}`,
+      error: `Gagal membaca format OpenAPI/Swagger (bukan JSON/YAML yang valid): ${errMsg}`,
     };
   }
 
@@ -56,81 +57,90 @@ export function convertOpenApiToMockStudio(rawContent: string): OpenApiConvertRe
     return { success: false, error: 'Konten dokumen OpenAPI kosong atau tidak valid.' };
   }
 
-  const isSwagger2 = doc.swagger === '2.0';
-  const isOpenApi3 = typeof doc.openapi === 'string' && doc.openapi.startsWith('3.');
+  const docObj = doc as Record<string, unknown>;
+  const isSwagger2 = docObj.swagger === '2.0';
+  const isOpenApi3 = typeof docObj.openapi === 'string' && docObj.openapi.startsWith('3.');
 
-  if (!isSwagger2 && !isOpenApi3 && !doc.paths) {
+  if (!isSwagger2 && !isOpenApi3 && !docObj.paths) {
     return {
       success: false,
       error: 'Dokumen bukan OpenAPI 3.x atau Swagger 2.0 yang valid (field "paths" tidak ditemukan).',
     };
   }
 
-  const title = doc.info?.title || 'OpenAPI Import';
-  const version = doc.info?.version || '1.0.0';
+  const infoObj = docObj.info && typeof docObj.info === 'object' ? (docObj.info as Record<string, unknown>) : null;
+  const title = (infoObj?.title as string) || 'OpenAPI Import';
+  const version = (infoObj?.version as string) || '1.0.0';
 
   // Extract Servers / Base URLs
   const servers: string[] = [];
-  if (Array.isArray(doc.servers)) {
-    for (const s of doc.servers) {
-      if (s.url) servers.push(s.url);
+  if (Array.isArray(docObj.servers)) {
+    for (const s of docObj.servers as Array<Record<string, unknown>>) {
+      if (typeof s.url === 'string') servers.push(s.url);
     }
-  } else if (doc.host) {
-    const scheme = doc.schemes?.[0] || 'https';
-    const basePath = doc.basePath || '';
-    servers.push(`${scheme}://${doc.host}${basePath}`);
+  } else if (typeof docObj.host === 'string') {
+    const schemes = Array.isArray(docObj.schemes) ? (docObj.schemes as string[]) : [];
+    const scheme = schemes[0] || 'https';
+    const basePath = typeof docObj.basePath === 'string' ? docObj.basePath : '';
+    servers.push(`${scheme}://${docObj.host}${basePath}`);
   }
 
   // Extract Paths & Methods
   const endpoints: OpenApiEndpointSummary[] = [];
   const collectionsSet = new Set<string>();
-  const paths = doc.paths || {};
+  const paths = docObj.paths && typeof docObj.paths === 'object' ? (docObj.paths as Record<string, unknown>) : {};
 
   const httpMethods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'];
 
   for (const [pathKey, pathItem] of Object.entries(paths)) {
     if (!pathItem || typeof pathItem !== 'object') continue;
+    const pathItemObj = pathItem as Record<string, unknown>;
 
     for (const method of httpMethods) {
-      const op = (pathItem as any)[method];
+      const op = pathItemObj[method] as Record<string, unknown> | undefined;
       if (!op || typeof op !== 'object') continue;
 
-      const tag = op.tags?.[0] || 'Default';
+      const tags = Array.isArray(op.tags) ? (op.tags as string[]) : [];
+      const tag = tags[0] || 'Default';
       collectionsSet.add(tag);
 
       // Extract Parameters
       const parameters: OpenApiEndpointSummary['parameters'] = [];
-      const rawParams = [...((pathItem as any).parameters || []), ...(op.parameters || [])];
+      const pathParams = Array.isArray(pathItemObj.parameters) ? (pathItemObj.parameters as Array<Record<string, unknown>>) : [];
+      const opParams = Array.isArray(op.parameters) ? (op.parameters as Array<Record<string, unknown>>) : [];
+      const rawParams = [...pathParams, ...opParams];
 
       for (const p of rawParams) {
         if (p && p.name && p.in) {
+          const schemaObj = p.schema && typeof p.schema === 'object' ? (p.schema as Record<string, unknown>) : null;
           parameters.push({
-            name: p.name,
-            in: p.in,
+            name: String(p.name),
+            in: p.in as 'query' | 'header' | 'path' | 'body',
             required: Boolean(p.required),
-            type: p.schema?.type || p.type || 'string',
+            type: (schemaObj?.type as string) || (p.type as string) || 'string',
           });
         }
       }
 
       // Extract Responses & Sample Payloads
       const responses: OpenApiEndpointSummary['responses'] = [];
-      const rawResponses = op.responses || {};
+      const rawResponses = op.responses && typeof op.responses === 'object' ? (op.responses as Record<string, unknown>) : {};
 
       for (const [codeStr, resDef] of Object.entries(rawResponses)) {
         const codeNum = parseInt(codeStr, 10) || 200;
-        const resObj = (resDef as any) || {};
-        const description = resObj.description || 'Response';
+        const resObj = resDef && typeof resDef === 'object' ? (resDef as Record<string, unknown>) : {};
+        const description = (resObj.description as string) || 'Response';
 
-        let sampleBody: any = {
+        let sampleBody: unknown = {
           code: codeNum < 400 ? 'SUCCESS' : 'ERROR',
           message: description,
         };
 
         // Try extracting schema in OpenAPI 3 or Swagger 2
+        const content = resObj.content && typeof resObj.content === 'object' ? (resObj.content as Record<string, Record<string, unknown>>) : null;
         const schema =
-          resObj.content?.['application/json']?.schema ||
-          resObj.content?.['*/*']?.schema ||
+          content?.['application/json']?.schema ||
+          content?.['*/*']?.schema ||
           resObj.schema;
 
         if (schema) {
@@ -155,7 +165,10 @@ export function convertOpenApiToMockStudio(rawContent: string): OpenApiConvertRe
       endpoints.push({
         method: method.toUpperCase(),
         path: pathKey,
-        summary: op.summary || op.description || `${method.toUpperCase()} ${pathKey}`,
+        summary:
+          (typeof op.summary === 'string' ? op.summary : '') ||
+          (typeof op.description === 'string' ? op.description : '') ||
+          `${method.toUpperCase()} ${pathKey}`,
         collection: tag,
         parameters,
         responses,
@@ -177,32 +190,33 @@ export function convertOpenApiToMockStudio(rawContent: string): OpenApiConvertRe
 /**
  * Generates sample mock JSON payload from OpenAPI JSON Schema
  */
-function generateSampleFromSchema(schema: any, rootDoc: any, depth = 0): any {
-  if (depth > 5 || !schema) return {};
+function generateSampleFromSchema(schema: unknown, rootDoc: unknown, depth = 0): unknown {
+  if (depth > 5 || !schema || typeof schema !== 'object') return {};
+  const schemaObj = schema as Record<string, unknown>;
 
   // Resolve $ref if exists
-  if (schema.$ref && typeof schema.$ref === 'string') {
-    const resolved = resolveRef(schema.$ref, rootDoc);
+  if (typeof schemaObj.$ref === 'string') {
+    const resolved = resolveRef(schemaObj.$ref, rootDoc);
     if (resolved) return generateSampleFromSchema(resolved, rootDoc, depth + 1);
     return {};
   }
 
-  if (schema.example !== undefined) return schema.example;
-  if (schema.default !== undefined) return schema.default;
+  if (schemaObj.example !== undefined) return schemaObj.example;
+  if (schemaObj.default !== undefined) return schemaObj.default;
 
-  const type = schema.type;
+  const type = schemaObj.type;
 
-  if (type === 'object' || schema.properties) {
-    const obj: Record<string, any> = {};
-    const props = schema.properties || {};
+  if (type === 'object' || (schemaObj.properties && typeof schemaObj.properties === 'object')) {
+    const obj: Record<string, unknown> = {};
+    const props = (schemaObj.properties as Record<string, unknown>) || {};
     for (const [propKey, propSchema] of Object.entries(props)) {
       obj[propKey] = generateSampleFromSchema(propSchema, rootDoc, depth + 1);
     }
     return obj;
   }
 
-  if (type === 'array' || schema.items) {
-    const itemSample = generateSampleFromSchema(schema.items || {}, rootDoc, depth + 1);
+  if (type === 'array' || schemaObj.items) {
+    const itemSample = generateSampleFromSchema(schemaObj.items || {}, rootDoc, depth + 1);
     return [itemSample];
   }
 
@@ -215,23 +229,23 @@ function generateSampleFromSchema(schema: any, rootDoc: any, depth = 0): any {
   }
 
   if (type === 'string') {
-    if (schema.format === 'date-time') return new Date().toISOString();
-    if (schema.format === 'uuid') return 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-    if (schema.format === 'email') return 'user@example.com';
-    if (schema.enum && schema.enum.length > 0) return schema.enum[0];
+    if (schemaObj.format === 'date-time') return new Date().toISOString();
+    if (schemaObj.format === 'uuid') return 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    if (schemaObj.format === 'email') return 'user@example.com';
+    if (Array.isArray(schemaObj.enum) && schemaObj.enum.length > 0) return schemaObj.enum[0];
     return 'sample string';
   }
 
   return {};
 }
 
-function resolveRef(ref: string, rootDoc: any): any {
+function resolveRef(ref: string, rootDoc: unknown): unknown {
   if (!ref.startsWith('#/')) return null;
   const parts = ref.substring(2).split('/');
-  let curr = rootDoc;
+  let curr: unknown = rootDoc;
   for (const p of parts) {
     if (!curr || typeof curr !== 'object') return null;
-    curr = curr[p];
+    curr = (curr as Record<string, unknown>)[p];
   }
   return curr;
 }

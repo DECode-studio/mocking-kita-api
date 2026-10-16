@@ -10,7 +10,6 @@ import { extractParamRule, updateDeepPath } from '@/src/core/utils/param-matcher
 import { API_DETAIL_TEXT, API_DETAIL_SEMANTIC_ID } from '../constant';
 import { DeepJsonTreeViewer } from './DeepJsonTreeViewer';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 interface RequestScenarioDetailPanelProps {
   scenario: RequestScenario;
   onEdit: () => void;

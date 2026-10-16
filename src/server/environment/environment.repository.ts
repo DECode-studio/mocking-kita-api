@@ -1,7 +1,9 @@
 import prisma from '@/src/core/db/prisma-client';
+import { Prisma } from '@prisma/client';
 import {
   Environment,
   EnvironmentVariable,
+  EnvironmentType,
   normalizeEnvironmentValues,
 } from '@/src/client/domain/environment/entity/environment';
 import { generateId } from '@/src/core/utils/uuid';
@@ -80,9 +82,9 @@ export async function createEnvironment(
       projectId: input.projectId,
       name: input.name,
       isBaseUrl,
-      values: finalValues as any,
-      environmentType: input.environmentType || null,
-      variables: finalVariables as any,
+      values: finalValues as unknown as Prisma.InputJsonValue,
+      environmentType: (input.environmentType as EnvironmentType) || null,
+      variables: finalVariables as unknown as Prisma.InputJsonValue,
       status: input.status,
       createdAt: new Date(input.createdAt),
       updatedAt: new Date(input.updatedAt),
@@ -92,9 +94,15 @@ export async function createEnvironment(
   return toEnvironmentDomain(row);
 }
 
+export type UpdateEnvironmentInput = Partial<Omit<Environment, 'environmentType' | 'variables'>> & {
+  environmentType?: string | null;
+  baseUrl?: string;
+  variables?: unknown;
+};
+
 export async function updateEnvironment(
   id: string,
-  input: Partial<Environment> & { baseUrl?: string }
+  input: UpdateEnvironmentInput
 ): Promise<Environment> {
   const current = await getEnvironmentById(id);
   if (!current) throw new Error(`Environment ${id} not found`);
@@ -110,7 +118,7 @@ export async function updateEnvironment(
 
   let finalVariables: EnvironmentVariable[] | undefined = undefined;
   if (input.variables !== undefined) {
-    finalVariables = normalizeVariables(input.variables, input.baseUrl);
+    finalVariables = normalizeVariables(input.variables as EnvironmentVariable[] | undefined, input.baseUrl);
   } else if (input.baseUrl !== undefined) {
     finalVariables = normalizeVariables(current.variables, input.baseUrl);
   }
@@ -122,10 +130,10 @@ export async function updateEnvironment(
       ...(input.name !== undefined && { name: input.name }),
       ...(input.isBaseUrl !== undefined && { isBaseUrl: input.isBaseUrl }),
       ...(input.values !== undefined || input.isBaseUrl !== undefined
-        ? { values: finalValues as any }
+        ? { values: finalValues as unknown as Prisma.InputJsonValue }
         : {}),
-      ...(input.environmentType !== undefined && { environmentType: input.environmentType || null }),
-      ...(finalVariables !== undefined && { variables: finalVariables as any }),
+      ...(input.environmentType !== undefined && { environmentType: (input.environmentType as EnvironmentType) || null }),
+      ...(finalVariables !== undefined && { variables: finalVariables as unknown as Prisma.InputJsonValue }),
       ...(input.status !== undefined && { status: input.status }),
       ...(input.createdAt !== undefined && { createdAt: new Date(input.createdAt) }),
       ...(input.updatedAt !== undefined ? { updatedAt: new Date(input.updatedAt) } : { updatedAt: new Date() }),

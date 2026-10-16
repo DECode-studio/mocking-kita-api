@@ -12,7 +12,7 @@ interface UseEditFlowModalProps {
     description?: string;
     defaultEnvironmentId?: string;
     stopOnFailure: boolean;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
   }) => Promise<void>;
   onClose: () => void;
 }
@@ -69,7 +69,7 @@ export const useEditFlowModal = ({
     e.preventDefault();
     if (!name.trim()) return;
 
-    let parsedVars: Record<string, any> = {};
+    let parsedVars: Record<string, unknown> = {};
     if (variablesJson.trim()) {
       try {
         parsedVars = JSON.parse(variablesJson);

@@ -29,7 +29,7 @@ const apiSchema = z.object({
   collectionId: z.string().nullable().optional(),
 });
 
-type ApiFormValues = z.infer<typeof apiSchema>;
+export type ApiFormValues = z.infer<typeof apiSchema>;
 
 export function useApiCollections(
   customApiUseCase?: ApiUseCase,

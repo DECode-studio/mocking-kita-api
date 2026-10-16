@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback, ChangeEvent } from 'react';
 import { getErrorMessage } from '@/src/core/utils/error';
 import { usePageLoadingOverlay } from '@/src/client/presentation/components/shared/PageLoadingOverlay';
+import { FlowExportTemplate } from '@/src/client/domain/scenario-flow/entity/scenario_flow';
+import { ImportFlowResult } from '@/src/client/domain/scenario-flow/repository/scenario_flow_repository';
 import {
   convertInsomniaToScenarioFlow,
   InsomniaConversionResult,
@@ -12,8 +14,8 @@ import { SCENARIO_FLOWS_TEXT } from '../constant';
 interface UseImportInsomniaModalProps {
   isOpen: boolean;
   projectId?: string;
-  onSuccess: (result: any) => void;
-  onImportFlow?: (targetProjectId: string, template: any) => Promise<any>;
+  onSuccess: (result: ImportFlowResult) => void;
+  onImportFlow?: (targetProjectId: string, template: FlowExportTemplate | Record<string, unknown>) => Promise<ImportFlowResult>;
   onClose: () => void;
 }
 
@@ -112,17 +114,18 @@ export const useImportInsomniaModal = ({
       return;
     }
 
+    const activeResult = result;
     setIsSubmitting(true);
     setError(null);
     try {
       await pageLoading.run(
         {
           title: 'Mengimpor Insomnia Collection',
-          description: `Mengonversi ${result.summary.totalRequests} request dan melakukan upserting API scenario flow ke project...`,
+          description: `Mengonversi ${activeResult.summary.totalRequests} request dan melakukan upserting API scenario flow ke project...`,
         },
         async () => {
           if (onImportFlow) {
-            const res = await onImportFlow(effectiveProjectId, result.template);
+            const res = await onImportFlow(effectiveProjectId, activeResult.template);
             onSuccess(res);
             setContent('');
             setFileName(null);

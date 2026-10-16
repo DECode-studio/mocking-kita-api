@@ -45,8 +45,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
       const domains = await accountAdminUseCase.getSsoDomains();
       setAccounts(data);
       setSsoDomains(domains);
-    } catch (err: any) {
-      setError(err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_LOAD_ACCOUNTS);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : ADMIN_ACCOUNTS_TEXT.ERROR_LOAD_ACCOUNTS);
     } finally {
       setLoading(false);
     }
@@ -102,8 +102,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
           const account = await accountAdminUseCase.create(data);
           setAccounts((prev) => [...prev, account]);
           return { success: true };
-        } catch (err: any) {
-          return { success: false, error: err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_CREATE_ACCOUNT };
+        } catch (err: unknown) {
+          return { success: false, error: err instanceof Error ? err.message : ADMIN_ACCOUNTS_TEXT.ERROR_CREATE_ACCOUNT };
         }
       }
     );
@@ -121,8 +121,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
           const updated = await accountAdminUseCase.update(id, data);
           setAccounts((prev) => prev.map((acc) => (acc.id === id ? updated : acc)));
           return { success: true };
-        } catch (err: any) {
-          return { success: false, error: err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_UPDATE_ACCOUNT };
+        } catch (err: unknown) {
+          return { success: false, error: err instanceof Error ? err.message : ADMIN_ACCOUNTS_TEXT.ERROR_UPDATE_ACCOUNT };
         }
       }
     );
@@ -140,8 +140,8 @@ export function useAdminAccounts(customUseCase?: AccountAdminUseCase) {
           await accountAdminUseCase.delete(id);
           setAccounts((prev) => prev.filter((acc) => acc.id !== id));
           return { success: true };
-        } catch (err: any) {
-          return { success: false, error: err?.message || ADMIN_ACCOUNTS_TEXT.ERROR_DELETE_ACCOUNT };
+        } catch (err: unknown) {
+          return { success: false, error: err instanceof Error ? err.message : ADMIN_ACCOUNTS_TEXT.ERROR_DELETE_ACCOUNT };
         }
       }
     );

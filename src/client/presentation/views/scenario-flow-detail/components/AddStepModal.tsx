@@ -32,6 +32,7 @@ import { Environment } from '@/src/client/domain/environment/entity/environment'
 import { ApiSearchSelect } from '@/src/client/presentation/components/shared/ApiSearchSelect';
 import { DataSheetVariablePicker } from '@/src/client/presentation/components/shared/DataSheetVariablePicker';
 import { EnvironmentVariablePicker } from '@/src/client/presentation/components/shared/EnvironmentVariablePicker';
+import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import {
   SCENARIO_FLOW_DETAIL_SEMANTIC_ID,
   SCENARIO_FLOW_DETAIL_TEXT,
@@ -51,7 +52,7 @@ export interface AddStepModalProps {
   stepCount: number;
   projectId?: string;
   onSave: (stepData: Partial<ScenarioFlowStep> & { name: string; stepOrder: number }) => Promise<void>;
-  onLoadScenarios?: (apiId: string) => Promise<any[]>;
+  onLoadScenarios?: (apiId: string) => Promise<RequestScenario[]>;
 }
 
 export const AddStepModal: React.FC<AddStepModalProps> = (props) => {
@@ -797,7 +798,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = (props) => {
                         <span className="text-xs text-slate-400">←</span>
                         <select
                           value={ext.from}
-                          onChange={(e) => updateExtractor(idx, 'from', e.target.value as any)}
+                          onChange={(e) => updateExtractor(idx, 'from', e.target.value as VariableExtractor['from'])}
                           className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                         >
                           <option value="body">Response Body</option>
@@ -853,7 +854,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = (props) => {
                       >
                         <select
                           value={ast.type}
-                          onChange={(e) => updateAssertion(idx, 'type', e.target.value as any)}
+                          onChange={(e) => updateAssertion(idx, 'type', e.target.value as AssertionRule['type'])}
                           className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-medium"
                         >
                           <option value="statusCode">Status Code</option>
@@ -874,7 +875,7 @@ export const AddStepModal: React.FC<AddStepModalProps> = (props) => {
 
                         <select
                           value={ast.operator}
-                          onChange={(e) => updateAssertion(idx, 'operator', e.target.value as any)}
+                          onChange={(e) => updateAssertion(idx, 'operator', e.target.value as AssertionRule['operator'])}
                           className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                         >
                           <option value="equals">equals</option>

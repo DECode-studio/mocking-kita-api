@@ -1,7 +1,7 @@
-export function formatDate(dateString?: string | null): string {
+export function formatDate(dateString?: string | Date | null): string {
   if (!dateString) return 'N/A';
   try {
-    const d = new Date(dateString);
+    const d = typeof dateString === 'string' ? new Date(dateString) : dateString;
     if (isNaN(d.getTime())) return 'Invalid date';
     return d.toLocaleDateString('en-US', {
       month: 'short',
@@ -15,10 +15,10 @@ export function formatDate(dateString?: string | null): string {
   }
 }
 
-export function formatRelativeTime(dateString?: string | null): string {
+export function formatRelativeTime(dateString?: string | Date | null): string {
   if (!dateString) return 'N/A';
   try {
-    const date = new Date(dateString);
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
     const now = new Date();
     const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
 

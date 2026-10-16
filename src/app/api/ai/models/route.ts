@@ -15,14 +15,14 @@ export async function GET() {
       isOnline: result.isOnline,
       routerUrl: result.routerUrl,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         models: [],
         defaultModel: '',
         isConfigured: false,
         isOnline: false,
-        error: error?.message || 'Gagal memuat model dari Router AI',
+        error: error instanceof Error ? error.message : 'Gagal memuat model dari Router AI',
       },
       { status: 500 }
     );

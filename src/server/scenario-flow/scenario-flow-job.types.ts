@@ -24,7 +24,7 @@ export interface ScenarioFlowJobInput {
   dataSourceType: JobDataSourceType;
   dataSheetId?: string | null;
   dataIterationMode?: JobDataIterationMode;
-  customVariables?: Record<string, any> | null;
+  customVariables?: Record<string, unknown> | null;
 }
 
 export interface ScenarioFlowJobEntity {
@@ -48,7 +48,7 @@ export interface ScenarioFlowJobEntity {
   dataSheetId: string | null;
   dataIterationMode: JobDataIterationMode;
   dataSheetCurrentIndex: number;
-  customVariables: any;
+  customVariables: unknown;
   lastRunAt: Date | null;
   nextRunAt: Date | null;
   lastStatus: string | null;

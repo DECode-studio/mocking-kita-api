@@ -8,7 +8,7 @@ export interface DataSheetInput {
   category?: string | null;
   description?: string | null;
   format?: DataSheetFormat;
-  data: any[];
+  data: unknown[];
   status?: boolean;
 }
 
@@ -18,7 +18,7 @@ export interface DataSheetUpdateInput {
   category?: string | null;
   description?: string | null;
   format?: DataSheetFormat;
-  data?: any[];
+  data?: unknown[];
   status?: boolean;
 }
 

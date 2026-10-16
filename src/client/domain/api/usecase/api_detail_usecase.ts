@@ -12,8 +12,8 @@ export interface ApiDetailSnapshot {
   activeReqScenario: RequestScenario | null;
 }
 
-type CreateRequestScenarioInput = Omit<RequestScenario, 'id' | 'createdAt' | 'updatedAt'>;
-type CreateResponseScenarioInput = Omit<ResponseScenario, 'id' | 'createdAt' | 'updatedAt'>;
+export type CreateRequestScenarioInput = Omit<RequestScenario, 'id' | 'createdAt' | 'updatedAt'>;
+export type CreateResponseScenarioInput = Omit<ResponseScenario, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface ApiDetailUseCase {
   load(projectId: string, apiId: string, selectedReqScenarioId?: string | null): Promise<ApiDetailSnapshot>;
