@@ -20,9 +20,9 @@ export async function PUT(
         isActive: updated.isActive,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error?.message || 'Gagal memperbarui API Key' },
+      { error: error instanceof Error ? error.message : 'Gagal memperbarui API Key' },
       { status: 500 }
     );
   }
@@ -39,9 +39,9 @@ export async function DELETE(
       success: true,
       message: 'API Key berhasil dihapus',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error?.message || 'Gagal menghapus API Key' },
+      { error: error instanceof Error ? error.message : 'Gagal menghapus API Key' },
       { status: 500 }
     );
   }

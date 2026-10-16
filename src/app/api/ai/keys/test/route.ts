@@ -43,9 +43,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(testRes);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, message: error?.message || 'Gagal menguji koneksi ke Router AI' },
+      { success: false, message: error instanceof Error ? error.message : 'Gagal menguji koneksi ke Router AI' },
       { status: 500 }
     );
   }
