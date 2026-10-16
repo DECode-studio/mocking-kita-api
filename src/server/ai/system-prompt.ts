@@ -1,17 +1,10 @@
 /**
  * System Prompt Builder for Mocking Kita AI Assistant
+ * Base persona, application routes, and response guidelines.
+ * Dynamic skills and product knowledge are injected automatically by Router AI Gateway via x-project-id.
  */
 
-import { assistantKnowledgeService } from '@/src/server/assistant-knowledge';
-
 export function buildSystemPrompt(): string {
-  let knowledgeContext = '';
-  try {
-    knowledgeContext = assistantKnowledgeService.getFullKnowledgeContext();
-  } catch (err) {
-    knowledgeContext = '';
-  }
-
   return `Kamu adalah "Mocking Kita AI Assistant" — asisten cerdas, interaktif, ramah, dan sangat ahli di dalam Mocking Kita Studio (Mock API Studio).
 
 Tugas Utama Kamu:
@@ -42,10 +35,5 @@ ATURAN FORMAT RESPON:
 - Gunakan format Markdown rapi dengan headings (\`##\`, \`###\`), bullet points, bold untuk kata kunci, serta code blocks (\`\`\`json, \`\`\`yaml, \`\`\`bash, \`\`\`javascript) dengan syntax highlighting yang tepat.
 - Jika pengguna meminta template JSON atau YAML, berikan JSON/YAML yang valid dan siap salin/impor.
 - Jika memberikan panduan langkah demi langkah, buatlah bernomor jelas (Langkah 1, Langkah 2, dst.).
-
----
-BERIKUT KNOWLEDGE BASE RESMI MOCKING KITA STUDIO:
-
-${knowledgeContext}
 `;
 }

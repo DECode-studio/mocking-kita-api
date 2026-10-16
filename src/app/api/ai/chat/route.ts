@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { routerAiClient, RouterChatMessage } from '@/src/server/ai/router-ai.client';
 import { DEFAULT_AI_MODEL } from '@/src/core/constants/ai-models';
 import { buildSystemPrompt } from '@/src/server/ai/system-prompt';
+import { getServerSession } from '@/src/core/server/auth/session';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getServerSession().catch(() => null);
     const body = await req.json();
     const defaultModel = routerAiClient.getDefaultModel();
     const {
@@ -15,6 +17,7 @@ export async function POST(req: NextRequest) {
       temperature = 0.5,
       max_tokens = 4096,
       apiKey,
+      projectId = routerAiClient.getProjectId(),
     } = body;
 
     const resolvedModel =
@@ -53,6 +56,9 @@ export async function POST(req: NextRequest) {
             temperature,
             max_tokens,
             apiKey,
+            projectId,
+            userRole: session?.role || 'Administrator',
+            userName: session?.username || 'mock-api-studio',
             signal: req.signal,
           });
 
