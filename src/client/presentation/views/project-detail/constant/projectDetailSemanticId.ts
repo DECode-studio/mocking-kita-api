@@ -17,5 +17,6 @@ export const PROJECT_DETAIL_SEMANTIC_ID = {
   OPENAPI_FILE_INPUT: 'project-detail-openapi-file-input',
   OPENAPI_JSON_TEXTAREA: 'project-detail-openapi-json-textarea',
   OPENAPI_MODE_BTN: (mode: string) => `project-detail-openapi-mode-${mode}`,
+  OPENAPI_FORMAT_BTN: (format: string) => `project-detail-openapi-format-${format}`,
 } as const;
 

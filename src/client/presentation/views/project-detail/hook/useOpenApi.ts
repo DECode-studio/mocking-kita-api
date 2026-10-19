@@ -22,8 +22,11 @@ export function useOpenApi({
   const router = useRouter();
   const pageLoading = usePageLoadingOverlay();
   const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
+  const [importFormat, setImportFormat] = useState<'openapi' | 'confluence_markdown'>('openapi');
   const [importMode, setImportMode] = useState<'upsert' | 'merge' | 'replace'>('upsert');
   const [jsonText, setJsonText] = useState('');
+  const [markdownTexts, setMarkdownTexts] = useState<string[]>([]);
+  const [selectedFileCount, setSelectedFileCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -35,6 +38,14 @@ export function useOpenApi({
 
   const changeTab = (tab: 'export' | 'import') => {
     setActiveTab(tab);
+    resetMessages();
+  };
+
+  const changeImportFormat = (format: 'openapi' | 'confluence_markdown') => {
+    setImportFormat(format);
+    setJsonText('');
+    setMarkdownTexts([]);
+    setSelectedFileCount(0);
     resetMessages();
   };
 
@@ -68,19 +79,52 @@ export function useOpenApi({
     );
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setJsonText((event.target?.result as string) || '');
-    };
-    reader.readAsText(file);
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    resetMessages();
+    setSelectedFileCount(files.length);
+
+    if (importFormat === 'confluence_markdown' && files.length > 1) {
+      const readPromises = Array.from(files).map(
+        (file) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve((event.target?.result as string) || '');
+            reader.onerror = (err) => reject(err);
+            reader.readAsText(file);
+          })
+      );
+
+      try {
+        const contents = await Promise.all(readPromises);
+        setMarkdownTexts(contents);
+        setJsonText(contents.join('\n\n---\n\n'));
+      } catch {
+        setErrorMsg('Failed to read uploaded markdown files.');
+      }
+    } else {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = (event.target?.result as string) || '';
+        setJsonText(text);
+        if (importFormat === 'confluence_markdown') {
+          setMarkdownTexts([text]);
+        }
+      };
+      reader.readAsText(file);
+    }
   };
 
   const handleImport = async () => {
-    if (!jsonText.trim()) {
-      setErrorMsg('Please select a JSON file or paste an OpenAPI JSON specification.');
+    if (!jsonText.trim() && markdownTexts.length === 0) {
+      setErrorMsg(
+        importFormat === 'confluence_markdown'
+          ? 'Please select .md file(s) or paste Confluence markdown specification.'
+          : 'Please select a JSON file or paste an OpenAPI JSON specification.'
+      );
       return;
     }
 
@@ -90,28 +134,44 @@ export function useOpenApi({
     await pageLoading.run(
       {
         title: `Mengimpor endpoint ke "${projectName}"`,
-        description: 'Endpoint dari file OpenAPI sedang ditambahkan atau diperbarui.',
+        description:
+          importFormat === 'confluence_markdown'
+            ? 'Endpoint dari Confluence Markdown sedang ditambahkan atau diperbarui.'
+            : 'Endpoint dari file OpenAPI sedang ditambahkan atau diperbarui.',
       },
       async () => {
         try {
-          const parsedJson = JSON.parse(jsonText);
-          const result = await projectUseCase.importOpenApi(projectId, parsedJson, importMode);
-
-          if (!result.success) {
-            throw new Error('Failed to import OpenAPI spec.');
+          let result;
+          if (importFormat === 'confluence_markdown') {
+            const input = markdownTexts.length > 0 ? markdownTexts : jsonText;
+            result = await projectUseCase.importMarkdown(projectId, input, importMode);
+          } else {
+            const parsedJson = JSON.parse(jsonText);
+            result = await projectUseCase.importOpenApi(projectId, parsedJson, importMode);
           }
 
+          if (!result.success) {
+            throw new Error('Failed to import specification.');
+          }
+
+          const formatName = importFormat === 'confluence_markdown' ? 'Confluence Markdown' : 'OpenAPI';
           if (result.updatedApiCount && result.updatedApiCount > 0) {
-            setSuccessMsg(`Successfully processed OpenAPI: ${result.importedApiCount} created, ${result.updatedApiCount} updated endpoints & ${result.importedCollectionCount} collections.`);
+            setSuccessMsg(`Successfully processed ${formatName}: ${result.importedApiCount} created, ${result.updatedApiCount} updated endpoints & ${result.importedCollectionCount} collections.`);
           } else {
-            setSuccessMsg(`Successfully imported ${result.importedApiCount} endpoints & ${result.importedCollectionCount} collections.`);
+            setSuccessMsg(`Successfully imported ${result.importedApiCount} endpoints & ${result.importedCollectionCount} collections from ${formatName}.`);
           }
           setTimeout(() => {
             router.refresh();
             onClose();
           }, 1200);
         } catch (err: unknown) {
-          setErrorMsg(err instanceof Error ? err.message : 'Invalid OpenAPI JSON or import failed.');
+          setErrorMsg(
+            err instanceof Error
+              ? err.message
+              : importFormat === 'confluence_markdown'
+              ? 'Invalid Confluence Markdown or import failed.'
+              : 'Invalid OpenAPI JSON or import failed.'
+          );
         } finally {
           setLoading(false);
         }
@@ -122,10 +182,13 @@ export function useOpenApi({
   return {
     activeTab,
     changeTab,
+    importFormat,
+    changeImportFormat,
     importMode,
     setImportMode,
     jsonText,
     setJsonText,
+    selectedFileCount,
     loading,
     errorMsg,
     successMsg,

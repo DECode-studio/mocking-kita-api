@@ -2,7 +2,7 @@
 
 import React from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Download, Upload, X, FileJson, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Download, Upload, X, FileJson, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useOpenApi } from '../hook/useOpenApi';
 import { PROJECT_DETAIL_TEXT, PROJECT_DETAIL_SEMANTIC_ID } from '../constant';
 
@@ -22,10 +22,13 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
   const {
     activeTab,
     changeTab,
+    importFormat,
+    changeImportFormat,
     importMode,
     setImportMode,
     jsonText,
     setJsonText,
+    selectedFileCount,
     loading,
     errorMsg,
     successMsg,
@@ -141,6 +144,44 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
             <div className="space-y-3 py-1">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {PROJECT_DETAIL_TEXT.IMPORT_FORMAT_LABEL}
+                </label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <button
+                    id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_FORMAT_BTN('openapi')}
+                    type="button"
+                    onClick={() => changeImportFormat('openapi')}
+                    className={`p-2 rounded-lg border text-left transition-colors flex items-center gap-2 ${
+                      importFormat === 'openapi'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 font-semibold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <FileJson className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-semibold">{PROJECT_DETAIL_TEXT.IMPORT_FORMAT_OPENAPI}</div>
+                    </div>
+                  </button>
+                  <button
+                    id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_FORMAT_BTN('confluence_markdown')}
+                    type="button"
+                    onClick={() => changeImportFormat('confluence_markdown')}
+                    className={`p-2 rounded-lg border text-left transition-colors flex items-center gap-2 ${
+                      importFormat === 'confluence_markdown'
+                        ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-900 dark:text-indigo-200 font-semibold'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-semibold">{PROJECT_DETAIL_TEXT.IMPORT_FORMAT_CONFLUENCE_MD}</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   {PROJECT_DETAIL_TEXT.IMPORT_MODE_LABEL}
                 </label>
                 <div className="grid grid-cols-3 gap-2 text-xs">
@@ -190,13 +231,23 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {PROJECT_DETAIL_TEXT.OPENAPI_UPLOAD_OR_PASTE_LABEL}
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {importFormat === 'confluence_markdown'
+                      ? PROJECT_DETAIL_TEXT.OPENAPI_UPLOAD_OR_PASTE_LABEL_MD
+                      : PROJECT_DETAIL_TEXT.OPENAPI_UPLOAD_OR_PASTE_LABEL}
+                  </label>
+                  {selectedFileCount > 1 && (
+                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                      {PROJECT_DETAIL_TEXT.OPENAPI_FILES_SELECTED(selectedFileCount)}
+                    </span>
+                  )}
+                </div>
                 <input
                   id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_FILE_INPUT}
                   type="file"
-                  accept=".json,application/json"
+                  multiple={importFormat === 'confluence_markdown'}
+                  accept={importFormat === 'confluence_markdown' ? '.md,text/markdown,text/plain' : '.json,application/json'}
                   onChange={handleFileUpload}
                   className="block w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 mb-2"
                 />
@@ -205,7 +256,11 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                   rows={5}
                   value={jsonText}
                   onChange={(e) => setJsonText(e.target.value)}
-                  placeholder={PROJECT_DETAIL_TEXT.OPENAPI_PLACEHOLDER_JSON}
+                  placeholder={
+                    importFormat === 'confluence_markdown'
+                      ? PROJECT_DETAIL_TEXT.OPENAPI_PLACEHOLDER_MD
+                      : PROJECT_DETAIL_TEXT.OPENAPI_PLACEHOLDER_JSON
+                  }
                   className="w-full text-xs font-mono p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
