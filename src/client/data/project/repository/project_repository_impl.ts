@@ -46,4 +46,12 @@ export class ProjectRepositoryImpl implements ProjectRepository {
   ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
     return this.dataSource.importOpenApi(projectId, openApiJson, mode);
   }
+
+  async importMarkdown(
+    projectId: string,
+    markdownInput: string | string[],
+    mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
+    return this.dataSource.importMarkdown(projectId, markdownInput, mode);
+  }
 }

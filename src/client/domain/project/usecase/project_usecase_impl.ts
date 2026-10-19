@@ -62,4 +62,12 @@ export class ProjectUseCaseImpl implements ProjectUseCase {
   ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
     return this.projectRepository.importOpenApi(projectId, openApiJson, mode);
   }
+
+  importMarkdown(
+    projectId: string,
+    markdownInput: string | string[],
+    mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
+    return this.projectRepository.importMarkdown(projectId, markdownInput, mode);
+  }
 }

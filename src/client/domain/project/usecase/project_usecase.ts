@@ -17,5 +17,10 @@ export interface ProjectUseCase {
     openApiJson: unknown,
     mode?: 'upsert' | 'merge' | 'replace'
   ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>;
+  importMarkdown(
+    projectId: string,
+    markdownInput: string | string[],
+    mode?: 'upsert' | 'merge' | 'replace'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>;
 }
 
