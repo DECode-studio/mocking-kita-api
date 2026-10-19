@@ -49,6 +49,20 @@ export class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
     const data = unwrapRemoteData(response);
     return { success: true, ...data };
   }
+
+  async importMarkdown(
+    projectId: string,
+    markdownInput: string | string[],
+    mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+  ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
+    const markdownTexts = Array.isArray(markdownInput) ? markdownInput : [markdownInput];
+    const response = await apiRequest<RemoteEnvelope<{ importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }>>(
+      `/api/projects/${encodeURIComponent(projectId)}/import-openapi`,
+      { method: 'POST', body: { format: 'confluence_markdown', markdownTexts, mode } }
+    );
+    const data = unwrapRemoteData(response);
+    return { success: true, ...data };
+  }
 }
 
 // Standalone functions for backward compatibility / tests if needed

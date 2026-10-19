@@ -13,6 +13,7 @@ Katalog skill ini berisi panduan komprehensif, arsitektur teknis, dan implementa
 | 3 | **OpenAPI & Swagger Parser** | [`openapi-parser/SKILL.md`](./openapi-parser/SKILL.md) | Panduan teknis parsing Swagger 2.0 / OpenAPI 3.x JSON, dereferensi `$ref` & `allOf`, sample generator, Matrix Environment, dan strategi merge database. |
 | 4 | **Scenario Flow Template & Runner Parser** | [`scenario-flow-parser/SKILL.md`](./scenario-flow-parser/SKILL.md) | Panduan skema template Scenario Flow v1, auto-provisioning API, mesin interpolasi variabel runtime (`{{var}}`), token generator dinamis, Data Sheet counter proxy, dan assertions. |
 | 5 | **Insomnia Collection to Scenario Flow Parser** | [`insomnia-parser/SKILL.md`](./insomnia-parser/SKILL.md) | Panduan konversi koleksi Insomnia (YAML/JSON v5) menjadi Scenario Flow Template JSON: mapping environment/subEnvironment, API/request/response scenario, `{% response ... %}` chaining, batasan script Insomnia, dan topological sort. |
+| 6 | **Confluence API Markdown Converter** | [`confluence-md-converter/SKILL.md`](./confluence-md-converter/SKILL.md) | Panduan teknis & perkakas konversi spesifikasi Confluence Markdown (.md) menjadi entitas database Mock API Studio JSON atau OpenAPI 3.0.3 specification JSON (termasuk CLI converter mandiri & validator). |
 
 ---
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/src/core/db/prisma-client';
-import { importProjectOpenApi } from '@/src/core/db/openapi_storage_helper';
+import { importProjectOpenApi, importProjectMarkdown } from '@/src/core/db/openapi_storage_helper';
 import { clearInternalProxyCache } from '@/src/server/mock-proxy/mock-proxy.cache';
 import { logChange } from '@/src/core/db/change_log_helper';
 import { getProjectById } from '@/src/server/project';
@@ -20,18 +20,27 @@ export async function POST(
 
     const parsedBody = OpenApiImportSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsedBody.success) {
-      return jsonFail('Invalid OpenAPI import request', 400, 'INVALID_OPENAPI_IMPORT_REQUEST');
+      return jsonFail('Invalid import request', 400, 'INVALID_IMPORT_REQUEST');
     }
 
     const projectId = parsedParams.data.id;
     const body = parsedBody.data;
     const mode = body.mode;
-    const openApiJson = body.openApiJson || body;
+    const format = body.format;
 
     const project = await getProjectById(projectId);
     const beforeApiCount = await prisma.api.count({ where: { projectId } });
 
-    const result = await importProjectOpenApi(projectId, openApiJson, mode);
+    let result;
+    const isMarkdown = format === 'confluence_markdown' || !!body.markdownText || !!body.markdownTexts;
+
+    if (isMarkdown) {
+      const markdownInput = body.markdownTexts || body.markdownText || '';
+      result = await importProjectMarkdown(projectId, markdownInput, mode);
+    } else {
+      const openApiJson = body.openApiJson || body;
+      result = await importProjectOpenApi(projectId, openApiJson, mode);
+    }
     clearInternalProxyCache();
 
     const afterApiCount = await prisma.api.count({ where: { projectId } });
@@ -43,8 +52,8 @@ export async function POST(
       projectId: projectId,
       beforeState: { apiCount: beforeApiCount },
       afterState: { apiCount: afterApiCount },
-      metadata: { mode, openApiImport: true },
-      description: `Imported OpenAPI spec into project '${project?.name || projectId}' (mode: ${mode})`,
+      metadata: { mode, openApiImport: !isMarkdown, markdownImport: isMarkdown },
+      description: `Imported ${isMarkdown ? 'Confluence Markdown' : 'OpenAPI spec'} into project '${project?.name || projectId}' (mode: ${mode})`,
     });
 
     return NextResponse.json({
