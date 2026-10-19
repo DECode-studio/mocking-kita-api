@@ -2,7 +2,8 @@ import prisma from '@/src/core/db/prisma-client';
 import { getProjectById } from '@/src/server/project';
 import { getCollectionsByProjectId } from '@/src/server/collection';
 import { getApisByProjectId } from '@/src/server/api';
-import { exportProjectToOpenApiSpec, parseOpenApiSpecToProjectData, OpenApiSpec } from '@/src/core/openapi/openapi_converter';
+import { exportProjectToOpenApiSpec, parseOpenApiSpecToProjectData, OpenApiSpec, ExtractedProjectData } from '@/src/core/openapi/openapi_converter';
+import { parseConfluenceMarkdownToProjectData } from '@/src/core/parsers/confluence/confluence_md_parser';
 import { RequestScenario } from '@/src/client/domain/request-scenario/entity/request_scenario';
 import { ResponseScenario } from '@/src/client/domain/response-scenario/entity/response_scenario';
 import { generateId } from '@/src/core/utils/uuid';
@@ -525,13 +526,37 @@ export async function importProjectOpenApi(
   rawSpec: unknown,
   mode: 'upsert' | 'merge' | 'replace' = 'upsert'
 ): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
+  const existingCollections = (await getCollectionsByProjectId(projectId)).filter((c) => !c.deletedAt);
+  const extracted = parseOpenApiSpecToProjectData(projectId, rawSpec, existingCollections);
+  return importExtractedProjectData(projectId, extracted, mode);
+}
+
+/**
+ * Import Confluence Markdown document(s) into a target project.
+ */
+export async function importProjectMarkdown(
+  projectId: string,
+  markdownInput: string | string[],
+  mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
+  const existingCollections = (await getCollectionsByProjectId(projectId)).filter((c) => !c.deletedAt);
+  const extracted = parseConfluenceMarkdownToProjectData(projectId, markdownInput, existingCollections);
+  return importExtractedProjectData(projectId, extracted, mode);
+}
+
+/**
+ * Common persistence engine to import extracted project data into database.
+ */
+export async function importExtractedProjectData(
+  projectId: string,
+  extracted: ExtractedProjectData,
+  mode: 'upsert' | 'merge' | 'replace' = 'upsert'
+): Promise<{ success: boolean; importedApiCount: number; importedCollectionCount: number; updatedApiCount?: number }> {
   const project = await getProjectById(projectId);
   if (!project) {
     throw new Error(`Project with ID ${projectId} not found.`);
   }
 
-  const existingCollections = (await getCollectionsByProjectId(projectId)).filter((c) => !c.deletedAt);
-  const extracted = parseOpenApiSpecToProjectData(projectId, rawSpec, existingCollections);
   const now = new Date();
 
   let importedApiCount = 0;
