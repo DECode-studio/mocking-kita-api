@@ -15,6 +15,7 @@ export const PROJECT_DETAIL_SEMANTIC_ID = {
   OPENAPI_IMPORT_BTN: 'project-detail-openapi-import-btn',
   OPENAPI_CANCEL_BTN: 'project-detail-openapi-cancel-btn',
   OPENAPI_FILE_INPUT: 'project-detail-openapi-file-input',
+  OPENAPI_DOWNLOAD_TEMPLATE_MD_BTN: 'project-detail-openapi-download-template-md-btn',
   OPENAPI_JSON_TEXTAREA: 'project-detail-openapi-json-textarea',
   OPENAPI_MODE_BTN: (mode: string) => `project-detail-openapi-mode-${mode}`,
   OPENAPI_FORMAT_BTN: (format: string) => `project-detail-openapi-format-${format}`,
