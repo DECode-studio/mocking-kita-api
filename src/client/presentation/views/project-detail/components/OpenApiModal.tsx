@@ -33,6 +33,7 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
     errorMsg,
     successMsg,
     handleExport,
+    handleDownloadTemplateMd,
     handleFileUpload,
     handleImport,
   } = useOpenApi({
@@ -243,14 +244,28 @@ export const OpenApiModal: React.FC<OpenApiModalProps> = ({
                     </span>
                   )}
                 </div>
-                <input
-                  id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_FILE_INPUT}
-                  type="file"
-                  multiple={importFormat === 'confluence_markdown'}
-                  accept={importFormat === 'confluence_markdown' ? '.md,text/markdown,text/plain' : '.json,application/json'}
-                  onChange={handleFileUpload}
-                  className="block w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 mb-2"
-                />
+                <div className="flex items-center gap-2 mb-2">
+                  {importFormat === 'confluence_markdown' && (
+                    <button
+                      id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_DOWNLOAD_TEMPLATE_MD_BTN}
+                      type="button"
+                      onClick={handleDownloadTemplateMd}
+                      title={PROJECT_DETAIL_TEXT.OPENAPI_DOWNLOAD_TEMPLATE_MD_TOOLTIP}
+                      className="shrink-0 inline-flex items-center gap-1.5 py-1 px-2.5 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{PROJECT_DETAIL_TEXT.OPENAPI_DOWNLOAD_TEMPLATE_MD_BTN}</span>
+                    </button>
+                  )}
+                  <input
+                    id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_FILE_INPUT}
+                    type="file"
+                    multiple={importFormat === 'confluence_markdown'}
+                    accept={importFormat === 'confluence_markdown' ? '.md,text/markdown,text/plain' : '.json,application/json'}
+                    onChange={handleFileUpload}
+                    className="block flex-1 text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300"
+                  />
+                </div>
                 <textarea
                   id={PROJECT_DETAIL_SEMANTIC_ID.OPENAPI_JSON_TEXTAREA}
                   rows={5}

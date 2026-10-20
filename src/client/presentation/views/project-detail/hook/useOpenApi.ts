@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProjectUseCase } from '@/src/client/domain/project/usecase/project_usecase';
 import { usePageLoadingOverlay } from '@/src/client/presentation/components/shared/PageLoadingOverlay';
+import { CONFLUENCE_MD_TEMPLATE } from '../constant';
 
 import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
 
@@ -77,6 +78,22 @@ export function useOpenApi({
         }
       }
     );
+  };
+
+  const handleDownloadTemplateMd = () => {
+    try {
+      const blob = new Blob([CONFLUENCE_MD_TEMPLATE], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'template-api-spec.md';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Error downloading template MD file.');
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,6 +210,7 @@ export function useOpenApi({
     errorMsg,
     successMsg,
     handleExport,
+    handleDownloadTemplateMd,
     handleFileUpload,
     handleImport,
   };
