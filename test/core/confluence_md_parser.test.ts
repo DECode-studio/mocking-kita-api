@@ -78,5 +78,37 @@ describe('confluence_md_parser', () => {
     const envNames = result.environments.map((e) => e.name);
     expect(envNames).toContain('Development');
   });
+
+  it('should parse CONFLUENCE_MD_TEMPLATE correctly meeting all minimum requirements', async () => {
+    const { CONFLUENCE_MD_TEMPLATE } = await import('@/src/client/presentation/views/project-detail/constant/templateMd');
+    const result = parseConfluenceMarkdownToProjectData('test-project-id', CONFLUENCE_MD_TEMPLATE);
+
+    expect(result.apis).toHaveLength(1);
+    const api = result.apis[0];
+    expect(api.name).toBe('Sample Endpoint');
+    expect(api.methodRequest).toBe('POST');
+    expect(api.path).toBe('/v1/sample/endpoint');
+
+    // Environments
+    expect(result.environments.length).toBeGreaterThanOrEqual(4);
+
+    // Request Scenario & Headers
+    expect(result.requestScenarios).toHaveLength(1);
+    const req = result.requestScenarios[0];
+    expect(req.headers).toHaveProperty('Authorization', 'Bearer {{token}}');
+    expect(req.headers).toHaveProperty('Content-Type', 'application/json');
+    expect(req.body).toEqual({
+      name: 'Contoh Permintaan',
+      status: 'ACTIVE',
+    });
+
+    // Response Scenarios
+    expect(result.responseScenarios.length).toBe(4);
+    const statusCodes = result.responseScenarios.map((r) => r.statusCode);
+    expect(statusCodes).toContain(200);
+    expect(statusCodes).toContain(400);
+    expect(statusCodes).toContain(404);
+    expect(statusCodes).toContain(500);
+  });
 });
 

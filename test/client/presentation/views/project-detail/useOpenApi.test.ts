@@ -97,7 +97,7 @@ describe('useOpenApi', () => {
     });
 
     expect(mockProjectUseCase.importOpenApi).toHaveBeenCalledWith('p1', { openapi: '3.0.0' }, 'upsert');
-    expect(result.current.successMsg).toContain('Successfully imported 5 endpoints & 1 collections.');
+    expect(result.current.successMsg).toContain('Successfully imported 5 endpoints & 1 collections');
 
     act(() => {
       vi.advanceTimersByTime(1200);
@@ -105,5 +105,28 @@ describe('useOpenApi', () => {
 
     expect(mockRefresh).toHaveBeenCalled();
     expect(mockOnClose).toHaveBeenCalled();
+  });
+
+  it('should download template markdown file when handleDownloadTemplateMd is called', () => {
+    const createObjectURLSpy = vi.fn().mockReturnValue('blob:test-md');
+    const revokeObjectURLSpy = vi.fn();
+    global.URL.createObjectURL = createObjectURLSpy;
+    global.URL.revokeObjectURL = revokeObjectURLSpy;
+
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((n) => n);
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((n) => n);
+
+    const { result } = renderHook(() =>
+      useOpenApi({ projectId: 'p1', projectName: 'My API', onClose: mockOnClose, projectUseCase: mockProjectUseCase })
+    );
+
+    act(() => {
+      result.current.handleDownloadTemplateMd();
+    });
+
+    expect(createObjectURLSpy).toHaveBeenCalled();
+    expect(appendChildSpy).toHaveBeenCalled();
+    expect(removeChildSpy).toHaveBeenCalled();
+    expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:test-md');
   });
 });
