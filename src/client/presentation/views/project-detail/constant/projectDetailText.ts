@@ -52,5 +52,7 @@ export const PROJECT_DETAIL_TEXT = {
   OPENAPI_PLACEHOLDER_MD: 'Paste Confluence markdown specification or upload .md file(s)...',
   OPENAPI_UPLOAD_OR_PASTE_LABEL_MD: 'Upload .md File(s) or Paste Markdown',
   OPENAPI_FILES_SELECTED: (count: number) => `${count} file(s) loaded`,
+  OPENAPI_DOWNLOAD_TEMPLATE_MD_BTN: 'Download Template MD',
+  OPENAPI_DOWNLOAD_TEMPLATE_MD_TOOLTIP: 'Unduh template Markdown (.md) sesuai minimum requirement',
 } as const;
 
