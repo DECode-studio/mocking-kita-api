@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
-interface MarkdownReaderProps {
+export interface MarkdownReaderProps {
   content: string;
   className?: string;
+  textSize?: 'xs' | 'sm' | 'base';
+  preserveNewlines?: boolean;
 }
 
 interface ListEntry {
@@ -25,6 +27,34 @@ type ParsedBlock =
   | { type: 'paragraph'; lines: string[] };
 
 /**
+ * Splits a table row into cells, respecting inline backticks
+ */
+function parseTableRow(line: string): string[] {
+  let trimmed = line.trim();
+  if (trimmed.startsWith('|')) trimmed = trimmed.slice(1);
+  if (trimmed.endsWith('|')) trimmed = trimmed.slice(0, -1);
+
+  const cells: string[] = [];
+  let current = '';
+  let inBacktick = false;
+
+  for (let c = 0; c < trimmed.length; c++) {
+    const char = trimmed[c];
+    if (char === '`') {
+      inBacktick = !inBacktick;
+      current += char;
+    } else if (char === '|' && !inBacktick) {
+      cells.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+/**
  * Robust line-by-line Markdown document parser
  */
 function parseMarkdownDocument(markdown: string): ParsedBlock[] {
@@ -33,6 +63,21 @@ function parseMarkdownDocument(markdown: string): ParsedBlock[] {
   const rawLines = markdown.split(/\r?\n/);
   const blocks: ParsedBlock[] = [];
   let i = 0;
+
+  const isTableLine = (l: string) => {
+    const trimmed = l.trim();
+    return trimmed.startsWith('|') && (trimmed.endsWith('|') || trimmed.includes('|'));
+  };
+
+  const isStartOfTable = (idx: number) => {
+    return (
+      idx < rawLines.length &&
+      isTableLine(rawLines[idx]) &&
+      idx + 1 < rawLines.length &&
+      isTableLine(rawLines[idx + 1]) &&
+      rawLines[idx + 1].includes('--')
+    );
+  };
 
   while (i < rawLines.length) {
     const line = rawLines[i];
@@ -81,47 +126,29 @@ function parseMarkdownDocument(markdown: string): ParsedBlock[] {
       continue;
     }
 
-    // 5. Table: lines starting and ending with |
-    if (
-      line.trim().startsWith('|') &&
-      line.trim().endsWith('|') &&
-      i + 1 < rawLines.length &&
-      rawLines[i + 1].trim().startsWith('|') &&
-      rawLines[i + 1].includes('---')
-    ) {
-      const headerCells = line
-        .split('|')
-        .slice(1, -1)
-        .map((c) => c.trim());
+    // 5. Table: lines starting with | and having a delimiter row below
+    if (isStartOfTable(i)) {
+      const headerCells = parseTableRow(line);
       i += 2; // skip header and delimiter row
       const rows: string[][] = [];
-      while (
-        i < rawLines.length &&
-        rawLines[i].trim().startsWith('|') &&
-        rawLines[i].trim().endsWith('|')
-      ) {
-        rows.push(
-          rawLines[i]
-            .split('|')
-            .slice(1, -1)
-            .map((c) => c.trim())
-        );
+      while (i < rawLines.length && isTableLine(rawLines[i])) {
+        rows.push(parseTableRow(rawLines[i]));
         i++;
       }
       blocks.push({ type: 'table', headers: headerCells, rows });
       continue;
     }
 
-    // 6. List items: bullet (- or *) or ordered (1. or 2.)
-    const listMatch = line.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+    // 6. List items: bullet (- or * or +) or ordered (1. or 2.)
+    const listMatch = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
     if (listMatch) {
       const items: ListEntry[] = [];
       while (i < rawLines.length) {
-        const itemMatch = rawLines[i].match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);
+        const itemMatch = rawLines[i].match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
         if (itemMatch) {
           items.push({
             indent: itemMatch[1].length,
-            isOrdered: /\d+\./.test(itemMatch[2]),
+            isOrdered: /\d+[.)]/.test(itemMatch[2]),
             bullet: itemMatch[2],
             text: itemMatch[3],
           });
@@ -158,8 +185,8 @@ function parseMarkdownDocument(markdown: string): ParsedBlock[] {
       !rawLines[i].match(/^(#{1,6})\s+/) &&
       !rawLines[i].trim().startsWith('```') &&
       !rawLines[i].trim().startsWith('>') &&
-      !rawLines[i].match(/^(\s*)([-*]|\d+\.)\s+/) &&
-      !(rawLines[i].trim().startsWith('|') && rawLines[i].trim().endsWith('|')) &&
+      !rawLines[i].match(/^(\s*)([-*+]|\d+[.)])\s+/) &&
+      !isStartOfTable(i) &&
       !/^(\-{3,}|\*{3,}|_{3,})$/.test(rawLines[i].trim())
     ) {
       paraLines.push(rawLines[i]);
@@ -167,6 +194,10 @@ function parseMarkdownDocument(markdown: string): ParsedBlock[] {
     }
     if (paraLines.length > 0) {
       blocks.push({ type: 'paragraph', lines: paraLines });
+    } else {
+      // Guaranteed loop advancement to prevent any infinite freeze
+      blocks.push({ type: 'paragraph', lines: [rawLines[i]] });
+      i++;
     }
   }
 
@@ -176,6 +207,8 @@ function parseMarkdownDocument(markdown: string): ParsedBlock[] {
 export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
   content,
   className = '',
+  textSize = 'xs',
+  preserveNewlines = false,
 }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -188,9 +221,15 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
   if (!content) return null;
 
   const blocks = parseMarkdownDocument(content);
+  const textSizeClass =
+    textSize === 'sm'
+      ? 'text-sm'
+      : textSize === 'base'
+      ? 'text-base'
+      : 'text-xs';
 
   return (
-    <div className={`space-y-3.5 text-xs leading-relaxed text-slate-800 dark:text-slate-200 ${className}`}>
+    <div className={`space-y-3.5 ${textSizeClass} leading-relaxed text-slate-800 dark:text-slate-200 ${className}`}>
       {blocks.map((block, index) => {
         switch (block.type) {
           case 'heading': {
@@ -198,7 +237,9 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
               return (
                 <h1
                   key={index}
-                  className="text-lg font-black text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-2 pt-2 mt-4 first:mt-0 tracking-tight"
+                  className={`${
+                    textSize === 'sm' ? 'text-xl' : 'text-lg'
+                  } font-black text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-2 pt-2 mt-4 first:mt-0 tracking-tight`}
                 >
                   {renderInline(block.text)}
                 </h1>
@@ -208,7 +249,9 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
               return (
                 <h2
                   key={index}
-                  className="text-base font-bold text-slate-900 dark:text-slate-100 pt-2 mt-3 first:mt-0 tracking-tight"
+                  className={`${
+                    textSize === 'sm' ? 'text-lg' : 'text-base'
+                  } font-bold text-slate-900 dark:text-slate-100 pt-2 mt-3 first:mt-0 tracking-tight`}
                 >
                   {renderInline(block.text)}
                 </h2>
@@ -218,7 +261,9 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
               return (
                 <h3
                   key={index}
-                  className="text-sm font-bold text-purple-700 dark:text-purple-300 pt-1 mt-2.5 first:mt-0"
+                  className={`${
+                    textSize === 'sm' ? 'text-base' : 'text-sm'
+                  } font-bold text-purple-700 dark:text-purple-300 pt-1 mt-2.5 first:mt-0`}
                 >
                   {renderInline(block.text)}
                 </h3>
@@ -227,7 +272,9 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
             return (
               <h4
                 key={index}
-                className="text-xs font-bold text-slate-800 dark:text-slate-200 pt-1 mt-2 first:mt-0"
+                className={`${
+                  textSize === 'sm' ? 'text-sm' : 'text-xs'
+                } font-bold text-slate-800 dark:text-slate-200 pt-1 mt-2 first:mt-0`}
               >
                 {renderInline(block.text)}
               </h4>
@@ -283,7 +330,10 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
                 className="pl-4 py-2 border-l-4 border-purple-500/70 bg-purple-500/5 dark:bg-purple-950/20 rounded-r-xl italic text-slate-700 dark:text-slate-300 my-2"
               >
                 {block.lines.map((l, lIdx) => (
-                  <p key={lIdx}>{renderInline(l)}</p>
+                  <p key={lIdx}>
+                    {preserveNewlines && lIdx > 0 ? <br /> : null}
+                    {renderInline(l)}
+                  </p>
                 ))}
               </blockquote>
             );
@@ -293,13 +343,13 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
             return (
               <div
                 key={index}
-                className="my-3 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800"
+                className="my-3 overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-white/40 dark:bg-slate-950/40 shadow-xs"
               >
-                <table className="w-full text-left text-xs border-collapse">
+                <table className={`w-full text-left ${textSize === 'sm' ? 'text-xs' : 'text-[11px]'} border-collapse`}>
                   <thead>
                     <tr className="bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800">
                       {block.headers.map((h, hIdx) => (
-                        <th key={hIdx} className="p-2.5 font-bold text-slate-800 dark:text-slate-200">
+                        <th key={hIdx} className="p-2.5 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                           {renderInline(h)}
                         </th>
                       ))}
@@ -307,7 +357,7 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {block.rows.map((row, rIdx) => (
-                      <tr key={rIdx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                      <tr key={rIdx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                         {row.map((cell, cIdx) => (
                           <td key={cIdx} className="p-2.5 text-slate-700 dark:text-slate-300">
                             {renderInline(cell)}
@@ -332,7 +382,7 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
                     }}
                     className="flex items-start gap-2 text-slate-700 dark:text-slate-300 leading-relaxed"
                   >
-                    <span className="font-bold text-purple-500 shrink-0 mt-0.5 select-none text-[11px]">
+                    <span className={`font-bold text-purple-500 shrink-0 mt-0.5 select-none ${textSize === 'sm' ? 'text-xs' : 'text-[11px]'}`}>
                       {it.isOrdered ? it.bullet : '•'}
                     </span>
                     <div className="flex-1 min-w-0">{renderInline(it.text)}</div>
@@ -345,7 +395,16 @@ export const MarkdownReader: React.FC<MarkdownReaderProps> = ({
           case 'paragraph': {
             return (
               <p key={index} className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                {renderInline(block.lines.join(' '))}
+                {preserveNewlines ? (
+                  block.lines.map((l, lIdx) => (
+                    <React.Fragment key={lIdx}>
+                      {lIdx > 0 && <br />}
+                      {renderInline(l)}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  renderInline(block.lines.join(' '))
+                )}
               </p>
             );
           }
@@ -370,7 +429,7 @@ function renderInline(text: string): React.ReactNode {
   let key = 0;
 
   // Regex for inline elements
-  const regex = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|<u>[^<]+<\/u>|~~[^~]+~~|\[[^\]]+\]\([^)]+\))/;
+  const regex = /(`[^`]+`|\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|\*[^*]+\*|<u>[^<]+<\/u>|~~[^~]+~~|\[[^\]]+\]\([^)]+\))/;
 
   while (remaining) {
     const match = remaining.match(regex);
@@ -391,10 +450,19 @@ function renderInline(text: string): React.ReactNode {
       tokens.push(
         <code
           key={key++}
-          className="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-300 font-mono text-[11px] border border-purple-500/20"
+          className="px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-300 font-mono text-[0.875em] border border-purple-500/20"
         >
           {code}
         </code>
+      );
+    }
+    // Bold & Italic: ***text***
+    else if (matchedStr.startsWith('***') && matchedStr.endsWith('***')) {
+      const biText = matchedStr.slice(3, -3);
+      tokens.push(
+        <strong key={key++} className="font-bold italic text-slate-900 dark:text-slate-100">
+          {biText}
+        </strong>
       );
     }
     // Bold: **text**
@@ -455,7 +523,12 @@ function renderInline(text: string): React.ReactNode {
       tokens.push(matchedStr);
     }
 
-    remaining = remaining.slice(match.index + matchedStr.length);
+    const sliceLen = match.index + matchedStr.length;
+    if (sliceLen <= 0) {
+      tokens.push(remaining);
+      break;
+    }
+    remaining = remaining.slice(sliceLen);
   }
 
   return <>{tokens}</>;

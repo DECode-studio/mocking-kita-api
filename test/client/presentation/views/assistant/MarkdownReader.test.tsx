@@ -79,4 +79,34 @@ describe('MarkdownReader Component', () => {
     expect(screen.getByText('Item 2')).toBeDefined();
     expect(screen.getByText('Sub Item 2.1')).toBeDefined();
   });
+
+  it('renders markdown tables properly', () => {
+    const md = `Sintaksis Interpolasi yang Didukung:
+| Sintaksis | Deskripsi |
+|-----------|-----------|
+| \`{{var}}\` | Variabel global yang sudah ditetapkan |
+| \`{{$response.body.field}}\` | Ekstraksi dari response request terakhir |
+---`;
+
+    const { container } = render(<MarkdownReader content={md} textSize="sm" />);
+
+    expect(screen.getByText('Sintaksis Interpolasi yang Didukung:')).toBeDefined();
+    expect(container.querySelector('table')).toBeDefined();
+    expect(screen.getByText('Sintaksis')).toBeDefined();
+    expect(screen.getByText('Deskripsi')).toBeDefined();
+    expect(screen.getByText('Variabel global yang sudah ditetapkan')).toBeDefined();
+    expect(screen.getByText('{{var}}')).toBeDefined();
+    expect(container.querySelector('hr')).toBeDefined();
+  });
+
+  it('safely renders lines starting with pipe without delimiter without entering infinite loop', () => {
+    const md = `Catatan penting:
+| Ini hanya satu baris yang diawali pipe tanpa header delimiter
+| Baris kedua dengan | multiple pipe | symbols
+Berikutnya adalah paragraf biasa.`;
+
+    const { container } = render(<MarkdownReader content={md} />);
+    expect(container.textContent).toContain('Ini hanya satu baris yang diawali pipe');
+    expect(container.textContent).toContain('Berikutnya adalah paragraf biasa.');
+  });
 });

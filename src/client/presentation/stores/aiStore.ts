@@ -92,7 +92,9 @@ const INITIAL_GREETING: ChatMessageItem = {
 - ⚡ **Sintaksis Dinamis**: Variabel \`{{var}}\`, token generator \`{{$uuid}}\`, \`{{$timestamp}}\`, iterator Data Sheet, dan assertion rules.
 - 🛠️ **Troubleshooting**: Diagnosa error forward proxy, JWT External API, dan cron jobs.
 
-Ada yang bisa saya bantu sekarang?`,
+Ada yang bisa saya bantu sekarang?
+
+[action:start-tour:system-overview|Mulai Tur Pengenalan Sistem]`,
   timestamp: Date.now(),
   model: DEFAULT_AI_MODEL,
 };
