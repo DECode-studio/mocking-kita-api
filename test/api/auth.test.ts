@@ -176,6 +176,30 @@ describe('/api/auth route', () => {
     }));
   });
 
+  it('GET should retain session for admin password account without googleId', async () => {
+    const sessionData = {
+      username: 'tormentor.the.conqueror',
+      name: 'Tormentor',
+      role: 'Administrator',
+      token: 'test-token',
+      rememberMe: false,
+      loginAt: '2026-09-03T00:00:00.000Z',
+    };
+    mockCookieStore.get.mockReturnValue({ value: JSON.stringify(sessionData) });
+    (accountRepository.getByUsername as any).mockResolvedValue({
+      id: 'admin-1',
+      username: 'tormentor.the.conqueror',
+      role: 'Administrator',
+      googleId: null, // Admin accounts don't need googleId
+    });
+
+    const res = await GET();
+    const json = await res.json();
+
+    expect(json.session).not.toBeNull();
+    expect(json.session.username).toBe('tormentor.the.conqueror');
+  });
+
   it('DELETE should clear auth cookie and return success', async () => {
     const res = await DELETE();
     const json = await res.json();
