@@ -30,6 +30,7 @@ export interface StreamChatOptions {
   userName?: string;
   onReasoning?: (delta: string) => void;
   onContent?: (delta: string) => void;
+  onResponseHeaders?: (headers: Headers) => void;
   signal?: AbortSignal;
 }
 
@@ -337,6 +338,14 @@ export class RouterAiClient {
 
         if (candidate.id !== 'direct-router') {
           await apiKeyManager.recordSuccess(candidate.id);
+        }
+
+        if (typeof options.onResponseHeaders === 'function') {
+          try {
+            options.onResponseHeaders(response.headers);
+          } catch {
+            // Ignore callback errors
+          }
         }
 
         const reader = response.body.getReader();
