@@ -1,7 +1,23 @@
 'use client';
 
-
 import { create } from 'zustand';
+
+export type TourTrackId =
+  | 'quickstart'
+  | 'system-overview'
+  | 'projects-and-environments'
+  | 'mock-api-engine'
+  | 'scenario-flows'
+  | 'scenario-flow-jobs'
+  | 'data-sheets'
+  | 'openapi-importers'
+  | 'external-api-cicd'
+  | 'admin-and-database'
+  | 'faq-and-guide'
+  | 'ai-tools-and-simulator'
+  | 'admin-accounts'
+  | 'admin-change-logs'
+  | 'account-settings';
 
 export interface OnboardingProgress {
   dashboardNavigated: 'not-started' | 'completed';
@@ -12,16 +28,28 @@ export interface OnboardingProgress {
 }
 
 interface OnboardingState {
+  // Legacy / Quickstart onboarding progress
   progress: OnboardingProgress;
   tourActive: boolean;
   completedAll: boolean;
   isInitialized: boolean;
+
+  // Multi-Track Tour Engine
+  activeTrackId: TourTrackId | null;
+  activeTrackStepIndex: number;
+  completedTrackIds: string[];
 
   // Actions
   initialize: () => void;
   completeStep: (step: keyof OnboardingProgress) => void;
   resetTour: () => void;
   disableTour: () => void;
+
+  // Multi-Track Actions
+  startTourTrack: (trackId: TourTrackId) => void;
+  setTrackStepIndex: (index: number) => void;
+  completeTrack: (trackId: TourTrackId) => void;
+  stopTour: () => void;
 }
 
 const defaultProgress: OnboardingProgress = {
@@ -33,6 +61,7 @@ const defaultProgress: OnboardingProgress = {
 };
 
 const COACH_MARK_STORAGE_KEY = 'mock_api_studio_coach_mark_guidance';
+const COMPLETED_TRACKS_STORAGE_KEY = 'mock_api_studio_completed_tracks';
 
 type StoredCoachMarkState = {
   progress: OnboardingProgress;
@@ -46,17 +75,23 @@ const isCompletedAll = (progress: OnboardingProgress) =>
   progress.createRequestScenario === 'completed' &&
   progress.createResponseScenario === 'completed';
 
-const getDefaultState = (): Pick<OnboardingState, 'progress' | 'tourActive' | 'completedAll'> => ({
+const getDefaultState = (): Pick<OnboardingState, 'progress' | 'tourActive' | 'completedAll' | 'activeTrackId' | 'activeTrackStepIndex' | 'completedTrackIds'> => ({
   progress: defaultProgress,
   tourActive: true,
   completedAll: false,
+  activeTrackId: 'quickstart',
+  activeTrackStepIndex: 0,
+  completedTrackIds: [],
 });
 
-const readStoredState = (): Pick<OnboardingState, 'progress' | 'tourActive' | 'completedAll'> | null => {
+const readStoredState = (): Pick<OnboardingState, 'progress' | 'tourActive' | 'completedAll' | 'completedTrackIds'> | null => {
   if (typeof window === 'undefined') return null;
 
   try {
     const raw = window.localStorage.getItem(COACH_MARK_STORAGE_KEY);
+    const rawTracks = window.localStorage.getItem(COMPLETED_TRACKS_STORAGE_KEY);
+    const completedTrackIds = rawTracks ? JSON.parse(rawTracks) : [];
+
     if (!raw) return null;
 
     const parsed = JSON.parse(raw) as Partial<StoredCoachMarkState> | null;
@@ -64,7 +99,7 @@ const readStoredState = (): Pick<OnboardingState, 'progress' | 'tourActive' | 'c
     if (
       !progress ||
       typeof progress !== 'object' ||
-      progress.dashboardNavigated !== 'completed' && progress.dashboardNavigated !== 'not-started'
+      (progress.dashboardNavigated !== 'completed' && progress.dashboardNavigated !== 'not-started')
     ) {
       return null;
     }
@@ -78,12 +113,13 @@ const readStoredState = (): Pick<OnboardingState, 'progress' | 'tourActive' | 'c
     };
 
     const completedAll = parsed?.completedAll ?? isCompletedAll(normalizedProgress);
-    const tourActive = completedAll ? false : parsed?.tourActive ?? true;
+    const tourActive = completedAll ? false : (parsed?.tourActive ?? true);
 
     return {
       progress: normalizedProgress,
       tourActive,
       completedAll,
+      completedTrackIds: Array.isArray(completedTrackIds) ? completedTrackIds : [],
     };
   } catch {
     return null;
@@ -110,12 +146,20 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   tourActive: false,
   completedAll: false,
   isInitialized: false,
+  activeTrackId: null,
+  activeTrackStepIndex: 0,
+  completedTrackIds: [],
 
   initialize: () => {
     const storedState = readStoredState();
 
     if (storedState) {
-      set({ ...storedState, isInitialized: true });
+      set({
+        ...storedState,
+        activeTrackId: storedState.tourActive ? 'quickstart' : null,
+        activeTrackStepIndex: 0,
+        isInitialized: true,
+      });
       return;
     }
 
@@ -162,6 +206,44 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       completedAll: get().completedAll,
     };
     persistState(nextState);
-    set({ tourActive: false });
+    set({ tourActive: false, activeTrackId: null, activeTrackStepIndex: 0 });
+  },
+
+  startTourTrack: (trackId: TourTrackId) => {
+    set({
+      activeTrackId: trackId,
+      activeTrackStepIndex: 0,
+      tourActive: true,
+    });
+  },
+
+  setTrackStepIndex: (index: number) => {
+    set({ activeTrackStepIndex: Math.max(0, index) });
+  },
+
+  completeTrack: (trackId: TourTrackId) => {
+    const nextCompleted = Array.from(new Set([...get().completedTrackIds, trackId]));
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(COMPLETED_TRACKS_STORAGE_KEY, JSON.stringify(nextCompleted));
+      }
+    } catch {
+      // Ignore storage errors
+    }
+
+    set({
+      completedTrackIds: nextCompleted,
+      tourActive: false,
+      activeTrackId: null,
+      activeTrackStepIndex: 0,
+    });
+  },
+
+  stopTour: () => {
+    set({
+      tourActive: false,
+      activeTrackId: null,
+      activeTrackStepIndex: 0,
+    });
   },
 }));

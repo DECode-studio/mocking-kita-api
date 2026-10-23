@@ -13,9 +13,13 @@ import {
   FileText,
   RotateCw,
   Lightbulb,
+  Play,
+  Compass,
 } from 'lucide-react';
 import { ChatMessageItem, useAIStore } from '@/src/client/presentation/stores/aiStore';
 import { inferModelMetadata } from '@/src/core/constants/ai-models';
+import { useOnboardingStore, TourTrackId } from '@/src/client/presentation/stores/onboardingStore';
+import { MarkdownReader } from './MarkdownReader';
 
 export const ChatMessage: React.FC<{
   message: ChatMessageItem;
@@ -23,15 +27,34 @@ export const ChatMessage: React.FC<{
 }> = ({ message, isLast = false }) => {
   const isAssistant = message.role === 'assistant';
   const { retryLastMessage, sendMessage, isStreaming } = useAIStore();
-  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [isReasoningOpen, setIsReasoningOpen] = useState<boolean>(false);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const modelDef = message.model ? inferModelMetadata(message.model) : null;
 
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedCodeId(id);
-    setTimeout(() => setCopiedCodeId(null), 2000);
+  // Extract interactive tour action triggers: [action:start-tour:TRACK_ID|Button Label]
+  const tourActions: Array<{ trackId: string; label: string }> = [];
+  const cleanContent = (message.content || '').replace(
+    /\[action:start-tour:([a-zA-Z0-9_-]+)(?:\|([^\]]*))?\]/g,
+    (_, trackId, label) => {
+      tourActions.push({
+        trackId: trackId.trim(),
+        label: label ? label.trim() : 'Mulai Tur Interaktif',
+      });
+      return '';
+    }
+  );
+
+  const handleCopyBubble = () => {
+    if (!cleanContent) return;
+    navigator.clipboard.writeText(cleanContent);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleStartTour = (trackId: string) => {
+    useAIStore.getState().closeDrawer();
+    useOnboardingStore.getState().startTourTrack(trackId as TourTrackId);
   };
 
   const getFollowUps = (text: string): string[] => {
@@ -40,20 +63,22 @@ export const ChatMessage: React.FC<{
     const suggestions: string[] = [];
 
     if (lower.includes('scenario flow') || lower.includes('flow') || lower.includes('step')) {
-      suggestions.push('🚀 Berikan contoh assertion rule pada step');
+      suggestions.push('🚀 Berikan panduan dan tur interaktif Scenario Flow');
       suggestions.push('🔄 Bagaimana cara looping data dengan Data Sheet?');
     } else if (lower.includes('mock') || lower.includes('api') || lower.includes('scenario')) {
-      suggestions.push('🎯 Bagaimana cara buat skenario respons error 400 & 500?');
+      suggestions.push('🎯 Tuntun saya membuat Mock API dan Response Scenario');
       suggestions.push('⚡ Jelaskan cara kerja path matching & query param');
     } else if (lower.includes('variabel') || lower.includes('variable') || lower.includes('token')) {
       suggestions.push('⚡ Contoh generator token dinamis {{$uuid}} & {{$timestamp}}');
       suggestions.push('🔄 Cara chaining value dari response step sebelumnya');
     } else if (lower.includes('insomnia') || lower.includes('openapi') || lower.includes('convert')) {
-      suggestions.push('📦 Bagaimana format JSON template Scenario Flow v1?');
+      suggestions.push('📦 Bagaimana cara konversi spesifikasi OpenAPI & Insomnia?');
       suggestions.push('🚀 Langkah impor ke project Mocking Kita');
+    } else if (lower.includes('database') || lower.includes('backup') || lower.includes('admin')) {
+      suggestions.push('🛠️ Bagaimana cara backup snapshot database dan audit Change Logs?');
     } else {
-      suggestions.push('💡 Berikan contoh cURL atau kode implementasinya');
-      suggestions.push('🛠️ Bagaimana panduan langkahnya di menu Studio?');
+      suggestions.push('🧭 Buka tur interaktif panduan sistem Mocking Kita');
+      suggestions.push('💡 Bagaimana panduan langkahnya di menu Studio?');
     }
 
     return suggestions.slice(0, 2);
@@ -71,116 +96,12 @@ export const ChatMessage: React.FC<{
       );
     }
 
-    const parts = content.split(/(```[\s\S]*?```)/g);
-
-    return (
-      <div className="space-y-3 text-sm leading-relaxed">
-        {parts.map((part, index) => {
-          if (part.startsWith('```') && part.endsWith('```')) {
-            const lines = part.slice(3, -3).trim().split('\n');
-            const lang = lines[0]?.trim() || 'text';
-            const code = lines.slice(1).join('\n') || lines[0] || '';
-            const codeId = `code_${message.id}_${index}`;
-            const isCopied = copiedCodeId === codeId;
-
-            return (
-              <div
-                key={index}
-                className="my-3 rounded-xl border border-slate-700/60 bg-slate-950/90 text-slate-100 overflow-hidden shadow-lg shadow-black/20"
-              >
-                <div className="flex items-center justify-between px-3.5 py-1.5 bg-slate-900/90 border-b border-slate-800 text-xs text-slate-400 font-mono">
-                  <span className="uppercase text-purple-400 font-semibold">{lang}</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(code, codeId)}
-                    className="flex items-center gap-1.5 hover:text-white px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer"
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400 font-sans">Tersalin!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span className="font-sans">Salin</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <pre className="p-3.5 text-xs font-mono overflow-x-auto selection:bg-purple-500/40 text-slate-200">
-                  <code>{code}</code>
-                </pre>
-              </div>
-            );
-          }
-
-          const paragraphs = part.split('\n\n');
-          return (
-            <div key={index} className="space-y-2">
-              {paragraphs.map((para, pIdx) => {
-                if (!para.trim()) return null;
-
-                if (para.startsWith('### ')) {
-                  return (
-                    <h4 key={pIdx} className="font-bold text-slate-900 dark:text-slate-100 text-base mt-3 mb-1">
-                      {para.replace('### ', '')}
-                    </h4>
-                  );
-                }
-                if (para.startsWith('## ')) {
-                  return (
-                    <h3 key={pIdx} className="font-bold text-slate-900 dark:text-slate-100 text-lg mt-4 mb-1.5">
-                      {para.replace('## ', '')}
-                    </h3>
-                  );
-                }
-
-                if (para.includes('\n- ') || para.startsWith('- ') || para.includes('\n* ') || para.startsWith('* ')) {
-                  const items = para.split(/\n[-*]\s+/).filter(Boolean);
-                  return (
-                    <ul key={pIdx} className="list-disc list-inside space-y-1 my-1.5 pl-1 text-slate-700 dark:text-slate-300">
-                      {items.map((it, iIdx) => (
-                        <li key={iIdx} dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(it) }} />
-                      ))}
-                    </ul>
-                  );
-                }
-
-                if (/^\d+\.\s+/.test(para)) {
-                  const lines = para.split('\n');
-                  return (
-                    <ol key={pIdx} className="list-decimal list-inside space-y-1 my-1.5 pl-1 text-slate-700 dark:text-slate-300">
-                      {lines.map((line, lIdx) => (
-                        <li
-                          key={lIdx}
-                          dangerouslySetInnerHTML={{
-                            __html: formatInlineMarkdown(line.replace(/^\d+\.\s+/, '')),
-                          }}
-                        />
-                      ))}
-                    </ol>
-                  );
-                }
-
-                return (
-                  <p
-                    key={pIdx}
-                    className="text-slate-800 dark:text-slate-200"
-                    dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(para) }}
-                  />
-                );
-              })}
-            </div>
-          );
-        })}
-      </div>
-    );
+    return <MarkdownReader content={content} textSize="sm" preserveNewlines />;
   };
 
   return (
     <div
-      className={`flex gap-3.5 p-4 rounded-2xl transition-colors ${
+      className={`flex gap-3.5 p-4 rounded-2xl transition-colors overflow-hidden ${
         isAssistant
           ? 'bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80'
           : 'bg-purple-500/10 dark:bg-purple-950/20 border border-purple-500/20 ml-6'
@@ -208,9 +129,26 @@ export const ChatMessage: React.FC<{
               </span>
             )}
           </div>
-          <span className="text-[10px] text-slate-400 font-mono">
-            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-slate-400 font-mono">
+              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            {cleanContent && (
+              <button
+                type="button"
+                onClick={handleCopyBubble}
+                className="p-1 rounded-md text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title={isCopied ? 'Tersalin!' : 'Salin isi pesan'}
+                aria-label="Salin pesan"
+              >
+                {isCopied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Attached Files on User Message */}
@@ -256,7 +194,45 @@ export const ChatMessage: React.FC<{
           </div>
         )}
 
-        {renderFormattedContent(message.content)}
+        {renderFormattedContent(cleanContent)}
+
+        {/* Interactive Tour Action Cards */}
+        {isAssistant && tourActions.length > 0 && (
+          <div className="space-y-2 pt-1">
+            {tourActions.map((action, aIdx) => (
+              <div
+                key={aIdx}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-purple-500/10 border border-purple-500/30 flex flex-col gap-3 shadow-xs overflow-hidden"
+              >
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-500/20 mt-0.5">
+                    <Compass className="w-5 h-5 animate-spin-slow" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 flex-wrap">
+                      <span>Tutorial Interaktif Tersedia</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-600 dark:text-purple-300">
+                        Coach Mark
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                      Klik tombol untuk meluncurkan tur interaktif langkah demi langkah di aplikasi.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartTour(action.trackId)}
+                  className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-purple-600/30 hover:shadow-purple-600/50 transition-all cursor-pointer min-w-0"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current shrink-0" />
+                  <span className="truncate">{action.label || 'Mulai Tur Interaktif'}</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Follow-up Suggestions & Retry Actions for Assistant Message */}
         {isAssistant && message.content && (
@@ -303,14 +279,3 @@ export const ChatMessage: React.FC<{
     </div>
   );
 };
-
-function formatInlineMarkdown(text: string): string {
-  if (!text) return '';
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-slate-900 dark:text-white">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-    .replace(
-      /`([^`]+)`/g,
-      '<code class="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-300 font-mono text-[13px] border border-purple-500/20">$1</code>'
-    );
-}

@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 import { ROUTES } from '@/src/core/constants/routes';
 import { useUIStore } from '@/src/client/presentation/stores/uiStore';
+import { LAYOUT_SEMANTIC_ID } from './constant';
 
 export const Breadcrumbs: React.FC = () => {
   const pathname = usePathname();
@@ -94,7 +95,7 @@ export const Breadcrumbs: React.FC = () => {
   }
 
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+    <nav id={LAYOUT_SEMANTIC_ID.TOP_NAVBAR_BREADCRUMBS} className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
       <Link
         href={ROUTES.DASHBOARD}
         className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors flex items-center gap-1"

@@ -1,17 +1,17 @@
 'use client';
 
-
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { usePathname } from 'next/navigation';
-import { type OnboardingProgress, useOnboardingStore } from '../../stores/onboardingStore';
+import { usePathname, useRouter } from 'next/navigation';
+import { type OnboardingProgress, useOnboardingStore, TourTrackId } from '../../stores/onboardingStore';
 import { useUIStore } from '../../stores/uiStore';
 import { PROJECTS_SEMANTIC_ID } from '../../views/projects/constant';
 import { API_COLLECTIONS_SEMANTIC_ID } from '../../views/api-collections/constant';
 import { API_DETAIL_SEMANTIC_ID } from '../../views/api-detail/constant';
+import { TOUR_TRACKS_META, TourStepDefinition } from './tourStepsRegistry';
 
 type ActiveModal = 'project' | 'api' | 'reqScenario' | 'respScenario' | null;
-type TourMode = 'click' | 'fill' | 'hold';
+type TourMode = 'click' | 'fill' | 'hold' | 'info';
 
 type AdvanceCheck = {
   allowed: boolean;
@@ -24,6 +24,7 @@ type TourStep = {
   mode: TourMode;
   content: string;
   title?: string;
+  targetPath?: string;
   optional?: boolean;
 };
 
@@ -57,12 +58,14 @@ const RigidTooltip: React.FC<{
   total: number;
   completedStepIds: string[];
   canAdvance: AdvanceCheck;
+  trackTitle?: string;
   onBack: () => void;
   onNext: () => void;
   onPass?: () => void;
   onSkip: () => void;
-}> = ({ step, index, total, completedStepIds, canAdvance, onBack, onNext, onPass, onSkip }) => {
-  const showNext = step.mode === 'fill';
+}> = ({ step, index, total, completedStepIds, canAdvance, trackTitle, onBack, onNext, onPass, onSkip }) => {
+  const isLastStep = index >= total - 1;
+  const showNext = step.mode === 'fill' || step.mode === 'info' || (step.mode === 'click' && !isLastStep);
   const showBack = index > 0;
   const showPass = step.mode === 'fill' && step.optional;
 
@@ -76,8 +79,13 @@ const RigidTooltip: React.FC<{
     >
       <div key={step.id} className="flex items-start justify-between gap-4 animate-tooltip-fade">
         <div className="space-y-1.5">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            Step {index + 1} of {total}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-400">
+              {trackTitle ? trackTitle : `Step ${index + 1} of ${total}`}
+            </span>
+            <span className="text-[10px] font-mono text-slate-500">
+              ({index + 1}/{total})
+            </span>
           </div>
           {step.title ? (
             <div className="text-sm font-semibold text-slate-50">{step.title}</div>
@@ -99,9 +107,9 @@ const RigidTooltip: React.FC<{
                   state === 'completed'
                     ? 'bg-emerald-400'
                     : state === 'active'
-                      ? 'bg-indigo-400'
+                      ? 'bg-purple-500'
                       : completedStepIds.includes(step.id) && stepIndex === index
-                        ? 'bg-indigo-300'
+                        ? 'bg-purple-400'
                         : 'bg-slate-800'
                 }`}
               />
@@ -109,8 +117,8 @@ const RigidTooltip: React.FC<{
           })}
         </div>
         <div className="flex items-center justify-between text-[11px] text-slate-400">
-          <span>Rigid flow</span>
-          <span>{completedStepIds.length} completed</span>
+          <span>{step.mode === 'info' ? 'Interactive Guide' : 'Guided Action'}</span>
+          <span>{index + 1} dari {total}</span>
         </div>
       </div>
 
@@ -124,7 +132,7 @@ const RigidTooltip: React.FC<{
           }}
           className="mr-auto py-1.5 text-xs font-semibold text-slate-400 underline-offset-2 hover:text-slate-200 hover:underline"
         >
-          Skip tour
+          Tutup Tur
         </button>
         {showBack && (
           <button
@@ -156,15 +164,17 @@ const RigidTooltip: React.FC<{
           <button
             type="button"
             disabled={!canAdvance.allowed}
-            title={canAdvance.allowed ? 'Lanjut' : canAdvance.reason}
+            title={canAdvance.allowed ? (isLastStep ? 'Selesai' : 'Lanjut') : canAdvance.reason}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               onNext();
             }}
-            className="rounded-lg bg-indigo-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-45"
+            className={`rounded-lg px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+              isLastStep ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-purple-600 hover:bg-purple-500'
+            }`}
           >
-            Next
+            {isLastStep ? 'Selesai 🎉' : 'Next'}
           </button>
         )}
       </div>
@@ -183,22 +193,20 @@ const SpotlightFrame: React.FC<{ rect: DOMRect }> = ({ rect }) => (
         left: rect.left - 6,
         width: rect.width + 12,
         height: rect.height + 12,
-        boxShadow: '0 0 25px 6px rgba(99, 102, 241, 0.45), 0 0 50px 12px rgba(168, 85, 247, 0.25)',
+        boxShadow: '0 0 25px 6px rgba(168, 85, 247, 0.45), 0 0 50px 12px rgba(129, 140, 248, 0.25)',
         animation: 'spotlight-glow-pulse 2.5s infinite ease-in-out',
-        transition: 'top 0.5s cubic-bezier(0.16, 1, 0.3, 1), left 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        transition:
+          'top 0.5s cubic-bezier(0.16, 1, 0.3, 1), left 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     />
 
     {/* SVG Animated Border */}
-    <svg
-      aria-hidden="true"
-      className="fixed inset-0 z-10000 pointer-events-none"
-    >
+    <svg aria-hidden="true" className="fixed inset-0 z-10000 pointer-events-none">
       <defs>
         <linearGradient id="spotlight-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6366f1" />
-          <stop offset="50%" stopColor="#d946ef" />
-          <stop offset="100%" stopColor="#3b82f6" />
+          <stop offset="0%" stopColor="#9333ea" />
+          <stop offset="50%" stopColor="#c084fc" />
+          <stop offset="100%" stopColor="#6366f1" />
         </linearGradient>
       </defs>
       {/* Outer soft glow border */}
@@ -215,7 +223,8 @@ const SpotlightFrame: React.FC<{ rect: DOMRect }> = ({ rect }) => (
         opacity="0.35"
         style={{
           filter: 'blur(2px)',
-          transition: 'x 0.5s cubic-bezier(0.16, 1, 0.3, 1), y 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition:
+            'x 0.5s cubic-bezier(0.16, 1, 0.3, 1), y 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       />
       {/* Crisp crawling dashed border */}
@@ -232,12 +241,15 @@ const SpotlightFrame: React.FC<{ rect: DOMRect }> = ({ rect }) => (
         style={{
           strokeDasharray: '24 8',
           animation: 'spotlight-dash-shift 25s infinite linear',
-          transition: 'x 0.5s cubic-bezier(0.16, 1, 0.3, 1), y 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition:
+            'x 0.5s cubic-bezier(0.16, 1, 0.3, 1), y 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       />
     </svg>
 
-    <style dangerouslySetInnerHTML={{ __html: `
+    <style
+      dangerouslySetInnerHTML={{
+        __html: `
       @keyframes spotlight-glow-pulse {
         0%, 100% {
           opacity: 0.35;
@@ -264,37 +276,47 @@ const SpotlightFrame: React.FC<{ rect: DOMRect }> = ({ rect }) => (
         }
       }
       .animate-tooltip-fade {
-        animation: tooltip-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: tooltip-fade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-    `}} />
+    `,
+      }}
+    />
   </>
 );
 
-const BackdropSlice: React.FC<React.CSSProperties & { onBlock: () => void }> = ({ onBlock, ...style }) => (
+const BackdropSlice: React.FC<{
+  top?: number | string;
+  left?: number | string;
+  right?: number | string;
+  bottom?: number | string;
+  width?: number | string;
+  height?: number | string;
+  onBlock?: () => void;
+}> = ({ top, left, right, bottom, width, height, onBlock }) => (
   <div
-    aria-hidden="true"
-    role="presentation"
-    onMouseDown={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      onBlock();
-    }}
+    className="fixed z-9996 bg-slate-950/75 pointer-events-auto transition-all duration-300 backdrop-blur-xs"
+    style={{ top, left, right, bottom, width, height }}
     onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
-      onBlock();
-    }}
-    className="fixed z-9999 bg-slate-950/55 pointer-events-auto"
-    style={{
-      ...style,
-      transition: 'top 0.5s cubic-bezier(0.16, 1, 0.3, 1), left 0.5s cubic-bezier(0.16, 1, 0.3, 1), right 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1), bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+      onBlock?.();
     }}
   />
 );
 
 export const OnboardingTour: React.FC = () => {
+  const router = useRouter();
   const pathname = usePathname();
-  const { progress, tourActive, completedAll, isInitialized, initialize, completeStep, disableTour } = useOnboardingStore();
+  const {
+    progress,
+    tourActive,
+    isInitialized,
+    initialize,
+    completeStep,
+    disableTour,
+    activeTrackId,
+    completeTrack,
+  } = useOnboardingStore();
   const { addToast } = useUIStore();
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -350,6 +372,7 @@ export const OnboardingTour: React.FC = () => {
 
   const canAdvance = (step: TourStep | undefined): AdvanceCheck => {
     if (!step) return { allowed: true };
+    if (step.mode === 'info') return { allowed: true };
 
     switch (step.target) {
       case `#${PROJECTS_SEMANTIC_ID.FORM_INPUT_NAME}`:
@@ -494,20 +517,6 @@ export const OnboardingTour: React.FC = () => {
   }, [completedStepIds, isCoachMarkHydrated, isInitialized]);
 
   useEffect(() => {
-    if (!isInitialized || !isCoachMarkHydrated || typeof window === 'undefined') return;
-
-    const allPending = Object.values(progress).every((value) => value === 'not-started');
-    if (!allPending) return;
-
-    setCompletedStepIds([]);
-    try {
-      window.localStorage.removeItem(COACH_MARK_STEP_IDS_KEY);
-    } catch {
-      // Ignore storage failures and keep the guidance functional.
-    }
-  }, [isCoachMarkHydrated, isInitialized, progress]);
-
-  useEffect(() => {
     const updateViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     updateViewport();
     window.addEventListener('resize', updateViewport);
@@ -530,12 +539,21 @@ export const OnboardingTour: React.FC = () => {
         setActiveModal(null);
       }
 
-      const reqBodyType = document.querySelector<HTMLSelectElement>(`#${API_DETAIL_SEMANTIC_ID.REQ_FORM_BODY_TYPE}`)?.value;
-      if (reqBodyType === 'JSON' || reqBodyType === 'FORM_DATA' || reqBodyType === 'URL_ENCODED' || reqBodyType === 'NONE') {
+      const reqBodyType = document.querySelector<HTMLSelectElement>(
+        `#${API_DETAIL_SEMANTIC_ID.REQ_FORM_BODY_TYPE}`
+      )?.value;
+      if (
+        reqBodyType === 'JSON' ||
+        reqBodyType === 'FORM_DATA' ||
+        reqBodyType === 'URL_ENCODED' ||
+        reqBodyType === 'NONE'
+      ) {
         setRequestBodyType(reqBodyType);
       }
 
-      const respType = document.querySelector<HTMLElement>('[data-tour-response-type]')?.getAttribute('data-tour-response-type');
+      const respType = document
+        .querySelector<HTMLElement>('[data-tour-response-type]')
+        ?.getAttribute('data-tour-response-type');
       if (respType === 'JSON' || respType === 'FILE') {
         setResponseTypeMode(respType);
       }
@@ -560,9 +578,27 @@ export const OnboardingTour: React.FC = () => {
     }
   }, [tourActive, progress.createProject]);
 
+  // Build steps based on active track or default quickstart onboarding
   const builtSteps = useMemo<TourStep[]>(() => {
     if (!isInitialized || !tourActive) return [];
 
+    // 1. If a multi-track tour is active and not quickstart, use the modular registry steps
+    if (activeTrackId && activeTrackId !== 'quickstart') {
+      const trackMeta = TOUR_TRACKS_META[activeTrackId];
+      if (trackMeta && trackMeta.steps.length > 0) {
+        return trackMeta.steps.map((st) => ({
+          id: st.id,
+          target: st.target,
+          mode: st.mode,
+          title: st.title,
+          content: st.content,
+          targetPath: st.targetPath,
+          optional: st.optional,
+        }));
+      }
+    }
+
+    // 2. Default Quickstart Onboarding Track
     const nextSteps: TourStep[] = [];
 
     if (pathname === '/dashboard' && progress.dashboardNavigated === 'not-started') {
@@ -848,6 +884,7 @@ export const OnboardingTour: React.FC = () => {
     return nextSteps;
   }, [
     activeModal,
+    activeTrackId,
     apiCreatedDuringTour,
     completeStep,
     pathname,
@@ -860,6 +897,12 @@ export const OnboardingTour: React.FC = () => {
     isInitialized,
   ]);
 
+  // Reset step index when active track changes
+  useEffect(() => {
+    setStepIndex(0);
+  }, [activeTrackId]);
+
+  // When activeTrackId changes or steps change, sync step index
   useEffect(() => {
     const currentStepId = stepsRef.current[stepIndex]?.id;
     setSteps(builtSteps);
@@ -876,6 +919,16 @@ export const OnboardingTour: React.FC = () => {
 
   const currentStep = steps[stepIndex];
 
+  // Auto-navigate if step has targetPath and current pathname differs
+  useEffect(() => {
+    if (!tourActive || !currentStep || !currentStep.targetPath) return;
+
+    if (pathname !== currentStep.targetPath) {
+      router.push(currentStep.targetPath);
+    }
+  }, [currentStep, pathname, router, tourActive]);
+
+  // Layout calculation for tooltip positioning
   useEffect(() => {
     if (!currentStep || !tourActive || !isInitialized) {
       setLayout(null);
@@ -928,6 +981,7 @@ export const OnboardingTour: React.FC = () => {
     };
   }, [currentStep, isInitialized, tourActive, viewport.height, viewport.width]);
 
+  // Focus and scroll into view
   useEffect(() => {
     if (!currentStep || !layout) return;
     const el = document.querySelector<HTMLElement>(currentStep.target);
@@ -946,6 +1000,7 @@ export const OnboardingTour: React.FC = () => {
     }
   }, [currentStep, layout, viewport.height]);
 
+  // Elevation of target element above backdrop
   useEffect(() => {
     const targetElement = currentStep ? document.querySelector<HTMLElement>(currentStep.target) : null;
 
@@ -994,6 +1049,7 @@ export const OnboardingTour: React.FC = () => {
     };
   }, [currentStep]);
 
+  // Click mode advance
   useEffect(() => {
     if (!currentStep || currentStep.mode !== 'click') return;
 
@@ -1019,6 +1075,7 @@ export const OnboardingTour: React.FC = () => {
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [currentStep, steps.length]);
 
+  // Hold mode advance
   useEffect(() => {
     if (!currentStep || currentStep.mode !== 'hold') return;
 
@@ -1033,13 +1090,31 @@ export const OnboardingTour: React.FC = () => {
     addToast({
       type: 'info',
       title: 'Ikuti langkah yang disorot',
-      description: 'Klik elemen yang disorot atau isi field yang diminta untuk lanjut.',
+      description: 'Klik elemen yang disorot atau klik Next untuk melanjutkan panduan.',
     });
   };
 
   const handleBack = () => setStepIndex((current) => Math.max(0, current - 1));
 
   const handleNext = () => {
+    const isLastStep = stepIndex >= steps.length - 1;
+
+    if (isLastStep) {
+      if (activeTrackId && activeTrackId !== 'quickstart') {
+        completeTrack(activeTrackId);
+        addToast({
+          type: 'success',
+          title: 'Tutorial Selesai! 🎉',
+          description: `Selamat! Anda telah menyelesaikan tutorial interaktif: ${
+            TOUR_TRACKS_META[activeTrackId]?.title || activeTrackId
+          }.`,
+        });
+      } else {
+        disableTour();
+      }
+      return;
+    }
+
     const check = canAdvance(currentStep);
     if (!check.allowed) {
       addToast({
@@ -1085,6 +1160,8 @@ export const OnboardingTour: React.FC = () => {
 
   if (!tourRoot) return null;
 
+  const currentTrackMeta = activeTrackId ? TOUR_TRACKS_META[activeTrackId] : null;
+
   return createPortal(
     <div className="fixed inset-0 z-9999 pointer-events-none">
       <BackdropSlice
@@ -1120,7 +1197,7 @@ export const OnboardingTour: React.FC = () => {
 
       <div
         aria-hidden="true"
-        className="fixed z-9998 bg-linear-to-b from-indigo-300/0 via-indigo-300/80 to-indigo-300/0 pointer-events-none"
+        className="fixed z-9998 bg-linear-to-b from-purple-400/0 via-purple-400/80 to-purple-400/0 pointer-events-none"
         style={{
           left: arrowAbsoluteX - 1.5,
           top:
@@ -1133,7 +1210,8 @@ export const OnboardingTour: React.FC = () => {
               ? Math.max(0, layout.tooltipTop - rect.bottom - 16)
               : Math.max(0, rect.top - (layout.tooltipTop + tooltipHeightEstimate) - 16),
           pointerEvents: 'none',
-          transition: 'left 0.5s cubic-bezier(0.16, 1, 0.3, 1), top 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition:
+            'left 0.5s cubic-bezier(0.16, 1, 0.3, 1), top 0.5s cubic-bezier(0.16, 1, 0.3, 1), height 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       />
 
@@ -1143,7 +1221,8 @@ export const OnboardingTour: React.FC = () => {
           top: layout.tooltipTop,
           left: layout.tooltipLeft,
           width: layout.tooltipWidth,
-          transition: 'top 0.5s cubic-bezier(0.16, 1, 0.3, 1), left 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition:
+            'top 0.5s cubic-bezier(0.16, 1, 0.3, 1), left 0.5s cubic-bezier(0.16, 1, 0.3, 1), width 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
         ref={tooltipRef}
       >
@@ -1153,6 +1232,7 @@ export const OnboardingTour: React.FC = () => {
           total={steps.length}
           completedStepIds={completedStepIds}
           canAdvance={canAdvance(currentStep)}
+          trackTitle={currentTrackMeta?.title}
           onBack={handleBack}
           onNext={handleNext}
           onPass={handlePass}
