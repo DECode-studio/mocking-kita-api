@@ -26,6 +26,7 @@ import { cn } from '@/src/core/utils/cn';
 import { ROUTES } from '@/src/core/constants/routes';
 import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { useAppSidebar } from './useAppSidebar';
+import { LAYOUT_SEMANTIC_ID } from './constant';
 
 export const AppSidebar: React.FC = () => {
   const {
@@ -48,6 +49,7 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.DASHBOARD,
       icon: LayoutDashboard,
       isActive: pathname === ROUTES.DASHBOARD,
+      id: LAYOUT_SEMANTIC_ID.NAV_DASHBOARD,
     },
     {
       name: 'AI Assistant',
@@ -55,48 +57,56 @@ export const AppSidebar: React.FC = () => {
       icon: Sparkles,
       isActive: pathname.startsWith(ROUTES.ASSISTANT),
       badge: 'AI',
+      id: LAYOUT_SEMANTIC_ID.NAV_ASSISTANT,
     },
     {
       name: 'Projects',
       href: ROUTES.PROJECTS,
       icon: FolderGit2,
       isActive: pathname.startsWith(ROUTES.PROJECTS) && !pathname.includes('/scenario-flows'),
+      id: LAYOUT_SEMANTIC_ID.NAV_PROJECTS,
     },
     {
       name: 'Environments',
       href: ROUTES.ENVIRONMENTS,
       icon: Server,
       isActive: pathname === ROUTES.ENVIRONMENTS,
+      id: LAYOUT_SEMANTIC_ID.NAV_ENVIRONMENTS,
     },
     {
       name: 'Scenario Flows',
       href: ROUTES.SCENARIO_FLOWS,
       icon: Layers,
       isActive: pathname.startsWith(ROUTES.SCENARIO_FLOWS) || pathname.includes('/scenario-flows'),
+      id: LAYOUT_SEMANTIC_ID.NAV_SCENARIO_FLOWS,
     },
     {
       name: 'Data Sheets',
       href: ROUTES.DATA_SHEETS,
       icon: Table2,
       isActive: pathname.startsWith(ROUTES.DATA_SHEETS) || pathname.includes('/data-sheets'),
+      id: LAYOUT_SEMANTIC_ID.NAV_DATA_SHEETS,
     },
     {
       name: 'External APIs Docs',
       href: ROUTES.EXTERNAL_API_DOCS,
       icon: Code2,
       isActive: pathname === ROUTES.EXTERNAL_API_DOCS,
+      id: LAYOUT_SEMANTIC_ID.NAV_EXTERNAL_API_DOCS,
     },
     {
       name: 'FAQ & Guide',
       href: ROUTES.FAQ,
       icon: HelpCircle,
       isActive: pathname === ROUTES.FAQ,
+      id: LAYOUT_SEMANTIC_ID.NAV_FAQ,
     },
     {
       name: 'Change Logs',
       href: ROUTES.CHANGE_LOGS,
       icon: History,
       isActive: pathname === ROUTES.CHANGE_LOGS,
+      id: LAYOUT_SEMANTIC_ID.NAV_CHANGE_LOGS,
     },
     ...(hasAdminAuthority(session?.role)
       ? [
@@ -105,6 +115,7 @@ export const AppSidebar: React.FC = () => {
             href: ROUTES.ADMIN_ACCOUNTS,
             icon: Shield,
             isActive: pathname === ROUTES.ADMIN_ACCOUNTS,
+            id: LAYOUT_SEMANTIC_ID.NAV_ADMIN_ACCOUNTS,
           },
         ]
       : []),
@@ -113,6 +124,7 @@ export const AppSidebar: React.FC = () => {
       href: ROUTES.SETTINGS,
       icon: Settings,
       isActive: pathname === ROUTES.SETTINGS,
+      id: LAYOUT_SEMANTIC_ID.NAV_SETTINGS,
     },
   ];
 
@@ -125,6 +137,7 @@ export const AppSidebar: React.FC = () => {
       )}
     >
       <aside
+        id={LAYOUT_SEMANTIC_ID.SIDEBAR}
         className={cn(
           'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800/90 rounded-2xl flex flex-col shadow-xl dark:shadow-2xl dark:shadow-slate-950/40 transition-all duration-300 ease-in-out h-full overflow-hidden',
           isSidebarCollapsed ? 'w-64 lg:w-20' : 'w-64'
@@ -138,6 +151,7 @@ export const AppSidebar: React.FC = () => {
           )}
         >
           <Link
+            id={LAYOUT_SEMANTIC_ID.SIDEBAR_LOGO}
             href={ROUTES.DASHBOARD}
             className={cn(
               'flex items-center gap-3 group overflow-hidden',
@@ -162,6 +176,7 @@ export const AppSidebar: React.FC = () => {
 
           {/* Desktop Toggle Button */}
           <button
+            id={LAYOUT_SEMANTIC_ID.SIDEBAR_COLLAPSE_BTN}
             type="button"
             onClick={toggleSidebarCollapsed}
             className="hidden lg:flex p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors shrink-0"
@@ -176,6 +191,7 @@ export const AppSidebar: React.FC = () => {
 
           {/* Mobile Close Button */}
           <button
+            id={LAYOUT_SEMANTIC_ID.SIDEBAR_MOBILE_CLOSE_BTN}
             type="button"
             onClick={() => setMobileSidebarOpen(false)}
             className="lg:hidden p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
@@ -201,7 +217,7 @@ export const AppSidebar: React.FC = () => {
                 return (
                   <Link
                     key={item.name}
-                    id={item.name === 'Projects' ? 'sidebar-projects-link' : undefined}
+                    id={item.id}
                     href={item.href}
                     onClick={() => setMobileSidebarOpen(false)}
                     title={isSidebarCollapsed ? item.name : undefined}
@@ -302,6 +318,7 @@ export const AppSidebar: React.FC = () => {
         {/* Sidebar Footer */}
         <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-2 shrink-0 bg-slate-50 dark:bg-slate-900/50">
           <button
+            id={LAYOUT_SEMANTIC_ID.SIDEBAR_THEME_TOGGLE_BTN}
             type="button"
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
