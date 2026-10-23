@@ -1,8 +1,12 @@
 import DashboardView from '@/src/client/presentation/views/dashboard/DashboardView';
-import { getService, CLIENT_DI_TOKENS } from '@/src/core/di';
+import { getDashboardSummary } from '@/src/server/database/database-dashboard-summary.service';
 
 export default async function DashboardPage() {
-  const dashboardUseCase = getService(CLIENT_DI_TOKENS.dashboardUseCase);
-  const initialSummary = await dashboardUseCase.getSummary();
-  return <DashboardView initialSummary={initialSummary} />;
+  try {
+    const initialSummary = await getDashboardSummary();
+    return <DashboardView initialSummary={initialSummary} />;
+  } catch (error) {
+    console.error('[DashboardPage] Failed to fetch initial dashboard summary:', error);
+    return <DashboardView />;
+  }
 }
