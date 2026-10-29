@@ -18,6 +18,8 @@ export interface FileSummary {
   projects?: number;
   apis?: number;
   scenarios?: number;
+  dataSheets?: number;
+  flows?: number;
   statementsCount?: number;
   lineCount?: number;
 }
@@ -107,6 +109,8 @@ export function useSettings(customDatabaseResetUseCase?: DatabaseResetUseCase) {
         const scenarioCount =
           (Array.isArray(db.requestScenarios) ? db.requestScenarios.length : 0) +
           (Array.isArray(db.responseScenarios) ? db.responseScenarios.length : 0);
+        const dataSheetCount = Array.isArray(db.dataSheets) ? db.dataSheets.length : 0;
+        const flowCount = Array.isArray(db.scenarioFlows) ? db.scenarioFlows.length : 0;
 
         setFileName(file.name);
         setFileSize(formatFileSize(file.size));
@@ -117,6 +121,8 @@ export function useSettings(customDatabaseResetUseCase?: DatabaseResetUseCase) {
           projects: projectCount,
           apis: apiCount,
           scenarios: scenarioCount,
+          ...(dataSheetCount > 0 ? { dataSheets: dataSheetCount } : {}),
+          ...(flowCount > 0 ? { flows: flowCount } : {}),
         });
       }
     } catch (err) {

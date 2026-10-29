@@ -22,6 +22,13 @@ export async function readDatabase(): Promise<MockApiDatabase> {
     requestScenariosRaw,
     responseScenariosRaw,
     dataSheetsRaw,
+    scenarioFlowsRaw,
+    scenarioFlowStepsRaw,
+    scenarioFlowJobsRaw,
+    projectPicsRaw,
+    apiPicsRaw,
+    aiApiKeysRaw,
+    accountsRaw,
   ] = await Promise.all([
     prisma.project.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
     prisma.environment.findMany({ orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] }),
@@ -35,7 +42,27 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }, { id: 'asc' }],
     }),
     prisma.dataSheet.findMany({
-      where: { deletedAt: null, status: true },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.scenarioFlow.findMany({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.scenarioFlowStep.findMany({
+      orderBy: [{ flowId: 'asc' }, { stepOrder: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.scenarioFlowJob.findMany({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.projectPic.findMany({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.apiPic.findMany({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.aiApiKey.findMany({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    }),
+    prisma.account.findMany({
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     }),
   ]);
@@ -150,6 +177,114 @@ export async function readDatabase(): Promise<MockApiDatabase> {
       updatedAt: ds.updatedAt.toISOString(),
       deletedAt: ds.deletedAt ? ds.deletedAt.toISOString() : null,
     })),
+    scenarioFlows: scenarioFlowsRaw.map((f) => ({
+      id: f.id,
+      projectId: f.projectId,
+      name: f.name,
+      description: f.description ?? undefined,
+      status: f.status,
+      defaultEnvironmentId: f.defaultEnvironmentId,
+      stopOnFailure: f.stopOnFailure,
+      variables: (f.variables as Record<string, unknown>) ?? undefined,
+      createdAt: f.createdAt.toISOString(),
+      updatedAt: f.updatedAt.toISOString(),
+      deletedAt: f.deletedAt ? f.deletedAt.toISOString() : null,
+    })),
+    scenarioFlowSteps: scenarioFlowStepsRaw.map((s) => ({
+      id: s.id,
+      flowId: s.flowId,
+      apiId: s.apiId,
+      requestScenarioId: s.requestScenarioId,
+      stepOrder: s.stepOrder,
+      name: s.name,
+      description: s.description ?? undefined,
+      enabled: s.enabled,
+      delayMs: s.delayMs,
+      continueOnError: s.continueOnError,
+      methodOverride: s.methodOverride,
+      pathOverride: s.pathOverride,
+      headersOverride: (s.headersOverride as Record<string, string>) ?? undefined,
+      queryParamsOverride: (s.queryParamsOverride as Record<string, string>) ?? undefined,
+      pathParamsOverride: (s.pathParamsOverride as Record<string, string>) ?? undefined,
+      bodyOverride: s.bodyOverride,
+      bodyType: s.bodyType,
+      extractors: (s.extractors as any) ?? undefined,
+      assertions: (s.assertions as any) ?? undefined,
+      targetEnvironmentType: s.targetEnvironmentType,
+      targetEnvironment: s.targetEnvironment,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+    })),
+    scenarioFlowJobs: scenarioFlowJobsRaw.map((j) => ({
+      id: j.id,
+      projectId: j.projectId,
+      flowId: j.flowId,
+      environmentId: j.environmentId,
+      name: j.name,
+      description: j.description ?? undefined,
+      status: j.status as any,
+      scheduleType: j.scheduleType as any,
+      cronExpression: j.cronExpression,
+      intervalSeconds: j.intervalSeconds,
+      scheduledAt: j.scheduledAt ? j.scheduledAt.toISOString() : null,
+      targetMode: j.targetMode as any,
+      stopCondition: j.stopCondition as any,
+      maxIterations: j.maxIterations,
+      currentIteration: j.currentIteration,
+      endAt: j.endAt ? j.endAt.toISOString() : null,
+      dataSourceType: j.dataSourceType as any,
+      dataSheetId: j.dataSheetId,
+      dataIterationMode: j.dataIterationMode as any,
+      dataSheetCurrentIndex: j.dataSheetCurrentIndex,
+      customVariables: (j.customVariables as Record<string, unknown>) ?? undefined,
+      lastRunAt: j.lastRunAt ? j.lastRunAt.toISOString() : null,
+      nextRunAt: j.nextRunAt ? j.nextRunAt.toISOString() : null,
+      lastStatus: j.lastStatus,
+      lastError: j.lastError,
+      totalRuns: j.totalRuns,
+      successRuns: j.successRuns,
+      failedRuns: j.failedRuns,
+      createdAt: j.createdAt.toISOString(),
+      updatedAt: j.updatedAt.toISOString(),
+      deletedAt: j.deletedAt ? j.deletedAt.toISOString() : null,
+    })),
+    projectPics: projectPicsRaw.map((pp) => ({
+      id: pp.id,
+      projectId: pp.projectId,
+      accountId: pp.accountId,
+      createdAt: pp.createdAt.toISOString(),
+    })),
+    apiPics: apiPicsRaw.map((ap) => ({
+      id: ap.id,
+      apiId: ap.apiId,
+      accountId: ap.accountId,
+      createdAt: ap.createdAt.toISOString(),
+    })),
+    aiApiKeys: aiApiKeysRaw.map((k) => ({
+      id: k.id,
+      name: k.name,
+      provider: k.provider,
+      encryptedKey: k.encryptedKey,
+      keyHint: k.keyHint,
+      priority: k.priority,
+      isActive: k.isActive,
+      lastUsedAt: k.lastUsedAt ? k.lastUsedAt.toISOString() : null,
+      failureCount: k.failureCount,
+      lastError: k.lastError,
+      createdAt: k.createdAt.toISOString(),
+      updatedAt: k.updatedAt.toISOString(),
+    })),
+    accounts: accountsRaw.map((u) => ({
+      id: u.id,
+      username: u.username,
+      password: u.password,
+      role: u.role,
+      name: u.name,
+      googleId: u.googleId,
+      hasCustomPassword: u.hasCustomPassword,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
+    })),
   };
 }
 
@@ -166,13 +301,43 @@ const CHUNK_SIZE = 100;
 export async function seedDatabase(data: MockApiDatabase): Promise<void> {
   await prisma.$transaction(
     async (tx) => {
+      await tx.scenarioFlowExecutionStep.deleteMany({});
+      await tx.scenarioFlowExecution.deleteMany({});
+      await tx.scenarioFlowJob.deleteMany({});
+      await tx.scenarioFlowStep.deleteMany({});
+      await tx.scenarioFlow.deleteMany({});
+      await tx.dataSheet.deleteMany({});
       await tx.responseScenario.deleteMany({});
       await tx.requestScenario.deleteMany({});
       await tx.apiEnvironment.deleteMany({});
+      await tx.apiPic.deleteMany({});
+      await tx.projectPic.deleteMany({});
       await tx.api.deleteMany({});
       await tx.collection.deleteMany({});
       await tx.environment.deleteMany({});
       await tx.project.deleteMany({});
+      if (data.aiApiKeys && data.aiApiKeys.length > 0) {
+        await tx.aiApiKey.deleteMany({});
+      }
+
+      if (data.accounts && data.accounts.length > 0) {
+        for (const chunk of chunkArray(data.accounts, CHUNK_SIZE)) {
+          await tx.account.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              username: item.username,
+              password: item.password || '$2b$10$hasheddefaultplaceholder',
+              role: item.role,
+              name: item.name,
+              googleId: item.googleId ?? null,
+              hasCustomPassword: item.hasCustomPassword === true,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
 
       if (data.projects && data.projects.length > 0) {
         for (const chunk of chunkArray(data.projects, CHUNK_SIZE)) {
@@ -324,6 +489,169 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
           });
         }
       }
+
+      if (data.dataSheets && data.dataSheets.length > 0) {
+        for (const chunk of chunkArray(data.dataSheets, CHUNK_SIZE)) {
+          await tx.dataSheet.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId ?? null,
+              name: item.name,
+              code: item.code,
+              category: item.category ?? null,
+              description: item.description ?? null,
+              format: item.format || 'LIST',
+              data: (item.data as Prisma.InputJsonValue) ?? [],
+              status: item.status !== false,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
+      }
+
+      if (data.scenarioFlows && data.scenarioFlows.length > 0) {
+        for (const chunk of chunkArray(data.scenarioFlows, CHUNK_SIZE)) {
+          await tx.scenarioFlow.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId ?? null,
+              name: item.name,
+              description: item.description ?? null,
+              status: item.status !== false,
+              defaultEnvironmentId: item.defaultEnvironmentId ?? null,
+              stopOnFailure: item.stopOnFailure !== false,
+              variables: (item.variables as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
+      }
+
+      if (data.scenarioFlowSteps && data.scenarioFlowSteps.length > 0) {
+        for (const chunk of chunkArray(data.scenarioFlowSteps, CHUNK_SIZE)) {
+          await tx.scenarioFlowStep.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              flowId: item.flowId,
+              apiId: item.apiId ?? null,
+              requestScenarioId: item.requestScenarioId ?? null,
+              stepOrder: item.stepOrder ?? 0,
+              name: item.name,
+              description: item.description ?? null,
+              enabled: item.enabled !== false,
+              delayMs: item.delayMs ?? 0,
+              continueOnError: item.continueOnError === true,
+              methodOverride: item.methodOverride ?? null,
+              pathOverride: item.pathOverride ?? null,
+              headersOverride: (item.headersOverride as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              queryParamsOverride: (item.queryParamsOverride as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              pathParamsOverride: (item.pathParamsOverride as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              bodyOverride: (item.bodyOverride as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              bodyType: item.bodyType ?? 'JSON',
+              extractors: (item.extractors as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              assertions: (item.assertions as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              targetEnvironmentType: item.targetEnvironmentType ?? 'DEFAULT',
+              targetEnvironment: item.targetEnvironment ?? null,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+            })),
+          });
+        }
+      }
+
+      if (data.scenarioFlowJobs && data.scenarioFlowJobs.length > 0) {
+        for (const chunk of chunkArray(data.scenarioFlowJobs, CHUNK_SIZE)) {
+          await tx.scenarioFlowJob.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId ?? null,
+              flowId: item.flowId,
+              environmentId: item.environmentId ?? null,
+              name: item.name,
+              description: item.description ?? null,
+              status: item.status || 'ACTIVE',
+              scheduleType: item.scheduleType || 'CRON',
+              cronExpression: item.cronExpression ?? null,
+              intervalSeconds: item.intervalSeconds ?? null,
+              scheduledAt: item.scheduledAt ? new Date(item.scheduledAt) : null,
+              targetMode: item.targetMode || 'LIVE',
+              stopCondition: item.stopCondition || 'FOREVER',
+              maxIterations: item.maxIterations ?? null,
+              currentIteration: item.currentIteration ?? 0,
+              endAt: item.endAt ? new Date(item.endAt) : null,
+              dataSourceType: item.dataSourceType || 'NONE',
+              dataSheetId: item.dataSheetId ?? null,
+              dataIterationMode: item.dataIterationMode || 'PER_TICK',
+              dataSheetCurrentIndex: item.dataSheetCurrentIndex ?? 0,
+              customVariables: (item.customVariables as unknown as Prisma.InputJsonValue) ?? Prisma.DbNull,
+              lastRunAt: item.lastRunAt ? new Date(item.lastRunAt) : null,
+              nextRunAt: item.nextRunAt ? new Date(item.nextRunAt) : null,
+              lastStatus: item.lastStatus ?? null,
+              lastError: item.lastError ?? null,
+              totalRuns: item.totalRuns ?? 0,
+              successRuns: item.successRuns ?? 0,
+              failedRuns: item.failedRuns ?? 0,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+              deletedAt: item.deletedAt ? new Date(item.deletedAt) : null,
+            })),
+          });
+        }
+      }
+
+      if (data.projectPics && data.projectPics.length > 0) {
+        for (const chunk of chunkArray(data.projectPics, CHUNK_SIZE)) {
+          await tx.projectPic.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              projectId: item.projectId,
+              accountId: item.accountId,
+              createdAt: new Date(item.createdAt),
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      if (data.apiPics && data.apiPics.length > 0) {
+        for (const chunk of chunkArray(data.apiPics, CHUNK_SIZE)) {
+          await tx.apiPic.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              apiId: item.apiId,
+              accountId: item.accountId,
+              createdAt: new Date(item.createdAt),
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      if (data.aiApiKeys && data.aiApiKeys.length > 0) {
+        for (const chunk of chunkArray(data.aiApiKeys, CHUNK_SIZE)) {
+          await tx.aiApiKey.createMany({
+            data: chunk.map((item) => ({
+              id: item.id,
+              name: item.name,
+              provider: item.provider,
+              encryptedKey: item.encryptedKey,
+              keyHint: item.keyHint,
+              priority: item.priority ?? 1,
+              isActive: item.isActive !== false,
+              lastUsedAt: item.lastUsedAt ? new Date(item.lastUsedAt) : null,
+              failureCount: item.failureCount ?? 0,
+              lastError: item.lastError ?? null,
+              createdAt: new Date(item.createdAt),
+              updatedAt: new Date(item.updatedAt),
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
     },
     {
       maxWait: 30000,
@@ -335,9 +663,17 @@ export async function seedDatabase(data: MockApiDatabase): Promise<void> {
 export async function wipeAllDatabaseData(): Promise<MockApiDatabase> {
   await prisma.$transaction(
     async (tx) => {
+      await tx.scenarioFlowExecutionStep.deleteMany({});
+      await tx.scenarioFlowExecution.deleteMany({});
+      await tx.scenarioFlowJob.deleteMany({});
+      await tx.scenarioFlowStep.deleteMany({});
+      await tx.scenarioFlow.deleteMany({});
+      await tx.dataSheet.deleteMany({});
       await tx.responseScenario.deleteMany({});
       await tx.requestScenario.deleteMany({});
       await tx.apiEnvironment.deleteMany({});
+      await tx.apiPic.deleteMany({});
+      await tx.projectPic.deleteMany({});
       await tx.api.deleteMany({});
       await tx.collection.deleteMany({});
       await tx.environment.deleteMany({});
@@ -382,6 +718,14 @@ export async function importDatabaseData(
     apiEnvironments: mergeByMap(current.apiEnvironments, importedData.apiEnvironments),
     requestScenarios: mergeByMap(current.requestScenarios, importedData.requestScenarios),
     responseScenarios: mergeByMap(current.responseScenarios, importedData.responseScenarios),
+    dataSheets: mergeByMap(current.dataSheets || [], importedData.dataSheets || []),
+    scenarioFlows: mergeByMap(current.scenarioFlows || [], importedData.scenarioFlows || []),
+    scenarioFlowSteps: mergeByMap(current.scenarioFlowSteps || [], importedData.scenarioFlowSteps || []),
+    scenarioFlowJobs: mergeByMap(current.scenarioFlowJobs || [], importedData.scenarioFlowJobs || []),
+    projectPics: mergeByMap(current.projectPics || [], importedData.projectPics || []),
+    apiPics: mergeByMap(current.apiPics || [], importedData.apiPics || []),
+    aiApiKeys: mergeByMap(current.aiApiKeys || [], importedData.aiApiKeys || []),
+    accounts: mergeByMap(current.accounts || [], importedData.accounts || []),
   };
 
   await seedDatabase(mergedDatabase);

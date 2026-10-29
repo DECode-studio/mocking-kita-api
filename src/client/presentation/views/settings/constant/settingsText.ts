@@ -68,6 +68,8 @@ export const SETTINGS_TEXT = {
   PROJECTS_COUNT: (count: number) => `${count} Projects`,
   APIS_COUNT: (count: number) => `${count} APIs`,
   SCENARIOS_COUNT: (count: number) => `${count} Scenarios`,
+  DATASHEETS_COUNT: (count: number) => `${count} DataSheets`,
+  FLOWS_COUNT: (count: number) => `${count} Flows`,
   REMOVE_FILE_TITLE: 'Remove file',
   DOWNLOAD_JSON_TOOLTIP: 'Download JSON Snapshot backup',
 } as const;

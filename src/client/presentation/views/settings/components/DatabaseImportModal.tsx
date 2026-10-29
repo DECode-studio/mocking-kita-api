@@ -14,6 +14,7 @@ import {
   Database,
   Layers,
   Sparkles,
+  Workflow,
 } from 'lucide-react';
 import { SETTINGS_TEXT, SETTINGS_SEMANTIC_ID } from '../constant';
 import { FileSummary } from '../hook/useSettings';
@@ -204,6 +205,18 @@ export const DatabaseImportModal: React.FC<DatabaseImportModalProps> = ({
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-900/60">
                           {SETTINGS_TEXT.SCENARIOS_COUNT(fileSummary.scenarios || 0)}
                         </span>
+                        {fileSummary.flows !== undefined && fileSummary.flows > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 border border-amber-100 dark:border-amber-900/60">
+                            <Workflow className="w-3 h-3" />
+                            {SETTINGS_TEXT.FLOWS_COUNT(fileSummary.flows)}
+                          </span>
+                        )}
+                        {fileSummary.dataSheets !== undefined && fileSummary.dataSheets > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-900/60">
+                            <Database className="w-3 h-3" />
+                            {SETTINGS_TEXT.DATASHEETS_COUNT(fileSummary.dataSheets)}
+                          </span>
+                        )}
                       </>
                     )}
                   </div>

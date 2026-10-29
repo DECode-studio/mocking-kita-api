@@ -137,11 +137,25 @@ export async function logChange(input: ChangeLogInput) {
 
 export async function getDatabaseSummary() {
   try {
-    const projects = await prisma.project.count();
-    const collections = await prisma.collection.count();
-    const apis = await prisma.api.count();
-    const requestScenarios = await prisma.requestScenario.count();
-    const responseScenarios = await prisma.responseScenario.count();
+    const [
+      projects,
+      collections,
+      apis,
+      requestScenarios,
+      responseScenarios,
+      dataSheets,
+      scenarioFlows,
+      scenarioFlowJobs,
+    ] = await Promise.all([
+      prisma.project.count(),
+      prisma.collection.count(),
+      prisma.api.count(),
+      prisma.requestScenario.count(),
+      prisma.responseScenario.count(),
+      prisma.dataSheet.count(),
+      prisma.scenarioFlow.count(),
+      prisma.scenarioFlowJob.count(),
+    ]);
 
     return {
       projects,
@@ -149,8 +163,20 @@ export async function getDatabaseSummary() {
       apis,
       requestScenarios,
       responseScenarios,
+      dataSheets,
+      scenarioFlows,
+      scenarioFlowJobs,
     };
   } catch (error) {
-    return { projects: 0, collections: 0, apis: 0, requestScenarios: 0, responseScenarios: 0 };
+    return {
+      projects: 0,
+      collections: 0,
+      apis: 0,
+      requestScenarios: 0,
+      responseScenarios: 0,
+      dataSheets: 0,
+      scenarioFlows: 0,
+      scenarioFlowJobs: 0,
+    };
   }
 }
