@@ -16,7 +16,7 @@ export const SIGN_IN_TEXT = {
   USERNAME_PLACEHOLDER: 'username or name@finansia.com',
   PASSWORD_LABEL: 'Password',
   PASSWORD_PLACEHOLDER: '••••••••',
-  PASSWORD_HINT: '* Password is required for Administrator and Manager accounts. Leave blank for SSO login.',
+  PASSWORD_HINT: '* Enter your password to sign in, or sign in with Google Workspace SSO below.',
   REMEMBER_ME: 'Remember me',
   SUBMIT_BTN: 'Sign In to Dashboard',
   SUBMITTING_BTN: 'Authenticating...',

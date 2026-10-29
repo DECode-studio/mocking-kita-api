@@ -9,13 +9,12 @@ import { ToastContainer } from '../shared/ToastContainer';
 import { ImportExportDialog } from '../../views/dashboard';
 import { useAuthStore } from '../../stores/authStore';
 import { ROUTES } from '@/src/core/constants/routes';
-import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { OnboardingTour } from './OnboardingTour';
 import { FloatingAssistantButton, ChatAssistantDrawer } from '../../views/assistant';
 import { useAIStore } from '../../stores/aiStore';
 
 export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { session, isAuthenticated, isInitialized, logout } = useAuthStore();
+  const { session, isAuthenticated, isInitialized } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,18 +30,8 @@ export const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (!isAuthenticated) {
       router.replace(ROUTES.SIGN_IN);
-    } else if (
-      session &&
-      !session.googleId &&
-      session.username.includes('@') &&
-      !hasAdminAuthority(session.role)
-    ) {
-      // Force logout if user account is non-admin SSO and has no linked Google ID
-      logout().then(() => {
-        router.replace(ROUTES.SIGN_IN);
-      });
     }
-  }, [isInitialized, isAuthenticated, session, router, logout]);
+  }, [isInitialized, isAuthenticated, router]);
 
   if (!isInitialized || !isAuthenticated) {
     return (
