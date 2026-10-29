@@ -3,7 +3,6 @@ import { UserSession } from '@/src/client/domain/auth/entity/user_session';
 import { accountRepository } from '@/src/server/account';
 import { verifyPassword, hashPassword } from '@/src/core/utils/password-hash';
 import { generateId } from '@/src/core/utils/uuid';
-import { hasAdminAuthority } from '@/src/core/constants/roles';
 import { ENV } from '@/src/core/constants/env';
 import { clearServerSession, getServerSession, setServerSession } from '@/src/core/server/auth/session';
 import { jsonFail, jsonUnknownError } from '@/src/core/server/http/responses';
@@ -44,22 +43,10 @@ export async function GET() {
     return NextResponse.json({ session: null });
   }
 
-  // Verify that database account has a valid googleId for non-admin SSO accounts
+  // Keep session googleId in sync with database account if present
   try {
     const account = await accountRepository.getByUsername(session.username);
     if (account) {
-      const isSsoRequired = session.username.includes('@') && !hasAdminAuthority(account.role);
-      if (isSsoRequired && !account.googleId) {
-        // Missing googleId for SSO user -> force logout
-        await clearServerSession();
-        return NextResponse.json({
-          session: null,
-          error: 'Account must have a linked Google Workspace ID. Please sign in with Google.',
-          code: 'GOOGLE_ID_REQUIRED',
-        });
-      }
-
-      // Keep session googleId in sync
       if (session.googleId !== account.googleId) {
         session.googleId = account.googleId;
         await setServerSession(session);
@@ -115,9 +102,13 @@ export async function POST(request: Request) {
       let account = await accountRepository.getByUsername(cleanUsername);
 
       if (account) {
+        if (!cleanPassword && !registerExtra) {
+          return jsonFail('Password is required', 400, 'PASSWORD_REQUIRED');
+        }
+
         if (cleanPassword) {
           const hash = await accountRepository.getPasswordHash(account.id);
-          if (hash && !verifyPassword(cleanPassword, hash)) {
+          if (!hash || !verifyPassword(cleanPassword, hash)) {
             return jsonFail('Invalid username or password', 401, 'INVALID_CREDENTIALS');
           }
         }
@@ -167,7 +158,7 @@ export async function POST(request: Request) {
       return jsonUnknownError('Auth SSO login failed', err, 'Authentication failed', 'AUTH_SSO_FAILED');
     }
   } 
-  // Case B: User logs in using Username (Admin -> Password login)
+  // Case B: User logs in using Username (Admin -> Password login, or DB username)
   else {
     let isEnvAuthenticated = false;
     let adminUsername = '';
@@ -190,6 +181,23 @@ export async function POST(request: Request) {
         rememberMe,
         loginAt: new Date().toISOString(),
       };
+      try {
+        const account = await accountRepository.getByUsername(cleanUsername);
+        if (account) {
+          session = {
+            username: account.username,
+            name: account.name,
+            role: account.role,
+            googleId: account.googleId || null,
+            token: `mock-jwt-token-${Date.now()}`,
+            rememberMe,
+            loginAt: new Date().toISOString(),
+          };
+        }
+      } catch {
+        // Proceed with env-based session
+      }
+    } else {
       // Check database accounts for matching username and password
       try {
         const account = await accountRepository.getByUsername(cleanUsername);
